@@ -1,0 +1,25 @@
+{
+	"name": "cinema-worker",
+	"version": "0.0.1",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "tsx watch src/index.ts",
+		"build": "tsc",
+		"start": "node dist/index.js",
+		"ingest:genres": "tsx src/cli.ts sync-genres",
+		"ingest:popular": "tsx src/cli.ts sync-popular"
+	},
+	"dependencies": {
+		"@electric-sql/pglite": "^0.5.4",
+		"dotenv": "^16.4.7",
+		"drizzle-orm": "^0.45.2",
+		"meilisearch": "^0.43.0",
+		"postgres": "^3.4.9"
+	},
+	"devDependencies": {
+		"@types/node": "^24",
+		"tsx": "^4.19.2",
+		"typescript": "^6.0.3"
+	}
+}
