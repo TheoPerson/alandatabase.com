@@ -12,11 +12,13 @@ export async function load() {
 			trending,
 			topRated
 		};
-	} catch (err) {
+	} catch (err: any) {
+		console.error('LOAD ERROR:', err);
 		// Fallback empty list if DB is not connected yet
 		return {
 			trending: [],
-			topRated: []
+			topRated: [],
+			error: err?.message || String(err)
 		};
 	}
 }

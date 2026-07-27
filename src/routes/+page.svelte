@@ -97,6 +97,11 @@
 		{:else}
 			<div class="empty-state">
 				<p>🎬 Database is initializing...</p>
+				{#if data.error}
+					<p class="subtext" style="color: var(--accent-red); margin-top: 1rem;">
+						<strong>Error:</strong> {data.error}
+					</p>
+				{/if}
 				<p class="subtext">Run <code>pnpm --filter cinema-worker ingest:popular</code> to populate movies!</p>
 			</div>
 		{/if}
