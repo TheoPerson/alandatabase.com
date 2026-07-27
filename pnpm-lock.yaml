@@ -87,18 +87,12 @@ importers:
 
   worker:
     dependencies:
-      '@electric-sql/pglite':
-        specifier: ^0.5.4
-        version: 0.5.4
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@electric-sql/pglite@0.5.4)(postgres@3.4.9)
-      meilisearch:
-        specifier: ^0.43.0
-        version: 0.43.0
       postgres:
         specifier: ^3.4.9
         version: 3.4.9
@@ -1741,9 +1735,6 @@ packages:
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
-
-  meilisearch@0.43.0:
-    resolution: {integrity: sha512-Bis2Hq5txVi3thzAHY5lladcJ3Yf/xRzhaBmTLJtsOVXgvbs5ikaLxCgiaSZiQ18raFWX/fvfd2fX3h7gd2+DQ==}
 
   minimatch@10.2.5:
     resolution: {integrity: sha512-MULkVLfKGYDFYejP07QOurDLLQpcjk7Fw+7jXS2R2czRQzR56yHRveU5NDJEOviH+hETZKSkIk5c+T23GjFUMg==}
@@ -3445,8 +3436,6 @@ snapshots:
   magic-string@0.30.21:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
-
-  meilisearch@0.43.0: {}
 
   minimatch@10.2.5:
     dependencies:

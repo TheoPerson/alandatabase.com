@@ -1,7 +1,6 @@
 import { db, schema } from '../db.js';
 import { TMDBClient, type TMDBMovieDetail } from './client.js';
 import { eq } from 'drizzle-orm';
-import { indexMovieInMeilisearch } from '../search/indexer.js';
 
 export async function ingestMovie(tmdbId: number): Promise<string | null> {
 	const client = new TMDBClient();
@@ -210,8 +209,7 @@ export async function ingestMovie(tmdbId: number): Promise<string | null> {
 			}
 		}
 
-		// 8. Index into Meilisearch
-		await indexMovieInMeilisearch(movieId);
+
 
 		console.log(`✅ Successfully ingested "${detail.title}" (${detail.release_date?.substring(0, 4) || 'N/A'})`);
 		return movieId;

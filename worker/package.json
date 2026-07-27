@@ -11,10 +11,8 @@
 		"ingest:popular": "tsx src/cli.ts sync-popular"
 	},
 	"dependencies": {
-		"@electric-sql/pglite": "^0.5.4",
 		"dotenv": "^16.4.7",
 		"drizzle-orm": "^0.45.2",
-		"meilisearch": "^0.43.0",
 		"postgres": "^3.4.9"
 	},
 	"devDependencies": {
