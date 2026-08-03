@@ -332,6 +332,27 @@ export const userReviews = pgTable(
 );
 
 // -----------------------------------------------------------------------------
+// 5. ACTIVITY DIARY (Personal Logging)
+// -----------------------------------------------------------------------------
+
+export const activities = pgTable(
+	'activities',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+		actionType: varchar('action_type', { length: 50 }).notNull(), // 'rating', 'watchlist', 'list_created', 'review'
+		movieId: uuid('movie_id').references(() => movies.id, { onDelete: 'cascade' }),
+		listId: uuid('list_id').references(() => userLists.id, { onDelete: 'cascade' }),
+		metadata: jsonb('metadata'), // Extra info, like the star rating given
+		createdAt: timestamp('created_at').defaultNow().notNull()
+	},
+	(table) => [
+		index('idx_activities_user').on(table.userId),
+		index('idx_activities_created_at').on(table.createdAt)
+	]
+);
+
+// -----------------------------------------------------------------------------
 // RELATIONS
 // -----------------------------------------------------------------------------
 
@@ -390,7 +411,8 @@ export const userReviewsRelations = relations(userReviews, ({ one }) => ({
 export const usersRelations = relations(users, ({ many }) => ({
 	interactions: many(userMovieInteractions),
 	reviews: many(userReviews),
-	lists: many(userLists)
+	lists: many(userLists),
+	activities: many(activities)
 }));
 
 export const userListsRelations = relations(userLists, ({ one, many }) => ({
@@ -411,4 +433,10 @@ export const movieCrewRelations = relations(movieCrew, ({ one }) => ({
 export const userListItemsRelations = relations(userListItems, ({ one }) => ({
 	list: one(userLists, { fields: [userListItems.listId], references: [userLists.id] }),
 	movie: one(movies, { fields: [userListItems.movieId], references: [movies.id] })
+}));
+
+export const activitiesRelations = relations(activities, ({ one }) => ({
+	user: one(users, { fields: [activities.userId], references: [users.id] }),
+	movie: one(movies, { fields: [activities.movieId], references: [movies.id] }),
+	list: one(userLists, { fields: [activities.listId], references: [userLists.id] })
 }));
