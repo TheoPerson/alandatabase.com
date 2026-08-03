@@ -16,7 +16,7 @@ export async function load({ params, locals }) {
 
 	let interaction = null;
 	let review = null;
-	let userCustomLists = [];
+	let userCustomLists: any[] = [];
 	
 	if (locals.user) {
 		interaction = await db.query.userMovieInteractions.findFirst({

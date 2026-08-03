@@ -125,7 +125,7 @@
 											name="value"
 											value={star}
 											class="star-btn"
-											class:active={rating >= star}
+											class:active={rating !== null && rating >= star}
 										>
 											★
 										</button>

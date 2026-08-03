@@ -17,14 +17,15 @@
 <header class="glass-header sticky-header">
 	<div class="container header-content">
 		<!-- Brand Logo -->
-		<a href="/" class="brand-logo" onclick={() => (menuOpen = false)}>
+		<a href="/movies" class="brand-logo" onclick={() => (menuOpen = false)}>
 			<span class="logo-icon">🎬</span>
 			<span class="logo-text">CINEMA<span class="logo-accent">DB</span></span>
 		</a>
 
 		<!-- Main Nav Navigation Links -->
 		<nav class="main-nav">
-			<a href="/movies" class="nav-link">Movies</a>
+			<a href="/" class="nav-link" style="color: #eab308">← Hub</a>
+			<a href="/movies/catalog" class="nav-link">Movies</a>
 			<a href="/search" class="nav-link">Discover</a>
 			<a href="/discover/ai" class="nav-link text-amber-500 font-bold">✨ AI Curator</a>
 			<a href="/my/films" class="nav-link">My Films</a>
