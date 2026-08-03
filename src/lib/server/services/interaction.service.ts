@@ -1,7 +1,28 @@
 import { db } from '../db/index.js';
-import { userMovieInteractions, userLists, userListItems, userReviews, users, movies } from '../db/schema.js';
+import { userMovieInteractions, userLists, userListItems, userReviews, users, movies, activities } from '../db/schema.js';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { ensureTablesExist } from '../db/migrate.js';
+
+// ── Activity Logging ────────────────────────────────────────────────────────
+export async function logActivity(
+	userId: string,
+	actionType: string,
+	movieId?: string,
+	listId?: string,
+	metadata?: Record<string, unknown>
+) {
+	try {
+		await db.insert(activities).values({
+			userId,
+			actionType,
+			...(movieId ? { movieId } : {}),
+			...(listId ? { listId } : {}),
+			...(metadata ? { metadata } : {})
+		});
+	} catch {
+		// Non-blocking — never fail the main action due to logging
+	}
+}
 
 async function checkDbReady() {
 	await ensureTablesExist();
@@ -74,6 +95,7 @@ export async function toggleWatchlist(userId: string, movieId: string) {
 			.set({ watchlist: newWatchlistState, updatedAt: new Date() })
 			.where(eq(userMovieInteractions.id, existing.id))
 			.returning();
+		if (newWatchlistState) logActivity(userId, 'watchlisted', resolvedUuid);
 		return updated;
 	} else {
 		const [created] = await db
@@ -84,6 +106,7 @@ export async function toggleWatchlist(userId: string, movieId: string) {
 				watchlist: true
 			})
 			.returning();
+		logActivity(userId, 'watchlisted', resolvedUuid);
 		return created;
 	}
 }
@@ -102,6 +125,7 @@ export async function toggleFavorite(userId: string, movieId: string) {
 			.set({ favorite: newFavState, updatedAt: new Date() })
 			.where(eq(userMovieInteractions.id, existing.id))
 			.returning();
+		if (newFavState) logActivity(userId, 'favorited', resolvedUuid);
 		return updated;
 	} else {
 		const [created] = await db
@@ -112,6 +136,7 @@ export async function toggleFavorite(userId: string, movieId: string) {
 				favorite: true
 			})
 			.returning();
+		logActivity(userId, 'favorited', resolvedUuid);
 		return created;
 	}
 }
@@ -150,6 +175,7 @@ export async function setMovieWatched(
 			.set(updateFields)
 			.where(eq(userMovieInteractions.id, existing.id))
 			.returning();
+		if (watched) logActivity(userId, rating ? 'rated' : 'watched', resolvedUuid, undefined, rating ? { rating } : undefined);
 		return updated;
 	} else {
 		const [created] = await db
@@ -160,6 +186,7 @@ export async function setMovieWatched(
 				...updateFields
 			})
 			.returning();
+		if (watched) logActivity(userId, rating ? 'rated' : 'watched', resolvedUuid, undefined, rating ? { rating } : undefined);
 		return created;
 	}
 }

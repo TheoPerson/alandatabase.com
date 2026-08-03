@@ -1,151 +1,168 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { db } from '$lib/server/db';
-import { userMovieInteractions, userReviews } from '$lib/server/db/schema';
+import { aiChatSessions, userMovieInteractions, userReviews } from '$lib/server/db/schema';
 import { eq, desc, gte, and } from 'drizzle-orm';
 import { searchMovies } from '$lib/server/services/movie.service';
 import { GoogleGenAI, Type } from '@google/genai';
 
 const geminiApiKey = process.env.GEMINI_API_KEY;
 
-// In-memory session store: sessionId -> message history
-// Survives for the lifetime of the serverless function instance
-const chatSessions = new Map<string, Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }>>();
+type GeminiMessage = { role: 'user' | 'model'; parts: Array<{ text: string }> };
 
 export const POST: RequestHandler = async ({ request, locals, cookies }) => {
-	if (!locals.user) {
-		throw error(401, 'Unauthorized');
-	}
-
-	if (!geminiApiKey || geminiApiKey === 'YOUR_GEMINI_KEY') {
-		throw error(500, 'Gemini API Key is not configured.');
-	}
+	if (!locals.user) throw error(401, 'Unauthorized');
+	if (!geminiApiKey || geminiApiKey === 'YOUR_GEMINI_KEY') throw error(500, 'Gemini API Key not configured.');
 
 	const body = await request.json();
 	const userMessage: string = body.message?.trim();
 	const resetSession: boolean = body.reset ?? false;
 
-	if (!userMessage) {
-		throw error(400, 'No message provided.');
-	}
+	if (!userMessage) throw error(400, 'No message provided.');
 
-	// Session management
-	let sessionId = cookies.get('ai_chat_session');
-	if (!sessionId || resetSession) {
-		sessionId = crypto.randomUUID();
-		cookies.set('ai_chat_session', sessionId, {
+	// ── Session management (DB-backed, survives cold starts) ──────────────────
+	let sessionKey = cookies.get('ai_chat_session');
+
+	if (!sessionKey || resetSession) {
+		sessionKey = crypto.randomUUID();
+		cookies.set('ai_chat_session', sessionKey, {
 			path: '/',
-			maxAge: 60 * 60 * 2, // 2h
+			maxAge: 60 * 60 * 6, // 6h
 			httpOnly: true,
 			sameSite: 'lax'
 		});
 	}
 
-	if (resetSession) {
-		chatSessions.delete(sessionId);
+	// Delete old session row if resetting
+	if (resetSession && sessionKey) {
+		await db.delete(aiChatSessions).where(eq(aiChatSessions.sessionKey, sessionKey));
+		// Issue new key for the fresh session
+		sessionKey = crypto.randomUUID();
+		cookies.set('ai_chat_session', sessionKey, {
+			path: '/',
+			maxAge: 60 * 60 * 6,
+			httpOnly: true,
+			sameSite: 'lax'
+		});
 	}
 
-	// Build or retrieve history
-	if (!chatSessions.has(sessionId)) {
-		chatSessions.set(sessionId, []);
-	}
-	const history = chatSessions.get(sessionId)!;
+	// Load or create session from DB
+	let sessionRow = await db.query.aiChatSessions.findFirst({
+		where: eq(aiChatSessions.sessionKey, sessionKey)
+	});
 
-	// First message in session: inject user taste profile as context
+	let history: GeminiMessage[] = (sessionRow?.messages as GeminiMessage[]) ?? [];
+	const isNewSession = !sessionRow;
+
+	// ── First message: inject taste profile as context ────────────────────────
 	let systemContext = '';
-	if (history.length === 0) {
+	if (isNewSession) {
 		try {
-			const topRated = await db.query.userMovieInteractions.findMany({
-				where: and(eq(userMovieInteractions.userId, locals.user.id), gte(userMovieInteractions.rating, 4)),
-				with: { movie: true },
-				limit: 20
-			});
+			const [topRated, favorites, recentReviews] = await Promise.all([
+				db.query.userMovieInteractions.findMany({
+					where: and(
+						eq(userMovieInteractions.userId, locals.user.id),
+						gte(userMovieInteractions.rating, 4)
+					),
+					with: { movie: true },
+					limit: 20
+				}),
+				db.query.userMovieInteractions.findMany({
+					where: and(
+						eq(userMovieInteractions.userId, locals.user.id),
+						eq(userMovieInteractions.favorite, true)
+					),
+					with: { movie: true },
+					limit: 10
+				}),
+				db.query.userReviews.findMany({
+					where: eq(userReviews.userId, locals.user.id),
+					with: { movie: true },
+					orderBy: [desc(userReviews.createdAt)],
+					limit: 5
+				})
+			]);
+
 			const topTitles = topRated.map(i => `${i.movie.title} (${i.rating}★)`).join(', ');
+			const favTitles = favorites.map(i => i.movie.title).join(', ');
+			const reviews = recentReviews.map(r => `"${r.movie.title}": ${r.content}`).join(' | ');
 
-			const favorites = await db.query.userMovieInteractions.findMany({
-				where: and(eq(userMovieInteractions.userId, locals.user.id), eq(userMovieInteractions.favorite, true)),
-				with: { movie: true },
-				limit: 10
-			});
-			const favoriteTitles = favorites.map(i => i.movie.title).join(', ');
-
-			const recentReviews = await db.query.userReviews.findMany({
-				where: eq(userReviews.userId, locals.user.id),
-				with: { movie: true },
-				orderBy: [desc(userReviews.createdAt)],
-				limit: 5
-			});
-			const reviewTexts = recentReviews.map(r => `"${r.movie.title}": ${r.content}`).join(' | ');
-
-			systemContext = `
-[USER TASTE PROFILE — use this to personalize all responses in this conversation]
-Top-rated films: ${topTitles || 'None yet'}
-Favorites: ${favoriteTitles || 'None yet'}
-Recent reviews: ${reviewTexts || 'None yet'}
----
-`.trim();
+			systemContext = [
+				'[USER TASTE PROFILE — use this throughout the conversation]',
+				`Top-rated: ${topTitles || 'None yet'}`,
+				`Favorites: ${favTitles || 'None yet'}`,
+				`Recent reviews: ${reviews || 'None yet'}`,
+				'---'
+			].join('\n');
 		} catch {
-			// Non-blocking: profile unavailable
+			// Non-blocking
 		}
 	}
 
-	// Append user message to history
-	const fullUserMessage = history.length === 0 && systemContext
-		? `${systemContext}\n\nUser request: ${userMessage}`
+	// ── Append user turn ──────────────────────────────────────────────────────
+	const fullUserText = isNewSession && systemContext
+		? `${systemContext}\n\nUser: ${userMessage}`
 		: userMessage;
 
-	history.push({ role: 'user', parts: [{ text: fullUserMessage }] });
+	history.push({ role: 'user', parts: [{ text: fullUserText }] });
 
-	// Call Gemini with full chat history (multi-turn)
+	// ── Call Gemini (multi-turn) ───────────────────────────────────────────────
 	const ai = new GoogleGenAI({ apiKey: geminiApiKey });
-
-	const systemInstruction = `You are Alan's personal AI film curator — a sophisticated, opinionated cinephile with deep knowledge of world cinema. You have access to the user's watch history and taste profile.
-
-Your behavior:
-- Respond in a conversational, engaging tone. Never bullet-point your response text.
-- Remember everything said earlier in this conversation.
-- When recommending movies, ALWAYS include exact titles in the JSON field.
-- If the user is just chatting (no recommendation needed), return an empty array for recommended_movie_titles.
-- You can refine, argue, debate, or expand on previous recommendations.
-
-You MUST always return valid JSON with this exact structure:
-{
-  "response_text": "Your conversational reply...",
-  "recommended_movie_titles": ["Title 1", "Title 2"]
-}`;
 
 	const response = await ai.models.generateContent({
 		model: 'gemini-2.5-flash',
 		contents: history,
 		config: {
-			systemInstruction,
+			systemInstruction: `You are Alan's personal AI film curator — an opinionated cinephile with encyclopedic knowledge of world cinema. You know the user's full taste profile from their database.
+
+Rules:
+- Conversational, never use bullet points in response_text. Talk naturally.
+- Remember everything from earlier in this chat.
+- When recommending, always provide exact, official titles in recommended_movie_titles.
+- If the user is chatting without needing recommendations, return an empty array.
+- You can debate, refine, or expand on previous suggestions.
+
+Always return valid JSON:
+{"response_text": "...", "recommended_movie_titles": ["..."]}`,
 			responseMimeType: 'application/json',
 			responseSchema: {
 				type: Type.OBJECT,
 				properties: {
 					response_text: { type: Type.STRING },
-					recommended_movie_titles: {
-						type: Type.ARRAY,
-						items: { type: Type.STRING }
-					}
+					recommended_movie_titles: { type: Type.ARRAY, items: { type: Type.STRING } }
 				},
 				required: ['response_text', 'recommended_movie_titles']
 			}
 		}
 	});
 
-	const responseText = response.text;
-	if (!responseText) throw error(500, 'Empty response from AI');
+	const rawText = response.text;
+	if (!rawText) throw error(500, 'Empty AI response');
 
-	const parsed = JSON.parse(responseText);
+	const parsed = JSON.parse(rawText);
 
-	// Append AI response to history
-	history.push({ role: 'model', parts: [{ text: responseText }] });
-	chatSessions.set(sessionId, history);
+	// ── Append model turn & persist to DB ────────────────────────────────────
+	history.push({ role: 'model', parts: [{ text: rawText }] });
 
-	// Resolve movies from DB / TMDB
+	// Keep history bounded (last 40 turns = 20 exchanges) to avoid token bloat
+	if (history.length > 40) history = history.slice(history.length - 40);
+
+	if (sessionRow) {
+		await db
+			.update(aiChatSessions)
+			.set({ messages: history, updatedAt: new Date() })
+			.where(eq(aiChatSessions.sessionKey, sessionKey));
+	} else {
+		await db.insert(aiChatSessions).values({
+			userId: locals.user.id,
+			sessionKey,
+			messages: history
+		});
+	}
+
+	// ── Resolve movie posters from TMDB ───────────────────────────────────────
 	const resolvedMovies = [];
-	for (const title of (parsed.recommended_movie_titles || [])) {
+	for (const title of (parsed.recommended_movie_titles ?? [])) {
 		const results = await searchMovies(title, 1);
 		if (results.length > 0) resolvedMovies.push(results[0]);
 	}

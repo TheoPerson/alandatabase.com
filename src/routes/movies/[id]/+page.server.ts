@@ -3,6 +3,7 @@ import { db } from '$lib/server/db';
 import { userMovieInteractions, userReviews, userLists, userListItems } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
+import { logActivity } from '$lib/server/services/interaction.service';
 
 export async function load({ params, locals }) {
 	const movie = await getMovieById(params.id);
@@ -97,6 +98,17 @@ export const actions = {
 				payload.userId = locals.user.id;
 				payload.movieId = movieId;
 				await db.insert(userMovieInteractions).values(payload);
+			}
+
+			// Log activity (non-blocking)
+			if (type === 'rating' && value) {
+				logActivity(locals.user.id, 'rated', movieId, undefined, { rating: parseFloat(value) });
+			} else if (type === 'watched' && value === 'true') {
+				logActivity(locals.user.id, 'watched', movieId);
+			} else if (type === 'favorite' && value === 'true') {
+				logActivity(locals.user.id, 'favorited', movieId);
+			} else if (type === 'watchlist' && value === 'true') {
+				logActivity(locals.user.id, 'watchlisted', movieId);
 			}
 
 			return { success: true };

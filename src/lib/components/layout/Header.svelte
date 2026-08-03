@@ -28,6 +28,7 @@
 			<a href="/search" class="nav-link">Discover</a>
 			<a href="/discover/ai" class="nav-link text-amber-500 font-bold">✨ AI Curator</a>
 			<a href="/my/films" class="nav-link">My Films</a>
+			<a href="/my/diary" class="nav-link">📖 Diary</a>
 		</nav>
 
 		<!-- Search Bar & User Actions -->
@@ -68,6 +69,7 @@
 				<a href="/search" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Discover</a>
 				<a href="/discover/ai" class="mobile-nav-link text-amber-500" onclick={() => (menuOpen = false)}>✨ AI Curator</a>
 				<a href="/my/films" class="mobile-nav-link" onclick={() => (menuOpen = false)}>My Films</a>
+				<a href="/my/diary" class="mobile-nav-link" onclick={() => (menuOpen = false)}>📖 Diary</a>
 				<div class="mobile-nav-actions">
 					<Button href="/my/films" variant="outline" size="sm" onclick={() => (menuOpen = false)}>
 						Personal OS

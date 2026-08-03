@@ -340,10 +340,10 @@ export const activities = pgTable(
 	{
 		id: uuid('id').defaultRandom().primaryKey(),
 		userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-		actionType: varchar('action_type', { length: 50 }).notNull(), // 'rating', 'watchlist', 'list_created', 'review'
+		actionType: varchar('action_type', { length: 50 }).notNull(), // 'rated', 'watched', 'favorited', 'watchlisted', 'reviewed', 'list_created'
 		movieId: uuid('movie_id').references(() => movies.id, { onDelete: 'cascade' }),
 		listId: uuid('list_id').references(() => userLists.id, { onDelete: 'cascade' }),
-		metadata: jsonb('metadata'), // Extra info, like the star rating given
+		metadata: jsonb('metadata'), // e.g. { rating: 5 }
 		createdAt: timestamp('created_at').defaultNow().notNull()
 	},
 	(table) => [
@@ -351,6 +351,23 @@ export const activities = pgTable(
 		index('idx_activities_created_at').on(table.createdAt)
 	]
 );
+
+export const aiChatSessions = pgTable(
+	'ai_chat_sessions',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+		sessionKey: varchar('session_key', { length: 100 }).notNull().unique(), // cookie value
+		messages: jsonb('messages').notNull().default('[]'), // Gemini-format message array
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		index('idx_ai_sessions_user').on(table.userId),
+		uniqueIndex('idx_ai_sessions_key').on(table.sessionKey)
+	]
+);
+
 
 // -----------------------------------------------------------------------------
 // RELATIONS
@@ -412,7 +429,8 @@ export const usersRelations = relations(users, ({ many }) => ({
 	interactions: many(userMovieInteractions),
 	reviews: many(userReviews),
 	lists: many(userLists),
-	activities: many(activities)
+	activities: many(activities),
+	aiChatSessions: many(aiChatSessions)
 }));
 
 export const userListsRelations = relations(userLists, ({ one, many }) => ({
@@ -439,4 +457,8 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
 	user: one(users, { fields: [activities.userId], references: [users.id] }),
 	movie: one(movies, { fields: [activities.movieId], references: [movies.id] }),
 	list: one(userLists, { fields: [activities.listId], references: [userLists.id] })
+}));
+
+export const aiChatSessionsRelations = relations(aiChatSessions, ({ one }) => ({
+	user: one(users, { fields: [aiChatSessions.userId], references: [users.id] })
 }));
