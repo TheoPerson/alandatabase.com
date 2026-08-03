@@ -1,17 +1,21 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { fade, scale } from 'svelte/transition';
+	import { onMount } from 'svelte';
 
 	let open = $state(false);
 	let query = $state('');
+	let movies = $state<any[]>([]);
+	let isSearching = $state(false);
+	let debounceTimer: ReturnType<typeof setTimeout>;
 
 	const navigationLinks = [
 		{ label: '🎬 Home', href: '/', category: 'Navigation' },
 		{ label: '🍿 Cinema Catalog', href: '/movies', category: 'Navigation' },
 		{ label: '🔍 Advanced Search', href: '/search', category: 'Navigation' },
 		{ label: '📽️ My Personal Archive', href: '/my/films', category: 'Personal OS' },
-		{ label: '🔑 Login', href: '/auth/login', category: 'Account' },
-		{ label: '📝 Register', href: '/auth/register', category: 'Account' }
+		{ label: '📖 My Diary', href: '/my/diary', category: 'Personal OS' },
+		{ label: '✨ AI Curator', href: '/discover/ai', category: 'Personal OS' }
 	];
 
 	const filteredLinks = $derived(
@@ -34,8 +38,47 @@
 	function navigate(href: string) {
 		open = false;
 		query = '';
+		movies = [];
 		goto(href);
 	}
+
+	async function searchApi(q: string) {
+		if (!q.trim()) {
+			movies = [];
+			return;
+		}
+		isSearching = true;
+		try {
+			const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=4`);
+			if (res.ok) {
+				const data = await res.json();
+				movies = data.results || [];
+			}
+		} catch {
+			movies = [];
+		} finally {
+			isSearching = false;
+		}
+	}
+
+	$effect(() => {
+		if (query) {
+			clearTimeout(debounceTimer);
+			debounceTimer = setTimeout(() => {
+				searchApi(query);
+			}, 300);
+		} else {
+			movies = [];
+		}
+	});
+
+	// When palette closes, reset state
+	$effect(() => {
+		if (!open) {
+			query = '';
+			movies = [];
+		}
+	});
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -61,9 +104,11 @@
 		>
 			<div class="palette-header">
 				<span class="search-icon">🔍</span>
+				<!-- svelte-ignore a11y_autofocus -->
 				<input
 					type="text"
-					placeholder="Type a command or page name..."
+					autofocus
+					placeholder="Search movies, commands, pages..."
 					bind:value={query}
 					class="palette-input"
 				/>
@@ -71,20 +116,56 @@
 			</div>
 
 			<div class="palette-results">
-				{#each filteredLinks as link}
-					<button
-						type="button"
-						class="palette-item"
-						onclick={() => navigate(link.href)}
-					>
-						<span class="item-label">{link.label}</span>
-						<span class="item-category">{link.category}</span>
-					</button>
-				{/each}
+				<!-- Movies Section -->
+				{#if query.trim() && (movies.length > 0 || isSearching)}
+					<div class="result-section">
+						<div class="section-title">Movies {isSearching ? '...' : ''}</div>
+						{#each movies as movie}
+							<button
+								type="button"
+								class="palette-item movie-item"
+								onclick={() => navigate(`/movies/${movie.id}`)}
+							>
+								{#if movie.posterPath}
+									<img src="https://image.tmdb.org/t/p/w92{movie.posterPath}" alt={movie.title} class="item-poster" />
+								{:else}
+									<div class="item-poster fallback">?</div>
+								{/if}
+								<div class="movie-meta">
+									<span class="item-label">{movie.title}</span>
+									<span class="item-year">{movie.releaseDate ? movie.releaseDate.substring(0,4) : 'N/A'}</span>
+								</div>
+								{#if movie.voteAverage}
+									<span class="item-rating">★ {Number(movie.voteAverage).toFixed(1)}</span>
+								{/if}
+							</button>
+						{/each}
+						{#if !isSearching && movies.length === 0}
+							<div class="empty-state">No movies found.</div>
+						{/if}
+					</div>
+				{/if}
 
-				{#if filteredLinks.length === 0}
+				<!-- Commands Section -->
+				{#if filteredLinks.length > 0}
+					<div class="result-section">
+						<div class="section-title">Navigation</div>
+						{#each filteredLinks as link}
+							<button
+								type="button"
+								class="palette-item"
+								onclick={() => navigate(link.href)}
+							>
+								<span class="item-label">{link.label}</span>
+								<span class="item-category">{link.category}</span>
+							</button>
+						{/each}
+					</div>
+				{/if}
+
+				{#if filteredLinks.length === 0 && !query.trim()}
 					<div class="empty-state">
-						<p>No results found for "{query}"</p>
+						<p>Type to search...</p>
 					</div>
 				{/if}
 			</div>
@@ -119,6 +200,9 @@
 		max-width: 580px;
 		box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.8);
 		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		max-height: 70vh;
 	}
 
 	.palette-header {
@@ -127,6 +211,7 @@
 		gap: 0.75rem;
 		padding: 1rem 1.25rem;
 		border-bottom: 1px solid var(--border-subtle);
+		flex-shrink: 0;
 	}
 
 	.search-icon {
@@ -148,66 +233,127 @@
 		font-weight: 700;
 		background: var(--bg-surface-2);
 		border: 1px solid var(--border-subtle);
-		padding: 0.2rem 0.5rem;
-		border-radius: var(--radius-sm);
+		padding: 0.15rem 0.4rem;
+		border-radius: 4px;
 		color: var(--text-tertiary);
 	}
 
 	.palette-results {
-		max-height: 320px;
+		flex: 1;
 		overflow-y: auto;
-		padding: 0.5rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
+		padding: 0.5rem 0;
+	}
+
+	.result-section {
+		margin-bottom: 0.5rem;
+	}
+
+	.section-title {
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		color: var(--text-tertiary);
+		padding: 0.5rem 1.25rem;
+		letter-spacing: 0.05em;
 	}
 
 	.palette-item {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0.75rem 1rem;
+		width: 100%;
 		background: none;
 		border: none;
-		border-radius: var(--radius-md);
-		color: var(--text-primary);
-		font-size: 0.95rem;
-		font-weight: 500;
+		padding: 0.75rem 1.25rem;
 		cursor: pointer;
-		width: 100%;
+		color: var(--text-primary);
+		transition: background 0.15s;
 		text-align: left;
-		transition: all var(--transition-fast);
 	}
 
-	.palette-item:hover {
-		background: var(--bg-surface-2);
-		color: var(--accent-gold);
+	.palette-item:hover, .palette-item:focus {
+		background: rgba(255, 255, 255, 0.06);
+		outline: none;
+	}
+
+	.movie-item {
+		justify-content: flex-start;
+		gap: 0.75rem;
+	}
+
+	.item-poster {
+		width: 32px;
+		height: 48px;
+		object-fit: cover;
+		border-radius: 4px;
+		flex-shrink: 0;
+	}
+
+	.item-poster.fallback {
+		background: rgba(255,255,255,0.1);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.8rem;
+		color: var(--text-tertiary);
+	}
+
+	.movie-meta {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.item-label {
+		font-size: 0.95rem;
+		font-weight: 500;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.item-category {
 		font-size: 0.75rem;
 		color: var(--text-tertiary);
+		padding: 0.2rem 0.5rem;
+		background: rgba(255,255,255,0.05);
+		border-radius: 99px;
+	}
+	
+	.item-year {
+		font-size: 0.75rem;
+		color: var(--text-tertiary);
+	}
+
+	.item-rating {
+		font-size: 0.8rem;
+		color: #f59e0b;
+		font-weight: 700;
 	}
 
 	.empty-state {
 		padding: 2rem;
 		text-align: center;
-		color: var(--text-tertiary);
+		color: var(--text-secondary);
 		font-size: 0.9rem;
 	}
 
 	.palette-footer {
-		padding: 0.6rem 1.25rem;
-		background: var(--bg-surface-2);
+		padding: 0.75rem 1.25rem;
 		border-top: 1px solid var(--border-subtle);
 		font-size: 0.75rem;
 		color: var(--text-tertiary);
+		text-align: right;
+		flex-shrink: 0;
 	}
 
 	kbd {
-		background: var(--bg-surface-3);
-		padding: 0.15rem 0.35rem;
-		border-radius: 3px;
+		background: var(--bg-surface-2);
+		border: 1px solid var(--border-subtle);
+		padding: 0.15rem 0.3rem;
+		border-radius: 4px;
+		font-family: inherit;
 		font-size: 0.7rem;
 	}
 </style>

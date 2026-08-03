@@ -1,0 +1,10 @@
+{
+  "name": "The Alan's Database",
+  "short_name": "Alan's DB",
+  "description": "Personal Cinema Operating System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07080b",
+  "theme_color": "#f59e0b",
+  "icons": []
+}
