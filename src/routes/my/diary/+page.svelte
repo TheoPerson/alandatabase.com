@@ -60,20 +60,20 @@
 				<div class="day-group">
 					<div class="day-label">
 						<span class="day-dot"></span>
-						<span class="day-text">{formatDate(entries[0].createdAt)}</span>
+						<span class="day-text">{formatDate(entries[0].createdAt.toString())}</span>
 					</div>
 
 					<div class="day-entries">
 						{#each entries as entry}
 							{@const action = ACTION_LABELS[entry.actionType] ?? { icon: '•', label: entry.actionType, color: '#71717a' }}
 							<div class="diary-entry glass-card glass-card-hover">
-								<div class="entry-time">{formatTime(entry.createdAt)}</div>
+								<div class="entry-time">{formatTime(entry.createdAt.toString())}</div>
 
 								<div class="action-badge" style="color: {action.color}; border-color: {action.color}33; background: {action.color}0f;">
 									<span class="action-icon">{action.icon}</span>
 									<span class="action-label">{action.label}</span>
-									{#if entry.metadata?.rating}
-										<span class="action-meta">{entry.metadata.rating}★</span>
+									{#if (entry.metadata as any)?.rating}
+										<span class="action-meta">{(entry.metadata as any).rating}★</span>
 									{/if}
 								</div>
 

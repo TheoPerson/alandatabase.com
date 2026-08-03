@@ -62,7 +62,7 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 				db.query.userMovieInteractions.findMany({
 					where: and(
 						eq(userMovieInteractions.userId, locals.user.id),
-						gte(userMovieInteractions.rating, 4)
+						gte(userMovieInteractions.rating, '4')
 					),
 					with: { movie: true },
 					limit: 20
@@ -83,9 +83,9 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 				})
 			]);
 
-			const topTitles = topRated.map(i => `${i.movie.title} (${i.rating}★)`).join(', ');
-			const favTitles = favorites.map(i => i.movie.title).join(', ');
-			const reviews = recentReviews.map(r => `"${r.movie.title}": ${r.content}`).join(' | ');
+			const topTitles = topRated.map((i: any) => `${i.movie?.title} (${i.rating}★)`).join(', ');
+			const favTitles = favorites.map((i: any) => i.movie?.title).join(', ');
+			const reviews = recentReviews.map((r: any) => `"${r.movie?.title}": ${r.content}`).join(' | ');
 
 			systemContext = [
 				'[USER TASTE PROFILE — use this throughout the conversation]',

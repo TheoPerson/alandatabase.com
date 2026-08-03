@@ -29,7 +29,7 @@
 	$effect(() => {
 		watched = data.userInteraction?.watched || false;
 		watchlist = data.userInteraction?.watchlist || false;
-		rating = data.userInteraction?.rating || null;
+		rating = data.userInteraction?.rating ? Number(data.userInteraction.rating) : null;
 	});
 </script>
 

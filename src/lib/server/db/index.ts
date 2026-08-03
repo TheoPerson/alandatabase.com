@@ -11,10 +11,10 @@ if (!connectionString) {
 
 // Single instance pattern for serverless environments
 declare global {
-	var __db__: ReturnType<typeof drizzle> | undefined;
+	var __db__: ReturnType<typeof drizzle<typeof schema>> | undefined;
 }
 
-let dbInstance: ReturnType<typeof drizzle>;
+let dbInstance: ReturnType<typeof drizzle<typeof schema>>;
 
 if (process.env.NODE_ENV === 'production') {
 	const client = postgres(connectionString);
