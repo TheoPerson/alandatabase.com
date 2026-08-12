@@ -37,6 +37,28 @@
 			color: '#14b8a6'
 		}
 	];
+	const workspaces = [
+		{ name: 'AI COMMANDS  - PROMPTS', icon: '🤖' },
+		{ name: 'ArcRaiders-AutoScrapper', icon: '🕷️' },
+		{ name: 'Challenges Tracker', icon: '🎯' },
+		{ name: 'Draftin', icon: '📝' },
+		{ name: 'Gradus Tracker', icon: '📈' },
+		{ name: 'JUG_SEC.COM - REVAMP', icon: '🛡️' },
+		{ name: 'Jelp', icon: '🍕' },
+		{ name: 'Movie Picker', icon: '🎬' },
+		{ name: 'MyLocalNetflix', icon: '🍿' },
+		{ name: 'Rareness 0.1', icon: '💎' },
+		{ name: 'Rareness 0.2', icon: '💎' },
+		{ name: 'Rareness 0.3', icon: '💎' },
+		{ name: 'Rareness-Reference', icon: '📚' },
+		{ name: 'Razor', icon: '🪒' },
+		{ name: 'Stasher', icon: '📦' },
+		{ name: 'Sylepse', icon: '✈️' },
+		{ name: 'Terminal', icon: '💻' },
+		{ name: 'VolumeScheduler', icon: '🔊' },
+		{ name: 'arcforge', icon: '⚒️' },
+		{ name: 'eSport Profiler', icon: '🎮' }
+	];
 </script>
 
 <svelte:head>
@@ -83,6 +105,25 @@
 					Launch Module →
 				</a>
 			</div>
+		{/each}
+	</div>
+
+	<div class="divider"></div>
+
+	<div class="tool-header" style="margin-top: 1rem;">
+		<div class="title-row">
+			<h1 class="tool-title"><span class="icon">💻</span> Local Workspaces</h1>
+			<span class="tool-badge" style="color: #60a5fa; background: rgba(96, 165, 250, 0.15); border-color: rgba(96, 165, 250, 0.3);">VS CODE DIRECT LAUNCH</span>
+		</div>
+		<p class="tool-subtitle">Direct shortcuts to launch local repositories from <code>C:\Users\theop\Desktop\Dev</code>.</p>
+	</div>
+
+	<div class="workspaces-grid">
+		{#each workspaces as ws}
+			<a href="vscode://file/C:/Users/theop/Desktop/Dev/{ws.name}" class="workspace-card glass-card">
+				<span class="ws-icon">{ws.icon}</span>
+				<span class="ws-name">{ws.name}</span>
+			</a>
 		{/each}
 	</div>
 </main>
@@ -189,5 +230,48 @@
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
+	}
+
+	.divider {
+		height: 1px;
+		background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+		margin: 2rem 0;
+	}
+
+	.workspaces-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+		gap: 1rem;
+	}
+
+	.workspace-card {
+		padding: 1rem 1.25rem;
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		border-radius: var(--radius-md, 12px);
+		text-decoration: none;
+		transition: all 0.2s ease;
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid rgba(255, 255, 255, 0.05);
+	}
+
+	.workspace-card:hover {
+		background: rgba(255, 255, 255, 0.08);
+		border-color: rgba(96, 165, 250, 0.5);
+		transform: translateY(-2px);
+	}
+
+	.ws-icon {
+		font-size: 1.25rem;
+	}
+
+	.ws-name {
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: var(--text-primary);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 </style>
