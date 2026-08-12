@@ -3,10 +3,6 @@ import { ensureTablesExist } from '$lib/server/db/migrate';
 import { assignAllExperiments } from '$lib/server/ab-testing';
 import type { Handle } from '@sveltejs/kit';
 
-// Warm up and initialize database tables asynchronously on server startup
-ensureTablesExist().catch((err) => {
-	console.error('DB Warmup Notice:', err);
-});
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// A/B Testing Assignment
