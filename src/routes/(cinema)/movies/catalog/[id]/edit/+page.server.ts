@@ -44,10 +44,12 @@ export const actions = {
 			}
 
 			let localOverrides: any = movie.localOverrides || {};
-			
+
 			if (title && title !== movie.title) localOverrides.title = title;
-			if (originalTitle && originalTitle !== movie.originalTitle) localOverrides.originalTitle = originalTitle;
-			if (releaseDate && releaseDate !== movie.releaseDate) localOverrides.releaseDate = releaseDate;
+			if (originalTitle && originalTitle !== movie.originalTitle)
+				localOverrides.originalTitle = originalTitle;
+			if (releaseDate && releaseDate !== movie.releaseDate)
+				localOverrides.releaseDate = releaseDate;
 			if (overview && overview !== movie.overview) localOverrides.overview = overview;
 
 			// If empty, set to null
@@ -55,12 +57,14 @@ export const actions = {
 				localOverrides = null;
 			}
 
-			await db.update(movies).set({
-				localOverrides,
-				isLocked,
-				updatedAt: new Date()
-			}).where(eq(movies.id, params.id));
-
+			await db
+				.update(movies)
+				.set({
+					localOverrides,
+					isLocked,
+					updatedAt: new Date()
+				})
+				.where(eq(movies.id, params.id));
 		} catch (err) {
 			console.error('Failed to update overrides:', err);
 			return fail(500, { error: 'Failed to update metadata overrides' });

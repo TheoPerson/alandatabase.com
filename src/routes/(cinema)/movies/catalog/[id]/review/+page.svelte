@@ -13,7 +13,11 @@
 	<header class="page-header">
 		<div class="movie-info">
 			{#if movie.posterPath}
-				<img src="https://image.tmdb.org/t/p/w92{movie.posterPath}" alt={movie.title} class="poster-thumb" />
+				<img
+					src="https://image.tmdb.org/t/p/w92{movie.posterPath}"
+					alt={movie.title}
+					class="poster-thumb"
+				/>
 			{/if}
 			<div>
 				<h1 class="title">Review "{movie.title}"</h1>
@@ -44,12 +48,22 @@
 		>
 			<div class="input-group full-width">
 				<label for="content">Your Review (Markdown supported)</label>
-				<textarea id="content" name="content" rows="12" placeholder="What did you think about the film?" required>{existingReview?.content || ''}</textarea>
+				<textarea
+					id="content"
+					name="content"
+					rows="12"
+					placeholder="What did you think about the film?"
+					required>{existingReview?.content || ''}</textarea
+				>
 			</div>
 
 			<div class="settings-group">
 				<label class="checkbox-label">
-					<input type="checkbox" name="containsSpoilers" checked={existingReview?.containsSpoilers || false} />
+					<input
+						type="checkbox"
+						name="containsSpoilers"
+						checked={existingReview?.containsSpoilers || false}
+					/>
 					<div class="checkbox-text">
 						<span class="label-title">Contains Spoilers</span>
 						<span class="label-desc">Hide this review behind a spoiler warning.</span>
@@ -59,7 +73,7 @@
 
 			<div class="actions">
 				<Button type="submit" variant="primary" disabled={isSubmitting}>
-					{isSubmitting ? 'Saving...' : (existingReview ? 'Update Review' : 'Save Review')}
+					{isSubmitting ? 'Saving...' : existingReview ? 'Update Review' : 'Save Review'}
 				</Button>
 			</div>
 		</form>
@@ -91,7 +105,7 @@
 		height: 90px;
 		border-radius: var(--radius-sm);
 		object-fit: cover;
-		box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 	}
 
 	.title {
@@ -154,7 +168,7 @@
 		cursor: pointer;
 	}
 
-	.checkbox-label input[type="checkbox"] {
+	.checkbox-label input[type='checkbox'] {
 		margin-top: 0.25rem;
 		width: 1.25rem;
 		height: 1.25rem;

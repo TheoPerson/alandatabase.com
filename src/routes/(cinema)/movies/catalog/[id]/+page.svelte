@@ -9,9 +9,7 @@
 	const user = $derived(data.user);
 	const userInteraction = $derived(data.userInteraction);
 
-	const directors = $derived(
-		movie.crew.filter((c: any) => c.job === 'Director')
-	);
+	const directors = $derived(movie.crew.filter((c: any) => c.job === 'Director'));
 
 	const trailer = $derived(
 		movie.videos.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube') || movie.videos[0]
@@ -37,7 +35,9 @@
 <div class="movie-backdrop-hero">
 	{#if movie.backdropPath && movie.backdropPath !== 'null'}
 		<img
-			src="https://image.tmdb.org/t/p/original{movie.backdropPath.startsWith('/') ? '' : '/'}{movie.backdropPath}"
+			src="https://image.tmdb.org/t/p/original{movie.backdropPath.startsWith('/')
+				? ''
+				: '/'}{movie.backdropPath}"
 			alt="{movie.title} Backdrop"
 			class="backdrop-img"
 		/>
@@ -94,9 +94,7 @@
 
 						<!-- Edit Metadata Button -->
 						<div class="flex gap-2">
-							<Button href="/movies/{movie.id}/edit" variant="ghost" class="w-full">
-								✏️ Edit
-							</Button>
+							<Button href="/movies/{movie.id}/edit" variant="ghost" class="w-full">✏️ Edit</Button>
 							<Button href="/movies/{movie.id}/merge" variant="ghost" class="w-full text-red-400">
 								🔗 Merge
 							</Button>
@@ -138,7 +136,9 @@
 							<span class="rate-label mb-2 block">Add to Lists</span>
 							{#if data.userCustomLists.length === 0}
 								<p class="text-sm text-gray-400 mb-3">You don't have any custom lists yet.</p>
-								<Button href="/my/lists/create" variant="ghost" class="text-xs py-1">Create a List</Button>
+								<Button href="/my/lists/create" variant="ghost" class="text-xs py-1"
+									>Create a List</Button
+								>
 							{:else}
 								<div class="list-toggles flex flex-col gap-2">
 									{#each data.userCustomLists as list}
@@ -147,24 +147,28 @@
 											<input type="hidden" name="listId" value={list.id} />
 											<input type="hidden" name="movieId" value={movie.id} />
 											<label class="list-toggle-label cursor-pointer flex items-center gap-2">
-												<input type="checkbox" checked={inList} onchange={(e) => e.currentTarget.form?.requestSubmit()} class="accent-emerald-500" />
+												<input
+													type="checkbox"
+													checked={inList}
+													onchange={(e) => e.currentTarget.form?.requestSubmit()}
+													class="accent-emerald-500"
+												/>
 												<span class="text-sm text-gray-200">{list.name}</span>
 											</label>
 										</form>
 									{/each}
 								</div>
 								<div class="mt-4 border-t border-white/10 pt-3 text-center">
-									<a href="/my/lists" class="text-xs text-emerald-400 hover:underline">Manage Lists</a>
+									<a href="/my/lists" class="text-xs text-emerald-400 hover:underline"
+										>Manage Lists</a
+									>
 								</div>
 							{/if}
 						</div>
-
 					{:else}
 						<div class="auth-prompt glass-panel">
 							<p>Log in to track this film.</p>
-							<Button href="/auth/login" variant="primary" class="w-full">
-								Sign In
-							</Button>
+							<Button href="/auth/login" variant="primary" class="w-full">Sign In</Button>
 						</div>
 					{/if}
 				</div>
@@ -356,7 +360,8 @@
 		cursor: pointer;
 	}
 
-	.star-btn.active, .star-btn:hover {
+	.star-btn.active,
+	.star-btn:hover {
 		color: var(--accent-gold);
 		transform: scale(1.1);
 	}
@@ -377,7 +382,6 @@
 		color: var(--text-secondary);
 		font-weight: 600;
 	}
-
 
 	.movie-title {
 		font-size: 2.5rem;

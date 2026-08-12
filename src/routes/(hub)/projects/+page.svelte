@@ -67,7 +67,9 @@
 			<h1 class="tool-title"><span class="icon">🧪</span> Alan's Innovation Labs</h1>
 			<span class="tool-badge">PROTOTYPES & ENGINES</span>
 		</div>
-		<p class="tool-subtitle">Showcase of active sub-projects, micro-applications, and experimental system algorithms.</p>
+		<p class="tool-subtitle">
+			Showcase of active sub-projects, micro-applications, and experimental system algorithms.
+		</p>
 	</div>
 
 	<div class="labs-grid">
@@ -75,7 +77,9 @@
 			<div class="lab-card" style="--lab-color: {lab.color}">
 				<div class="card-top">
 					<span class="category-tag">{lab.category}</span>
-					<span class="status-pill" style="color: {lab.color}; background: {lab.color}15">{lab.status}</span>
+					<span class="status-pill" style="color: {lab.color}; background: {lab.color}15"
+						>{lab.status}</span
+					>
 				</div>
 
 				<div class="card-body">
@@ -89,9 +93,7 @@
 					{/each}
 				</div>
 
-				<a href={lab.link} class="explore-btn" style="color: {lab.color}">
-					Launch Module →
-				</a>
+				<a href={lab.link} class="explore-btn" style="color: {lab.color}"> Launch Module → </a>
 			</div>
 		{/each}
 	</div>
@@ -103,7 +105,9 @@
 			<h1 class="tool-title"><span class="icon">💻</span> Local Workspaces</h1>
 			<span class="tool-badge blue">VS CODE DIRECT LAUNCH</span>
 		</div>
-		<p class="tool-subtitle">Direct shortcuts to launch local repositories from <code>C:\Users\theop\Desktop\Dev</code>.</p>
+		<p class="tool-subtitle">
+			Direct shortcuts to launch local repositories from <code>C:\Users\theop\Desktop\Dev</code>.
+		</p>
 	</div>
 
 	<div class="workspaces-grid">
@@ -122,7 +126,7 @@
 		inset: 0;
 		z-index: 0;
 		background-color: #050507;
-		background-image: 
+		background-image:
 			linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
 			linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
 		background-size: 32px 32px;
@@ -148,7 +152,9 @@
 		transition: opacity 120ms ease;
 	}
 
-	.back-link:hover { opacity: 0.8; }
+	.back-link:hover {
+		opacity: 0.8;
+	}
 
 	.title-row {
 		display: flex;

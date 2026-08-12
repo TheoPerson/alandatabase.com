@@ -10,7 +10,8 @@
 ### Q1. What is the monetization model?
 
 **Options to consider:**
-- **(a)** Freemium (free tier + paid Pro with advanced stats, lists, etc.) — *Letterboxd model*
+
+- **(a)** Freemium (free tier + paid Pro with advanced stats, lists, etc.) — _Letterboxd model_
 - **(b)** Fully free + advertising revenue
 - **(c)** Fully free + affiliate revenue (earn commission when users click through to streaming services)
 - **(d)** Subscription-only (paid from day one)
@@ -24,18 +25,20 @@
 ### Q2. What is your target scale for Year 1?
 
 **Options to consider:**
+
 - **(a)** Personal project / small community (< 1,000 users)
 - **(b)** Niche product (1,000 – 50,000 users)
 - **(c)** Growth product (50,000 – 500,000 users)
 - **(d)** Scale product (500,000+ users, venture-backed ambition)
 
-**Why this matters:** This single answer changes everything: hosting costs, database choice, caching strategy, CDN requirements, team size, and whether we need infrastructure like Kubernetes vs. a single server. The vision says "millions of users" but the *timeline* to get there determines what we build now vs. later. Over-engineering for millions on day one wastes resources. Under-engineering forces painful rewrites.
+**Why this matters:** This single answer changes everything: hosting costs, database choice, caching strategy, CDN requirements, team size, and whether we need infrastructure like Kubernetes vs. a single server. The vision says "millions of users" but the _timeline_ to get there determines what we build now vs. later. Over-engineering for millions on day one wastes resources. Under-engineering forces painful rewrites.
 
 ---
 
 ### Q3. Is this a solo/small-team project or do you have (or plan to hire) a team?
 
 **Why this matters:** Architecture decisions differ dramatically:
+
 - **Solo developer:** Simplicity is survival. Managed services over self-hosted. Monolith over microservices. Ship fast.
 - **Small team (2-5):** Can handle moderate complexity. Some service separation makes sense.
 - **Larger team (5+):** Microservices, CI/CD pipelines, code review processes become necessary.
@@ -51,9 +54,10 @@ The brief describes a multi-year production system, but if you're building this 
 The vision includes 50+ features. We need to know: **what is the ONE thing the product must do on launch day to prove its value?**
 
 **Candidates:**
-- **(a)** "I can search for any movie and see beautiful, deep information about it" — *the database play*
-- **(b)** "I can track every movie I've watched and see stunning statistics about my cinema history" — *the personal archive play*
-- **(c)** "I can discover what to watch tonight through an enjoyable, intelligent experience" — *the discovery play*
+
+- **(a)** "I can search for any movie and see beautiful, deep information about it" — _the database play_
+- **(b)** "I can track every movie I've watched and see stunning statistics about my cinema history" — _the personal archive play_
+- **(c)** "I can discover what to watch tonight through an enjoyable, intelligent experience" — _the discovery play_
 - **(d)** Something else?
 
 **Why this matters:** Each option leads to a fundamentally different first sprint. Option (a) prioritizes data ingestion. Option (b) prioritizes user systems. Option (c) prioritizes recommendation algorithms. We cannot do all three well simultaneously in an MVP.
@@ -85,13 +89,14 @@ The vision includes 50+ features. We need to know: **what is the ONE thing the p
 
 ### Q7. The "Intelligent Movie Picker" — how committed are you to the swipe/Tinder metaphor specifically?
 
-**Our analysis (see discovery document):** Swipe-for-movies has been attempted many times and has a poor track record. Movies are contextual decisions (mood, time, company), not binary yes/no like dating. 
+**Our analysis (see discovery document):** Swipe-for-movies has been attempted many times and has a poor track record. Movies are contextual decisions (mood, time, company), not binary yes/no like dating.
 
 **Alternatives we'd like to explore:**
+
 - **(a)** Mood-based discovery ("I'm feeling nostalgic + want something under 2 hours")
 - **(b)** Visual browsing (curated "shelves" with cinematic presentation)
 - **(c)** "Surprise me" with smart constraints (genre, decade, rating, runtime)
-- **(d)** Swipe mechanic but for movie *attributes* (poster, synopsis, genre) not full commitment
+- **(d)** Swipe mechanic but for movie _attributes_ (poster, synopsis, genre) not full commitment
 - **(e)** You want us to prototype multiple approaches and test
 
 **Why this matters:** This is described as a flagship feature. Getting the UX wrong on the signature feature undermines the entire product identity. We'd rather spend time prototyping 2-3 approaches than committing to one based on assumption.
@@ -100,7 +105,7 @@ The vision includes 50+ features. We need to know: **what is the ONE thing the p
 
 ### Q8. What is the design reference point?
 
-**Not** "copy this website" — but what *feeling* should the product evoke?
+**Not** "copy this website" — but what _feeling_ should the product evoke?
 
 - **(a)** Criterion Channel — scholarly, minimal, black & white, film-focused
 - **(b)** Apple TV app — polished, spacious, content-forward, premium consumer product

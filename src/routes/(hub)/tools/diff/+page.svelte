@@ -2,10 +2,19 @@
 	let mode: 'diff' | 'regex' = $state('diff');
 
 	// Diff state
-	let originalText = $state('// Original Configuration\nconst apiEndpoint = "https://api.v1.example.com";\nconst timeout = 5000;\nconst retries = 3;\nconst debug = true;');
-	let modifiedText = $state('// Updated 2026 Configuration\nconst apiEndpoint = "https://alandatabase.com/api";\nconst timeout = 3000;\nconst retries = 5;\nconst debug = false;\nconst theme = "swiss-oled";');
+	let originalText = $state(
+		'// Original Configuration\nconst apiEndpoint = "https://api.v1.example.com";\nconst timeout = 5000;\nconst retries = 3;\nconst debug = true;'
+	);
+	let modifiedText = $state(
+		'// Updated 2026 Configuration\nconst apiEndpoint = "https://alandatabase.com/api";\nconst timeout = 3000;\nconst retries = 5;\nconst debug = false;\nconst theme = "swiss-oled";'
+	);
 
-	type DiffLine = { type: 'same' | 'added' | 'removed' | 'changed'; orig: string; mod: string; lineNum: number };
+	type DiffLine = {
+		type: 'same' | 'added' | 'removed' | 'changed';
+		orig: string;
+		mod: string;
+		lineNum: number;
+	};
 
 	let diffLines = $derived.by(() => {
 		const origLines = originalText.split('\n');
@@ -33,7 +42,9 @@
 	// Regex state
 	let regexPattern = $state('(https?:\\/\\/[^\\s"]+)');
 	let regexFlags = $state('gi');
-	let sampleText = $state('Welcome to Alan Database OS.\nVisit https://alandatabase.com for status.\nAPI Gateway at https://api.themoviedb.org/3.');
+	let sampleText = $state(
+		'Welcome to Alan Database OS.\nVisit https://alandatabase.com for status.\nAPI Gateway at https://api.themoviedb.org/3.'
+	);
 	let replacePattern = $state('<a href="$1">$1</a>');
 
 	type RegexMatch = { text: string; index: number; groups: string[] };
@@ -90,7 +101,9 @@
 				</button>
 			</div>
 		</div>
-		<p class="tool-subtitle">High-speed side-by-side text comparison, line diffing, and regular expression pattern matcher.</p>
+		<p class="tool-subtitle">
+			High-speed side-by-side text comparison, line diffing, and regular expression pattern matcher.
+		</p>
 	</div>
 
 	{#if mode === 'diff'}
@@ -100,7 +113,8 @@
 					<span class="pane-title">Original Text</span>
 					<span class="line-count">{originalText.split('\n').length} lines</span>
 				</div>
-				<textarea bind:value={originalText} class="code-editor" placeholder="Paste original text..."></textarea>
+				<textarea bind:value={originalText} class="code-editor" placeholder="Paste original text..."
+				></textarea>
 			</div>
 
 			<div class="editor-pane">
@@ -108,7 +122,8 @@
 					<span class="pane-title">Modified Text</span>
 					<span class="line-count">{modifiedText.split('\n').length} lines</span>
 				</div>
-				<textarea bind:value={modifiedText} class="code-editor" placeholder="Paste modified text..."></textarea>
+				<textarea bind:value={modifiedText} class="code-editor" placeholder="Paste modified text..."
+				></textarea>
 			</div>
 		</div>
 
@@ -149,7 +164,12 @@
 		<div class="regex-controls-card">
 			<div class="regex-input-group">
 				<span class="regex-slash">/</span>
-				<input type="text" bind:value={regexPattern} placeholder="Enter regex pattern..." class="regex-input" />
+				<input
+					type="text"
+					bind:value={regexPattern}
+					placeholder="Enter regex pattern..."
+					class="regex-input"
+				/>
 				<span class="regex-slash">/</span>
 				<input type="text" bind:value={regexFlags} placeholder="flags" class="flags-input" />
 				<span class="match-badge">{regexMatches.length} matches found</span>
@@ -157,7 +177,12 @@
 
 			<div class="replace-input-group">
 				<span class="label">Replace pattern:</span>
-				<input type="text" bind:value={replacePattern} class="replace-input" placeholder="e.g. $1 or replacement string" />
+				<input
+					type="text"
+					bind:value={replacePattern}
+					class="replace-input"
+					placeholder="e.g. $1 or replacement string"
+				/>
 			</div>
 		</div>
 
@@ -166,7 +191,10 @@
 				<div class="pane-header">
 					<span class="pane-title">Input Sample Text</span>
 				</div>
-				<textarea bind:value={sampleText} class="code-editor" placeholder="Type or paste sample text..."></textarea>
+				<textarea
+					bind:value={sampleText}
+					class="code-editor"
+					placeholder="Type or paste sample text..."></textarea>
 			</div>
 
 			<div class="editor-pane">
@@ -202,7 +230,7 @@
 		inset: 0;
 		z-index: 0;
 		background-color: #050507;
-		background-image: 
+		background-image:
 			linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
 			linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
 		background-size: 32px 32px;
@@ -222,8 +250,14 @@
 	}
 
 	@keyframes fade-in-up {
-		from { opacity: 0; transform: translateY(12px); }
-		to { opacity: 1; transform: translateY(0); }
+		from {
+			opacity: 0;
+			transform: translateY(12px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
 	.back-link {
@@ -289,7 +323,8 @@
 		margin: 0.2rem 0 0 0;
 	}
 
-	.diff-workspace, .regex-workspace {
+	.diff-workspace,
+	.regex-workspace {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
 		gap: 1.5rem;
@@ -304,12 +339,16 @@
 		flex-direction: column;
 		backdrop-filter: blur(16px);
 		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-		transition: transform 300ms ease, box-shadow 300ms ease;
+		transition:
+			transform 300ms ease,
+			box-shadow 300ms ease;
 	}
 
 	.editor-pane:focus-within {
 		transform: translateY(-2px);
-		box-shadow: 0 12px 40px rgba(16, 185, 129, 0.08), 0 0 0 1px rgba(16, 185, 129, 0.3);
+		box-shadow:
+			0 12px 40px rgba(16, 185, 129, 0.08),
+			0 0 0 1px rgba(16, 185, 129, 0.3);
 	}
 
 	.pane-header {
@@ -367,7 +406,9 @@
 		white-space: pre-wrap;
 	}
 
-	.diff-output-card, .regex-controls-card, .matches-card {
+	.diff-output-card,
+	.regex-controls-card,
+	.matches-card {
 		background: rgba(12, 12, 18, 0.75);
 		border: 1px solid rgba(255, 255, 255, 0.08);
 		border-radius: 20px;
@@ -398,9 +439,15 @@
 		font-weight: 700;
 	}
 
-	.leg-item.added { color: #10b981; }
-	.leg-item.removed { color: #ef4444; }
-	.leg-item.changed { color: #3b82f6; }
+	.leg-item.added {
+		color: #10b981;
+	}
+	.leg-item.removed {
+		color: #ef4444;
+	}
+	.leg-item.changed {
+		color: #3b82f6;
+	}
 
 	.diff-lines-wrapper {
 		display: flex;
@@ -421,21 +468,35 @@
 		gap: 1rem;
 		padding: 0.3rem 0.5rem;
 		border-radius: 6px;
-		transition: transform 150ms ease, background-color 150ms ease;
+		transition:
+			transform 150ms ease,
+			background-color 150ms ease;
 	}
 
 	.diff-row:hover {
 		transform: translateX(2px);
 	}
 
-	.diff-row.added { background: rgba(16, 185, 129, 0.12); }
-	.diff-row.added:hover { background: rgba(16, 185, 129, 0.18); }
-	
-	.diff-row.removed { background: rgba(239, 68, 68, 0.12); }
-	.diff-row.removed:hover { background: rgba(239, 68, 68, 0.18); }
-	
-	.diff-row.changed { background: rgba(59, 130, 246, 0.12); }
-	.diff-row.changed:hover { background: rgba(59, 130, 246, 0.18); }
+	.diff-row.added {
+		background: rgba(16, 185, 129, 0.12);
+	}
+	.diff-row.added:hover {
+		background: rgba(16, 185, 129, 0.18);
+	}
+
+	.diff-row.removed {
+		background: rgba(239, 68, 68, 0.12);
+	}
+	.diff-row.removed:hover {
+		background: rgba(239, 68, 68, 0.18);
+	}
+
+	.diff-row.changed {
+		background: rgba(59, 130, 246, 0.12);
+	}
+	.diff-row.changed:hover {
+		background: rgba(59, 130, 246, 0.18);
+	}
 
 	.line-no {
 		color: #71717a;
@@ -444,9 +505,17 @@
 		user-select: none;
 	}
 
-	.text-same { color: #a1a1aa; }
-	.text-add { color: #10b981; font-weight: 600; }
-	.text-del { color: #ef4444; font-weight: 600; }
+	.text-same {
+		color: #a1a1aa;
+	}
+	.text-add {
+		color: #10b981;
+		font-weight: 600;
+	}
+	.text-del {
+		color: #ef4444;
+		font-weight: 600;
+	}
 
 	.regex-input-group {
 		display: flex;
@@ -456,7 +525,9 @@
 		border: 1px solid rgba(255, 255, 255, 0.1);
 		border-radius: 12px;
 		padding: 0.6rem 1rem;
-		transition: border-color 200ms ease, box-shadow 200ms ease;
+		transition:
+			border-color 200ms ease,
+			box-shadow 200ms ease;
 	}
 
 	.regex-input-group:focus-within {
@@ -518,7 +589,9 @@
 		color: #f4f4f5;
 		font-family: var(--font-mono);
 		outline: none;
-		transition: border-color 200ms ease, box-shadow 200ms ease;
+		transition:
+			border-color 200ms ease,
+			box-shadow 200ms ease;
 	}
 
 	.replace-input:focus {
@@ -543,7 +616,16 @@
 		font-size: 0.8rem;
 	}
 
-	.match-idx { color: #71717a; font-weight: 700; }
-	.match-val { color: #10b981; font-weight: 700; }
-	.match-pos { color: #71717a; font-size: 0.75rem; }
+	.match-idx {
+		color: #71717a;
+		font-weight: 700;
+	}
+	.match-val {
+		color: #10b981;
+		font-weight: 700;
+	}
+	.match-pos {
+		color: #71717a;
+		font-size: 0.75rem;
+	}
 </style>

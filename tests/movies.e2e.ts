@@ -28,7 +28,7 @@ test.describe('Movie Interactions (E2E)', () => {
 		// Go to a known movie ID (Assuming Inception is seeded, ID: 27205)
 		// Or we can just go to the discover page and click the first movie
 		await page.goto('/search');
-		
+
 		// Search for a movie
 		await page.fill('input[type="search"]', 'Inception');
 		await page.click('button[type="submit"]');

@@ -3,7 +3,6 @@ import { ensureTablesExist } from '$lib/server/db/migrate';
 import { assignAllExperiments } from '$lib/server/ab-testing';
 import type { Handle } from '@sveltejs/kit';
 
-
 export const handle: Handle = async ({ event, resolve }) => {
 	// A/B Testing Assignment
 	let deviceId = event.cookies.get('device_id');

@@ -1,5 +1,14 @@
 import { db } from '../db/index.js';
-import { movies, genres, movieGenres, people, movieCast, movieCrew, collections, movieVideos } from '../db/schema.js';
+import {
+	movies,
+	genres,
+	movieGenres,
+	people,
+	movieCast,
+	movieCrew,
+	collections,
+	movieVideos
+} from '../db/schema.js';
 import { eq, desc, sql, ilike, and, inArray } from 'drizzle-orm';
 import { ensureTablesExist } from '../db/migrate.js';
 import { TMDBClient, ingestMovie } from '../tmdb.js';
@@ -168,16 +177,18 @@ export async function getMovieById(id: string) {
 					voteAverage: String(details.vote_average),
 					voteCount: details.vote_count,
 					adult: details.adult,
-					collection: details.belongs_to_collection ? {
-						id: String(details.belongs_to_collection.id),
-						tmdbId: details.belongs_to_collection.id,
-						name: details.belongs_to_collection.name,
-						overview: null,
-						posterPath: details.belongs_to_collection.poster_path,
-						backdropPath: details.belongs_to_collection.backdrop_path,
-						createdAt: new Date(),
-						updatedAt: new Date()
-					} : null,
+					collection: details.belongs_to_collection
+						? {
+								id: String(details.belongs_to_collection.id),
+								tmdbId: details.belongs_to_collection.id,
+								name: details.belongs_to_collection.name,
+								overview: null,
+								posterPath: details.belongs_to_collection.poster_path,
+								backdropPath: details.belongs_to_collection.backdrop_path,
+								createdAt: new Date(),
+								updatedAt: new Date()
+							}
+						: null,
 					genres: (details.genres || []).map((g: any) => ({ genre: g })),
 					cast: (details.credits?.cast || []).slice(0, 15).map((c: any) => ({
 						character: c.character,
@@ -295,4 +306,3 @@ export async function searchMovies(q: string, limit = 20) {
 		return localResults.map(applyLocalOverrides);
 	}
 }
-

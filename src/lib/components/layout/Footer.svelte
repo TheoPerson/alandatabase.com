@@ -7,11 +7,10 @@
 
 		<div class="footer-meta">
 			<p class="attribution">
-				Powered by <a href="https://themoviedb.org" target="_blank" rel="noopener">TMDB</a>. This product uses the TMDB API but is not endorsed or certified by TMDB.
+				Powered by <a href="https://themoviedb.org" target="_blank" rel="noopener">TMDB</a>. This
+				product uses the TMDB API but is not endorsed or certified by TMDB.
 			</p>
-			<p class="copyright">
-				Open Source (MIT) • Free & Self-Hostable
-			</p>
+			<p class="copyright">Open Source (MIT) • Free & Self-Hostable</p>
 		</div>
 	</div>
 </footer>

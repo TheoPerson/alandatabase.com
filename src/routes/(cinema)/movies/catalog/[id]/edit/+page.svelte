@@ -65,7 +65,9 @@
 					<input type="checkbox" name="isLocked" checked={movie.isLocked} />
 					<div class="checkbox-text">
 						<span class="label-title">Lock Record</span>
-						<span class="label-desc">Prevent background worker from updating this movie in the future.</span>
+						<span class="label-desc"
+							>Prevent background worker from updating this movie in the future.</span
+						>
 					</div>
 				</label>
 			</div>
@@ -168,7 +170,7 @@
 		cursor: pointer;
 	}
 
-	.checkbox-label input[type="checkbox"] {
+	.checkbox-label input[type='checkbox'] {
 		margin-top: 0.25rem;
 		width: 1.25rem;
 		height: 1.25rem;

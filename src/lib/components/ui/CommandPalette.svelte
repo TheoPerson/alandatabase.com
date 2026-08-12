@@ -23,7 +23,7 @@
 		query.trim()
 			? navigationLinks.filter((item) =>
 					item.label.toLowerCase().includes(query.trim().toLowerCase())
-			  )
+				)
 			: navigationLinks
 	);
 
@@ -128,13 +128,19 @@
 								onclick={() => navigate(`/movies/${movie.id}`)}
 							>
 								{#if movie.posterPath}
-									<img src="https://image.tmdb.org/t/p/w92{movie.posterPath}" alt={movie.title} class="item-poster" />
+									<img
+										src="https://image.tmdb.org/t/p/w92{movie.posterPath}"
+										alt={movie.title}
+										class="item-poster"
+									/>
 								{:else}
 									<div class="item-poster fallback">?</div>
 								{/if}
 								<div class="movie-meta">
 									<span class="item-label">{movie.title}</span>
-									<span class="item-year">{movie.releaseDate ? movie.releaseDate.substring(0,4) : 'N/A'}</span>
+									<span class="item-year"
+										>{movie.releaseDate ? movie.releaseDate.substring(0, 4) : 'N/A'}</span
+									>
 								</div>
 								{#if movie.voteAverage}
 									<span class="item-rating">★ {Number(movie.voteAverage).toFixed(1)}</span>
@@ -152,11 +158,7 @@
 					<div class="result-section">
 						<div class="section-title">Navigation</div>
 						{#each filteredLinks as link}
-							<button
-								type="button"
-								class="palette-item"
-								onclick={() => navigate(link.href)}
-							>
+							<button type="button" class="palette-item" onclick={() => navigate(link.href)}>
 								<span class="item-label">{link.label}</span>
 								<span class="item-category">{link.category}</span>
 							</button>
@@ -272,7 +274,8 @@
 		text-align: left;
 	}
 
-	.palette-item:hover, .palette-item:focus {
+	.palette-item:hover,
+	.palette-item:focus {
 		background: rgba(255, 255, 255, 0.06);
 		outline: none;
 	}
@@ -291,7 +294,7 @@
 	}
 
 	.item-poster.fallback {
-		background: rgba(255,255,255,0.1);
+		background: rgba(255, 255, 255, 0.1);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -318,10 +321,10 @@
 		font-size: 0.75rem;
 		color: var(--text-tertiary);
 		padding: 0.2rem 0.5rem;
-		background: rgba(255,255,255,0.05);
+		background: rgba(255, 255, 255, 0.05);
 		border-radius: 99px;
 	}
-	
+
 	.item-year {
 		font-size: 0.75rem;
 		color: var(--text-tertiary);

@@ -91,10 +91,7 @@ export async function ingestMovie(tmdbId: number): Promise<string | null> {
 		// 3. Link Genres
 		if (detail.genres && detail.genres.length > 0) {
 			for (const g of detail.genres) {
-				await db
-					.insert(schema.genres)
-					.values({ id: g.id, name: g.name })
-					.onConflictDoNothing();
+				await db.insert(schema.genres).values({ id: g.id, name: g.name }).onConflictDoNothing();
 
 				await db
 					.insert(schema.movieGenres)
@@ -106,10 +103,7 @@ export async function ingestMovie(tmdbId: number): Promise<string | null> {
 		// 4. Link Keywords
 		if (detail.keywords?.keywords) {
 			for (const kw of detail.keywords.keywords) {
-				await db
-					.insert(schema.keywords)
-					.values({ id: kw.id, name: kw.name })
-					.onConflictDoNothing();
+				await db.insert(schema.keywords).values({ id: kw.id, name: kw.name }).onConflictDoNothing();
 
 				await db
 					.insert(schema.movieKeywords)
@@ -156,7 +150,14 @@ export async function ingestMovie(tmdbId: number): Promise<string | null> {
 		// 6. Ingest Directors / Key Crew
 		if (detail.credits?.crew) {
 			const keyCrew = detail.credits.crew.filter((c) =>
-				['Director', 'Writer', 'Screenplay', 'Producer', 'Director of Photography', 'Composer'].includes(c.job)
+				[
+					'Director',
+					'Writer',
+					'Screenplay',
+					'Producer',
+					'Director of Photography',
+					'Composer'
+				].includes(c.job)
 			);
 
 			for (const cr of keyCrew) {
@@ -196,22 +197,25 @@ export async function ingestMovie(tmdbId: number): Promise<string | null> {
 		if (detail.videos?.results) {
 			for (const v of detail.videos.results) {
 				if (v.site === 'YouTube' && ['Trailer', 'Teaser'].includes(v.type)) {
-					await db.insert(schema.movieVideos).values({
-						movieId,
-						key: v.key,
-						site: v.site,
-						type: v.type,
-						name: v.name,
-						official: v.official,
-						publishedAt: v.published_at ? new Date(v.published_at) : null
-					}).onConflictDoNothing();
+					await db
+						.insert(schema.movieVideos)
+						.values({
+							movieId,
+							key: v.key,
+							site: v.site,
+							type: v.type,
+							name: v.name,
+							official: v.official,
+							publishedAt: v.published_at ? new Date(v.published_at) : null
+						})
+						.onConflictDoNothing();
 				}
 			}
 		}
 
-
-
-		console.log(`✅ Successfully ingested "${detail.title}" (${detail.release_date?.substring(0, 4) || 'N/A'})`);
+		console.log(
+			`✅ Successfully ingested "${detail.title}" (${detail.release_date?.substring(0, 4) || 'N/A'})`
+		);
 		return movieId;
 	} catch (err) {
 		console.error(`❌ Ingestion failed for TMDB #${tmdbId}:`, err);

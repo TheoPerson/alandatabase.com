@@ -45,17 +45,17 @@ export const actions = {
 			});
 
 			if (existingReview) {
-				await db.update(userReviews)
+				await db
+					.update(userReviews)
 					.set({ content, containsSpoilers, updatedAt: new Date() })
 					.where(eq(userReviews.id, existingReview.id));
 			} else {
-				await db.insert(userReviews)
-					.values({
-						userId: locals.user.id,
-						movieId: params.id,
-						content,
-						containsSpoilers
-					});
+				await db.insert(userReviews).values({
+					userId: locals.user.id,
+					movieId: params.id,
+					content,
+					containsSpoilers
+				});
 			}
 
 			return { success: true };

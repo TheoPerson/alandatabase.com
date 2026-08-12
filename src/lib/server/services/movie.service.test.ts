@@ -11,7 +11,7 @@ describe('Movie Service - Local Overrides', () => {
 		};
 
 		const result = applyLocalOverrides(movie);
-		
+
 		expect(result.title).toBe('Original Title');
 		expect(result.overview).toBe('Original Overview');
 	});
@@ -28,7 +28,7 @@ describe('Movie Service - Local Overrides', () => {
 		};
 
 		const result = applyLocalOverrides(movie);
-		
+
 		expect(result.title).toBe('My Custom Matrix Title');
 		expect(result.overview).toBe('This is my personal overview for the movie.');
 		// The original fields are mutated, so the object itself is updated
@@ -47,7 +47,7 @@ describe('Movie Service - Local Overrides', () => {
 		};
 
 		const result = applyLocalOverrides(movie);
-		
+
 		expect(result.title).toBe('My Custom Matrix Title');
 		expect(result.releaseDate).toBe('1999-03-31');
 		expect(result.overview).toBe('Official Overview');

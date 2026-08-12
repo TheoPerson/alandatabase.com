@@ -1,5 +1,7 @@
 <script lang="ts">
-	let rawInput = $state('{\n  "appName": "Alan Database OS",\n  "version": "1.0.0",\n  "status": "online",\n  "features": ["Movie DB", "JSON Studio", "Image Studio", "Generators"],\n  "config": {\n    "theme": "aurora-cyber",\n    "telemetry": true\n  }\n}');
+	let rawInput = $state(
+		'{\n  "appName": "Alan Database OS",\n  "version": "1.0.0",\n  "status": "online",\n  "features": ["Movie DB", "JSON Studio", "Image Studio", "Generators"],\n  "config": {\n    "theme": "aurora-cyber",\n    "telemetry": true\n  }\n}'
+	);
 	let activeTab: 'format' | 'minify' | 'tree' | 'yaml' | 'csv' = $state('format');
 	let indentSpaces = $state(2);
 	let errorMessage = $state<string | null>(null);
@@ -58,9 +60,10 @@
 
 	function jsonToCsv(obj: any): string {
 		const arr = Array.isArray(obj) ? obj : [obj];
-		if (arr.length === 0 || typeof arr[0] !== 'object') return 'Invalid JSON array for CSV conversion';
+		if (arr.length === 0 || typeof arr[0] !== 'object')
+			return 'Invalid JSON array for CSV conversion';
 		const headers = Object.keys(arr[0]);
-		const rows = arr.map(row => headers.map(h => JSON.stringify(row[h] ?? '')).join(','));
+		const rows = arr.map((row) => headers.map((h) => JSON.stringify(row[h] ?? '')).join(','));
 		return [headers.join(','), ...rows].join('\n');
 	}
 
@@ -99,22 +102,40 @@
 			<h1 class="tool-title"><span class="icon">🧩</span> JSON Studio Pro</h1>
 			<span class="tool-badge">2026 ENGINE</span>
 		</div>
-		<p class="tool-subtitle">Format, validate, minify, inspect tree view, and convert JSON to YAML or CSV instantly.</p>
+		<p class="tool-subtitle">
+			Format, validate, minify, inspect tree view, and convert JSON to YAML or CSV instantly.
+		</p>
 	</div>
 
 	<!-- Control Bar -->
 	<div class="control-bar glass-card">
 		<div class="tabs">
-			<button class="tab-btn" class:active={activeTab === 'format'} onclick={() => (activeTab = 'format')}>
+			<button
+				class="tab-btn"
+				class:active={activeTab === 'format'}
+				onclick={() => (activeTab = 'format')}
+			>
 				Pretty Format
 			</button>
-			<button class="tab-btn" class:active={activeTab === 'minify'} onclick={() => (activeTab = 'minify')}>
+			<button
+				class="tab-btn"
+				class:active={activeTab === 'minify'}
+				onclick={() => (activeTab = 'minify')}
+			>
 				Minify
 			</button>
-			<button class="tab-btn" class:active={activeTab === 'yaml'} onclick={() => (activeTab = 'yaml')}>
+			<button
+				class="tab-btn"
+				class:active={activeTab === 'yaml'}
+				onclick={() => (activeTab = 'yaml')}
+			>
 				YAML
 			</button>
-			<button class="tab-btn" class:active={activeTab === 'csv'} onclick={() => (activeTab = 'csv')}>
+			<button
+				class="tab-btn"
+				class:active={activeTab === 'csv'}
+				onclick={() => (activeTab = 'csv')}
+			>
 				CSV
 			</button>
 		</div>
@@ -147,8 +168,7 @@
 				class="json-textarea"
 				placeholder="Paste JSON payload here..."
 				bind:value={rawInput}
-				spellcheck="false"
-			></textarea>
+				spellcheck="false"></textarea>
 		</div>
 
 		<!-- Right: Output Area -->
@@ -176,8 +196,7 @@
 				class="json-textarea output"
 				readonly
 				value={formattedOutput}
-				placeholder="Processed output will appear here..."
-			></textarea>
+				placeholder="Processed output will appear here..."></textarea>
 		</div>
 	</div>
 </main>
@@ -196,7 +215,6 @@
 		font-size: 0.85rem;
 		font-weight: 700;
 		color: var(--accent-gold);
-
 	}
 
 	.title-row {

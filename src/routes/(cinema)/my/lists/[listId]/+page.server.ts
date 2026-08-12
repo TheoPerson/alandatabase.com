@@ -54,9 +54,9 @@ export const actions = {
 			return fail(403, { error: 'Forbidden' });
 		}
 
-		await db.delete(userListItems).where(
-			and(eq(userListItems.listId, params.listId), eq(userListItems.movieId, movieId))
-		);
+		await db
+			.delete(userListItems)
+			.where(and(eq(userListItems.listId, params.listId), eq(userListItems.movieId, movieId)));
 
 		return { success: true };
 	},

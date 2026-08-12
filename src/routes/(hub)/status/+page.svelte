@@ -17,7 +17,10 @@
 			<h1 class="tool-title"><span class="icon">📈</span> System Telemetry & Status</h1>
 			<span class="tool-badge green">ALL SYSTEMS OPERATIONAL</span>
 		</div>
-		<p class="tool-subtitle">Real-time health monitoring, Neon Postgres database ping latency, and TMDB API response metrics.</p>
+		<p class="tool-subtitle">
+			Real-time health monitoring, Neon Postgres database ping latency, and TMDB API response
+			metrics.
+		</p>
 	</div>
 
 	<div class="telemetry-grid">
@@ -78,9 +81,14 @@
 	<div class="diagnostics-panel">
 		<div class="panel-header">
 			<span class="panel-title">SYSTEM DIAGNOSTICS PAYLOAD</span>
-			<span class="time-stamp">Checked at {new Date(telemetry.timestamp).toLocaleTimeString()}</span>
+			<span class="time-stamp">Checked at {new Date(telemetry.timestamp).toLocaleTimeString()}</span
+			>
 		</div>
-		<pre class="json-payload">{JSON.stringify({ ...telemetry, host: 'Vercel Edge Platform' }, null, 2)}</pre>
+		<pre class="json-payload">{JSON.stringify(
+				{ ...telemetry, host: 'Vercel Edge Platform' },
+				null,
+				2
+			)}</pre>
 	</div>
 </main>
 
@@ -90,7 +98,7 @@
 		inset: 0;
 		z-index: 0;
 		background-color: #050507;
-		background-image: 
+		background-image:
 			linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
 			linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
 		background-size: 32px 32px;
@@ -116,7 +124,9 @@
 		transition: opacity 120ms ease;
 	}
 
-	.back-link:hover { opacity: 0.8; }
+	.back-link:hover {
+		opacity: 0.8;
+	}
 
 	.title-row {
 		display: flex;
@@ -185,9 +195,18 @@
 		font-size: 1.5rem;
 	}
 
-	.icon-wrap.db { background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.25); }
-	.icon-wrap.tmdb { background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.25); }
-	.icon-wrap.server { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); }
+	.icon-wrap.db {
+		background: rgba(59, 130, 246, 0.12);
+		border: 1px solid rgba(59, 130, 246, 0.25);
+	}
+	.icon-wrap.tmdb {
+		background: rgba(16, 185, 129, 0.12);
+		border: 1px solid rgba(16, 185, 129, 0.25);
+	}
+	.icon-wrap.server {
+		background: rgba(255, 255, 255, 0.08);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+	}
 
 	.status-badge {
 		font-size: 0.75rem;

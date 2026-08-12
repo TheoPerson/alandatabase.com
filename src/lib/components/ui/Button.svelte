@@ -25,20 +25,11 @@
 </script>
 
 {#if href}
-	<a
-		{href}
-		class="btn {variant} {size} {customClass}"
-		class:disabled
-	>
+	<a {href} class="btn {variant} {size} {customClass}" class:disabled>
 		{@render children?.()}
 	</a>
 {:else}
-	<button
-		{type}
-		{disabled}
-		{onclick}
-		class="btn {variant} {size} {customClass}"
-	>
+	<button {type} {disabled} {onclick} class="btn {variant} {size} {customClass}">
 		{@render children?.()}
 	</button>
 {/if}

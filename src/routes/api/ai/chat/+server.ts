@@ -12,7 +12,8 @@ type GeminiMessage = { role: 'user' | 'model'; parts: Array<{ text: string }> };
 
 export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 	if (!locals.user) throw error(401, 'Unauthorized');
-	if (!geminiApiKey || geminiApiKey === 'YOUR_GEMINI_KEY') throw error(500, 'Gemini API Key not configured.');
+	if (!geminiApiKey || geminiApiKey === 'YOUR_GEMINI_KEY')
+		throw error(500, 'Gemini API Key not configured.');
 
 	const body = await request.json();
 	const userMessage: string = body.message?.trim();
@@ -85,7 +86,9 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 
 			const topTitles = topRated.map((i: any) => `${i.movie?.title} (${i.rating}★)`).join(', ');
 			const favTitles = favorites.map((i: any) => i.movie?.title).join(', ');
-			const reviews = recentReviews.map((r: any) => `"${r.movie?.title}": ${r.content}`).join(' | ');
+			const reviews = recentReviews
+				.map((r: any) => `"${r.movie?.title}": ${r.content}`)
+				.join(' | ');
 
 			systemContext = [
 				'[USER TASTE PROFILE — use this throughout the conversation]',
@@ -100,9 +103,8 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 	}
 
 	// ── Append user turn ──────────────────────────────────────────────────────
-	const fullUserText = isNewSession && systemContext
-		? `${systemContext}\n\nUser: ${userMessage}`
-		: userMessage;
+	const fullUserText =
+		isNewSession && systemContext ? `${systemContext}\n\nUser: ${userMessage}` : userMessage;
 
 	history.push({ role: 'user', parts: [{ text: fullUserText }] });
 
@@ -162,7 +164,7 @@ Always return valid JSON:
 
 	// ── Resolve movie posters from TMDB ───────────────────────────────────────
 	const resolvedMovies = [];
-	for (const title of (parsed.recommended_movie_titles ?? [])) {
+	for (const title of parsed.recommended_movie_titles ?? []) {
 		const results = await searchMovies(title, 1);
 		if (results.length > 0) resolvedMovies.push(results[0]);
 	}

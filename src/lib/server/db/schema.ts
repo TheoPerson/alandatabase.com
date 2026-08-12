@@ -339,7 +339,9 @@ export const activities = pgTable(
 	'activities',
 	{
 		id: uuid('id').defaultRandom().primaryKey(),
-		userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
 		actionType: varchar('action_type', { length: 50 }).notNull(), // 'rated', 'watched', 'favorited', 'watchlisted', 'reviewed', 'list_created'
 		movieId: uuid('movie_id').references(() => movies.id, { onDelete: 'cascade' }),
 		listId: uuid('list_id').references(() => userLists.id, { onDelete: 'cascade' }),
@@ -356,7 +358,9 @@ export const aiChatSessions = pgTable(
 	'ai_chat_sessions',
 	{
 		id: uuid('id').defaultRandom().primaryKey(),
-		userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
 		sessionKey: varchar('session_key', { length: 100 }).notNull().unique(), // cookie value
 		messages: jsonb('messages').notNull().default('[]'), // Gemini-format message array
 		createdAt: timestamp('created_at').defaultNow().notNull(),
@@ -367,7 +371,6 @@ export const aiChatSessions = pgTable(
 		uniqueIndex('idx_ai_sessions_key').on(table.sessionKey)
 	]
 );
-
 
 // -----------------------------------------------------------------------------
 // RELATIONS

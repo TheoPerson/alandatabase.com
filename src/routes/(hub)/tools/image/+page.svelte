@@ -125,17 +125,16 @@
 			<h1 class="tool-title"><span class="icon">🖼️</span> Image Studio Pro</h1>
 			<span class="tool-badge">CANVAS ENGINE</span>
 		</div>
-		<p class="tool-subtitle">Convert formats (WebP, PNG, JPEG), resize dimensions, compress quality, and encode Base64 Data URIs.</p>
+		<p class="tool-subtitle">
+			Convert formats (WebP, PNG, JPEG), resize dimensions, compress quality, and encode Base64 Data
+			URIs.
+		</p>
 	</div>
 
 	<div class="workspace-grid">
 		<!-- Upload / Preview Box -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div
-			class="drop-pane glass-card"
-			ondrop={handleDrop}
-			ondragover={e => e.preventDefault()}
-		>
+		<div class="drop-pane glass-card" ondrop={handleDrop} ondragover={(e) => e.preventDefault()}>
 			{#if !previewUrl}
 				<div class="drop-placeholder">
 					<span class="drop-icon">📁</span>
@@ -175,9 +174,21 @@
 					<div class="form-group">
 						<label class="form-label" for="targetFormat">Export Format</label>
 						<div class="format-buttons">
-							<button class="fmt-btn" class:active={targetFormat === 'webp'} onclick={() => (targetFormat = 'webp')}>WebP</button>
-							<button class="fmt-btn" class:active={targetFormat === 'png'} onclick={() => (targetFormat = 'png')}>PNG</button>
-							<button class="fmt-btn" class:active={targetFormat === 'jpeg'} onclick={() => (targetFormat = 'jpeg')}>JPEG</button>
+							<button
+								class="fmt-btn"
+								class:active={targetFormat === 'webp'}
+								onclick={() => (targetFormat = 'webp')}>WebP</button
+							>
+							<button
+								class="fmt-btn"
+								class:active={targetFormat === 'png'}
+								onclick={() => (targetFormat = 'png')}>PNG</button
+							>
+							<button
+								class="fmt-btn"
+								class:active={targetFormat === 'jpeg'}
+								onclick={() => (targetFormat = 'jpeg')}>JPEG</button
+							>
 						</div>
 					</div>
 
@@ -188,7 +199,14 @@
 								<label class="form-label" for="qualityRange">Compression Quality</label>
 								<span class="val-badge">{targetQuality}%</span>
 							</div>
-							<input id="qualityRange" type="range" min="10" max="100" bind:value={targetQuality} class="range-slider" />
+							<input
+								id="qualityRange"
+								type="range"
+								min="10"
+								max="100"
+								bind:value={targetQuality}
+								class="range-slider"
+							/>
 						</div>
 					{/if}
 
@@ -201,9 +219,22 @@
 							</label>
 						</div>
 						<div class="dim-inputs">
-							<input id="targetWidthInput" type="number" value={targetWidth} oninput={e => updateWidth(+e.currentTarget.value)} class="num-input" placeholder="Width" />
+							<input
+								id="targetWidthInput"
+								type="number"
+								value={targetWidth}
+								oninput={(e) => updateWidth(+e.currentTarget.value)}
+								class="num-input"
+								placeholder="Width"
+							/>
 							<span class="x-sep">×</span>
-							<input type="number" value={targetHeight} oninput={e => updateHeight(+e.currentTarget.value)} class="num-input" placeholder="Height" />
+							<input
+								type="number"
+								value={targetHeight}
+								oninput={(e) => updateHeight(+e.currentTarget.value)}
+								class="num-input"
+								placeholder="Height"
+							/>
 						</div>
 					</div>
 
@@ -217,7 +248,11 @@
 					<div class="form-group">
 						<label class="form-label" for="base64CopyArea">Base64 Data URI</label>
 						<div class="base64-box">
-							<textarea id="base64CopyArea" readonly value={base64Output.slice(0, 150) + '...'} class="base64-preview"></textarea>
+							<textarea
+								id="base64CopyArea"
+								readonly
+								value={base64Output.slice(0, 150) + '...'}
+								class="base64-preview"></textarea>
 							<button class="copy-base64-btn" onclick={copyBase64}>
 								{copiedBase64 ? '✓ Copied Data URI' : '📋 Copy Base64'}
 							</button>
@@ -322,7 +357,8 @@
 		color: var(--text-tertiary);
 	}
 
-	.select-file-btn, .change-file-btn {
+	.select-file-btn,
+	.change-file-btn {
 		padding: 0.6rem 1.25rem;
 		background: var(--accent-violet);
 		color: #ffffff;

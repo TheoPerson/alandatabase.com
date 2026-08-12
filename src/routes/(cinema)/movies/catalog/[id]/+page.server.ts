@@ -1,6 +1,11 @@
 import { getMovieById } from '$lib/server/services/movie.service';
 import { db } from '$lib/server/db';
-import { userMovieInteractions, userReviews, userLists, userListItems } from '$lib/server/db/schema';
+import {
+	userMovieInteractions,
+	userReviews,
+	userLists,
+	userListItems
+} from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import { logActivity } from '$lib/server/services/interaction.service';
@@ -17,7 +22,7 @@ export async function load({ params, locals }) {
 	let interaction = null;
 	let review = null;
 	let userCustomLists: any[] = [];
-	
+
 	if (locals.user) {
 		interaction = await db.query.userMovieInteractions.findFirst({
 			where: and(
@@ -27,10 +32,7 @@ export async function load({ params, locals }) {
 		});
 
 		review = await db.query.userReviews.findFirst({
-			where: and(
-				eq(userReviews.userId, locals.user.id),
-				eq(userReviews.movieId, movie.id)
-			)
+			where: and(eq(userReviews.userId, locals.user.id), eq(userReviews.movieId, movie.id))
 		});
 
 		userCustomLists = await db.query.userLists.findMany({
@@ -117,7 +119,7 @@ export const actions = {
 			return fail(500, { error: 'Failed to update interaction.' });
 		}
 	},
-	
+
 	toggleList: async ({ request, locals }) => {
 		if (!locals.user) {
 			return fail(401, { error: 'You must be logged in to modify lists.' });
@@ -147,7 +149,8 @@ export const actions = {
 			});
 
 			if (existingItem) {
-				await db.delete(userListItems)
+				await db
+					.delete(userListItems)
 					.where(and(eq(userListItems.listId, listId), eq(userListItems.movieId, movieId)));
 			} else {
 				// Find max position

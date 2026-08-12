@@ -5,7 +5,7 @@ describe('Authentication Utilities', () => {
 	it('should hash and verify a password correctly', async () => {
 		const password = 'my_super_secret_password';
 		const hash = await hashPassword(password);
-		
+
 		expect(hash).not.toEqual(password);
 		expect(hash).toContain(':'); // Scrypt format string
 
@@ -16,7 +16,7 @@ describe('Authentication Utilities', () => {
 	it('should fail verification for incorrect password', async () => {
 		const password = 'correct_password';
 		const hash = await hashPassword(password);
-		
+
 		const isValid = await verifyPassword('wrong_password', hash);
 		expect(isValid).toBe(false);
 	});

@@ -21,7 +21,10 @@
 		<span class="icon">⚠️</span>
 		<div class="banner-text">
 			<strong>Warning: This action is destructive.</strong>
-			<p>Merging will reassign all your reviews, lists, and ratings from this movie into the target movie. Afterwards, <em>this</em> movie record will be permanently deleted from the local database.</p>
+			<p>
+				Merging will reassign all your reviews, lists, and ratings from this movie into the target
+				movie. Afterwards, <em>this</em> movie record will be permanently deleted from the local database.
+			</p>
 		</div>
 	</div>
 
@@ -46,8 +49,16 @@
 		>
 			<div class="input-group">
 				<label for="targetTmdbId">Target TMDB ID</label>
-				<p class="help-text">Enter the TMDB ID of the movie you want to merge into. (e.g. 27205 for Inception)</p>
-				<input type="number" id="targetTmdbId" name="targetTmdbId" placeholder="e.g. 27205" required />
+				<p class="help-text">
+					Enter the TMDB ID of the movie you want to merge into. (e.g. 27205 for Inception)
+				</p>
+				<input
+					type="number"
+					id="targetTmdbId"
+					name="targetTmdbId"
+					placeholder="e.g. 27205"
+					required
+				/>
 			</div>
 
 			<div class="actions">

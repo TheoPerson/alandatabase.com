@@ -19,11 +19,11 @@
 </script>
 
 <svelte:head>
-  <title>My Films | CinemaDB</title>
-  <meta name="description" content="Personal Cinema Archive" />
-  <meta property="og:title" content="My Films | CinemaDB" />
-  <meta property="og:description" content="Personal Cinema Archive" />
-  <meta property="og:type" content="website" />
+	<title>My Films | CinemaDB</title>
+	<meta name="description" content="Personal Cinema Archive" />
+	<meta property="og:title" content="My Films | CinemaDB" />
+	<meta property="og:description" content="Personal Cinema Archive" />
+	<meta property="og:type" content="website" />
 </svelte:head>
 
 <div class="container my-films-page">
@@ -101,7 +101,13 @@
 							<div class="bar-row">
 								<span class="genre-name">{genreName}</span>
 								<div class="bar-bg">
-									<div class="bar-fill" style="width: {Math.min(100, (count / Math.max(1, stats.watchedCount)) * 100)}%;"></div>
+									<div
+										class="bar-fill"
+										style="width: {Math.min(
+											100,
+											(count / Math.max(1, stats.watchedCount)) * 100
+										)}%;"
+									></div>
 								</div>
 								<span class="count">{count}</span>
 							</div>

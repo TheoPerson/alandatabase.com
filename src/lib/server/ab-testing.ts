@@ -26,9 +26,9 @@ export function getVariant(experimentId: string, deviceId: string): string {
 		hash = (hash << 5) - hash + str.charCodeAt(i);
 		hash |= 0;
 	}
-	
+
 	// Normalize hash to 0-1 range
-	const normalized = Math.abs(hash) / 2147483648; 
+	const normalized = Math.abs(hash) / 2147483648;
 
 	// Distribute based on weights
 	let cumulative = 0;

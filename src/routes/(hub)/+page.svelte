@@ -10,7 +10,7 @@
 	onMount(() => {
 		isClient = true;
 		scratchpadText = localStorage.getItem('alan_vault_scratchpad') || '';
-		
+
 		// Simulate periodic ping telemetry update
 		const interval = setInterval(() => {
 			dbLatency = Math.floor(11 + Math.random() * 8);
@@ -38,11 +38,29 @@
 	// Dock items (macOS / iOS 27 Style)
 	const dockApps = [
 		{ id: 'github', name: 'GitHub', icon: '🐙', url: 'https://github.com', color: '#ffffff' },
-		{ id: 'chatgpt', name: 'ChatGPT', icon: '🤖', url: 'https://chat.openai.com', color: '#10a37f' },
+		{
+			id: 'chatgpt',
+			name: 'ChatGPT',
+			icon: '🤖',
+			url: 'https://chat.openai.com',
+			color: '#10a37f'
+		},
 		{ id: 'gmail', name: 'Gmail', icon: '✉️', url: 'https://mail.google.com', color: '#ea4335' },
 		{ id: 'drive', name: 'Drive', icon: '☁️', url: 'https://drive.google.com', color: '#34a853' },
-		{ id: 'cloudflare', name: 'Cloudflare', icon: '⚡', url: 'https://dash.cloudflare.com', color: '#f38020' },
-		{ id: 'steam', name: 'Steam', icon: '🎮', url: 'https://store.steampowered.com', color: '#38bdf8' },
+		{
+			id: 'cloudflare',
+			name: 'Cloudflare',
+			icon: '⚡',
+			url: 'https://dash.cloudflare.com',
+			color: '#f38020'
+		},
+		{
+			id: 'steam',
+			name: 'Steam',
+			icon: '🎮',
+			url: 'https://store.steampowered.com',
+			color: '#38bdf8'
+		},
 		{ id: 'figma', name: 'Figma', icon: '🎨', url: 'https://figma.com', color: '#a259ff' },
 		{ id: 'vercel', name: 'Vercel', icon: '▲', url: 'https://vercel.com', color: '#ffffff' },
 		{ id: 'cinemadb', name: 'Cinema DB', icon: '🎬', url: '/movies', color: '#10b981' },
@@ -52,36 +70,103 @@
 
 	// Primary Dev & Vault Suites
 	const devSuites = [
-		{ id: 'json', name: 'JSON Studio', icon: '🧩', url: '/tools/json', color: '#10b981', desc: 'Format, Validate & CSV' },
-		{ id: 'diff', name: 'Diff & Regex', icon: '⚡', url: '/tools/diff', color: '#10b981', desc: 'Side-by-Side Text & Regex' },
-		{ id: 'image', name: 'Image Studio', icon: '🖼️', url: '/tools/image', color: '#8b5cf6', desc: 'Compress, WebP & Base64' },
-		{ id: 'file', name: 'File Utilities', icon: '📄', url: '/tools/file', color: '#3b82f6', desc: 'SHA Hashes & Regex' },
-		{ id: 'generators', name: 'Generator Vault', icon: '🪄', url: '/tools/generators', color: '#ec4899', desc: 'UUIDs & Passwords' }
+		{
+			id: 'json',
+			name: 'JSON Studio',
+			icon: '🧩',
+			url: '/tools/json',
+			color: '#10b981',
+			desc: 'Format, Validate & CSV'
+		},
+		{
+			id: 'diff',
+			name: 'Diff & Regex',
+			icon: '⚡',
+			url: '/tools/diff',
+			color: '#10b981',
+			desc: 'Side-by-Side Text & Regex'
+		},
+		{
+			id: 'image',
+			name: 'Image Studio',
+			icon: '🖼️',
+			url: '/tools/image',
+			color: '#8b5cf6',
+			desc: 'Compress, WebP & Base64'
+		},
+		{
+			id: 'file',
+			name: 'File Utilities',
+			icon: '📄',
+			url: '/tools/file',
+			color: '#3b82f6',
+			desc: 'SHA Hashes & Regex'
+		},
+		{
+			id: 'generators',
+			name: 'Generator Vault',
+			icon: '🪄',
+			url: '/tools/generators',
+			color: '#ec4899',
+			desc: 'UUIDs & Passwords'
+		}
 	];
 
 	const coreEngines = [
-		{ id: 'cinemadb', name: 'Cinema DB', icon: '🎬', url: '/movies', color: '#10b981', desc: 'Movie Archive & TMDB Engine' },
-		{ id: 'labs', name: 'Innovation Labs', icon: '🧪', url: '/projects', color: '#06b6d4', desc: 'Active AI Models & Prototypes' }
+		{
+			id: 'cinemadb',
+			name: 'Cinema DB',
+			icon: '🎬',
+			url: '/movies',
+			color: '#10b981',
+			desc: 'Movie Archive & TMDB Engine'
+		},
+		{
+			id: 'labs',
+			name: 'Innovation Labs',
+			icon: '🧪',
+			url: '/projects',
+			color: '#06b6d4',
+			desc: 'Active AI Models & Prototypes'
+		}
 	];
 
 	const searchableItems = [
-		...devSuites.map(d => ({ ...d, category: 'Dev Tool' })),
-		...coreEngines.map(e => ({ ...e, category: 'Vault Engine' })),
-		...dockApps.map(a => ({ ...a, category: 'Bookmark', desc: a.url })),
-		{ name: 'System Setup', icon: '⚙️', url: '/setup', desc: 'Environment inspector', category: 'System' },
-		{ name: 'Telemetry Status', icon: '📈', url: '/status', desc: 'Live Postgres & TMDB health', category: 'System' },
-		{ name: 'AI Curator', icon: '✨', url: '/discover/ai', desc: 'AI Movie Recommendations', category: 'Cinema' }
+		...devSuites.map((d) => ({ ...d, category: 'Dev Tool' })),
+		...coreEngines.map((e) => ({ ...e, category: 'Vault Engine' })),
+		...dockApps.map((a) => ({ ...a, category: 'Bookmark', desc: a.url })),
+		{
+			name: 'System Setup',
+			icon: '⚙️',
+			url: '/setup',
+			desc: 'Environment inspector',
+			category: 'System'
+		},
+		{
+			name: 'Telemetry Status',
+			icon: '📈',
+			url: '/status',
+			desc: 'Live Postgres & TMDB health',
+			category: 'System'
+		},
+		{
+			name: 'AI Curator',
+			icon: '✨',
+			url: '/discover/ai',
+			desc: 'AI Movie Recommendations',
+			category: 'Cinema'
+		}
 	];
 
 	let filteredSearch = $derived(
 		searchQuery.trim() === ''
 			? searchableItems
 			: searchableItems.filter(
-					i =>
+					(i) =>
 						i.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
 						(i.desc && i.desc.toLowerCase().includes(searchQuery.toLowerCase())) ||
 						i.category.toLowerCase().includes(searchQuery.toLowerCase())
-			  )
+				)
 	);
 
 	function formatScratchJSON() {
@@ -128,7 +213,7 @@
 				<span class="pane-title">SYSTEM TELEMETRY</span>
 				<span class="status-live">● LIVE</span>
 			</div>
-			
+
 			<div class="telemetry-metrics">
 				<div class="metric-item">
 					<span class="metric-label">Neon Postgres DB</span>
@@ -165,8 +250,12 @@
 			<div class="pane-header">
 				<span class="pane-title">UNIVERSAL COMMAND & SCRATCHPAD</span>
 				<div class="scratch-tools">
-					<button class="tool-chip" onclick={formatScratchJSON} title="Format JSON in scratchpad">Format JSON</button>
-					<button class="tool-chip" onclick={copyScratch} title="Copy scratchpad content">Copy</button>
+					<button class="tool-chip" onclick={formatScratchJSON} title="Format JSON in scratchpad"
+						>Format JSON</button
+					>
+					<button class="tool-chip" onclick={copyScratch} title="Copy scratchpad content"
+						>Copy</button
+					>
 				</div>
 			</div>
 
@@ -181,7 +270,13 @@
 						oninput={handleSearchInput}
 					/>
 					{#if searchQuery.trim().length > 0}
-						<button class="clear-btn" onclick={() => { searchQuery = ''; closeDrawer(); }}>✕</button>
+						<button
+							class="clear-btn"
+							onclick={() => {
+								searchQuery = '';
+								closeDrawer();
+							}}>✕</button
+						>
 					{/if}
 				</div>
 
@@ -189,8 +284,7 @@
 					bind:value={scratchpadText}
 					oninput={handleScratchInput}
 					placeholder="Markdown Scratchpad — Auto-saved to local vault state..."
-					class="scratch-textarea"
-				></textarea>
+					class="scratch-textarea"></textarea>
 			</div>
 		</div>
 	</section>
@@ -234,7 +328,7 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="drawer-backdrop" onclick={closeDrawer}>
-		<aside class="drawer-panel" onclick={e => e.stopPropagation()}>
+		<aside class="drawer-panel" onclick={(e) => e.stopPropagation()}>
 			<div class="drawer-header">
 				<div class="drawer-title-group">
 					<span class="drawer-icon">🔍</span>
@@ -253,7 +347,11 @@
 					<div class="empty-results">
 						<span class="empty-emoji">🔍</span>
 						<span>No vault items match "{searchQuery}"</span>
-						<a href="/search?q={encodeURIComponent(searchQuery)}" class="cinema-fallback-btn" onclick={closeDrawer}>
+						<a
+							href="/search?q={encodeURIComponent(searchQuery)}"
+							class="cinema-fallback-btn"
+							onclick={closeDrawer}
+						>
 							Search "{searchQuery}" in Cinema Database →
 						</a>
 					</div>
@@ -301,7 +399,7 @@
 		inset: 0;
 		z-index: 0;
 		background-color: #050507;
-		background-image: 
+		background-image:
 			linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
 			linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
 		background-size: 32px 32px;
@@ -369,7 +467,8 @@
 		gap: 0.6rem;
 	}
 
-	.ping-badge, .sys-badge {
+	.ping-badge,
+	.sys-badge {
 		font-size: 0.7rem;
 		font-weight: 700;
 		padding: 0.2rem 0.55rem;
@@ -460,8 +559,12 @@
 		gap: 0.4rem;
 	}
 
-	.metric-value.green { color: #10b981; }
-	.metric-value.titanium { color: #f4f4f5; }
+	.metric-value.green {
+		color: #10b981;
+	}
+	.metric-value.titanium {
+		color: #f4f4f5;
+	}
 
 	.unit {
 		font-size: 0.7rem;
@@ -626,7 +729,9 @@
 	.engine-tile:hover {
 		border-color: var(--engine-color, #10b981);
 		background: rgba(18, 18, 26, 0.85);
-		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(16, 185, 129, 0.15);
+		box-shadow:
+			0 10px 30px rgba(0, 0, 0, 0.7),
+			0 0 20px rgba(16, 185, 129, 0.15);
 	}
 
 	.engine-icon {
@@ -884,7 +989,9 @@
 		border: 1px solid rgba(255, 255, 255, 0.12);
 		border-radius: 22px;
 		backdrop-filter: blur(24px);
-		box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(16, 185, 129, 0.12);
+		box-shadow:
+			0 15px 40px rgba(0, 0, 0, 0.8),
+			0 0 20px rgba(16, 185, 129, 0.12);
 	}
 
 	.dock-item {
@@ -905,7 +1012,9 @@
 		transform: scale(1.22) translateY(-8px);
 		background: rgba(16, 185, 129, 0.18);
 		border-color: #10b981;
-		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7), 0 0 15px rgba(16, 185, 129, 0.3);
+		box-shadow:
+			0 10px 25px rgba(0, 0, 0, 0.7),
+			0 0 15px rgba(16, 185, 129, 0.3);
 	}
 
 	.dock-icon {

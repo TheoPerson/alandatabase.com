@@ -31,14 +31,21 @@
 						{:else}
 							{#each list.items as item, i}
 								{#if item.movie.posterPath}
-									<img src="https://image.tmdb.org/t/p/w154{item.movie.posterPath}" alt="Cover" class="cover-img" style="z-index: {4 - i}; transform: translateX({i * 10}px);" />
+									<img
+										src="https://image.tmdb.org/t/p/w154{item.movie.posterPath}"
+										alt="Cover"
+										class="cover-img"
+										style="z-index: {4 - i}; transform: translateX({i * 10}px);"
+									/>
 								{/if}
 							{/each}
 						{/if}
 					</div>
 					<div class="list-info">
 						<h3 class="list-title">{list.name}</h3>
-						<p class="list-meta">{list.items.length} films • {list.isPublic ? 'Public' : 'Private'}</p>
+						<p class="list-meta">
+							{list.items.length} films • {list.isPublic ? 'Public' : 'Private'}
+						</p>
 					</div>
 				</a>
 			{/each}
@@ -103,7 +110,9 @@
 		padding: 1.5rem;
 		border-radius: var(--radius-lg);
 		text-decoration: none;
-		transition: transform var(--transition-fast), border-color var(--transition-fast);
+		transition:
+			transform var(--transition-fast),
+			border-color var(--transition-fast);
 	}
 
 	.list-card:hover {
@@ -125,21 +134,21 @@
 		height: 135px;
 		object-fit: cover;
 		border-radius: var(--radius-sm);
-		box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-		border: 1px solid rgba(255,255,255,0.1);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+		border: 1px solid rgba(255, 255, 255, 0.1);
 	}
 
 	.empty-cover {
 		width: 100%;
 		height: 100%;
-		background: rgba(255,255,255,0.05);
+		background: rgba(255, 255, 255, 0.05);
 		border-radius: var(--radius-sm);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		color: var(--text-tertiary);
 		font-size: 0.9rem;
-		border: 1px dashed rgba(255,255,255,0.1);
+		border: 1px dashed rgba(255, 255, 255, 0.1);
 	}
 
 	.list-info {

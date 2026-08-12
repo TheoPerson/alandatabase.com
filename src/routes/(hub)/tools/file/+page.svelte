@@ -1,5 +1,7 @@
 <script lang="ts">
-	let inputText = $state('Alan Database OS 2026\nPersonal Command Vault\nDeveloper Utilities & Tools\nAlan Database OS 2026');
+	let inputText = $state(
+		'Alan Database OS 2026\nPersonal Command Vault\nDeveloper Utilities & Tools\nAlan Database OS 2026'
+	);
 	let activeTab: 'hash' | 'case' | 'sort' | 'regex' = $state('hash');
 
 	// Hash state
@@ -11,10 +13,14 @@
 		const text = inputText;
 		const cleanWords = text.trim().split(/\s+/);
 		return {
-			camel: cleanWords.map((w, i) => i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(''),
-			snake: cleanWords.map(w => w.toLowerCase()).join('_'),
-			kebab: cleanWords.map(w => w.toLowerCase()).join('-'),
-			constant: cleanWords.map(w => w.toUpperCase()).join('_'),
+			camel: cleanWords
+				.map((w, i) =>
+					i === 0 ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+				)
+				.join(''),
+			snake: cleanWords.map((w) => w.toLowerCase()).join('_'),
+			kebab: cleanWords.map((w) => w.toLowerCase()).join('-'),
+			constant: cleanWords.map((w) => w.toUpperCase()).join('_'),
 			upper: text.toUpperCase(),
 			lower: text.toLowerCase()
 		};
@@ -38,7 +44,7 @@
 		try {
 			const re = new RegExp(regexPattern, regexFlags);
 			const matches = [...inputText.matchAll(re)];
-			return matches.map(m => m[0]);
+			return matches.map((m) => m[0]);
 		} catch (e) {
 			return ['Invalid Regular Expression'];
 		}
@@ -54,10 +60,14 @@
 		const data = encoder.encode(inputText);
 
 		const buffer256 = await crypto.subtle.digest('SHA-256', data);
-		sha256Hash = Array.from(new Uint8Array(buffer256)).map(b => b.toString(16).padStart(2, '0')).join('');
+		sha256Hash = Array.from(new Uint8Array(buffer256))
+			.map((b) => b.toString(16).padStart(2, '0'))
+			.join('');
 
 		const buffer512 = await crypto.subtle.digest('SHA-512', data);
-		sha512Hash = Array.from(new Uint8Array(buffer512)).map(b => b.toString(16).padStart(2, '0')).join('');
+		sha512Hash = Array.from(new Uint8Array(buffer512))
+			.map((b) => b.toString(16).padStart(2, '0'))
+			.join('');
 	}
 
 	$effect(() => {
@@ -87,22 +97,41 @@
 			<h1 class="tool-title"><span class="icon">📄</span> File & Text Utilities</h1>
 			<span class="tool-badge">CRYPTO & TEXT ENGINE</span>
 		</div>
-		<p class="tool-subtitle">Cryptographic hash generators (SHA-256/512), text case converters, line sorters & regex matchers.</p>
+		<p class="tool-subtitle">
+			Cryptographic hash generators (SHA-256/512), text case converters, line sorters & regex
+			matchers.
+		</p>
 	</div>
 
 	<!-- Control Bar -->
 	<div class="control-bar glass-card">
 		<div class="tabs">
-			<button class="tab-btn" class:active={activeTab === 'hash'} onclick={() => (activeTab = 'hash')}>
+			<button
+				class="tab-btn"
+				class:active={activeTab === 'hash'}
+				onclick={() => (activeTab = 'hash')}
+			>
 				🔐 Hash Generator
 			</button>
-			<button class="tab-btn" class:active={activeTab === 'case'} onclick={() => (activeTab = 'case')}>
+			<button
+				class="tab-btn"
+				class:active={activeTab === 'case'}
+				onclick={() => (activeTab = 'case')}
+			>
 				🔤 Case Converter
 			</button>
-			<button class="tab-btn" class:active={activeTab === 'sort'} onclick={() => (activeTab = 'sort')}>
+			<button
+				class="tab-btn"
+				class:active={activeTab === 'sort'}
+				onclick={() => (activeTab = 'sort')}
+			>
 				🧹 Line Sorter
 			</button>
-			<button class="tab-btn" class:active={activeTab === 'regex'} onclick={() => (activeTab = 'regex')}>
+			<button
+				class="tab-btn"
+				class:active={activeTab === 'regex'}
+				onclick={() => (activeTab = 'regex')}
+			>
 				🎯 Regex Tester
 			</button>
 		</div>
@@ -113,9 +142,14 @@
 		<div class="editor-pane glass-card">
 			<div class="pane-header">
 				<span class="pane-title">Input Text Payload</span>
-				<span class="char-count">{inputText.length} chars | {inputText.split('\n').length} lines</span>
+				<span class="char-count"
+					>{inputText.length} chars | {inputText.split('\n').length} lines</span
+				>
 			</div>
-			<textarea class="textarea" bind:value={inputText} placeholder="Type or paste input text here..."></textarea>
+			<textarea
+				class="textarea"
+				bind:value={inputText}
+				placeholder="Type or paste input text here..."></textarea>
 		</div>
 
 		<!-- Processed Output Box -->
@@ -142,10 +176,18 @@
 			{:else if activeTab === 'case'}
 				<div class="pane-header"><span class="pane-title">Case Conversions</span></div>
 				<div class="results-box">
-					<div class="case-row"><span class="lbl">camelCase:</span><code>{caseOutputs.camel}</code></div>
-					<div class="case-row"><span class="lbl">snake_case:</span><code>{caseOutputs.snake}</code></div>
-					<div class="case-row"><span class="lbl">kebab-case:</span><code>{caseOutputs.kebab}</code></div>
-					<div class="case-row"><span class="lbl">CONSTANT_CASE:</span><code>{caseOutputs.constant}</code></div>
+					<div class="case-row">
+						<span class="lbl">camelCase:</span><code>{caseOutputs.camel}</code>
+					</div>
+					<div class="case-row">
+						<span class="lbl">snake_case:</span><code>{caseOutputs.snake}</code>
+					</div>
+					<div class="case-row">
+						<span class="lbl">kebab-case:</span><code>{caseOutputs.kebab}</code>
+					</div>
+					<div class="case-row">
+						<span class="lbl">CONSTANT_CASE:</span><code>{caseOutputs.constant}</code>
+					</div>
 				</div>
 			{:else if activeTab === 'sort'}
 				<div class="pane-header"><span class="pane-title">Deduplicated & Sorted Text</span></div>
@@ -154,7 +196,12 @@
 				<div class="pane-header">
 					<span class="pane-title">Regex Matches</span>
 					<div class="regex-inputs">
-						<input type="text" bind:value={regexPattern} class="regex-input" placeholder="Pattern (e.g. \w+)" />
+						<input
+							type="text"
+							bind:value={regexPattern}
+							class="regex-input"
+							placeholder="Pattern (e.g. \w+)"
+						/>
 						<input type="text" bind:value={regexFlags} class="flag-input" placeholder="Flags" />
 					</div>
 				</div>
@@ -360,7 +407,8 @@
 		gap: 0.4rem;
 	}
 
-	.regex-input, .flag-input {
+	.regex-input,
+	.flag-input {
 		background: var(--bg-surface-2);
 		border: 1px solid var(--border-subtle);
 		color: var(--text-primary);
@@ -369,7 +417,9 @@
 		font-size: 0.8rem;
 	}
 
-	.flag-input { width: 50px; }
+	.flag-input {
+		width: 50px;
+	}
 
 	.count-badge {
 		font-size: 0.75rem;
@@ -391,5 +441,8 @@
 		border-radius: var(--radius-sm);
 	}
 
-	.idx { color: var(--text-tertiary); margin-right: 0.5rem; }
+	.idx {
+		color: var(--text-tertiary);
+		margin-right: 0.5rem;
+	}
 </style>

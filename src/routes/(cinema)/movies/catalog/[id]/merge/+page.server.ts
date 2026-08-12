@@ -27,7 +27,7 @@ export const actions = {
 
 		const formData = await request.formData();
 		const targetTmdbId = formData.get('targetTmdbId')?.toString();
-		
+
 		if (!targetTmdbId) {
 			return fail(400, { error: 'Target TMDB ID is required' });
 		}
@@ -39,7 +39,10 @@ export const actions = {
 			});
 
 			if (!targetMovie) {
-				return fail(400, { error: 'Target movie not found in local database. Please search for it first to auto-ingest.' });
+				return fail(400, {
+					error:
+						'Target movie not found in local database. Please search for it first to auto-ingest.'
+				});
 			}
 
 			if (targetMovie.id === params.id) {
@@ -52,19 +55,23 @@ export const actions = {
 			// Perform merge
 			await db.transaction(async (tx) => {
 				// 1. Move Reviews
-				const sourceReviews = await tx.query.userReviews.findMany({ where: eq(userReviews.movieId, sourceMovieId) });
+				const sourceReviews = await tx.query.userReviews.findMany({
+					where: eq(userReviews.movieId, sourceMovieId)
+				});
 				for (const rev of sourceReviews) {
 					// Does user already have a review on target?
 					const existing = await tx.query.userReviews.findFirst({
 						where: and(eq(userReviews.userId, rev.userId), eq(userReviews.movieId, targetMovieId))
 					});
 					if (!existing) {
-						await tx.update(userReviews)
+						await tx
+							.update(userReviews)
 							.set({ movieId: targetMovieId })
 							.where(eq(userReviews.id, rev.id));
 					} else {
 						// Append review content
-						await tx.update(userReviews)
+						await tx
+							.update(userReviews)
 							.set({ content: existing.content + '\n\n---\n\n' + rev.content })
 							.where(eq(userReviews.id, existing.id));
 						// Delete old
@@ -73,47 +80,75 @@ export const actions = {
 				}
 
 				// 2. Move List Items
-				const sourceListItems = await tx.query.userListItems.findMany({ where: eq(userListItems.movieId, sourceMovieId) });
+				const sourceListItems = await tx.query.userListItems.findMany({
+					where: eq(userListItems.movieId, sourceMovieId)
+				});
 				for (const item of sourceListItems) {
 					const existing = await tx.query.userListItems.findFirst({
-						where: and(eq(userListItems.listId, item.listId), eq(userListItems.movieId, targetMovieId))
+						where: and(
+							eq(userListItems.listId, item.listId),
+							eq(userListItems.movieId, targetMovieId)
+						)
 					});
 					if (!existing) {
 						// Workaround composite primary key update
-						await tx.delete(userListItems)
-							.where(and(eq(userListItems.listId, item.listId), eq(userListItems.movieId, sourceMovieId)));
-						await tx.insert(userListItems)
-							.values({ listId: item.listId, movieId: targetMovieId, position: item.position, addedAt: item.addedAt });
+						await tx
+							.delete(userListItems)
+							.where(
+								and(eq(userListItems.listId, item.listId), eq(userListItems.movieId, sourceMovieId))
+							);
+						await tx.insert(userListItems).values({
+							listId: item.listId,
+							movieId: targetMovieId,
+							position: item.position,
+							addedAt: item.addedAt
+						});
 					} else {
 						// Just delete duplicate
-						await tx.delete(userListItems)
-							.where(and(eq(userListItems.listId, item.listId), eq(userListItems.movieId, sourceMovieId)));
+						await tx
+							.delete(userListItems)
+							.where(
+								and(eq(userListItems.listId, item.listId), eq(userListItems.movieId, sourceMovieId))
+							);
 					}
 				}
 
 				// 3. Move Interactions (watched, rating, etc)
-				const sourceInteractions = await tx.query.userMovieInteractions.findMany({ where: eq(userMovieInteractions.movieId, sourceMovieId) });
+				const sourceInteractions = await tx.query.userMovieInteractions.findMany({
+					where: eq(userMovieInteractions.movieId, sourceMovieId)
+				});
 				for (const interaction of sourceInteractions) {
 					const existing = await tx.query.userMovieInteractions.findFirst({
-						where: and(eq(userMovieInteractions.userId, interaction.userId), eq(userMovieInteractions.movieId, targetMovieId))
+						where: and(
+							eq(userMovieInteractions.userId, interaction.userId),
+							eq(userMovieInteractions.movieId, targetMovieId)
+						)
 					});
 					if (!existing) {
-						await tx.update(userMovieInteractions)
+						await tx
+							.update(userMovieInteractions)
 							.set({ movieId: targetMovieId })
 							.where(eq(userMovieInteractions.id, interaction.id));
 					} else {
 						// Merge interactions
-						await tx.update(userMovieInteractions).set({
-							watched: existing.watched || interaction.watched,
-							watchlist: existing.watchlist || interaction.watchlist,
-							favorite: existing.favorite || interaction.favorite,
-							rating: existing.rating || interaction.rating,
-							rewatchCount: existing.rewatchCount + interaction.rewatchCount,
-							personalNotes: existing.personalNotes ? (existing.personalNotes + '\n' + (interaction.personalNotes || '')) : interaction.personalNotes,
-							updatedAt: new Date()
-						}).where(eq(userMovieInteractions.id, existing.id));
-						
-						await tx.delete(userMovieInteractions).where(eq(userMovieInteractions.id, interaction.id));
+						await tx
+							.update(userMovieInteractions)
+							.set({
+								watched: existing.watched || interaction.watched,
+								watchlist: existing.watchlist || interaction.watchlist,
+								favorite: existing.favorite || interaction.favorite,
+								rating: existing.rating || interaction.rating,
+								rewatchCount: existing.rewatchCount + interaction.rewatchCount,
+								personalNotes: existing.personalNotes
+									? existing.personalNotes + '\n' + (interaction.personalNotes || '')
+									: interaction.personalNotes,
+								updatedAt: new Date()
+							})
+							.where(eq(userMovieInteractions.id, existing.id));
+
+						await tx
+							.delete(userMovieInteractions)
+							.where(eq(userMovieInteractions.id, interaction.id));
 					}
 				}
 

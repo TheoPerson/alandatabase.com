@@ -3,10 +3,7 @@ import { getOrCreateDefaultUser, toggleWatchlist } from '$lib/server/services/in
 
 export async function load() {
 	try {
-		const [trending, topRated] = await Promise.all([
-			getTrendingMovies(12),
-			getTopRatedMovies(12)
-		]);
+		const [trending, topRated] = await Promise.all([getTrendingMovies(12), getTopRatedMovies(12)]);
 
 		return {
 			trending,

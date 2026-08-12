@@ -25,7 +25,8 @@ export const actions = {
 		}
 
 		try {
-			const [newList] = await db.insert(userLists)
+			const [newList] = await db
+				.insert(userLists)
 				.values({
 					userId: locals.user.id,
 					name,

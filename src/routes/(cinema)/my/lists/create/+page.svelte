@@ -36,12 +36,22 @@
 		>
 			<div class="input-group">
 				<label for="name">List Name</label>
-				<input type="text" id="name" name="name" placeholder="e.g. Best Sci-Fi of the 90s" required />
+				<input
+					type="text"
+					id="name"
+					name="name"
+					placeholder="e.g. Best Sci-Fi of the 90s"
+					required
+				/>
 			</div>
 
 			<div class="input-group mt-4">
 				<label for="description">Description (Optional)</label>
-				<textarea id="description" name="description" rows="3" placeholder="What is this list about?"></textarea>
+				<textarea
+					id="description"
+					name="description"
+					rows="3"
+					placeholder="What is this list about?"></textarea>
 			</div>
 
 			<div class="settings-group mt-6">
@@ -134,7 +144,7 @@
 		cursor: pointer;
 	}
 
-	.checkbox-label input[type="checkbox"] {
+	.checkbox-label input[type='checkbox'] {
 		margin-top: 0.25rem;
 		width: 1.25rem;
 		height: 1.25rem;

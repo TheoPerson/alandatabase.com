@@ -124,11 +124,7 @@ export async function seedInitialData() {
 
 	// Seed Movies
 	for (const m of SEED_MOVIES) {
-		const [inserted] = await db
-			.insert(movies)
-			.values(m)
-			.onConflictDoNothing()
-			.returning();
+		const [inserted] = await db.insert(movies).values(m).onConflictDoNothing().returning();
 
 		if (inserted) {
 			// Link default Sci-Fi / Drama genres

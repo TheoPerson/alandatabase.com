@@ -1,12 +1,13 @@
 <script lang="ts">
+	import { SvelteMap } from 'svelte/reactivity';
 	let { data } = $props();
 
 	const ACTION_LABELS: Record<string, { icon: string; label: string; color: string }> = {
-		rated:      { icon: '★', label: 'Rated',       color: '#f59e0b' },
-		watched:    { icon: '✓', label: 'Watched',     color: '#10b981' },
-		favorited:  { icon: '♥', label: 'Favorited',   color: '#ec4899' },
-		watchlisted:{ icon: '⊕', label: 'Watchlisted', color: '#6366f1' },
-		reviewed:   { icon: '✎', label: 'Reviewed',    color: '#3b82f6' },
+		rated: { icon: '★', label: 'Rated', color: '#f59e0b' },
+		watched: { icon: '✓', label: 'Watched', color: '#10b981' },
+		favorited: { icon: '♥', label: 'Favorited', color: '#ec4899' },
+		watchlisted: { icon: '⊕', label: 'Watchlisted', color: '#6366f1' },
+		reviewed: { icon: '✎', label: 'Reviewed', color: '#3b82f6' }
 	};
 
 	function formatDate(dateStr: string) {
@@ -20,7 +21,7 @@
 	}
 
 	function groupByDay(entries: typeof data.diary) {
-		const groups = new Map<string, typeof data.diary>();
+		const groups = new SvelteMap<string, typeof data.diary>();
 		for (const entry of entries) {
 			const day = new Date(entry.createdAt).toDateString();
 			if (!groups.has(day)) groups.set(day, []);
@@ -65,11 +66,18 @@
 
 					<div class="day-entries">
 						{#each entries as entry}
-							{@const action = ACTION_LABELS[entry.actionType] ?? { icon: '•', label: entry.actionType, color: '#71717a' }}
+							{@const action = ACTION_LABELS[entry.actionType] ?? {
+								icon: '•',
+								label: entry.actionType,
+								color: '#71717a'
+							}}
 							<div class="diary-entry glass-card glass-card-hover">
 								<div class="entry-time">{formatTime(entry.createdAt.toString())}</div>
 
-								<div class="action-badge" style="color: {action.color}; border-color: {action.color}33; background: {action.color}0f;">
+								<div
+									class="action-badge"
+									style="color: {action.color}; border-color: {action.color}33; background: {action.color}0f;"
+								>
 									<span class="action-icon">{action.icon}</span>
 									<span class="action-label">{action.label}</span>
 									{#if (entry.metadata as any)?.rating}

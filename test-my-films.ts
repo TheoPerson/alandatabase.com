@@ -1,5 +1,11 @@
 import { db } from './src/lib/server/db/index.js';
-import { getOrCreateDefaultUser, getUserWatchlist, getUserFavorites, getUserWatchedHistory, getUserStats } from './src/lib/server/services/interaction.service.js';
+import {
+	getOrCreateDefaultUser,
+	getUserWatchlist,
+	getUserFavorites,
+	getUserWatchedHistory,
+	getUserStats
+} from './src/lib/server/services/interaction.service.js';
 
 async function main() {
 	try {

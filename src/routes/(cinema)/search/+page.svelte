@@ -19,11 +19,14 @@
 </script>
 
 <svelte:head>
-  <title>{data.query ? `Search: ${data.query} | CinemaDB` : 'Discover Cinema | CinemaDB'}</title>
-  <meta name="description" content="Search by title, director, actor, or genre keywords" />
-  <meta property="og:title" content={data.query ? `Search: ${data.query} | CinemaDB` : 'Discover Cinema | CinemaDB'} />
-  <meta property="og:description" content="Search by title, director, actor, or genre keywords" />
-  <meta property="og:type" content="website" />
+	<title>{data.query ? `Search: ${data.query} | CinemaDB` : 'Discover Cinema | CinemaDB'}</title>
+	<meta name="description" content="Search by title, director, actor, or genre keywords" />
+	<meta
+		property="og:title"
+		content={data.query ? `Search: ${data.query} | CinemaDB` : 'Discover Cinema | CinemaDB'}
+	/>
+	<meta property="og:description" content="Search by title, director, actor, or genre keywords" />
+	<meta property="og:type" content="website" />
 </svelte:head>
 
 <div class="container search-page">
@@ -38,9 +41,7 @@
 				bind:value={searchInput}
 				class="hero-search-input"
 			/>
-			<Button type="submit" variant="primary" size="lg">
-				Search
-			</Button>
+			<Button type="submit" variant="primary" size="lg">Search</Button>
 		</form>
 	</div>
 
@@ -67,7 +68,9 @@
 			<div class="no-results">
 				<p class="emoji">🔍</p>
 				<h3>No movies found for "{data.query}"</h3>
-				<p class="hint">Try searching for another movie title or populate more films via the worker CLI.</p>
+				<p class="hint">
+					Try searching for another movie title or populate more films via the worker CLI.
+				</p>
 			</div>
 		{/if}
 	{/if}

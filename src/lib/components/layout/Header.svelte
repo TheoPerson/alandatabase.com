@@ -41,20 +41,16 @@
 					bind:value={searchQuery}
 					class="search-input"
 				/>
-				<button type="submit" aria-label="Search" class="search-btn">
-					🔍
-				</button>
+				<button type="submit" aria-label="Search" class="search-btn"> 🔍 </button>
 			</form>
 
 			<div class="desktop-only">
-				<Button href="/my/films" variant="outline" size="sm">
-					Personal OS
-				</Button>
+				<Button href="/my/films" variant="outline" size="sm">Personal OS</Button>
 			</div>
 
-			<button 
-				class="mobile-menu-btn" 
-				aria-label="Toggle menu" 
+			<button
+				class="mobile-menu-btn"
+				aria-label="Toggle menu"
 				aria-expanded={menuOpen}
 				onclick={() => (menuOpen = !menuOpen)}
 			>
@@ -68,7 +64,11 @@
 			<nav class="mobile-nav">
 				<a href="/movies" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Movies</a>
 				<a href="/search" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Discover</a>
-				<a href="/discover/ai" class="mobile-nav-link text-amber-500" onclick={() => (menuOpen = false)}>✨ AI Curator</a>
+				<a
+					href="/discover/ai"
+					class="mobile-nav-link text-amber-500"
+					onclick={() => (menuOpen = false)}>✨ AI Curator</a
+				>
 				<a href="/my/films" class="mobile-nav-link" onclick={() => (menuOpen = false)}>My Films</a>
 				<a href="/my/diary" class="mobile-nav-link" onclick={() => (menuOpen = false)}>📖 Diary</a>
 				<div class="mobile-nav-actions">

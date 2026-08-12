@@ -27,9 +27,9 @@
 
 	const STARTER_PROMPTS = [
 		"Trouve-moi un film sombre et psychologique que je n'ai pas encore vu",
-		"Based on my taste, what should I watch on a rainy Sunday?",
-		"Something with incredible cinematography, like 2001 or Blade Runner",
-		"A hidden gem from the 90s I might have missed",
+		'Based on my taste, what should I watch on a rainy Sunday?',
+		'Something with incredible cinematography, like 2001 or Blade Runner',
+		'A hidden gem from the 90s I might have missed'
 	];
 
 	onMount(() => {
@@ -82,15 +82,20 @@
 			turnCount = data.turnCount;
 
 			// Replace placeholder with real message
-			messages = messages.map(m =>
+			messages = messages.map((m) =>
 				m.id === aiPlaceholder.id
 					? { ...m, text: data.reply, movies: data.movies, loading: false }
 					: m
 			);
 		} catch (e: any) {
-			messages = messages.map(m =>
+			messages = messages.map((m) =>
 				m.id === aiPlaceholder.id
-					? { ...m, text: `Error: ${e.message || 'Something went wrong'}`, movies: [], loading: false }
+					? {
+							...m,
+							text: `Error: ${e.message || 'Something went wrong'}`,
+							movies: [],
+							loading: false
+						}
 					: m
 			);
 		} finally {
@@ -129,7 +134,20 @@
 	<div class="chat-header">
 		<div class="header-left">
 			<div class="ai-icon">
-				<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/><circle cx="7.5" cy="14.5" r="1.5"/><circle cx="16.5" cy="14.5" r="1.5"/></svg>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="20"
+					height="20"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					><path
+						d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"
+					/><circle cx="7.5" cy="14.5" r="1.5" /><circle cx="16.5" cy="14.5" r="1.5" /></svg
+				>
 			</div>
 			<div>
 				<h1 class="chat-title">AI Curator</h1>
@@ -144,7 +162,16 @@
 		</div>
 		{#if messages.length > 0}
 			<button class="reset-btn" onclick={resetChat} title="New conversation">
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg
+				>
 				New chat
 			</button>
 		{/if}
@@ -174,7 +201,18 @@
 					<div class="message-row {msg.role}">
 						{#if msg.role === 'ai'}
 							<div class="ai-avatar">
-								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"/></svg>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="14"
+									height="14"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									><path
+										d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1H1a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73A2 2 0 0 1 10 4a2 2 0 0 1 2-2z"
+									/></svg
+								>
 							</div>
 						{/if}
 						<div class="bubble-wrap">
@@ -229,8 +267,7 @@
 					placeholder="Ask for a recommendation, refine results, or just chat about film..."
 					rows="1"
 					disabled={isLoading}
-					class="chat-input"
-				></textarea>
+					class="chat-input"></textarea>
 				<button
 					class="send-btn"
 					onclick={() => sendMessage(inputValue)}
@@ -238,13 +275,37 @@
 					aria-label="Send"
 				>
 					{#if isLoading}
-						<svg class="spin" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+						<svg
+							class="spin"
+							xmlns="http://www.w3.org/2000/svg"
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg
+						>
 					{:else}
-						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="18"
+							height="18"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							><line x1="22" y1="2" x2="11" y2="13" /><polygon
+								points="22 2 15 22 11 13 2 9 22 2"
+							/></svg
+						>
 					{/if}
 				</button>
 			</div>
-			<p class="input-hint">Enter to send · Shift+Enter for newline · Context is remembered in this session</p>
+			<p class="input-hint">
+				Enter to send · Shift+Enter for newline · Context is remembered in this session
+			</p>
 		</div>
 	{/if}
 </div>
@@ -331,9 +392,16 @@
 		scroll-behavior: smooth;
 	}
 
-	.chat-thread::-webkit-scrollbar { width: 4px; }
-	.chat-thread::-webkit-scrollbar-track { background: transparent; }
-	.chat-thread::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
+	.chat-thread::-webkit-scrollbar {
+		width: 4px;
+	}
+	.chat-thread::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	.chat-thread::-webkit-scrollbar-thumb {
+		background: rgba(255, 255, 255, 0.08);
+		border-radius: 99px;
+	}
 
 	/* Empty state */
 	.empty-state {
@@ -455,12 +523,24 @@
 		animation: bounce 1.2s infinite;
 	}
 
-	.typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
-	.typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+	.typing-indicator span:nth-child(2) {
+		animation-delay: 0.15s;
+	}
+	.typing-indicator span:nth-child(3) {
+		animation-delay: 0.3s;
+	}
 
 	@keyframes bounce {
-		0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-		30% { transform: translateY(-5px); opacity: 1; }
+		0%,
+		60%,
+		100% {
+			transform: translateY(0);
+			opacity: 0.4;
+		}
+		30% {
+			transform: translateY(-5px);
+			opacity: 1;
+		}
 	}
 
 	/* Movie reel */
@@ -471,9 +551,16 @@
 		padding-bottom: 0.5rem;
 	}
 
-	.movie-reel::-webkit-scrollbar { height: 3px; }
-	.movie-reel::-webkit-scrollbar-track { background: transparent; }
-	.movie-reel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 99px; }
+	.movie-reel::-webkit-scrollbar {
+		height: 3px;
+	}
+	.movie-reel::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	.movie-reel::-webkit-scrollbar-thumb {
+		background: rgba(255, 255, 255, 0.1);
+		border-radius: 99px;
+	}
 
 	.reel-card {
 		flex-shrink: 0;
@@ -483,7 +570,9 @@
 		overflow: hidden;
 		background: rgba(255, 255, 255, 0.03);
 		border: 1px solid rgba(255, 255, 255, 0.07);
-		transition: transform 0.2s, border-color 0.2s;
+		transition:
+			transform 0.2s,
+			border-color 0.2s;
 	}
 
 	.reel-card:hover {
@@ -510,7 +599,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: rgba(255,255,255,0.05);
+		background: rgba(255, 255, 255, 0.05);
 		color: var(--text-tertiary);
 		font-size: 1.5rem;
 	}
@@ -599,7 +688,9 @@
 		justify-content: center;
 		cursor: pointer;
 		flex-shrink: 0;
-		transition: background 0.2s, transform 0.1s;
+		transition:
+			background 0.2s,
+			transform 0.1s;
 	}
 
 	.send-btn:hover:not(:disabled) {
@@ -619,8 +710,12 @@
 	}
 
 	@keyframes spin {
-		from { transform: rotate(0deg); }
-		to { transform: rotate(360deg); }
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	.input-hint {
@@ -640,7 +735,7 @@
 	}
 
 	.api-key-error code {
-		background: rgba(255,255,255,0.06);
+		background: rgba(255, 255, 255, 0.06);
 		padding: 0.1rem 0.4rem;
 		border-radius: 4px;
 		font-size: 0.85em;

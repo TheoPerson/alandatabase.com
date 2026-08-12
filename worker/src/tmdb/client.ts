@@ -153,7 +153,10 @@ export class TMDBClient {
 		}>(`/person/${tmdbId}`);
 	}
 
-	async searchMovies(query: string, page = 1): Promise<{ results: TMDBMovieSummary[]; total_pages: number }> {
+	async searchMovies(
+		query: string,
+		page = 1
+	): Promise<{ results: TMDBMovieSummary[]; total_pages: number }> {
 		return this.request<{ results: TMDBMovieSummary[]; total_pages: number }>('/search/movie', {
 			query,
 			page: page.toString()

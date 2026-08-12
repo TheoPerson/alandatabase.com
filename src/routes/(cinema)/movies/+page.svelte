@@ -8,17 +8,23 @@
 	let { data } = $props();
 
 	const heroMovie = $derived(data.trending[0] || null);
-	
+
 	const btnColorTest = $derived(data.abTests?.cta_button_color || 'control');
 	const ctaVariant = $derived(btnColorTest === 'test_green' ? 'success' : 'primary');
 </script>
 
 <svelte:head>
-  <title>CinemaDB — Your Personal Cinema Archive</title>
-  <meta name="description" content="Explore millions of movies, track your personal cinema history, and discover film as art." />
-  <meta property="og:title" content="CinemaDB — Your Personal Cinema Archive" />
-  <meta property="og:description" content="Explore millions of movies, track your personal cinema history, and discover film as art." />
-  <meta property="og:type" content="website" />
+	<title>CinemaDB — Your Personal Cinema Archive</title>
+	<meta
+		name="description"
+		content="Explore millions of movies, track your personal cinema history, and discover film as art."
+	/>
+	<meta property="og:title" content="CinemaDB — Your Personal Cinema Archive" />
+	<meta
+		property="og:description"
+		content="Explore millions of movies, track your personal cinema history, and discover film as art."
+	/>
+	<meta property="og:type" content="website" />
 </svelte:head>
 
 <!-- Hero Section -->
@@ -26,7 +32,9 @@
 	{#if heroMovie?.backdropPath && heroMovie.backdropPath !== 'null'}
 		<div class="hero-backdrop">
 			<img
-				src="https://image.tmdb.org/t/p/w1280{heroMovie.backdropPath.startsWith('/') ? '' : '/'}{heroMovie.backdropPath}"
+				src="https://image.tmdb.org/t/p/w1280{heroMovie.backdropPath.startsWith('/')
+					? ''
+					: '/'}{heroMovie.backdropPath}"
 				alt="{heroMovie.title} Backdrop"
 				class="backdrop-img"
 			/>
@@ -46,27 +54,26 @@
 			<p class="hero-overview">{heroMovie.overview}</p>
 
 			<div class="hero-actions">
-				<Button href="/movies/{heroMovie.id}" variant={ctaVariant} size="lg">
-					▶ View Details
-				</Button>
-				<form action="?/toggleWatchlist" method="POST" use:enhance={() => {
-					addToast(`Added "${heroMovie.title}" to watchlist ✓`, 'success');
-				}}>
+				<Button href="/movies/{heroMovie.id}" variant={ctaVariant} size="lg">▶ View Details</Button>
+				<form
+					action="?/toggleWatchlist"
+					method="POST"
+					use:enhance={() => {
+						addToast(`Added "${heroMovie.title}" to watchlist ✓`, 'success');
+					}}
+				>
 					<input type="hidden" name="movieId" value={heroMovie.id} />
-					<Button type="submit" variant="secondary" size="lg">
-						+ Add to Watchlist
-					</Button>
+					<Button type="submit" variant="secondary" size="lg">+ Add to Watchlist</Button>
 				</form>
 			</div>
 		{:else}
 			<h1 class="hero-title">The Next Generation Cinema Database</h1>
 			<p class="hero-overview">
-				Explore millions of movies, track your personal cinema history, and discover film as art. Self-hosted, private, and open-source.
+				Explore millions of movies, track your personal cinema history, and discover film as art.
+				Self-hosted, private, and open-source.
 			</p>
 			<div class="hero-actions">
-				<Button href="/search" variant="primary" size="lg">
-					🔍 Start Exploring
-				</Button>
+				<Button href="/search" variant="primary" size="lg">🔍 Start Exploring</Button>
 			</div>
 		{/if}
 	</div>
@@ -99,10 +106,13 @@
 				<p>🎬 Database is initializing...</p>
 				{#if data.error}
 					<p class="subtext" style="color: var(--accent-red); margin-top: 1rem;">
-						<strong>Error:</strong> {data.error}
+						<strong>Error:</strong>
+						{data.error}
 					</p>
 				{/if}
-				<p class="subtext">Run <code>pnpm --filter cinema-worker ingest:popular</code> to populate movies!</p>
+				<p class="subtext">
+					Run <code>pnpm --filter cinema-worker ingest:popular</code> to populate movies!
+				</p>
 			</div>
 		{/if}
 	</section>

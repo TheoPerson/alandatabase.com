@@ -1,5 +1,13 @@
 import { db } from '../db/index.js';
-import { userMovieInteractions, userLists, userListItems, userReviews, users, movies, activities } from '../db/schema.js';
+import {
+	userMovieInteractions,
+	userLists,
+	userListItems,
+	userReviews,
+	users,
+	movies,
+	activities
+} from '../db/schema.js';
 import { eq, and, desc, sql } from 'drizzle-orm';
 import { ensureTablesExist } from '../db/migrate.js';
 
@@ -175,7 +183,14 @@ export async function setMovieWatched(
 			.set(updateFields)
 			.where(eq(userMovieInteractions.id, existing.id))
 			.returning();
-		if (watched) logActivity(userId, rating ? 'rated' : 'watched', resolvedUuid, undefined, rating ? { rating } : undefined);
+		if (watched)
+			logActivity(
+				userId,
+				rating ? 'rated' : 'watched',
+				resolvedUuid,
+				undefined,
+				rating ? { rating } : undefined
+			);
 		return updated;
 	} else {
 		const [created] = await db
@@ -186,7 +201,14 @@ export async function setMovieWatched(
 				...updateFields
 			})
 			.returning();
-		if (watched) logActivity(userId, rating ? 'rated' : 'watched', resolvedUuid, undefined, rating ? { rating } : undefined);
+		if (watched)
+			logActivity(
+				userId,
+				rating ? 'rated' : 'watched',
+				resolvedUuid,
+				undefined,
+				rating ? { rating } : undefined
+			);
 		return created;
 	}
 }
@@ -194,10 +216,7 @@ export async function setMovieWatched(
 export async function getUserWatchlist(userId: string): Promise<any[]> {
 	await checkDbReady();
 	const items = await db.query.userMovieInteractions.findMany({
-		where: and(
-			eq(userMovieInteractions.userId, userId),
-			eq(userMovieInteractions.watchlist, true)
-		),
+		where: and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.watchlist, true)),
 		orderBy: [desc(userMovieInteractions.updatedAt)],
 		with: {
 			movie: {
@@ -217,10 +236,7 @@ export async function getUserWatchlist(userId: string): Promise<any[]> {
 export async function getUserFavorites(userId: string): Promise<any[]> {
 	await checkDbReady();
 	const items = await db.query.userMovieInteractions.findMany({
-		where: and(
-			eq(userMovieInteractions.userId, userId),
-			eq(userMovieInteractions.favorite, true)
-		),
+		where: and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.favorite, true)),
 		orderBy: [desc(userMovieInteractions.updatedAt)],
 		with: {
 			movie: {
@@ -240,10 +256,7 @@ export async function getUserFavorites(userId: string): Promise<any[]> {
 export async function getUserWatchedHistory(userId: string): Promise<any[]> {
 	await checkDbReady();
 	const items = await db.query.userMovieInteractions.findMany({
-		where: and(
-			eq(userMovieInteractions.userId, userId),
-			eq(userMovieInteractions.watched, true)
-		),
+		where: and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.watched, true)),
 		orderBy: [desc(userMovieInteractions.updatedAt)],
 		with: {
 			movie: {
@@ -308,10 +321,21 @@ export async function getUserMovieReviews(movieId: string): Promise<any[]> {
 
 export async function getUserStats(userId: string) {
 	await checkDbReady();
-	
-	const [watchedResult] = await db.select({ count: sql<number>`count(*)` }).from(userMovieInteractions).where(and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.watched, true)));
-	const [watchlistResult] = await db.select({ count: sql<number>`count(*)` }).from(userMovieInteractions).where(and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.watchlist, true)));
-	const [favoritesResult] = await db.select({ count: sql<number>`count(*)` }).from(userMovieInteractions).where(and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.favorite, true)));
+
+	const [watchedResult] = await db
+		.select({ count: sql<number>`count(*)` })
+		.from(userMovieInteractions)
+		.where(and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.watched, true)));
+	const [watchlistResult] = await db
+		.select({ count: sql<number>`count(*)` })
+		.from(userMovieInteractions)
+		.where(
+			and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.watchlist, true))
+		);
+	const [favoritesResult] = await db
+		.select({ count: sql<number>`count(*)` })
+		.from(userMovieInteractions)
+		.where(and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.favorite, true)));
 
 	const watchedCount = Number(watchedResult.count) || 0;
 	const watchlistCount = Number(watchlistResult.count) || 0;
@@ -319,10 +343,7 @@ export async function getUserStats(userId: string) {
 
 	// Optimization: only load watched movies for genre distribution and total runtime
 	const watched = await db.query.userMovieInteractions.findMany({
-		where: and(
-			eq(userMovieInteractions.userId, userId),
-			eq(userMovieInteractions.watched, true)
-		),
+		where: and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.watched, true)),
 		with: {
 			movie: {
 				with: {

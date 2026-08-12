@@ -41,15 +41,25 @@
 	// Base64 State
 	let base64Input = $state('Hello Alan Database OS 2026!');
 	let base64Encoded = $derived.by(() => {
-		try { return btoa(base64Input); } catch { return 'Invalid input for Base64 encoding'; }
+		try {
+			return btoa(base64Input);
+		} catch {
+			return 'Invalid input for Base64 encoding';
+		}
 	});
 	let base64Decoded = $derived.by(() => {
-		try { return atob(base64Input); } catch { return 'Invalid Base64 string for decoding'; }
+		try {
+			return atob(base64Input);
+		} catch {
+			return 'Invalid Base64 string for decoding';
+		}
 	});
 
 	// QR Code State
 	let qrText = $state('https://alandatabase.com');
-	let qrUrl = $derived(`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrText)}`);
+	let qrUrl = $derived(
+		`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrText)}`
+	);
 
 	let copiedText = $state(false);
 
@@ -82,19 +92,33 @@
 			<h1 class="tool-title"><span class="icon">🪄</span> Generator Vault Pro</h1>
 			<span class="tool-badge">SECURE VAULT</span>
 		</div>
-		<p class="tool-subtitle">Batch UUID v4, cryptographically secure passwords, Base64 encoder/decoder, and QR Codes.</p>
+		<p class="tool-subtitle">
+			Batch UUID v4, cryptographically secure passwords, Base64 encoder/decoder, and QR Codes.
+		</p>
 	</div>
 
 	<!-- Control Bar -->
 	<div class="control-bar glass-card">
 		<div class="tabs">
-			<button class="tab-btn" class:active={activeTab === 'uuid'} onclick={() => (activeTab = 'uuid')}>
+			<button
+				class="tab-btn"
+				class:active={activeTab === 'uuid'}
+				onclick={() => (activeTab = 'uuid')}
+			>
 				🆔 UUID v4
 			</button>
-			<button class="tab-btn" class:active={activeTab === 'password'} onclick={() => (activeTab = 'password')}>
+			<button
+				class="tab-btn"
+				class:active={activeTab === 'password'}
+				onclick={() => (activeTab = 'password')}
+			>
 				🔑 Passwords & Tokens
 			</button>
-			<button class="tab-btn" class:active={activeTab === 'base64'} onclick={() => (activeTab = 'base64')}>
+			<button
+				class="tab-btn"
+				class:active={activeTab === 'base64'}
+				onclick={() => (activeTab = 'base64')}
+			>
 				🔤 Base64 Codec
 			</button>
 			<button class="tab-btn" class:active={activeTab === 'qr'} onclick={() => (activeTab = 'qr')}>
@@ -108,7 +132,15 @@
 			<div class="pane-content">
 				<div class="config-row">
 					<label class="form-label" for="uuidQuantityRange">Count: {uuidCount} UUIDs</label>
-					<input id="uuidQuantityRange" type="range" min="1" max="25" bind:value={uuidCount} oninput={generateUuids} class="range-slider" />
+					<input
+						id="uuidQuantityRange"
+						type="range"
+						min="1"
+						max="25"
+						bind:value={uuidCount}
+						oninput={generateUuids}
+						class="range-slider"
+					/>
 					<button class="gen-btn" onclick={generateUuids}>🔄 Re-Generate</button>
 				</div>
 				<div class="uuids-list">
@@ -132,14 +164,34 @@
 
 				<div class="pass-options">
 					<div class="opt-row">
-						<label class="form-label" for="tokenLengthSlider">Length: {passLength} characters</label>
-						<input id="tokenLengthSlider" type="range" min="8" max="64" bind:value={passLength} oninput={generatePassword} class="range-slider" />
+						<label class="form-label" for="tokenLengthSlider">Length: {passLength} characters</label
+						>
+						<input
+							id="tokenLengthSlider"
+							type="range"
+							min="8"
+							max="64"
+							bind:value={passLength}
+							oninput={generatePassword}
+							class="range-slider"
+						/>
 					</div>
 					<div class="checkbox-grid">
-						<label><input type="checkbox" bind:checked={useUpper} onchange={generatePassword} /> Uppercase (A-Z)</label>
-						<label><input type="checkbox" bind:checked={useLower} onchange={generatePassword} /> Lowercase (a-z)</label>
-						<label><input type="checkbox" bind:checked={useNums} onchange={generatePassword} /> Numbers (0-9)</label>
-						<label><input type="checkbox" bind:checked={useSymbols} onchange={generatePassword} /> Symbols (!@#$%)</label>
+						<label
+							><input type="checkbox" bind:checked={useUpper} onchange={generatePassword} /> Uppercase
+							(A-Z)</label
+						>
+						<label
+							><input type="checkbox" bind:checked={useLower} onchange={generatePassword} /> Lowercase
+							(a-z)</label
+						>
+						<label
+							><input type="checkbox" bind:checked={useNums} onchange={generatePassword} /> Numbers (0-9)</label
+						>
+						<label
+							><input type="checkbox" bind:checked={useSymbols} onchange={generatePassword} /> Symbols
+							(!@#$%)</label
+						>
 					</div>
 				</div>
 			</div>
@@ -152,14 +204,21 @@
 				<div class="codec-box">
 					<span class="pane-title">Encoded Base64</span>
 					<textarea class="codec-area output" readonly value={base64Encoded}></textarea>
-					<button class="copy-codec-btn" onclick={() => copyToClipboard(base64Encoded)}>📋 Copy Base64</button>
+					<button class="copy-codec-btn" onclick={() => copyToClipboard(base64Encoded)}
+						>📋 Copy Base64</button
+					>
 				</div>
 			</div>
 		{:else if activeTab === 'qr'}
 			<div class="pane-content qr-layout">
 				<div class="qr-inputs">
 					<span class="pane-title">Target URL or Data String</span>
-					<input type="text" class="qr-text-input" bind:value={qrText} placeholder="https://example.com" />
+					<input
+						type="text"
+						class="qr-text-input"
+						bind:value={qrText}
+						placeholder="https://example.com"
+					/>
 				</div>
 				<div class="qr-preview-box">
 					<img src={qrUrl} alt="Generated QR Code" class="qr-image" />
@@ -220,9 +279,15 @@
 		margin: 0.25rem 0 0 0;
 	}
 
-	.control-bar { padding: 0.85rem 1.25rem; }
+	.control-bar {
+		padding: 0.85rem 1.25rem;
+	}
 
-	.tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+	.tabs {
+		display: flex;
+		gap: 0.5rem;
+		flex-wrap: wrap;
+	}
 
 	.tab-btn {
 		padding: 0.5rem 1rem;
@@ -260,7 +325,10 @@
 		gap: 1.5rem;
 	}
 
-	.range-slider { flex: 1; accent-color: var(--accent-rose); }
+	.range-slider {
+		flex: 1;
+		accent-color: var(--accent-rose);
+	}
 
 	.gen-btn {
 		padding: 0.6rem 1.25rem;
@@ -289,7 +357,9 @@
 		font-size: 0.9rem;
 	}
 
-	.copy-icon-btn { font-size: 1rem; }
+	.copy-icon-btn {
+		font-size: 1rem;
+	}
 
 	/* Password styles */
 	.password-display-box {
@@ -311,15 +381,22 @@
 		word-break: break-all;
 	}
 
-	.copy-pass-btn, .regen-btn {
+	.copy-pass-btn,
+	.regen-btn {
 		padding: 0.6rem 1rem;
 		border-radius: var(--radius-md);
 		font-weight: 700;
 		font-size: 0.85rem;
 	}
 
-	.copy-pass-btn { background: var(--accent-gold); color: var(--bg-primary); }
-	.regen-btn { background: var(--bg-surface-3); color: var(--text-primary); }
+	.copy-pass-btn {
+		background: var(--accent-gold);
+		color: var(--bg-primary);
+	}
+	.regen-btn {
+		background: var(--bg-surface-3);
+		color: var(--text-primary);
+	}
 
 	.checkbox-grid {
 		display: grid;
@@ -353,7 +430,9 @@
 		resize: none;
 	}
 
-	.codec-area.output { color: var(--accent-rose); }
+	.codec-area.output {
+		color: var(--accent-rose);
+	}
 
 	.copy-codec-btn {
 		padding: 0.6rem;

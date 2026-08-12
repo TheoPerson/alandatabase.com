@@ -1,11 +1,11 @@
 <script lang="ts">
 	import type { ToastType } from '$lib/stores/toast';
-	
+
 	interface Props {
 		message: string;
 		type: ToastType;
 	}
-	
+
 	let { message, type }: Props = $props();
 </script>
 
@@ -31,11 +31,11 @@
 	.toast-success {
 		border-left: 4px solid var(--color-success);
 	}
-	
+
 	.toast-error {
 		border-left: 4px solid var(--color-error);
 	}
-	
+
 	.toast-info {
 		border-left: 4px solid var(--accent-blue);
 	}

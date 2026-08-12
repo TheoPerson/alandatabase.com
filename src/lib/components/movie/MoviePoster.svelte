@@ -7,14 +7,18 @@
 		class?: string;
 	}
 
-	let { path, title, size = 'w342', aspectRatio = '2 / 3', class: customClass = '' }: Props = $props();
+	let {
+		path,
+		title,
+		size = 'w342',
+		aspectRatio = '2 / 3',
+		class: customClass = ''
+	}: Props = $props();
 
 	let loaded = $state(false);
 	let error = $state(false);
 
-	const imageUrl = $derived(
-		path ? `https://image.tmdb.org/t/p/${size}${path}` : null
-	);
+	const imageUrl = $derived(path ? `https://image.tmdb.org/t/p/${size}${path}` : null);
 </script>
 
 <div class="poster-container {customClass}" style="aspect-ratio: {aspectRatio}">

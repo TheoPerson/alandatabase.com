@@ -12,19 +12,15 @@
 
 	let { id, title, posterPath, releaseDate, voteAverage, genres }: Props = $props();
 
-	const year = $derived(
-		releaseDate ? new Date(releaseDate).getFullYear() : null
-	);
+	const year = $derived(releaseDate ? new Date(releaseDate).getFullYear() : null);
 
-	const ratingFormatted = $derived(
-		voteAverage ? Number(voteAverage).toFixed(1) : null
-	);
+	const ratingFormatted = $derived(voteAverage ? Number(voteAverage).toFixed(1) : null);
 </script>
 
 <a href="/movies/{id}" class="movie-card">
 	<div class="poster-wrapper">
 		<MoviePoster path={posterPath} {title} />
-		
+
 		{#if ratingFormatted && ratingFormatted !== '0.0'}
 			<div class="rating-badge" title="IMDb Rating">
 				<span class="imdb-tag">IMDb</span>
@@ -67,7 +63,9 @@
 	}
 
 	.movie-card:hover .poster-wrapper {
-		box-shadow: var(--shadow-md), 0 0 0 1px var(--border-accent);
+		box-shadow:
+			var(--shadow-md),
+			0 0 0 1px var(--border-accent);
 	}
 
 	.rating-badge {

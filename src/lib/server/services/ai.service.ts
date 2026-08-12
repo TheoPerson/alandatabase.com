@@ -1,4 +1,7 @@
-export function buildAiPrompt(userPrompt: string, context: { topTitles: string, favoriteTitles: string, reviewTexts: string }) {
+export function buildAiPrompt(
+	userPrompt: string,
+	context: { topTitles: string; favoriteTitles: string; reviewTexts: string }
+) {
 	return `
 You are an expert, highly articulate film curator.
 The user is asking for a movie recommendation based on this prompt: "${userPrompt}"

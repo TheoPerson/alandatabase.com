@@ -6,22 +6,24 @@
 
 	let { data } = $props();
 
-	let selectedGenreId = $state<number | null>($page.url.searchParams.has('genre') ? Number($page.url.searchParams.get('genre')) : null);
+	let selectedGenreId = $state<number | null>(
+		$page.url.searchParams.has('genre') ? Number($page.url.searchParams.get('genre')) : null
+	);
 	let sortBy = $state<'popularity' | 'rating' | 'release'>('popularity');
 
 	const filteredMovies = $derived.by(() => {
 		let list = [...data.allMovies];
 
 		if (selectedGenreId !== null) {
-			list = list.filter((m) =>
-				m.genres?.some((g: any) => g.genreId === selectedGenreId)
-			);
+			list = list.filter((m) => m.genres?.some((g: any) => g.genreId === selectedGenreId));
 		}
 
 		if (sortBy === 'rating') {
 			list.sort((a, b) => Number(b.voteAverage || 0) - Number(a.voteAverage || 0));
 		} else if (sortBy === 'release') {
-			list.sort((a, b) => new Date(b.releaseDate || 0).getTime() - new Date(a.releaseDate || 0).getTime());
+			list.sort(
+				(a, b) => new Date(b.releaseDate || 0).getTime() - new Date(a.releaseDate || 0).getTime()
+			);
 		} else {
 			list.sort((a, b) => Number(b.popularity || 0) - Number(a.popularity || 0));
 		}
@@ -42,11 +44,17 @@
 </script>
 
 <svelte:head>
-  <title>Cinema Catalog | CinemaDB</title>
-  <meta name="description" content="Explore curated films, top-rated masterpieces, and upcoming releases." />
-  <meta property="og:title" content="Cinema Catalog | CinemaDB" />
-  <meta property="og:description" content="Explore curated films, top-rated masterpieces, and upcoming releases." />
-  <meta property="og:type" content="website" />
+	<title>Cinema Catalog | CinemaDB</title>
+	<meta
+		name="description"
+		content="Explore curated films, top-rated masterpieces, and upcoming releases."
+	/>
+	<meta property="og:title" content="Cinema Catalog | CinemaDB" />
+	<meta
+		property="og:description"
+		content="Explore curated films, top-rated masterpieces, and upcoming releases."
+	/>
+	<meta property="og:type" content="website" />
 </svelte:head>
 
 <div class="container movies-page">

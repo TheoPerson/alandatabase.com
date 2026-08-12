@@ -10,12 +10,12 @@ test.describe('Authentication Flow', () => {
 		// Go to registration page
 		await page.goto('/auth/register');
 		await expect(page).toHaveTitle(/Cinema Platform/); // Assuming layout has a title, or we can check header
-		
+
 		// Fill form
 		await page.fill('input[name="username"]', testUsername);
 		await page.fill('input[name="email"]', testEmail);
 		await page.fill('input[name="password"]', password);
-		
+
 		// Submit
 		await page.click('button[type="submit"]');
 
@@ -41,7 +41,7 @@ test.describe('Authentication Flow', () => {
 
 	test('shows error on invalid login', async ({ page }) => {
 		await page.goto('/auth/login');
-		
+
 		await page.fill('input[name="identifier"]', 'nonexistent_user_999');
 		await page.fill('input[name="password"]', 'wrongpassword');
 		await page.click('button[type="submit"]');

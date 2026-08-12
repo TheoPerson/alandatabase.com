@@ -18,7 +18,10 @@
 			<h1 class="tool-title"><span class="icon">⚙️</span> System Setup & Inspector</h1>
 			<span class="tool-badge">ENV CONTROL</span>
 		</div>
-		<p class="tool-subtitle">Inspect environment configuration variables, database pooler settings, and system runtime parameters.</p>
+		<p class="tool-subtitle">
+			Inspect environment configuration variables, database pooler settings, and system runtime
+			parameters.
+		</p>
 	</div>
 
 	<!-- System Architecture Cards -->
@@ -67,7 +70,7 @@
 		inset: 0;
 		z-index: 0;
 		background-color: #050507;
-		background-image: 
+		background-image:
 			linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
 			linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
 		background-size: 32px 32px;
@@ -93,7 +96,9 @@
 		transition: opacity 120ms ease;
 	}
 
-	.back-link:hover { opacity: 0.8; }
+	.back-link:hover {
+		opacity: 0.8;
+	}
 
 	.title-row {
 		display: flex;
@@ -193,7 +198,9 @@
 		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 	}
 
-	.table-row:last-child { border-bottom: none; }
+	.table-row:last-child {
+		border-bottom: none;
+	}
 
 	.col-name {
 		display: flex;

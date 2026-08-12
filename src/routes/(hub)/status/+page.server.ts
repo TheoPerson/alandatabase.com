@@ -24,7 +24,9 @@ export const load: PageServerLoad = async () => {
 		const tmdbStart = Date.now();
 		const apiKey = process.env.TMDB_API_KEY;
 		if (apiKey) {
-			const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&page=1`);
+			const res = await fetch(
+				`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&page=1`
+			);
 			if (res.ok) {
 				tmdbLatencyMs = Date.now() - tmdbStart;
 				tmdbStatus = 'ONLINE';

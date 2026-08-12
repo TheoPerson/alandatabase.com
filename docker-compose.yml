@@ -6,7 +6,7 @@ services:
     container_name: cinema-postgres
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - '5432:5432'
     environment:
       POSTGRES_DB: cinema
       POSTGRES_USER: cinema
@@ -14,7 +14,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cinema -d cinema"]
+      test: ['CMD-SHELL', 'pg_isready -U cinema -d cinema']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,15 +24,15 @@ services:
     container_name: cinema-meilisearch
     restart: unless-stopped
     ports:
-      - "7700:7700"
+      - '7700:7700'
     environment:
       MEILI_MASTER_KEY: cinema_dev_meili_key_12345
-      MEILI_NO_ANALYTICS: "true"
+      MEILI_NO_ANALYTICS: 'true'
       MEILI_ENV: development
     volumes:
       - meili_data:/meili_data
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:7700/health || exit 1"]
+      test: ['CMD-SHELL', 'curl -f http://localhost:7700/health || exit 1']
       interval: 5s
       timeout: 5s
       retries: 5

@@ -1,7 +1,12 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { users } from '$lib/server/db/schema';
-import { verifyPassword, createSession, generateSessionToken, SESSION_COOKIE_OPTIONS } from '$lib/server/auth';
+import {
+	verifyPassword,
+	createSession,
+	generateSessionToken,
+	SESSION_COOKIE_OPTIONS
+} from '$lib/server/auth';
 import { eq, or } from 'drizzle-orm';
 
 export async function load({ locals }) {

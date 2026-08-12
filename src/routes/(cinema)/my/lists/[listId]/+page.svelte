@@ -12,7 +12,9 @@
 		<div>
 			<h1 class="title">{list.name}</h1>
 			<p class="subtitle">
-				By {list.user.displayName || list.user.username} • {list.items.length} films • {list.isPublic ? 'Public' : 'Private'}
+				By {list.user.displayName || list.user.username} • {list.items.length} films • {list.isPublic
+					? 'Public'
+					: 'Private'}
 			</p>
 			{#if list.description}
 				<p class="description">{list.description}</p>
@@ -39,7 +41,10 @@
 				<div class="item-card glass-panel">
 					<a href="/movies/{item.movie.id}" class="poster-link">
 						{#if item.movie.posterPath}
-							<img src="https://image.tmdb.org/t/p/w342{item.movie.posterPath}" alt={item.movie.title} />
+							<img
+								src="https://image.tmdb.org/t/p/w342{item.movie.posterPath}"
+								alt={item.movie.title}
+							/>
 						{:else}
 							<div class="placeholder">No Image</div>
 						{/if}
@@ -119,7 +124,9 @@
 		position: relative;
 		border-radius: var(--radius-md);
 		overflow: hidden;
-		transition: transform var(--transition-fast), border-color var(--transition-fast);
+		transition:
+			transform var(--transition-fast),
+			border-color var(--transition-fast);
 	}
 
 	.item-card:hover {
@@ -184,9 +191,9 @@
 		width: 32px;
 		height: 32px;
 		border-radius: 50%;
-		background: rgba(0,0,0,0.6);
+		background: rgba(0, 0, 0, 0.6);
 		color: white;
-		border: 1px solid rgba(255,255,255,0.2);
+		border: 1px solid rgba(255, 255, 255, 0.2);
 		display: flex;
 		align-items: center;
 		justify-content: center;
