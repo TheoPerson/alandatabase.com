@@ -4,7 +4,6 @@ import { sveltekit } from '@sveltejs/kit/vite';
 export default defineConfig({
 	plugins: [sveltekit()],
 	ssr: {
-		noExternal: true,
 		external: ['@electric-sql/pglite']
 	},
 	test: {

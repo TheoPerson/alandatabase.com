@@ -38,26 +38,18 @@
 		}
 	];
 	const workspaces = [
-		{ name: 'AI COMMANDS  - PROMPTS', icon: '🤖' },
-		{ name: 'ArcRaiders-AutoScrapper', icon: '🕷️' },
 		{ name: 'Challenges Tracker', icon: '🎯' },
 		{ name: 'Draftin', icon: '📝' },
+		{ name: 'eSport Profiler', icon: '🎮' },
 		{ name: 'Gradus Tracker', icon: '📈' },
 		{ name: 'JUG_SEC.COM - REVAMP', icon: '🛡️' },
 		{ name: 'Jelp', icon: '🍕' },
 		{ name: 'Movie Picker', icon: '🎬' },
 		{ name: 'MyLocalNetflix', icon: '🍿' },
-		{ name: 'Rareness 0.1', icon: '💎' },
-		{ name: 'Rareness 0.2', icon: '💎' },
 		{ name: 'Rareness 0.3', icon: '💎' },
 		{ name: 'Rareness-Reference', icon: '📚' },
-		{ name: 'Razor', icon: '🪒' },
 		{ name: 'Stasher', icon: '📦' },
-		{ name: 'Sylepse', icon: '✈️' },
-		{ name: 'Terminal', icon: '💻' },
-		{ name: 'VolumeScheduler', icon: '🔊' },
-		{ name: 'arcforge', icon: '⚒️' },
-		{ name: 'eSport Profiler', icon: '🎮' }
+		{ name: 'Sylepse', icon: '✈️' }
 	];
 </script>
 
