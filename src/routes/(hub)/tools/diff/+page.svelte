@@ -5,12 +5,14 @@
 	let originalText = $state('// Original Configuration\nconst apiEndpoint = "https://api.v1.example.com";\nconst timeout = 5000;\nconst retries = 3;\nconst debug = true;');
 	let modifiedText = $state('// Updated 2026 Configuration\nconst apiEndpoint = "https://alandatabase.com/api";\nconst timeout = 3000;\nconst retries = 5;\nconst debug = false;\nconst theme = "swiss-oled";');
 
+	type DiffLine = { type: 'same' | 'added' | 'removed' | 'changed'; orig: string; mod: string; lineNum: number };
+
 	let diffLines = $derived.by(() => {
 		const origLines = originalText.split('\n');
 		const modLines = modifiedText.split('\n');
 		const max = Math.max(origLines.length, modLines.length);
 
-		const result = [];
+		const result: DiffLine[] = [];
 		for (let i = 0; i < max; i++) {
 			const orig = origLines[i] ?? '';
 			const mod = modLines[i] ?? '';
@@ -34,12 +36,14 @@
 	let sampleText = $state('Welcome to Alan Database OS.\nVisit https://alandatabase.com for status.\nAPI Gateway at https://api.themoviedb.org/3.');
 	let replacePattern = $state('<a href="$1">$1</a>');
 
+	type RegexMatch = { text: string; index: number; groups: string[] };
+
 	let regexMatches = $derived.by(() => {
 		if (!regexPattern) return [];
 		try {
 			const re = new RegExp(regexPattern, regexFlags);
-			const matches = [];
-			let match;
+			const matches: RegexMatch[] = [];
+			let match: RegExpExecArray | null;
 			if (regexFlags.includes('g')) {
 				while ((match = re.exec(sampleText)) !== null) {
 					matches.push({ text: match[0], index: match.index, groups: match.slice(1) });
@@ -50,7 +54,7 @@
 				if (match) matches.push({ text: match[0], index: match.index, groups: match.slice(1) });
 			}
 			return matches;
-		} catch (err) {
+		} catch {
 			return [];
 		}
 	});
@@ -60,7 +64,7 @@
 		try {
 			const re = new RegExp(regexPattern, regexFlags);
 			return sampleText.replace(re, replacePattern);
-		} catch (err) {
+		} catch {
 			return sampleText;
 		}
 	});
@@ -214,6 +218,12 @@
 		display: flex;
 		flex-direction: column;
 		gap: 2rem;
+		animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	@keyframes fade-in-up {
+		from { opacity: 0; transform: translateY(12px); }
+		to { opacity: 1; transform: translateY(0); }
 	}
 
 	.back-link {
@@ -259,12 +269,18 @@
 		border: none;
 		border-radius: 9px;
 		cursor: pointer;
-		transition: all 120ms ease;
+		transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.mode-btn:hover:not(.active) {
+		color: #f4f4f5;
+		background: rgba(255, 255, 255, 0.08);
 	}
 
 	.mode-btn.active {
 		background: #10b981;
 		color: #050507;
+		box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
 	}
 
 	.tool-subtitle {
@@ -287,6 +303,13 @@
 		display: flex;
 		flex-direction: column;
 		backdrop-filter: blur(16px);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+		transition: transform 300ms ease, box-shadow 300ms ease;
+	}
+
+	.editor-pane:focus-within {
+		transform: translateY(-2px);
+		box-shadow: 0 12px 40px rgba(16, 185, 129, 0.08), 0 0 0 1px rgba(16, 185, 129, 0.3);
 	}
 
 	.pane-header {
@@ -323,6 +346,11 @@
 		outline: none;
 		resize: vertical;
 		line-height: 1.5;
+		transition: background-color 200ms ease;
+	}
+
+	.code-editor:focus {
+		background: #0c0c11;
 	}
 
 	.regex-output {
@@ -393,11 +421,21 @@
 		gap: 1rem;
 		padding: 0.3rem 0.5rem;
 		border-radius: 6px;
+		transition: transform 150ms ease, background-color 150ms ease;
+	}
+
+	.diff-row:hover {
+		transform: translateX(2px);
 	}
 
 	.diff-row.added { background: rgba(16, 185, 129, 0.12); }
+	.diff-row.added:hover { background: rgba(16, 185, 129, 0.18); }
+	
 	.diff-row.removed { background: rgba(239, 68, 68, 0.12); }
+	.diff-row.removed:hover { background: rgba(239, 68, 68, 0.18); }
+	
 	.diff-row.changed { background: rgba(59, 130, 246, 0.12); }
+	.diff-row.changed:hover { background: rgba(59, 130, 246, 0.18); }
 
 	.line-no {
 		color: #71717a;
@@ -418,6 +456,12 @@
 		border: 1px solid rgba(255, 255, 255, 0.1);
 		border-radius: 12px;
 		padding: 0.6rem 1rem;
+		transition: border-color 200ms ease, box-shadow 200ms ease;
+	}
+
+	.regex-input-group:focus-within {
+		border-color: rgba(16, 185, 129, 0.4);
+		box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
 	}
 
 	.regex-slash {
@@ -474,6 +518,12 @@
 		color: #f4f4f5;
 		font-family: var(--font-mono);
 		outline: none;
+		transition: border-color 200ms ease, box-shadow 200ms ease;
+	}
+
+	.replace-input:focus {
+		border-color: rgba(16, 185, 129, 0.4);
+		box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
 	}
 
 	.matches-list {
