@@ -24,10 +24,10 @@
 
 		<!-- Main Nav Navigation Links -->
 		<nav class="main-nav">
-			<a href="/" class="nav-link" style="color: #eab308">← Hub</a>
+			<a href="/" class="nav-link" style="color: #10b981">← Hub</a>
 			<a href="/movies/catalog" class="nav-link">Movies</a>
 			<a href="/search" class="nav-link">Discover</a>
-			<a href="/discover/ai" class="nav-link text-amber-500 font-bold">✨ AI Curator</a>
+			<a href="/discover/ai" class="nav-link text-emerald-400 font-bold">✨ AI Curator</a>
 			<a href="/my/films" class="nav-link">My Films</a>
 			<a href="/my/diary" class="nav-link">📖 Diary</a>
 		</nav>
@@ -113,7 +113,7 @@
 	}
 
 	.logo-accent {
-		color: var(--accent-gold);
+		color: #10b981;
 		margin-left: 2px;
 	}
 
@@ -137,7 +137,7 @@
 	}
 
 	.nav-link:hover {
-		color: var(--accent-gold);
+		color: #10b981;
 	}
 
 	.header-right {

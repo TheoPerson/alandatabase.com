@@ -38,5 +38,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		event.locals.user = null;
 	}
 
-	return resolve(event);
+	const response = await resolve(event);
+	if (event.request.headers.get('accept')?.includes('text/html')) {
+		response.headers.set('cache-control', 'no-cache, no-store, must-revalidate');
+	}
+	return response;
 };

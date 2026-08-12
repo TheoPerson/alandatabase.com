@@ -79,15 +79,16 @@
 
 	/* Variants */
 	.primary {
-		background: var(--accent-gold);
-		color: #07080b;
-		box-shadow: 0 4px 14px rgba(245, 197, 24, 0.25);
+		background: #10b981;
+		color: #050507;
+		font-weight: 800;
+		box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
 	}
 
 	.primary:hover {
-		background: var(--accent-gold-hover);
+		background: #34d399;
 		transform: translateY(-1px);
-		box-shadow: 0 6px 20px rgba(245, 197, 24, 0.35);
+		box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
 	}
 
 	.secondary {
@@ -113,12 +114,13 @@
 
 	.outline {
 		background: transparent;
-		color: var(--accent-gold);
-		border: 1px solid var(--border-accent);
+		color: #10b981;
+		border: 1px solid rgba(16, 185, 129, 0.4);
 	}
 
 	.outline:hover {
-		background: var(--accent-gold-subtle);
+		background: rgba(16, 185, 129, 0.12);
+		border-color: #10b981;
 	}
 
 	.success {

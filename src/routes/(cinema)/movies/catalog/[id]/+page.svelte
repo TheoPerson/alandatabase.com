@@ -147,14 +147,14 @@
 											<input type="hidden" name="listId" value={list.id} />
 											<input type="hidden" name="movieId" value={movie.id} />
 											<label class="list-toggle-label cursor-pointer flex items-center gap-2">
-												<input type="checkbox" checked={inList} onchange={(e) => e.currentTarget.form?.requestSubmit()} class="accent-amber-500" />
+												<input type="checkbox" checked={inList} onchange={(e) => e.currentTarget.form?.requestSubmit()} class="accent-emerald-500" />
 												<span class="text-sm text-gray-200">{list.name}</span>
 											</label>
 										</form>
 									{/each}
 								</div>
 								<div class="mt-4 border-t border-white/10 pt-3 text-center">
-									<a href="/my/lists" class="text-xs text-amber-500 hover:underline">Manage Lists</a>
+									<a href="/my/lists" class="text-xs text-emerald-400 hover:underline">Manage Lists</a>
 								</div>
 							{/if}
 						</div>

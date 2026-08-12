@@ -22,11 +22,13 @@ export const load: PageServerLoad = async () => {
 	let tmdbLatencyMs = -1;
 	try {
 		const tmdbStart = Date.now();
-		const apiKey = process.env.TMDB_API_KEY || '63560e33e8e0e21084ebced8eddfc1cd';
-		const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&page=1`);
-		if (res.ok) {
-			tmdbLatencyMs = Date.now() - tmdbStart;
-			tmdbStatus = 'ONLINE';
+		const apiKey = process.env.TMDB_API_KEY;
+		if (apiKey) {
+			const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&page=1`);
+			if (res.ok) {
+				tmdbLatencyMs = Date.now() - tmdbStart;
+				tmdbStatus = 'ONLINE';
+			}
 		}
 	} catch (err: any) {
 		tmdbStatus = `ERROR: ${err.message || 'API request failed'}`;

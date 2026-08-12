@@ -2,8 +2,7 @@ import type { PageServerLoad } from './$types';
 
 function maskSecret(val: string | undefined): string {
 	if (!val) return '❌ NOT CONFIGURED';
-	if (val.length < 12) return '●●●●●●●● (Set)';
-	return val.slice(0, 6) + '...' + val.slice(-4);
+	return '●●●●●●●● (PROTECTED)';
 }
 
 export const load: PageServerLoad = async () => {
@@ -23,7 +22,7 @@ export const load: PageServerLoad = async () => {
 		],
 		systemInfo: {
 			nodeVersion: process.version,
-			adapter: '@sveltejs/adapter-netlify (v6)',
+			adapter: '@sveltejs/adapter-vercel (v5)',
 			architecture: 'Serverless Functions (ESM)',
 			framework: 'SvelteKit 2 + Svelte 5 (Runes)'
 		}

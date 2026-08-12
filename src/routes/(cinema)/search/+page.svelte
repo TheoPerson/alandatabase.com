@@ -117,8 +117,8 @@
 
 	.hero-search-input:focus {
 		outline: none;
-		border-color: var(--border-accent);
-		box-shadow: 0 0 0 3px var(--accent-gold-subtle);
+		border-color: #10b981;
+		box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 	}
 
 	.results-header {
@@ -136,12 +136,18 @@
 	}
 
 	.query-text {
-		color: var(--accent-gold);
+		color: #10b981;
 	}
 
 	.count {
 		font-size: 0.9rem;
 		color: var(--text-tertiary);
+	}
+
+	.grid-movies {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+		gap: 1.5rem;
 	}
 
 	.no-results {

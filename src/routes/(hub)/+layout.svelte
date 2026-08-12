@@ -10,8 +10,8 @@
 <style>
 	.hub-app {
 		min-height: 100vh;
-		background: #0a0a0a;
+		background: var(--bg-primary, #050507);
 		color: #f4f4f5;
-		font-family: 'Inter', sans-serif;
+		font-family: var(--font-sans);
 	}
 </style>

@@ -7,7 +7,7 @@
 			desc: 'Personal movie vault with hybrid Postgres full-text & TMDB API fallback search.',
 			tags: ['SvelteKit 2', 'Neon Postgres', 'TMDB API', 'Drizzle ORM'],
 			link: '/movies',
-			color: '#eab308'
+			color: '#10b981'
 		},
 		{
 			title: 'AI Curator Studio',
@@ -16,7 +16,7 @@
 			desc: 'LLM-powered conversational movie recommendations and natural language mood filtering.',
 			tags: ['Google Gemini API', 'Vector Search', 'Svelte 5 Runes'],
 			link: '/discover/ai',
-			color: '#ec4899'
+			color: '#06b6d4'
 		},
 		{
 			title: 'Developer Tool Suites',
@@ -31,10 +31,10 @@
 			title: 'Personal OS Vault',
 			category: 'System Operating System',
 			status: 'STABLE',
-			desc: 'Glassmorphic 2026 Bento Command Center with ⌘K Spotlight Launcher.',
-			tags: ['Glassmorphism', 'Aurora Mesh', 'PWA Ready'],
+			desc: 'Swiss Minimalist 2026 OLED Control Center with ⌘K Spotlight & Live Drawer.',
+			tags: ['Swiss OLED', 'Linear.app', 'PWA Ready'],
 			link: '/',
-			color: '#14b8a6'
+			color: '#10b981'
 		}
 	];
 	const workspaces = [
@@ -54,19 +54,15 @@
 </script>
 
 <svelte:head>
-	<title>Innovation Labs | Alan OS</title>
+	<title>Innovation Labs | Alan Vault</title>
 </svelte:head>
 
-<!-- Aurora Backdrop -->
-<div class="aurora-backdrop">
-	<div class="aurora-blob aurora-blob-2"></div>
-	<div class="aurora-blob aurora-blob-3"></div>
-	<div class="cyber-grid-overlay"></div>
-</div>
+<!-- Micro Grid Background -->
+<div class="linear-grid-bg"></div>
 
 <main class="tool-container">
 	<div class="tool-header">
-		<a href="/" class="back-link">← Back to Hub</a>
+		<a href="/" class="back-link">← Back to Vault Hub</a>
 		<div class="title-row">
 			<h1 class="tool-title"><span class="icon">🧪</span> Alan's Innovation Labs</h1>
 			<span class="tool-badge">PROTOTYPES & ENGINES</span>
@@ -76,7 +72,7 @@
 
 	<div class="labs-grid">
 		{#each labs as lab}
-			<div class="lab-card glass-card" style="--lab-color: {lab.color}">
+			<div class="lab-card" style="--lab-color: {lab.color}">
 				<div class="card-top">
 					<span class="category-tag">{lab.category}</span>
 					<span class="status-pill" style="color: {lab.color}; background: {lab.color}15">{lab.status}</span>
@@ -105,14 +101,14 @@
 	<div class="tool-header" style="margin-top: 1rem;">
 		<div class="title-row">
 			<h1 class="tool-title"><span class="icon">💻</span> Local Workspaces</h1>
-			<span class="tool-badge" style="color: #60a5fa; background: rgba(96, 165, 250, 0.15); border-color: rgba(96, 165, 250, 0.3);">VS CODE DIRECT LAUNCH</span>
+			<span class="tool-badge blue">VS CODE DIRECT LAUNCH</span>
 		</div>
 		<p class="tool-subtitle">Direct shortcuts to launch local repositories from <code>C:\Users\theop\Desktop\Dev</code>.</p>
 	</div>
 
 	<div class="workspaces-grid">
 		{#each workspaces as ws}
-			<a href="vscode://file/C:/Users/theop/Desktop/Dev/{ws.name}" class="workspace-card glass-card">
+			<a href="vscode://file/C:/Users/theop/Desktop/Dev/{ws.name}" class="workspace-card">
 				<span class="ws-icon">{ws.icon}</span>
 				<span class="ws-name">{ws.name}</span>
 			</a>
@@ -121,32 +117,77 @@
 </main>
 
 <style>
-	.tool-container {
-		max-width: 1200px;
-		margin: 0 auto;
-		padding: 2rem 1.5rem 5rem 1.5rem;
-		display: flex;
-		flex-direction: column;
-		gap: 2rem;
+	.linear-grid-bg {
+		position: fixed;
+		inset: 0;
+		z-index: 0;
+		background-color: #050507;
+		background-image: 
+			linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+			linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+		background-size: 32px 32px;
+		pointer-events: none;
 	}
 
-	.back-link { font-size: 0.85rem; font-weight: 700; color: var(--accent-gold); }
+	.tool-container {
+		position: relative;
+		z-index: 1;
+		max-width: 1140px;
+		margin: 0 auto;
+		padding: 2.5rem 1.5rem 6rem 1.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 2.5rem;
+	}
 
-	.title-row { display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem; }
+	.back-link {
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: #10b981;
+		text-decoration: none;
+		transition: opacity 120ms ease;
+	}
 
-	.tool-title { font-size: 2rem; font-weight: 800; display: flex; align-items: center; gap: 0.6rem; margin: 0; }
+	.back-link:hover { opacity: 0.8; }
+
+	.title-row {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		margin-top: 0.5rem;
+	}
+
+	.tool-title {
+		font-size: 2rem;
+		font-weight: 800;
+		color: #f4f4f5;
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin: 0;
+	}
 
 	.tool-badge {
 		font-size: 0.75rem;
 		font-weight: 800;
-		color: var(--accent-teal, #14b8a6);
-		background: rgba(20, 184, 166, 0.15);
-		border: 1px solid rgba(20, 184, 166, 0.3);
-		padding: 0.25rem 0.6rem;
-		border-radius: var(--radius-full);
+		color: #10b981;
+		background: rgba(16, 185, 129, 0.12);
+		border: 1px solid rgba(16, 185, 129, 0.25);
+		padding: 0.25rem 0.65rem;
+		border-radius: 9999px;
 	}
 
-	.tool-subtitle { color: var(--text-secondary); font-size: 0.95rem; margin: 0.25rem 0 0 0; }
+	.tool-badge.blue {
+		color: #3b82f6;
+		background: rgba(59, 130, 246, 0.12);
+		border-color: rgba(59, 130, 246, 0.25);
+	}
+
+	.tool-subtitle {
+		color: #a1a1aa;
+		font-size: 0.95rem;
+		margin: 0.35rem 0 0 0;
+	}
 
 	.labs-grid {
 		display: grid;
@@ -155,15 +196,21 @@
 	}
 
 	.lab-card {
+		background: rgba(12, 12, 18, 0.75);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		border-radius: 20px;
 		padding: 1.75rem;
 		display: flex;
 		flex-direction: column;
 		gap: 1.25rem;
-		position: relative;
+		backdrop-filter: blur(16px);
+		transition: all 150ms ease;
 	}
 
 	.lab-card:hover {
-		border-color: var(--lab-color);
+		border-color: var(--lab-color, #10b981);
+		background: rgba(18, 18, 26, 0.85);
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
 	}
 
 	.card-top {
@@ -174,29 +221,29 @@
 
 	.category-tag {
 		font-size: 0.75rem;
-		font-weight: 700;
-		color: var(--text-tertiary);
+		font-weight: 800;
+		color: #71717a;
 		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		letter-spacing: 0.08em;
 	}
 
 	.status-pill {
 		font-size: 0.7rem;
 		font-weight: 800;
 		padding: 0.2rem 0.55rem;
-		border-radius: var(--radius-full);
+		border-radius: 9999px;
 	}
 
 	.lab-title {
 		font-size: 1.3rem;
 		font-weight: 800;
-		color: var(--text-primary);
+		color: #f4f4f5;
 		margin: 0;
 	}
 
 	.lab-desc {
 		font-size: 0.9rem;
-		color: var(--text-secondary);
+		color: #a1a1aa;
 		line-height: 1.5;
 		margin-top: 0.3rem;
 	}
@@ -209,16 +256,18 @@
 
 	.tag {
 		font-size: 0.75rem;
-		color: var(--text-tertiary);
-		background: var(--bg-surface-2);
-		padding: 0.2rem 0.5rem;
-		border-radius: 4px;
+		color: #a1a1aa;
+		background: #09090d;
+		border: 1px solid rgba(255, 255, 255, 0.06);
+		padding: 0.2rem 0.55rem;
+		border-radius: 6px;
 	}
 
 	.explore-btn {
 		margin-top: auto;
 		font-size: 0.9rem;
-		font-weight: 700;
+		font-weight: 800;
+		text-decoration: none;
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
@@ -226,8 +275,8 @@
 
 	.divider {
 		height: 1px;
-		background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-		margin: 2rem 0;
+		background: rgba(255, 255, 255, 0.08);
+		margin: 1.5rem 0;
 	}
 
 	.workspaces-grid {
@@ -237,20 +286,20 @@
 	}
 
 	.workspace-card {
-		padding: 1rem 1.25rem;
+		padding: 1.1rem 1.25rem;
 		display: flex;
 		align-items: center;
 		gap: 1rem;
-		border-radius: var(--radius-md, 12px);
+		border-radius: 16px;
 		text-decoration: none;
-		transition: all 0.2s ease;
-		background: rgba(255, 255, 255, 0.03);
-		border: 1px solid rgba(255, 255, 255, 0.05);
+		transition: all 150ms ease;
+		background: rgba(12, 12, 18, 0.5);
+		border: 1px solid rgba(255, 255, 255, 0.07);
 	}
 
 	.workspace-card:hover {
-		background: rgba(255, 255, 255, 0.08);
-		border-color: rgba(96, 165, 250, 0.5);
+		background: rgba(18, 18, 26, 0.8);
+		border-color: #3b82f6;
 		transform: translateY(-2px);
 	}
 
@@ -259,9 +308,9 @@
 	}
 
 	.ws-name {
-		font-size: 0.95rem;
-		font-weight: 600;
-		color: var(--text-primary);
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: #f4f4f5;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;

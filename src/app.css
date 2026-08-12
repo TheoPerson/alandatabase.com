@@ -3,28 +3,29 @@
    ========================================================================== */
 
 :root {
-	/* Color Palette: Deep Dark Cyber-Cinema & Vibrant Glows */
-	--bg-primary: #07080d;
-	--bg-surface-1: #0e111a;
-	--bg-surface-2: #151926;
-	--bg-surface-3: #1e2436;
-	--bg-surface-glass: rgba(18, 22, 34, 0.65);
-	--bg-surface-glass-hover: rgba(28, 34, 52, 0.85);
+	/* Color Palette: OLED Titanium & Emerald (2026 High-End Swiss Minimalist) */
+	--bg-primary: #050507;
+	--bg-surface-1: #09090d;
+	--bg-surface-2: #121218;
+	--bg-surface-3: #1a1a24;
+	--bg-surface-glass: rgba(14, 14, 20, 0.75);
+	--bg-surface-glass-hover: rgba(24, 24, 34, 0.85);
 
 	/* Text Hierarchy */
-	--text-primary: #f8fafc;
-	--text-secondary: #94a3b8;
-	--text-tertiary: #64748b;
-	--text-accent: #f59e0b;
+	--text-primary: #f4f4f5;
+	--text-secondary: #a1a1aa;
+	--text-tertiary: #71717a;
+	--text-accent: #10b981;
 
 	/* Brand & Interactive Colors */
-	--accent-gold: #f59e0b;
-	--accent-gold-hover: #fbbf24;
-	--accent-gold-subtle: rgba(245, 158, 11, 0.15);
+	--accent-emerald: #10b981;
+	--accent-emerald-hover: #34d399;
+	--accent-emerald-subtle: rgba(16, 185, 129, 0.12);
+	--accent-titanium: #e4e4e7;
+	--accent-silver: #a1a1aa;
 	--accent-cyan: #06b6d4;
 	--accent-violet: #8b5cf6;
-	--accent-emerald: #10b981;
-	--accent-rose: #f43f5e;
+	--accent-gold: #10b981;
 
 	/* Status Colors */
 	--color-success: #10b981;
@@ -34,35 +35,34 @@
 	/* Rating Colors */
 	--rating-star: #f59e0b;
 
-	/* Borders & Separators */
-	--border-subtle: rgba(255, 255, 255, 0.08);
-	--border-strong: rgba(255, 255, 255, 0.18);
-	--border-glow: rgba(245, 158, 11, 0.4);
+	/* Borders & Separators (Ultra-clean Linear 1px borders) */
+	--border-subtle: rgba(255, 255, 255, 0.07);
+	--border-strong: rgba(255, 255, 255, 0.14);
+	--border-emerald: rgba(16, 185, 129, 0.35);
 
 	/* Typography */
 	--font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 	--font-serif: 'Cinzel', Georgia, serif;
 	--font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
 
-	/* Radii */
-	--radius-sm: 8px;
-	--radius-md: 12px;
-	--radius-lg: 20px;
-	--radius-xl: 28px;
+	/* Radii (iOS 27 Fluid Squircular Corners) */
+	--radius-sm: 10px;
+	--radius-md: 16px;
+	--radius-lg: 24px;
+	--radius-xl: 32px;
 	--radius-full: 9999px;
 
 	/* Shadows & Depth */
-	--shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-	--shadow-md: 0 8px 24px rgba(0, 0, 0, 0.5);
-	--shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.7);
-	--shadow-glow-gold: 0 0 35px rgba(245, 158, 11, 0.25);
-	--shadow-glow-cyan: 0 0 35px rgba(6, 182, 212, 0.25);
-	--shadow-glow-violet: 0 0 35px rgba(139, 92, 246, 0.25);
+	--shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.6);
+	--shadow-md: 0 8px 30px rgba(0, 0, 0, 0.7);
+	--shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.85);
+	--shadow-glow-emerald: 0 0 30px rgba(16, 185, 129, 0.2);
+	--shadow-glow-cyan: 0 0 30px rgba(6, 182, 212, 0.2);
 
 	/* Transitions */
-	--transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
-	--transition-normal: 250ms cubic-bezier(0.16, 1, 0.3, 1);
-	--transition-slow: 450ms cubic-bezier(0.16, 1, 0.3, 1);
+	--transition-fast: 120ms cubic-bezier(0.16, 1, 0.3, 1);
+	--transition-normal: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+	--transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Base Reset & Document Setup */
@@ -214,6 +214,12 @@ input, textarea, select {
 	padding: 0 1.5rem;
 }
 
+.grid-movies {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 1.5rem;
+}
+
 @media (min-width: 768px) {
 	.container {
 		padding: 0 2.5rem;
@@ -243,6 +249,18 @@ input, textarea, select {
 :focus-visible {
 	outline: 2px solid var(--accent-gold);
 	outline-offset: 2px;
+}
+
+/* Drawer & Floating Dock Animations */
+@keyframes slideDrawer {
+	from { transform: translateX(100%); opacity: 0; }
+	to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes dockMagnify {
+	0% { transform: scale(1); }
+	50% { transform: scale(1.15) translateY(-6px); }
+	100% { transform: scale(1); }
 }
 
 .sr-only {

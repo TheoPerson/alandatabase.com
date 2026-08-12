@@ -278,13 +278,13 @@
 	.ai-icon {
 		width: 40px;
 		height: 40px;
-		background: rgba(245, 158, 11, 0.1);
-		border: 1px solid rgba(245, 158, 11, 0.2);
+		background: rgba(16, 185, 129, 0.1);
+		border: 1px solid rgba(16, 185, 129, 0.2);
 		border-radius: 10px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: #f59e0b;
+		color: #10b981;
 		flex-shrink: 0;
 	}
 
@@ -392,13 +392,13 @@
 	.ai-avatar {
 		width: 30px;
 		height: 30px;
-		background: rgba(245, 158, 11, 0.1);
-		border: 1px solid rgba(245, 158, 11, 0.2);
+		background: rgba(16, 185, 129, 0.1);
+		border: 1px solid rgba(16, 185, 129, 0.2);
 		border-radius: 8px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: #f59e0b;
+		color: #10b981;
 		flex-shrink: 0;
 		margin-top: 2px;
 	}
@@ -421,8 +421,8 @@
 	}
 
 	.bubble.user {
-		background: rgba(245, 158, 11, 0.1);
-		border: 1px solid rgba(245, 158, 11, 0.15);
+		background: rgba(16, 185, 129, 0.12);
+		border: 1px solid rgba(16, 185, 129, 0.25);
 		border-bottom-right-radius: 4px;
 	}
 
@@ -488,7 +488,7 @@
 
 	.reel-card:hover {
 		transform: translateY(-3px);
-		border-color: rgba(245, 158, 11, 0.3);
+		border-color: rgba(16, 185, 129, 0.3);
 	}
 
 	.reel-poster {
@@ -538,7 +538,7 @@
 
 	.reel-rating {
 		font-size: 0.7rem;
-		color: #f59e0b;
+		color: #10b981;
 		font-weight: 600;
 	}
 
@@ -561,8 +561,8 @@
 	}
 
 	.input-wrap:focus-within {
-		border-color: rgba(245, 158, 11, 0.4);
-		box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.1);
+		border-color: rgba(16, 185, 129, 0.4);
+		box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.1);
 	}
 
 	.chat-input {
@@ -590,7 +590,7 @@
 	.send-btn {
 		width: 36px;
 		height: 36px;
-		background: #f59e0b;
+		background: #10b981;
 		border: none;
 		border-radius: 9px;
 		color: #000;
@@ -603,7 +603,7 @@
 	}
 
 	.send-btn:hover:not(:disabled) {
-		background: #fbbf24;
+		background: #34d399;
 		transform: scale(1.05);
 	}
 
