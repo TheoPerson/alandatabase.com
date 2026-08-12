@@ -1,5 +1,4 @@
 import type { PageServerLoad } from './$types';
-import { env } from '$env/dynamic/private';
 
 function maskSecret(val: string | undefined): string {
 	if (!val) return '❌ NOT CONFIGURED';
@@ -8,13 +7,19 @@ function maskSecret(val: string | undefined): string {
 }
 
 export const load: PageServerLoad = async () => {
+	const dbUrl = process.env.DATABASE_URL;
+	const pglite = process.env.USE_PGLITE;
+	const tmdbKey = process.env.TMDB_API_KEY;
+	const tmdbToken = process.env.TMDB_READ_TOKEN;
+	const geminiKey = process.env.GEMINI_API_KEY;
+
 	return {
 		envVariables: [
-			{ key: 'DATABASE_URL', status: env.DATABASE_URL ? 'CONFIGURED' : 'MISSING', masked: maskSecret(env.DATABASE_URL), category: 'Database' },
-			{ key: 'USE_PGLITE', status: env.USE_PGLITE !== undefined ? 'CONFIGURED' : 'DEFAULT (false)', masked: env.USE_PGLITE || 'false', category: 'Database' },
-			{ key: 'TMDB_API_KEY', status: env.TMDB_API_KEY ? 'CONFIGURED' : 'MISSING', masked: maskSecret(env.TMDB_API_KEY), category: 'Cinema API' },
-			{ key: 'TMDB_READ_TOKEN', status: env.TMDB_READ_TOKEN ? 'CONFIGURED' : 'MISSING', masked: maskSecret(env.TMDB_READ_TOKEN), category: 'Cinema API' },
-			{ key: 'GEMINI_API_KEY', status: env.GEMINI_API_KEY ? 'CONFIGURED' : 'OPTIONAL', masked: maskSecret(env.GEMINI_API_KEY), category: 'AI Curator' }
+			{ key: 'DATABASE_URL', status: dbUrl ? 'CONFIGURED' : 'MISSING', masked: maskSecret(dbUrl), category: 'Database' },
+			{ key: 'USE_PGLITE', status: pglite !== undefined ? 'CONFIGURED' : 'DEFAULT (false)', masked: pglite || 'false', category: 'Database' },
+			{ key: 'TMDB_API_KEY', status: tmdbKey ? 'CONFIGURED' : 'MISSING', masked: maskSecret(tmdbKey), category: 'Cinema API' },
+			{ key: 'TMDB_READ_TOKEN', status: tmdbToken ? 'CONFIGURED' : 'MISSING', masked: maskSecret(tmdbToken), category: 'Cinema API' },
+			{ key: 'GEMINI_API_KEY', status: geminiKey ? 'CONFIGURED' : 'OPTIONAL', masked: maskSecret(geminiKey), category: 'AI Curator' }
 		],
 		systemInfo: {
 			nodeVersion: process.version,

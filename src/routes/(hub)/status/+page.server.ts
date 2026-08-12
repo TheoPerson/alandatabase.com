@@ -1,7 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { sql } from 'drizzle-orm';
-import { env } from '$env/dynamic/private';
 
 export const load: PageServerLoad = async () => {
 	const startTime = Date.now();
@@ -23,7 +22,7 @@ export const load: PageServerLoad = async () => {
 	let tmdbLatencyMs = -1;
 	try {
 		const tmdbStart = Date.now();
-		const apiKey = env.TMDB_API_KEY || '63560e33e8e0e21084ebced8eddfc1cd';
+		const apiKey = process.env.TMDB_API_KEY || '63560e33e8e0e21084ebced8eddfc1cd';
 		const res = await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&page=1`);
 		if (res.ok) {
 			tmdbLatencyMs = Date.now() - tmdbStart;
