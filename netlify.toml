@@ -1,5 +1,5 @@
 [build]
-  command = "pnpm run build"
+  command = "pnpm --filter the-alan-s-data-base run build"
   publish = "build"
 
 [build.environment]
