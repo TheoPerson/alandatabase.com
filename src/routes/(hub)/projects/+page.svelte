@@ -37,20 +37,21 @@
 			color: '#10b981'
 		}
 	];
-	const workspaces = [
-		{ name: 'Challenges Tracker', icon: '🎯' },
-		{ name: 'Draftin', icon: '📝' },
-		{ name: 'eSport Profiler', icon: '🎮' },
-		{ name: 'Gradus Tracker', icon: '📈' },
-		{ name: 'JUG_SEC.COM - REVAMP', icon: '🛡️' },
-		{ name: 'Jelp', icon: '🍕' },
-		{ name: 'Movie Picker', icon: '🎬' },
-		{ name: 'MyLocalNetflix', icon: '🍿' },
-		{ name: 'Rareness 0.3', icon: '💎' },
-		{ name: 'Rareness-Reference', icon: '📚' },
-		{ name: 'Stasher', icon: '📦' },
-		{ name: 'Sylepse', icon: '✈️' }
+	const projects = [
+		{ name: 'Sylepse', icon: '✈️', desc: 'Radar aérien PWA — scan, trajectoires, audio', status: 'live', stack: 'Vanilla JS · PWA', url: 'https://theoperson.github.io/Sylepse/' },
+		{ name: 'Rareness', icon: '💎', desc: 'Rarity tracker pour collections gaming', status: 'live', stack: 'React · Vite · Vercel', url: 'https://rareness.vercel.app/' },
+		{ name: 'JUG_SEC.COM', icon: '🛡️', desc: 'Site vitrine cybersécurité — revamp complet', status: 'repo', stack: 'HTML · JS', url: 'https://github.com/TheoPerson/JUG_SEC.COM' },
+		{ name: 'Gradus Tracker', icon: '📈', desc: 'Suivi de progression multi-objectifs', status: 'repo', stack: 'Vue · Vite', url: 'https://github.com/TheoPerson/Gradus-Tracker' },
+		{ name: 'Challenges Tracker', icon: '🎯', desc: 'Tableau de bord challenges League of Legends', status: 'repo', stack: 'React · Vite', url: 'https://github.com/DarkIntaqt/challenges' },
+		{ name: 'Draftin', icon: '📝', desc: 'Éditeur de texte collaboratif temps réel', status: 'dev', stack: 'Next.js · React', url: '' },
+		{ name: 'eSport Profiler', icon: '🎮', desc: 'Profil joueur eSport multi-jeux', status: 'dev', stack: 'Next.js · React', url: '' },
+		{ name: 'Jelp', icon: '🍕', desc: 'Découverte de restaurants locale', status: 'dev', stack: 'Express · Node.js', url: '' },
+		{ name: 'Movie Picker', icon: '🎬', desc: 'Recommandation de films intelligente', status: 'dev', stack: 'Next.js · React', url: '' },
+		{ name: 'Stasher', icon: '📦', desc: 'Gestionnaire de fichiers et assets', status: 'dev', stack: 'Next.js · React', url: '' }
 	];
+
+	const statusLabels: Record<string, string> = { live: 'EN LIGNE', repo: 'REPO', dev: 'EN DEV' };
+	const statusColors: Record<string, string> = { live: '#10b981', repo: '#3b82f6', dev: '#71717a' };
 </script>
 
 <svelte:head>
@@ -102,20 +103,37 @@
 
 	<div class="tool-header" style="margin-top: 1rem;">
 		<div class="title-row">
-			<h1 class="tool-title"><span class="icon">💻</span> Local Workspaces</h1>
-			<span class="tool-badge blue">VS CODE DIRECT LAUNCH</span>
+			<h1 class="tool-title"><span class="icon">🚀</span> All Projects</h1>
+			<span class="tool-badge blue">{projects.filter(p => p.status === 'live').length} LIVE</span>
 		</div>
 		<p class="tool-subtitle">
-			Direct shortcuts to launch local repositories from <code>C:\Users\theop\Desktop\Dev</code>.
+			All web projects — click to open live apps, repos, or view development status.
 		</p>
 	</div>
 
-	<div class="workspaces-grid">
-		{#each workspaces as ws}
-			<a href="vscode://file/C:/Users/theop/Desktop/Dev/{ws.name}" class="workspace-card">
-				<span class="ws-icon">{ws.icon}</span>
-				<span class="ws-name">{ws.name}</span>
-			</a>
+	<div class="projects-grid">
+		{#each projects as p}
+			{#if p.url}
+				<a href={p.url} target="_blank" rel="noopener noreferrer" class="project-card" style="--p-color: {statusColors[p.status]}">
+					<div class="project-top">
+						<span class="project-icon">{p.icon}</span>
+						<span class="project-status" style="color: {statusColors[p.status]}; background: {statusColors[p.status]}15">{statusLabels[p.status]}</span>
+					</div>
+					<span class="project-name">{p.name}</span>
+					<span class="project-desc">{p.desc}</span>
+					<span class="project-stack">{p.stack}</span>
+				</a>
+			{:else}
+				<div class="project-card disabled" style="--p-color: {statusColors[p.status]}">
+					<div class="project-top">
+						<span class="project-icon">{p.icon}</span>
+						<span class="project-status" style="color: {statusColors[p.status]}; background: {statusColors[p.status]}15">{statusLabels[p.status]}</span>
+					</div>
+					<span class="project-name">{p.name}</span>
+					<span class="project-desc">{p.desc}</span>
+					<span class="project-stack">{p.stack}</span>
+				</div>
+			{/if}
 		{/each}
 	</div>
 </main>
@@ -285,40 +303,77 @@
 		margin: 1.5rem 0;
 	}
 
-	.workspaces-grid {
+	.projects-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 		gap: 1rem;
 	}
 
-	.workspace-card {
-		padding: 1.1rem 1.25rem;
+	.project-card {
+		padding: 1.25rem;
 		display: flex;
-		align-items: center;
-		gap: 1rem;
+		flex-direction: column;
+		gap: 0.5rem;
 		border-radius: 16px;
 		text-decoration: none;
 		transition: all 150ms ease;
 		background: rgba(12, 12, 18, 0.5);
 		border: 1px solid rgba(255, 255, 255, 0.07);
+		cursor: pointer;
 	}
 
-	.workspace-card:hover {
+	.project-card:hover {
 		background: rgba(18, 18, 26, 0.8);
-		border-color: #3b82f6;
+		border-color: var(--p-color, #3b82f6);
 		transform: translateY(-2px);
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 	}
 
-	.ws-icon {
-		font-size: 1.25rem;
+	.project-card.disabled {
+		opacity: 0.5;
+		cursor: default;
 	}
 
-	.ws-name {
-		font-size: 0.9rem;
-		font-weight: 700;
+	.project-card.disabled:hover {
+		transform: none;
+		box-shadow: none;
+		border-color: rgba(255, 255, 255, 0.07);
+	}
+
+	.project-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.project-icon {
+		font-size: 1.5rem;
+	}
+
+	.project-status {
+		font-size: 0.65rem;
+		font-weight: 800;
+		padding: 0.15rem 0.5rem;
+		border-radius: 9999px;
+		letter-spacing: 0.05em;
+	}
+
+	.project-name {
+		font-size: 1rem;
+		font-weight: 800;
 		color: #f4f4f5;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
+	}
+
+	.project-desc {
+		font-size: 0.8rem;
+		color: #71717a;
+		line-height: 1.4;
+	}
+
+	.project-stack {
+		font-size: 0.7rem;
+		color: #52525b;
+		font-weight: 600;
+		margin-top: auto;
 	}
 </style>
