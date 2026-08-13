@@ -1,15 +1,19 @@
 <div align="center">
-  
-  # 🎬 CinemaDB
-  
-  **Next-Generation Personal Movie Operating System**
+  <picture>
+    <img src="./docs/hero-banner.jpg" width="100%" alt="CinemaDB — Next-Generation Personal Movie Operating System" style="border-radius: 8px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.15);" />
+  </picture>
+
+  <br />
+  <br />
 
   [![SvelteKit](https://img.shields.io/badge/SvelteKit-5-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://kit.svelte.dev/)
   [![Drizzle](https://img.shields.io/badge/Drizzle_ORM-PostgreSQL-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
   [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
+  <br />
+
   <p align="center">
-    Discover, track, and stream cinema with the world's most elegant personal movie archive. Designed with a premium "Swiss OLED" aesthetic for true cinephiles.
+    <strong>Personal Movie Operating System</strong> turning raw cinema data into a highly visual, fully streamed web experience.
   </p>
 </div>
 
