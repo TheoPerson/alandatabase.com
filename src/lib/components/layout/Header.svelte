@@ -18,7 +18,18 @@
 	<div class="container header-content">
 		<!-- Brand Logo -->
 		<a href="/movies" class="brand-logo" onclick={() => (menuOpen = false)}>
-			<span class="logo-icon">🎬</span>
+			<div class="logo-symbol-wrapper">
+				<svg class="brand-logo-svg" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+					<circle cx="18" cy="18" r="15" stroke="rgba(16, 185, 129, 0.3)" stroke-width="1.5" stroke-dasharray="3 2" class="pulse-ring" />
+					<circle cx="18" cy="18" r="11" fill="#090d14" stroke="#10b981" stroke-width="2" />
+					<circle cx="18" cy="18" r="3.5" fill="#10b981" />
+					<circle cx="18" cy="11.5" r="1.5" fill="#10b981" />
+					<circle cx="18" cy="24.5" r="1.5" fill="#10b981" />
+					<circle cx="11.5" cy="18" r="1.5" fill="#10b981" />
+					<circle cx="24.5" cy="18" r="1.5" fill="#10b981" />
+					<line x1="18" y1="18" x2="28" y2="8" stroke="#34d399" stroke-width="2" stroke-linecap="round" class="radar-scan" />
+				</svg>
+			</div>
 			<span class="logo-text">CINEMA<span class="logo-accent">DB</span></span>
 		</a>
 
@@ -87,15 +98,57 @@
 	.brand-logo {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: 0.65rem;
 		font-family: var(--font-sans);
 		font-weight: 800;
 		font-size: 1.25rem;
 		letter-spacing: -0.02em;
+		text-decoration: none;
 	}
 
-	.logo-icon {
-		font-size: 1.4rem;
+	.logo-symbol-wrapper {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 30px;
+		height: 30px;
+	}
+
+	.brand-logo-svg {
+		width: 100%;
+		height: 100%;
+		transition: transform 0.25s ease;
+	}
+
+	.brand-logo:hover .brand-logo-svg {
+		transform: scale(1.12);
+	}
+
+	.radar-scan {
+		transform-origin: 18px 18px;
+		animation: radarSpin 5s linear infinite;
+	}
+
+	.pulse-ring {
+		animation: pulseOpacity 2.5s ease-in-out infinite;
+	}
+
+	@keyframes radarSpin {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	@keyframes pulseOpacity {
+		0%, 100% {
+			opacity: 0.25;
+		}
+		50% {
+			opacity: 0.7;
+		}
 	}
 
 	.logo-accent {

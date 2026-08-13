@@ -142,7 +142,18 @@
 	<!-- Top Bar -->
 	<header class="vault-header">
 		<div class="brand-line">
-			<span class="live-dot"></span>
+			<div class="hub-logo-icon">
+				<svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="hub-svg">
+					<circle cx="18" cy="18" r="15" stroke="rgba(16, 185, 129, 0.3)" stroke-width="1.5" stroke-dasharray="3 2" class="hub-pulse" />
+					<circle cx="18" cy="18" r="11" fill="#090d14" stroke="#10b981" stroke-width="2" />
+					<circle cx="18" cy="18" r="3.5" fill="#10b981" />
+					<circle cx="18" cy="11.5" r="1.5" fill="#10b981" />
+					<circle cx="18" cy="24.5" r="1.5" fill="#10b981" />
+					<circle cx="11.5" cy="18" r="1.5" fill="#10b981" />
+					<circle cx="24.5" cy="18" r="1.5" fill="#10b981" />
+					<line x1="18" y1="18" x2="28" y2="8" stroke="#34d399" stroke-width="2" stroke-linecap="round" class="hub-scan" />
+				</svg>
+			</div>
 			<span class="brand-name">ALAN <span class="emerald-accent">VAULT</span></span>
 			<span class="version-tag">2026.1 OS</span>
 		</div>
@@ -401,6 +412,46 @@
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
+	}
+
+	.hub-logo-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 26px;
+		height: 26px;
+	}
+
+	.hub-svg {
+		width: 100%;
+		height: 100%;
+	}
+
+	.hub-scan {
+		transform-origin: 18px 18px;
+		animation: hubRadarSpin 5s linear infinite;
+	}
+
+	.hub-pulse {
+		animation: hubPulse 2.5s ease-in-out infinite;
+	}
+
+	@keyframes hubRadarSpin {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	@keyframes hubPulse {
+		0%, 100% {
+			opacity: 0.25;
+		}
+		50% {
+			opacity: 0.75;
+		}
 	}
 
 	@keyframes pulseGlow {
