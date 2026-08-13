@@ -242,3 +242,19 @@ export async function notifySearchPerformed(query: string, resultCount: number) 
 		inlineButtons: [[{ text: '🔍 View Search Results', url: `https://alandatabase.com/search?q=${encodeURIComponent(query)}` }]]
 	});
 }
+
+export async function notifyLivePageVisit(pathname: string, method = 'GET', username?: string) {
+	const time = new Date().toLocaleTimeString('fr-FR');
+	const text =
+		`📡 <b>LIVE TELEMETRY • USER ACTIVITY</b>\n` +
+		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+		`🌐 <b>Route:</b> <code>${method} ${pathname}</code>\n` +
+		`👤 <b>Visitor:</b> <code>${username || 'Anonymous Guest'}</code>\n` +
+		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+		`🕒 <b>Timestamp:</b> <code>${time}</code>`;
+
+	return sendTelegramCard(text, {
+		category: 'logs',
+		inlineButtons: [[{ text: '🌐 Open Route Live', url: `https://alandatabase.com${pathname}` }]]
+	});
+}
