@@ -3,56 +3,75 @@
 		tmdbId,
 		imdbId,
 		title,
-		trailerKey
+		trailerKey,
+		customVideoUrl
 	} = $props<{
 		tmdbId: number | string;
 		imdbId?: string | null;
 		title: string;
 		trailerKey?: string | null;
+		customVideoUrl?: string | null;
 	}>();
 
 	// Premium 2026 Movie Mirror Pipeline
-	const servers = $derived([
-		{
-			id: 'vidlink-pro',
-			name: '💎 VidLink Pro',
-			badge: 'Ultra HD',
-			url: `https://vidlink.pro/movie/${tmdbId}?primaryColor=10b981&secondaryColor=050507`
-		},
-		{
-			id: 'vidsrc-vip',
-			name: '⚡ VidSrc VIP',
-			badge: 'Fast',
-			url: `https://vidsrc.vip/embed/movie/${tmdbId}`
-		},
-		{
-			id: 'vidsrc-rip',
-			name: '🌟 VidSrc RIP',
-			badge: 'Stable',
-			url: `https://vidsrc.rip/embed/movie/${tmdbId}`
-		},
-		{
-			id: 'autoembed-co',
-			name: '🛡️ AutoEmbed',
-			badge: 'Backup',
-			url: `https://autoembed.co/movie/tmdb/${tmdbId}`
-		},
-		...(trailerKey
+	const servers = $derived(
+		customVideoUrl
 			? [
 					{
-						id: 'youtube-trailer',
-						name: '▶ Official Trailer',
-						badge: '4K',
-						url: `https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&rel=0`
+						id: 'custom-source',
+						name: '🔒 Custom Source',
+						badge: 'Private',
+						url: customVideoUrl
 					}
 			  ]
-			: [])
-	]);
+			: [
+					{
+						id: 'vidlink-pro',
+						name: '💎 VidLink Pro',
+						badge: 'Ultra HD',
+						url: `https://vidlink.pro/movie/${tmdbId}?primaryColor=10b981&secondaryColor=050507`
+					},
+					{
+						id: 'vidsrc-vip',
+						name: '⚡ VidSrc VIP',
+						badge: 'Fast',
+						url: `https://vidsrc.vip/embed/movie/${tmdbId}`
+					},
+					{
+						id: 'vidsrc-rip',
+						name: '🌟 VidSrc RIP',
+						badge: 'Stable',
+						url: `https://vidsrc.rip/embed/movie/${tmdbId}`
+					},
+					{
+						id: 'autoembed-co',
+						name: '🛡️ AutoEmbed',
+						badge: 'Backup',
+						url: `https://autoembed.co/movie/tmdb/${tmdbId}`
+					},
+					...(trailerKey
+						? [
+								{
+									id: 'youtube-trailer',
+									name: '▶ Official Trailer',
+									badge: '4K',
+									url: `https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&rel=0`
+								}
+						  ]
+						: [])
+			  ]
+	);
 
 	let activeServerId = $state('vidlink-pro');
 	let isLoading = $state(true);
 	let isError = $state(false);
 	let fallbackTimer: ReturnType<typeof setTimeout>;
+
+	$effect(() => {
+		if (customVideoUrl && activeServerId !== 'custom-source') {
+			activeServerId = 'custom-source';
+		}
+	});
 
 	const activeServer = $derived(
 		servers.find((s) => s.id === activeServerId) || servers[0]

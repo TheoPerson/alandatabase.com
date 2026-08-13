@@ -59,8 +59,8 @@
 
 <div class="container movies-page">
 	<header class="page-header">
-		<h1 class="page-title">Cinema Catalog</h1>
-		<p class="subtitle">Explore curated films, top-rated masterpieces, and upcoming releases.</p>
+		<h1 class="page-title">All Movies</h1>
+		<p class="subtitle">Explore the entire database, filter by genre, and sort by IMDb ratings.</p>
 
 		<!-- Genre Filter Pills -->
 		{#if data.genreList.length > 0}

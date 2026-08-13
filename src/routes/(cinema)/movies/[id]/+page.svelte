@@ -230,6 +230,7 @@
 						imdbId={movie.imdbId}
 						title={movie.title}
 						trailerKey={trailer?.key}
+						customVideoUrl={movie.localOverrides?.customVideoUrl}
 					/>
 				</section>
 			</main>

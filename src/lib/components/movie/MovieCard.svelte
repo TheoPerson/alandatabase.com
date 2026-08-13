@@ -74,15 +74,16 @@
 		right: 0.5rem;
 		display: flex;
 		align-items: center;
-		gap: 0.25rem;
-		padding: 0.2rem 0.45rem;
-		background: rgba(7, 8, 11, 0.85);
+		gap: 0.35rem;
+		padding: 0.25rem 0.6rem;
+		background: rgba(7, 8, 11, 0.9);
 		backdrop-filter: blur(8px);
 		border-radius: var(--radius-sm);
-		border: 1px solid var(--border-subtle);
-		font-size: 0.75rem;
-		font-weight: 700;
+		border: 1px solid var(--accent-gold-subtle);
+		font-size: 0.9rem;
+		font-weight: 800;
 		color: var(--text-primary);
+		box-shadow: 0 2px 10px rgba(0,0,0,0.5);
 	}
 
 	.imdb-tag {
