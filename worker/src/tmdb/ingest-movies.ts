@@ -217,7 +217,7 @@ export async function ingestMovie(tmdbId: number): Promise<string | null> {
 		console.log(
 			`✅ Successfully ingested "${detail.title}" (${detail.release_date?.substring(0, 4) || 'N/A'})`
 		);
-		notifyMovieIngested(detail.title, detail.release_date?.substring(0, 4), detail.id).catch(() => {});
+		notifyMovieIngested(detail.title, detail.release_date?.substring(0, 4), detail.id, detail.poster_path).catch(() => {});
 		return movieId;
 	} catch (err) {
 		console.error(`❌ Ingestion failed for TMDB #${tmdbId}:`, err);

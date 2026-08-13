@@ -20,7 +20,7 @@ export async function load({ params, locals }) {
 		});
 	}
 
-	notifyMovieStreamed(movie.title, undefined, locals.user?.username).catch(() => {});
+	notifyMovieStreamed(movie.title, undefined, locals.user?.username, movie.posterPath).catch(() => {});
 
 	let interaction = null;
 	let review = null;
