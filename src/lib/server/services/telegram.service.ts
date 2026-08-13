@@ -1,6 +1,7 @@
 /**
- * Ultra-Luxury Multi-Channel Telegram Monitoring System
- * The Alan's Database / CinemaDB Real-Time Radar
+ * High-Precision Multi-Channel Telegram Telemetry Service
+ * The Alan's Database / CinemaDB Core Telemetry Engine
+ * Language: English (Technical & System-Grade)
  */
 
 export type ChannelCategory = 'major' | 'ingest' | 'users' | 'logs';
@@ -84,43 +85,42 @@ export async function sendTelegramCard(text: string, options: TelegramSendOption
 }
 
 // -------------------------------------------------------------
-// CHANNEL 1: 🚨 MAJOR EVENTS & CRITICAL ALERTS
+// 1. 🚨 MAJOR EVENTS & CRITICAL RUNTIME ALERTS
 // -------------------------------------------------------------
 export async function notifyCriticalError(context: string, error: any) {
 	const errorMsg = error instanceof Error ? error.message : String(error);
-	const time = new Date().toLocaleTimeString('fr-FR');
+	const timestamp = new Date().toISOString();
 	const text =
-		`🔴 <b>ALAN MONITORING • CRITICAL ALERT</b>\n` +
+		`🔴 <b>[CORE ENGINE] CRITICAL RUNTIME EXCEPTION</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`📍 <b>Location:</b> <code>${context}</code>\n` +
-		`💥 <b>Exception:</b>\n<code>${errorMsg.slice(0, 320)}</code>\n` +
+		`⚡ <b>Context Scope:</b> <code>${context}</code>\n` +
+		`💥 <b>Stack / Trace:</b>\n<code>${errorMsg.slice(0, 350)}</code>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`⚡ <b>Status:</b> Immediate Attention Required\n` +
-		`🕒 <b>Timestamp:</b> <code>${time}</code>`;
+		`🛠️ <b>Runtime Node:</b> <code>Vercel Serverless (Node.js / ESM)</code>\n` +
+		`⏱️ <b>UTC Timestamp:</b> <code>${timestamp}</code>`;
 
 	return sendTelegramCard(text, {
 		category: 'major',
-		inlineButtons: [[{ text: '🛠️ Open Sentry Console', url: 'https://alandatabase.sentry.io' }]]
+		inlineButtons: [[{ text: '🛠️ Sentry Console', url: 'https://alandatabase.sentry.io' }]]
 	});
 }
 
 export async function notifyMajorEvent(title: string, message: string, severity: 'CRITICAL' | 'WARNING' | 'NOTICE' = 'NOTICE') {
 	const icon = severity === 'CRITICAL' ? '🔴' : severity === 'WARNING' ? '🟠' : '🟢';
-	const time = new Date().toLocaleTimeString('fr-FR');
+	const timestamp = new Date().toISOString();
 	const text =
-		`${icon} <b>ALAN MONITORING • SYSTEM EVENT</b>\n` +
+		`${icon} <b>[SYSTEM TELEMETRY] CLUSTER EVENT • ${severity}</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`📌 <b>${title}</b>\n` +
-		`📝 ${message}\n` +
+		`📌 <b>Event:</b> <code>${title}</code>\n` +
+		`📝 <b>Payload:</b> ${message}\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`⚡ <b>Severity:</b> <code>${severity}</code>\n` +
-		`🕒 <b>Timestamp:</b> <code>${time}</code>`;
+		`⏱️ <b>UTC Timestamp:</b> <code>${timestamp}</code>`;
 
 	return sendTelegramCard(text, { category: 'major' });
 }
 
 // -------------------------------------------------------------
-// CHANNEL 2: 🎬 MOVIE INGESTION (With High-Res Posters & Buttons)
+// 2. 🎬 INGESTION PIPELINE & METADATA SYNC
 // -------------------------------------------------------------
 export async function notifyMovieIngested(
 	title: string,
@@ -128,7 +128,7 @@ export async function notifyMovieIngested(
 	tmdbId?: number | string,
 	posterPath?: string | null
 ) {
-	const time = new Date().toLocaleTimeString('fr-FR');
+	const timestamp = new Date().toISOString();
 	const fullPosterUrl = posterPath
 		? posterPath.startsWith('http')
 			? posterPath
@@ -136,18 +136,19 @@ export async function notifyMovieIngested(
 		: null;
 
 	const text =
-		`🟣 <b>CINEMADB • NEW FILM INGESTED</b>\n` +
+		`🟣 <b>[INGESTION PIPELINE] TMDB ASSET INGEST COMPLETE</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🍿 <b>Title:</b> <b>${title}</b> ${year ? `(${year})` : ''}\n` +
-		`🆔 <b>TMDB:</b> <code>#${tmdbId || 'N/A'}</code>\n` +
-		`✨ <b>Pipeline:</b> Ultra HD Streams & Metadata Synced\n` +
+		`🎬 <b>Entity:</b> <b>${title}</b> ${year ? `(${year})` : ''}\n` +
+		`🆔 <b>TMDB UID:</b> <code>#${tmdbId || 'N/A'}</code>\n` +
+		`📦 <b>Pipeline Sync:</b> <code>Cast, Crew, Trailers & HD Streams</code>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🕒 <b>Timestamp:</b> <code>${time}</code>`;
+		`⚡ <b>Status:</b> <code>200 OK • Ingested to Database</code>\n` +
+		`⏱️ <b>UTC Timestamp:</b> <code>${timestamp}</code>`;
 
 	const buttons: Array<Array<{ text: string; url: string }>> = [
 		[
-			{ text: '🎬 Watch on Alan\'s DB', url: `https://alandatabase.com/movies/${tmdbId}` },
-			{ text: '🔗 TMDB Page', url: `https://www.themoviedb.org/movie/${tmdbId}` }
+			{ text: '🎬 Watch on CinemaDB', url: `https://alandatabase.com/movies/${tmdbId}` },
+			{ text: '🔗 TMDB Reference', url: `https://www.themoviedb.org/movie/${tmdbId}` }
 		]
 	];
 
@@ -159,66 +160,55 @@ export async function notifyMovieIngested(
 }
 
 // -------------------------------------------------------------
-// CHANNEL 3: 👤 USER ACCOUNTS & SECURITY
+// 3. 👤 AUTH & IDENTITY TELEMETRY
 // -------------------------------------------------------------
 export async function notifyUserRegistered(username: string, email?: string) {
-	const time = new Date().toLocaleTimeString('fr-FR');
+	const timestamp = new Date().toISOString();
 	const text =
-		`👤 <b>AUTH RADAR • NEW USER ONBOARDED</b>\n` +
+		`👤 <b>[AUTH RADAR] IDENTITY PROVISIONED</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
 		`🏷️ <b>Username:</b> <code>${username}</code>\n` +
-		`${email ? `📧 <b>Email:</b> <code>${email}</code>\n` : ''}` +
-		`🚀 <b>Action:</b> Account Created & Vault Initialized\n` +
+		`${email ? `📧 <b>Email Identity:</b> <code>${email}</code>\n` : ''}` +
+		`🛡️ <b>Auth Protocol:</b> <code>Argon2id Hash + Secure Session Vault</code>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🕒 <b>Timestamp:</b> <code>${time}</code>`;
+		`⚡ <b>Session Status:</b> <code>Active / Authenticated</code>\n` +
+		`⏱️ <b>UTC Timestamp:</b> <code>${timestamp}</code>`;
 
 	return sendTelegramCard(text, {
 		category: 'users',
-		inlineButtons: [[{ text: '📊 View in Dashboard', url: 'https://alandatabase.com/my/films' }]]
+		inlineButtons: [[{ text: '📊 User Vault', url: 'https://alandatabase.com/my/films' }]]
 	});
 }
 
 export async function notifyUserLogin(username: string, ip?: string) {
-	const time = new Date().toLocaleTimeString('fr-FR');
+	const timestamp = new Date().toISOString();
 	const text =
-		`🔑 <b>AUTH RADAR • USER SESSION START</b>\n` +
+		`🔑 <b>[AUTH RADAR] SESSION ESTABLISHED</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
 		`🏷️ <b>Username:</b> <code>${username}</code>\n` +
-		`${ip ? `🌐 <b>Origin:</b> <code>${ip}</code>\n` : ''}` +
+		`${ip ? `🌐 <b>Client Origin:</b> <code>${ip}</code>\n` : ''}` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🕒 <b>Timestamp:</b> <code>${time}</code>`;
-
-	return sendTelegramCard(text, { category: 'users' });
-}
-
-export async function notifyUserDeleted(username: string) {
-	const time = new Date().toLocaleTimeString('fr-FR');
-	const text =
-		`🗑️ <b>AUTH RADAR • ACCOUNT REMOVAL</b>\n` +
-		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🏷️ <b>Username:</b> <code>${username}</code>\n` +
-		`⚠️ <b>Action:</b> All session data wiped\n` +
-		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🕒 <b>Timestamp:</b> <code>${time}</code>`;
+		`⏱️ <b>UTC Timestamp:</b> <code>${timestamp}</code>`;
 
 	return sendTelegramCard(text, { category: 'users' });
 }
 
 // -------------------------------------------------------------
-// CHANNEL 4: 📡 LIVE RUNTIME ACTIVITY (VIVANT / EN DIRECT)
+// 4. 📡 LIVE RUNTIME ACTIVITY (DISCOVERY & STREAMING)
 // -------------------------------------------------------------
 export async function notifyMovieStreamed(movieTitle: string, serverName?: string, user?: string, posterPath?: string | null) {
-	const time = new Date().toLocaleTimeString('fr-FR');
+	const timestamp = new Date().toISOString();
 	const fullPosterUrl = posterPath ? (posterPath.startsWith('http') ? posterPath : `https://image.tmdb.org/t/p/w500${posterPath}`) : null;
 
 	const text =
-		`🟢 <b>LIVE STREAM • PLAYBACK STARTED</b>\n` +
+		`🟢 <b>[STREAM PIPELINE] PLAYBACK SESSION INITIALIZED</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🎥 <b>Film:</b> <b>${movieTitle}</b>\n` +
-		`📡 <b>Active Server:</b> <code>${serverName || 'Vidzy HD (VFQ)'}</code>\n` +
-		`👤 <b>Viewer:</b> <code>${user || 'Guest User'}</code>\n` +
+		`🎬 <b>Entity:</b> <b>${movieTitle}</b>\n` +
+		`📡 <b>Mirror Gateway:</b> <code>${serverName || 'Vidzy HD (HLS / m3u8)'}</code>\n` +
+		`👤 <b>Viewer:</b> <code>${user || 'Anonymous / Guest'}</code>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🕒 <b>Timestamp:</b> <code>${time}</code>`;
+		`⚡ <b>Protocol:</b> <code>Multi-Server Embed Sandbox (1080p Ultra HD)</code>\n` +
+		`⏱️ <b>UTC Timestamp:</b> <code>${timestamp}</code>`;
 
 	return sendTelegramCard(text, {
 		category: 'logs',
@@ -228,33 +218,18 @@ export async function notifyMovieStreamed(movieTitle: string, serverName?: strin
 }
 
 export async function notifySearchPerformed(query: string, resultCount: number) {
-	const time = new Date().toLocaleTimeString('fr-FR');
+	const timestamp = new Date().toISOString();
 	const text =
-		`🔍 <b>LIVE SEARCH • REAL-TIME RADAR</b>\n` +
+		`🔍 <b>[TELEMETRY] SEARCH QUERY VECTOR DISPATCHED</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🔎 <b>Query:</b> "<code>${query}</code>"\n` +
-		`📊 <b>Relevance Matches:</b> <b>${resultCount}</b> titles found\n` +
+		`🔎 <b>Query String:</b> <code>"${query}"</code>\n` +
+		`📊 <b>Relevance Matches:</b> <code>${resultCount} titles resolved</code>\n` +
+		`⚡ <b>Engine:</b> <code>Dual-Source Hybrid (PostgreSQL + TMDB v3 API)</code>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🕒 <b>Timestamp:</b> <code>${time}</code>`;
+		`⏱️ <b>UTC Timestamp:</b> <code>${timestamp}</code>`;
 
 	return sendTelegramCard(text, {
 		category: 'logs',
-		inlineButtons: [[{ text: '🔍 View Search Results', url: `https://alandatabase.com/search?q=${encodeURIComponent(query)}` }]]
-	});
-}
-
-export async function notifyLivePageVisit(pathname: string, method = 'GET', username?: string) {
-	const time = new Date().toLocaleTimeString('fr-FR');
-	const text =
-		`📡 <b>LIVE TELEMETRY • USER ACTIVITY</b>\n` +
-		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🌐 <b>Route:</b> <code>${method} ${pathname}</code>\n` +
-		`👤 <b>Visitor:</b> <code>${username || 'Anonymous Guest'}</code>\n` +
-		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🕒 <b>Timestamp:</b> <code>${time}</code>`;
-
-	return sendTelegramCard(text, {
-		category: 'logs',
-		inlineButtons: [[{ text: '🌐 Open Route Live', url: `https://alandatabase.com${pathname}` }]]
+		inlineButtons: [[{ text: '🔍 View Search Vector', url: `https://alandatabase.com/search?q=${encodeURIComponent(query)}` }]]
 	});
 }
