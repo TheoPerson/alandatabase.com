@@ -2,6 +2,12 @@ packages:
   - '.'
   - 'worker'
 
+minimumReleaseAgeExclude:
+  - '@electric-sql/pglite@0.5.5'
+  - '@google/genai@2.17.0'
+  - eslint-plugin-svelte@3.23.0
+  - svelte-check@4.7.6
+
 onlyBuiltDependencies:
   - esbuild
   - protobufjs
