@@ -3,7 +3,7 @@ import { db } from '$lib/server/db/index.js';
 
 export async function load() {
 	const [allMovies, topRated, genreList] = await Promise.all([
-		getTrendingMovies(50),
+		getTrendingMovies(50000), // High limit to load "all" movies for the client-side filtering/sorting
 		getTopRatedMovies(20),
 		db.query.genres.findMany()
 	]);
