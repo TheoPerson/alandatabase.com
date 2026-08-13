@@ -37,79 +37,26 @@
 
 	// Dock items (macOS / iOS 27 Style)
 	const dockApps = [
-		{ id: 'github', name: 'GitHub', icon: '🐙', url: 'https://github.com', color: '#ffffff' },
-		{
-			id: 'chatgpt',
-			name: 'ChatGPT',
-			icon: '🤖',
-			url: 'https://chat.openai.com',
-			color: '#10a37f'
-		},
-		{ id: 'gmail', name: 'Gmail', icon: '✉️', url: 'https://mail.google.com', color: '#ea4335' },
-		{ id: 'drive', name: 'Drive', icon: '☁️', url: 'https://drive.google.com', color: '#34a853' },
-		{
-			id: 'cloudflare',
-			name: 'Cloudflare',
-			icon: '⚡',
-			url: 'https://dash.cloudflare.com',
-			color: '#f38020'
-		},
-		{
-			id: 'steam',
-			name: 'Steam',
-			icon: '🎮',
-			url: 'https://store.steampowered.com',
-			color: '#38bdf8'
-		},
-		{ id: 'figma', name: 'Figma', icon: '🎨', url: 'https://figma.com', color: '#a259ff' },
-		{ id: 'vercel', name: 'Vercel', icon: '▲', url: 'https://vercel.com', color: '#ffffff' },
+		{ id: 'github', name: 'GitHub', icon: '🐙', url: 'https://github.com', color: '#e4e4e7' },
+		{ id: 'chatgpt', name: 'ChatGPT', icon: '🤖', url: 'https://chat.openai.com', color: '#10b981' },
+		{ id: 'gmail', name: 'Gmail', icon: '✉️', url: 'https://mail.google.com', color: '#a1a1aa' },
+		{ id: 'drive', name: 'Drive', icon: '☁️', url: 'https://drive.google.com', color: '#e4e4e7' },
+		{ id: 'cloudflare', name: 'Cloudflare', icon: '⚡', url: 'https://dash.cloudflare.com', color: '#10b981' },
+		{ id: 'steam', name: 'Steam', icon: '🎮', url: 'https://store.steampowered.com', color: '#a1a1aa' },
+		{ id: 'figma', name: 'Figma', icon: '🎨', url: 'https://figma.com', color: '#e4e4e7' },
+		{ id: 'vercel', name: 'Vercel', icon: '▲', url: 'https://vercel.com', color: '#e4e4e7' },
 		{ id: 'cinemadb', name: 'Cinema DB', icon: '🎬', url: '/movies', color: '#10b981' },
-		{ id: 'json', name: 'JSON Studio', icon: '🧩', url: '/tools/json', color: '#f59e0b' },
+		{ id: 'json', name: 'JSON Studio', icon: '🧩', url: '/tools/json', color: '#10b981' },
 		{ id: 'setup', name: 'Setup', icon: '⚙️', url: '/setup', color: '#71717a' }
 	];
 
 	// Primary Dev & Vault Suites
 	const devSuites = [
-		{
-			id: 'json',
-			name: 'JSON Studio',
-			icon: '🧩',
-			url: '/tools/json',
-			color: '#10b981',
-			desc: 'Format, Validate & CSV'
-		},
-		{
-			id: 'diff',
-			name: 'Diff & Regex',
-			icon: '⚡',
-			url: '/tools/diff',
-			color: '#10b981',
-			desc: 'Side-by-Side Text & Regex'
-		},
-		{
-			id: 'image',
-			name: 'Image Studio',
-			icon: '🖼️',
-			url: '/tools/image',
-			color: '#8b5cf6',
-			desc: 'Compress, WebP & Base64'
-		},
-		{
-			id: 'file',
-			name: 'File Utilities',
-			icon: '📄',
-			url: '/tools/file',
-			color: '#3b82f6',
-			desc: 'SHA Hashes & Regex'
-		},
-		{
-			id: 'generators',
-			name: 'Generator Vault',
-			icon: '🪄',
-			url: '/tools/generators',
-			color: '#ec4899',
-			desc: 'UUIDs & Passwords'
-		}
+		{ id: 'json', name: 'JSON Studio', icon: '🧩', url: '/tools/json', color: '#10b981', desc: 'Format, Validate & CSV' },
+		{ id: 'diff', name: 'Diff & Regex', icon: '⚡', url: '/tools/diff', color: '#10b981', desc: 'Side-by-Side Text & Regex' },
+		{ id: 'image', name: 'Image Studio', icon: '🖼️', url: '/tools/image', color: '#e4e4e7', desc: 'Compress, WebP & Base64' },
+		{ id: 'file', name: 'File Utilities', icon: '📄', url: '/tools/file', color: '#a1a1aa', desc: 'SHA Hashes & Regex' },
+		{ id: 'generators', name: 'Generator Vault', icon: '🪄', url: '/tools/generators', color: '#e4e4e7', desc: 'UUIDs & Passwords' }
 	];
 
 	const coreEngines = [
@@ -266,12 +213,14 @@
 						type="text"
 						class="search-inline-input"
 						placeholder="Search tools, bookmarks, movies, or type notes below..."
+						aria-label="Search tools, bookmarks, movies, or type notes below"
 						value={searchQuery}
 						oninput={handleSearchInput}
 					/>
 					{#if searchQuery.trim().length > 0}
 						<button
 							class="clear-btn"
+							aria-label="Clear search"
 							onclick={() => {
 								searchQuery = '';
 								closeDrawer();
@@ -327,14 +276,14 @@
 {#if isDrawerOpen}
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="drawer-backdrop" onclick={closeDrawer}>
-		<aside class="drawer-panel" role="presentation" onclick={(e) => e.stopPropagation()}>
+	<div class="drawer-backdrop" role="presentation" onclick={closeDrawer}>
+		<div class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="drawer-title" tabindex="-1" onclick={(e) => e.stopPropagation()}>
 			<div class="drawer-header">
 				<div class="drawer-title-group">
 					<span class="drawer-icon">🔍</span>
-					<span class="drawer-title">LIVE SEARCH RESULTS</span>
+					<span class="drawer-title" id="drawer-title">LIVE SEARCH RESULTS</span>
 				</div>
-				<button class="drawer-close-btn" onclick={closeDrawer}>✕</button>
+				<button class="drawer-close-btn" aria-label="Close drawer" onclick={closeDrawer}>✕</button>
 			</div>
 
 			<div class="drawer-query-bar">
@@ -370,7 +319,7 @@
 					{/each}
 				{/if}
 			</div>
-		</aside>
+		</div>
 	</div>
 {/if}
 
@@ -394,6 +343,15 @@
 
 <style>
 	/* Micro-grid OLED background */
+	@keyframes gridPan {
+		0% {
+			background-position: 0 0;
+		}
+		100% {
+			background-position: 32px 32px;
+		}
+	}
+
 	.linear-grid-bg {
 		position: fixed;
 		inset: 0;
@@ -404,6 +362,18 @@
 			linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
 		background-size: 32px 32px;
 		pointer-events: none;
+		animation: gridPan 15s linear infinite;
+	}
+
+	@keyframes fadeSlideUp {
+		from {
+			opacity: 0;
+			transform: translateY(15px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
 	.vault-container {
@@ -415,6 +385,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 2.5rem;
+		animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 	}
 
 	/* Top Bar */
@@ -432,12 +403,25 @@
 		gap: 0.75rem;
 	}
 
+	@keyframes pulseGlow {
+		0% {
+			box-shadow: 0 0 8px #10b981;
+		}
+		50% {
+			box-shadow: 0 0 16px #10b981, 0 0 24px rgba(16, 185, 129, 0.4);
+		}
+		100% {
+			box-shadow: 0 0 8px #10b981;
+		}
+	}
+
 	.live-dot {
 		width: 8px;
 		height: 8px;
 		background: #10b981;
 		border-radius: 50%;
 		box-shadow: 0 0 12px #10b981;
+		animation: pulseGlow 2s ease-in-out infinite;
 	}
 
 	.brand-name {
@@ -510,6 +494,13 @@
 		gap: 1.25rem;
 		backdrop-filter: blur(16px);
 		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+		transition: transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease;
+	}
+
+	.pane-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(16, 185, 129, 0.05);
+		border-color: rgba(255, 255, 255, 0.15);
 	}
 
 	.pane-header {
@@ -1015,6 +1006,11 @@
 		box-shadow:
 			0 10px 25px rgba(0, 0, 0, 0.7),
 			0 0 15px rgba(16, 185, 129, 0.3);
+	}
+
+	.dock-item:active {
+		transform: scale(0.92);
+		background: rgba(255, 255, 255, 0.1);
 	}
 
 	.dock-icon {

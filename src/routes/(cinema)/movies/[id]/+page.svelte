@@ -1,8 +1,8 @@
 <script lang="ts">
 	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
 	import StreamPlayerContainer from '$lib/components/player/StreamPlayerContainer.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
-	import Badge from '$lib/components/ui/Badge.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
@@ -64,8 +64,12 @@
 								method="POST"
 								action="?/logInteraction"
 								use:enhance={() => {
+									const previous = watched;
 									watched = !watched;
-									return async ({ update }) => {
+									return async ({ result, update }) => {
+										if (result.type === 'error' || result.type === 'failure') {
+											watched = previous;
+										}
 										await update({ reset: false });
 									};
 								}}
@@ -73,7 +77,7 @@
 								<input type="hidden" name="movieId" value={movie.id} />
 								<input type="hidden" name="type" value="watched" />
 								<input type="hidden" name="value" value={(!watched).toString()} />
-								<Button variant={watched ? 'success' : 'primary'} class="w-full">
+								<Button variant={watched ? 'default' : 'secondary'} class="w-full">
 									{watched ? '✔ Watched' : 'Mark as Watched'}
 								</Button>
 							</form>
@@ -83,8 +87,12 @@
 								method="POST"
 								action="?/logInteraction"
 								use:enhance={() => {
+									const previous = watchlist;
 									watchlist = !watchlist;
-									return async ({ update }) => {
+									return async ({ result, update }) => {
+										if (result.type === 'error' || result.type === 'failure') {
+											watchlist = previous;
+										}
 										await update({ reset: false });
 									};
 								}}
@@ -92,7 +100,7 @@
 								<input type="hidden" name="movieId" value={movie.id} />
 								<input type="hidden" name="type" value="watchlist" />
 								<input type="hidden" name="value" value={(!watchlist).toString()} />
-								<Button variant={watchlist ? 'success' : 'secondary'} class="w-full">
+								<Button variant={watchlist ? 'default' : 'secondary'} class="w-full">
 									{watchlist ? '✔ On Watchlist' : '+ Add to Watchlist'}
 								</Button>
 							</form>
@@ -109,8 +117,12 @@
 									method="POST"
 									action="?/logInteraction"
 									use:enhance={({ formData }) => {
+										const previous = rating;
 										rating = Number(formData.get('value'));
-										return async ({ update }) => {
+										return async ({ result, update }) => {
+											if (result.type === 'error' || result.type === 'failure') {
+												rating = previous;
+											}
 											await update({ reset: false });
 										};
 									}}
@@ -136,7 +148,7 @@
 						{:else}
 							<div class="auth-prompt glass-card">
 								<p>Log in to track this film.</p>
-								<Button href="/auth/login" variant="primary" class="w-full">Sign In</Button>
+								<Button href="/auth/login" variant="default" class="w-full">Sign In</Button>
 							</div>
 						{/if}
 					</div>
@@ -159,11 +171,11 @@
 					<!-- Key Specs & Badges -->
 					<div class="meta-pills">
 						{#if movie.voteAverage}
-							<Badge variant="gold">★ {Number(movie.voteAverage).toFixed(1)} / 10</Badge>
+							<Badge variant="secondary">★ {Number(movie.voteAverage).toFixed(1)} / 10</Badge>
 						{/if}
 
 						{#if movie.runtime}
-							<Badge variant="surface">⏱ {movie.runtime} min</Badge>
+							<Badge variant="secondary">⏱ {movie.runtime} min</Badge>
 						{/if}
 
 						{#if movie.originalLanguage}
@@ -172,7 +184,7 @@
 
 						{#if movie.genres}
 							{#each movie.genres as g}
-								<Badge variant="surface">{(g as any).genre?.name || ''}</Badge>
+								<Badge variant="secondary">{(g as any).genre?.name || ''}</Badge>
 							{/each}
 						{/if}
 					</div>
@@ -202,7 +214,7 @@
 						<h2 class="section-heading">Top Cast</h2>
 						<div class="cast-grid">
 							{#each movie.cast as actor}
-								<div class="cast-card">
+								<a href="/search?q={encodeURIComponent(actor.person?.name || '')}" class="cast-card clickable-cast">
 									{#if actor.person?.profilePath}
 										<img
 											src="https://image.tmdb.org/t/p/w185{actor.person.profilePath}"
@@ -216,7 +228,7 @@
 										<p class="actor-name">{actor.person?.name}</p>
 										<p class="character-name">{actor.character || ''}</p>
 									</div>
-								</div>
+								</a>
 							{/each}
 						</div>
 					</section>
@@ -427,6 +439,16 @@
 		border: 1px solid var(--border-subtle);
 		border-radius: var(--radius-md);
 		overflow: hidden;
+		transition: transform 0.2s ease, border-color 0.2s ease;
+		text-decoration: none;
+		color: inherit;
+		display: block; /* Since it's an <a> now */
+	}
+
+	.clickable-cast:hover {
+		transform: translateY(-4px);
+		border-color: var(--accent-emerald);
+		cursor: pointer;
 	}
 
 	.cast-img {

@@ -38,7 +38,7 @@
 		--color-error: #ef4444;
 
 		/* Rating Colors */
-		--rating-star: #f59e0b;
+		--rating-star: var(--accent-emerald);
 
 		/* Borders & Separators (Ultra-clean Linear 1px borders) */
 		--border-subtle: rgba(255, 255, 255, 0.07);

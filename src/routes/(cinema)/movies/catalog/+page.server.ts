@@ -9,6 +9,7 @@ export async function load({ url }) {
 	const offset = (page - 1) * limit;
 	
 	const genreId = url.searchParams.get('genre') ? Number(url.searchParams.get('genre')) : null;
+	const decade = url.searchParams.get('decade') ? Number(url.searchParams.get('decade')) : null;
 	const sortBy = url.searchParams.get('sort') || 'popularity'; // 'popularity', 'rating', 'release'
 
 	// Build the where clause
@@ -27,6 +28,16 @@ export async function load({ url }) {
 			// No movies found for this genre
 			whereClause = and(whereClause, eq(movies.id, '00000000-0000-0000-0000-000000000000')) as any; 
 		}
+	}
+
+	if (decade) {
+		const startYear = decade;
+		const endYear = decade + 9;
+		whereClause = and(
+			whereClause,
+			sql`EXTRACT(YEAR FROM ${movies.releaseDate}) >= ${startYear}`,
+			sql`EXTRACT(YEAR FROM ${movies.releaseDate}) <= ${endYear}`
+		) as any;
 	}
 
 	// Build order by

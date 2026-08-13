@@ -8,6 +8,7 @@ import {
 	SESSION_COOKIE_OPTIONS
 } from '$lib/server/auth';
 import { eq, or } from 'drizzle-orm';
+import { notifyUserRegistered } from '$lib/server/services/telegram.service';
 
 export async function load({ locals }) {
 	if (locals.user) {
@@ -57,6 +58,9 @@ export const actions = {
 			await createSession(sessionToken, newUser.id);
 
 			cookies.set('session', sessionToken, SESSION_COOKIE_OPTIONS);
+
+			// Trigger Telegram notification
+			notifyUserRegistered(newUser.username, newUser.email).catch(() => {});
 		} catch (err) {
 			console.error('Registration failed:', err);
 			return fail(500, { error: 'Server error during registration.' });

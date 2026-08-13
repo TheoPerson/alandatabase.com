@@ -8,7 +8,7 @@
 	let { data } = $props();
 
 	let selectedGenreId = $state<number | null>(data.filters.genreId);
-	let sortBy = $state<'popularity' | 'rating' | 'release'>(data.filters.sortBy);
+	let sortBy = $state<'popularity' | 'rating' | 'release'>(data.filters.sortBy as 'popularity' | 'rating' | 'release');
 
 	function updateUrl(params: Record<string, string | null>) {
 		const url = new URL($page.url);
@@ -77,6 +77,22 @@
 				{/each}
 			</div>
 		{/if}
+
+		<!-- Decade Filters -->
+		<div class="genre-pills" style="margin-top: 1rem; margin-bottom: 2rem;">
+			<button type="button" onclick={() => updateUrl({ decade: null })}>
+				<Badge variant={!$page.url.searchParams.get('decade') ? "default" : "outline"} class="cursor-pointer">
+					All Time
+				</Badge>
+			</button>
+			{#each [2020, 2010, 2000, 1990, 1980, 1970] as decade}
+				<button type="button" onclick={() => updateUrl({ decade: decade.toString() })}>
+					<Badge variant={$page.url.searchParams.get('decade') === decade.toString() ? "default" : "outline"} class="cursor-pointer">
+						{decade}s
+					</Badge>
+				</button>
+			{/each}
+		</div>
 
 		<!-- Sorting Controls -->
 		<div class="toolbar">

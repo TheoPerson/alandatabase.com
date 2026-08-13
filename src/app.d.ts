@@ -7,6 +7,7 @@ declare global {
 				username: string;
 				displayName: string | null;
 				avatarPath: string | null;
+				settings: Record<string, any>;
 			} | null;
 			session: {
 				id: string;

@@ -32,9 +32,9 @@
 	{#if heroMovie?.backdropPath && heroMovie.backdropPath !== 'null'}
 		<div class="hero-backdrop">
 			<img
-				src="https://image.tmdb.org/t/p/w1280{heroMovie.backdropPath.startsWith('/')
-					? ''
-					: '/'}{heroMovie.backdropPath}"
+				src={heroMovie.backdropPath.startsWith('http') 
+					? heroMovie.backdropPath 
+					: `https://image.tmdb.org/t/p/w1280${heroMovie.backdropPath.startsWith('/') ? '' : '/'}${heroMovie.backdropPath}`}
 				alt="{heroMovie.title} Backdrop"
 				class="backdrop-img"
 			/>
@@ -198,6 +198,7 @@
 		color: #ffffff;
 		margin-bottom: 1rem;
 		letter-spacing: -0.02em;
+		word-break: break-word;
 	}
 
 	@media (min-width: 768px) {

@@ -43,6 +43,21 @@
 		goto(href);
 	}
 
+	function handlePaletteKeydown(e: KeyboardEvent) {
+		if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+			e.preventDefault();
+			const items = Array.from(document.querySelectorAll('.palette-item')) as HTMLElement[];
+			if (!items.length) return;
+			const currentIndex = items.indexOf(document.activeElement as HTMLElement);
+			let nextIndex = e.key === 'ArrowDown' ? currentIndex + 1 : currentIndex - 1;
+			if (nextIndex < 0) nextIndex = items.length - 1;
+			if (nextIndex >= items.length) nextIndex = 0;
+			items[nextIndex].focus();
+		} else if (e.key === 'Escape') {
+			open = false;
+		}
+	}
+
 	async function searchApi(q: string) {
 		if (!q.trim()) {
 			movies = [];
@@ -88,10 +103,8 @@
 	<div
 		class="palette-backdrop"
 		transition:fade={{ duration: 120 }}
-		role="button"
-		tabindex="0"
+		role="presentation"
 		onclick={() => (open = false)}
-		onkeydown={(e) => e.key === 'Escape' && (open = false)}
 	>
 		<div
 			class="palette-card"
@@ -101,7 +114,7 @@
 			aria-modal="true"
 			aria-label="Command Palette"
 			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
+			onkeydown={handlePaletteKeydown}
 		>
 			<div class="palette-header">
 				<span class="search-icon">🔍</span>
@@ -319,9 +332,9 @@
 
 	.item-category {
 		font-size: 0.75rem;
-		color: var(--text-tertiary);
+		color: var(--text-secondary);
 		padding: 0.2rem 0.5rem;
-		background: rgba(255, 255, 255, 0.05);
+		background: rgba(255, 255, 255, 0.1);
 		border-radius: 99px;
 	}
 

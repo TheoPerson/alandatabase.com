@@ -222,20 +222,7 @@ export async function getMovieById(id: string) {
 		}
 	}
 
-	// Ultimate Fallback: if still not found, return the top trending movie from DB so 404 never occurs
-	if (!found) {
-		found = await db.query.movies.findFirst({
-			where: eq(movies.adult, false),
-			orderBy: [desc(movies.popularity)],
-			with: {
-				collection: true,
-				genres: { with: { genre: true } },
-				cast: { limit: 15, with: { person: true } },
-				crew: { limit: 10, with: { person: true } },
-				videos: true
-			}
-		});
-	}
+
 
 	return applyLocalOverrides(found);
 }
@@ -261,65 +248,177 @@ export async function getPersonById(id: string) {
 	});
 }
 
-export async function searchMovies(q: string, limit = 20) {
+export async function searchMovies(q: string, limit = 30) {
 	await checkDbReady();
-	if (!q) return [];
+	if (!q || !q.trim()) return [];
+	const queryStr = q.trim();
+	const queryLower = queryStr.toLowerCase();
 
-	// 1. Check local DB first
-	const localResults = await db.query.movies.findMany({
-		where: and(ilike(movies.title, `%${q}%`), eq(movies.adult, false)),
-		orderBy: [desc(movies.popularity)],
-		limit,
-		with: {
-			genres: {
+	// 1. Query TMDB and Local DB in parallel
+	try {
+		const client = new TMDBClient();
+		const [localResults, localActors, searchMoviesRes, searchPeopleRes] = await Promise.all([
+			db.query.movies.findMany({
+				where: and(ilike(movies.title, `%${queryStr}%`), eq(movies.adult, false)),
+				orderBy: [desc(movies.popularity)],
+				limit: 15,
+				with: { genres: { with: { genre: true } } }
+			}).catch(() => []),
+			db.query.people.findMany({
+				where: ilike(people.name, `%${queryStr}%`),
+				limit: 3,
 				with: {
-					genre: true
+					castRoles: {
+						limit: 10,
+						with: { movie: { with: { genres: { with: { genre: true } } } } }
+					}
+				}
+			}).catch(() => []),
+			client.searchMovies(queryStr, 1).catch(() => ({ results: [] })),
+			client.searchPeople(queryStr, 1).catch(() => ({ results: [] }))
+		]);
+
+		// Extract actor movies from local DB
+		const localActorMovies: any[] = [];
+		for (const actor of localActors) {
+			for (const role of actor.castRoles || []) {
+				if (role.movie && !role.movie.adult) {
+					localActorMovies.push(role.movie);
 				}
 			}
 		}
-	});
 
-	if (localResults.length >= 5) return localResults.map(applyLocalOverrides);
+		// Extract person movies from TMDB (sort people by popularity first to get the most famous actor)
+		let tmdbPersonMovies: any[] = [];
+		const sortedPeople = (searchPeopleRes.results || []).sort(
+			(a: any, b: any) => (b.popularity || 0) - (a.popularity || 0)
+		);
 
-	// 2. Query TMDB API directly and return results immediately
-	try {
-		const client = new TMDBClient();
-		const searchRes = await client.searchMovies(q, 1);
-		const tmdbResults = searchRes.results.slice(0, limit);
+		if (sortedPeople.length > 0) {
+			const topPerson = sortedPeople[0];
+			if (topPerson && topPerson.id) {
+				try {
+					const credits = await client.getPersonMovieCredits(topPerson.id);
+					tmdbPersonMovies = (credits.cast || [])
+						.filter((m: any) => !m.adult && (m.poster_path || m.backdrop_path))
+						.sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
+						.slice(0, 20);
+				} catch {
+					tmdbPersonMovies = (topPerson.known_for || []).filter((m: any) => !m.adult);
+				}
+			}
+		}
 
-		// Convert TMDB results to display-ready format matching our schema shape
-		const tmdbFormatted = tmdbResults.map((m: any) => ({
-			id: String(m.id), // Use TMDB ID as string for linking
-			tmdbId: m.id,
-			title: m.title,
-			originalTitle: m.original_title,
-			originalLanguage: m.original_language,
-			overview: m.overview,
-			posterPath: m.poster_path,
-			backdropPath: m.backdrop_path,
-			releaseDate: m.release_date,
-			popularity: String(m.popularity),
-			voteAverage: String(m.vote_average),
-			voteCount: m.vote_count,
-			adult: m.adult,
-			genres: [] // No genre join data from search endpoint
-		}));
+		// Pool all candidate movies
+		const candidateMap = new Map<number, any>();
 
-		// Merge: local results first, then TMDB results not already in local
-		const localTmdbIds = new Set(localResults.map((m: any) => m.tmdbId));
-		const newFromTmdb = tmdbFormatted.filter((m: any) => !localTmdbIds.has(m.tmdbId));
-		const merged = [...localResults, ...newFromTmdb].slice(0, limit);
+		// Add local matches
+		for (const m of [...localResults, ...localActorMovies]) {
+			if (m.tmdbId) {
+				candidateMap.set(m.tmdbId, {
+					...m,
+					id: m.id || String(m.tmdbId),
+					popularityNum: Number(m.popularity || 0),
+					voteAvgNum: Number(m.voteAverage || 0),
+					voteCountNum: Number(m.voteCount || 0)
+				});
+			}
+		}
 
-		// Fire-and-forget: ingest top results in background (don't await)
+		// Add TMDB movie matches
+		for (const m of (searchMoviesRes.results || []) as any[]) {
+			if (m.id && !candidateMap.has(m.id)) {
+				candidateMap.set(m.id, {
+					id: String(m.id),
+					tmdbId: m.id,
+					title: m.title || m.name || '',
+					originalTitle: m.original_title || m.original_name || '',
+					originalLanguage: m.original_language || '',
+					overview: m.overview || '',
+					posterPath: m.poster_path || null,
+					backdropPath: m.backdrop_path || null,
+					releaseDate: m.release_date || m.first_air_date || '',
+					popularity: String(m.popularity || 0),
+					voteAverage: String(m.vote_average || 0),
+					voteCount: m.vote_count || 0,
+					adult: m.adult || false,
+					genres: [],
+					popularityNum: Number(m.popularity || 0),
+					voteAvgNum: Number(m.vote_average || 0),
+					voteCountNum: Number(m.vote_count || 0)
+				});
+			}
+		}
+
+		// Add TMDB person filmography matches
+		for (const m of tmdbPersonMovies as any[]) {
+			if (m.id && !candidateMap.has(m.id)) {
+				candidateMap.set(m.id, {
+					id: String(m.id),
+					tmdbId: m.id,
+					title: m.title || m.name || '',
+					originalTitle: m.original_title || m.original_name || '',
+					originalLanguage: m.original_language || '',
+					overview: m.overview || '',
+					posterPath: m.poster_path || null,
+					backdropPath: m.backdrop_path || null,
+					releaseDate: m.release_date || m.first_air_date || '',
+					popularity: String(m.popularity || 0),
+					voteAverage: String(m.vote_average || 0),
+					voteCount: m.vote_count || 0,
+					adult: m.adult || false,
+					genres: [],
+					popularityNum: Number(m.popularity || 0),
+					voteAvgNum: Number(m.vote_average || 0),
+					voteCountNum: Number(m.vote_count || 0),
+					fromActorSearch: true
+				});
+			}
+		}
+
+		// Smart Relevance Ranking Algorithm
+		const scoredCandidates = Array.from(candidateMap.values()).map((m) => {
+			let score = 0;
+			const titleLower = (m.title || '').toLowerCase();
+
+			// Exact or close title matches get heavy boosts
+			if (titleLower === queryLower) {
+				score += 5000;
+			} else if (titleLower.startsWith(queryLower)) {
+				score += 2000;
+			} else if (titleLower.includes(queryLower)) {
+				score += 800;
+			}
+
+			// Popularity & Vote weighting
+			score += (m.popularityNum || 0) * 5;
+			score += (m.voteAvgNum || 0) * 20;
+			score += Math.log10((m.voteCountNum || 0) + 1) * 50;
+
+			// If from top actor credits, add a solid baseline
+			if (m.fromActorSearch) {
+				score += 400;
+			}
+
+			return { movie: m, score };
+		});
+
+		// Sort descending by score
+		scoredCandidates.sort((a, b) => b.score - a.score);
+		const finalResults = scoredCandidates.slice(0, limit).map((item) => item.movie);
+
+		// Background ingest top 3 items
 		Promise.resolve().then(async () => {
-			for (const m of tmdbResults.slice(0, 5)) {
-				await ingestMovie(m.id).catch(() => null);
+			for (const m of finalResults.slice(0, 3)) {
+				if (m.tmdbId) {
+					await ingestMovie(m.tmdbId).catch(() => null);
+				}
 			}
 		});
 
-		return merged.map(applyLocalOverrides);
+		return finalResults.map(applyLocalOverrides);
 	} catch (err) {
-		console.warn('⚠️ TMDB search fallback failed:', err);
-		return localResults.map(applyLocalOverrides);
+		console.warn('⚠️ Search algorithm error:', err);
+		return [];
 	}
 }

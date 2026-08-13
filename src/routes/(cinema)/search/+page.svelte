@@ -5,9 +5,25 @@
 
 	let { data } = $props();
 	let searchInput = $state('');
+	let sortBy = $state<'relevance' | 'rating' | 'recent'>('relevance');
 
 	$effect(() => {
 		searchInput = data.query || '';
+	});
+
+	const sortedResults = $derived.by(() => {
+		const list = [...(data.results || [])];
+		if (sortBy === 'rating') {
+			return list.sort((a, b) => Number(b.voteAverage || 0) - Number(a.voteAverage || 0));
+		}
+		if (sortBy === 'recent') {
+			return list.sort((a, b) => {
+				const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
+				const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
+				return dateB - dateA;
+			});
+		}
+		return list;
 	});
 
 	function handleSubmit(e: SubmitEvent) {
@@ -47,20 +63,57 @@
 
 	{#if data.query}
 		<div class="results-header">
-			<h2>Results for <span class="query-text">"{data.query}"</span></h2>
-			<span class="count">{data.results.length} movies found</span>
+			<div class="results-title-group">
+				<h2>Results for <span class="query-text">"{data.query}"</span></h2>
+				<span class="count">{data.results.length} movies found</span>
+			</div>
+
+			{#if data.results.length > 0}
+				<div class="sort-controls">
+					<span class="sort-label">Sort:</span>
+					<div class="sort-pills">
+						<button
+							type="button"
+							class="sort-pill"
+							class:active={sortBy === 'relevance'}
+							onclick={() => (sortBy = 'relevance')}
+							title="Tri par pertinence"
+						>
+							🔥 Relevance
+						</button>
+						<button
+							type="button"
+							class="sort-pill"
+							class:active={sortBy === 'rating'}
+							onclick={() => (sortBy = 'rating')}
+							title="Tri par note IMDb"
+						>
+							⭐ IMDb Rating
+						</button>
+						<button
+							type="button"
+							class="sort-pill"
+							class:active={sortBy === 'recent'}
+							onclick={() => (sortBy = 'recent')}
+							title="Tri par date de sortie"
+						>
+							📅 Release Date
+						</button>
+					</div>
+				</div>
+			{/if}
 		</div>
 
-		{#if data.results.length > 0}
+		{#if sortedResults.length > 0}
 			<div class="grid-movies">
-				{#each data.results as movie}
+				{#each sortedResults as movie (movie.id || movie.tmdbId)}
 					<MovieCard
 						id={movie.id}
 						title={movie.title}
 						posterPath={movie.posterPath}
 						releaseDate={movie.releaseDate}
 						voteAverage={movie.voteAverage}
-						genres={movie.genres?.map((g: any) => g.genre.name)}
+						genres={movie.genres?.map((g: any) => g?.genre?.name || g?.name || (typeof g === 'string' ? g : ''))}
 					/>
 				{/each}
 			</div>
@@ -126,11 +179,25 @@
 
 	.results-header {
 		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
+		flex-direction: column;
+		gap: 1rem;
 		margin-bottom: 2rem;
 		padding-bottom: 1rem;
 		border-bottom: 1px solid var(--border-subtle);
+	}
+
+	@media (min-width: 768px) {
+		.results-header {
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+		}
+	}
+
+	.results-title-group {
+		display: flex;
+		align-items: baseline;
+		gap: 1rem;
 	}
 
 	.results-header h2 {
@@ -145,6 +212,58 @@
 	.count {
 		font-size: 0.9rem;
 		color: var(--text-tertiary);
+	}
+
+	.sort-controls {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+	}
+
+	.sort-label {
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: var(--text-tertiary);
+	}
+
+	.sort-pills {
+		display: flex;
+		align-items: center;
+		background: var(--bg-surface-1);
+		border: 1px solid var(--border-subtle);
+		border-radius: 9999px;
+		padding: 3px;
+		gap: 2px;
+	}
+
+	.sort-pill {
+		border: 1px solid transparent;
+		background: transparent;
+		color: var(--text-secondary);
+		font-size: 0.78rem;
+		font-weight: 600;
+		padding: 0.35rem 0.75rem;
+		border-radius: 9999px;
+		cursor: pointer;
+		transition: all 150ms ease;
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		user-select: none;
+	}
+
+	.sort-pill:hover {
+		color: var(--text-primary);
+		background: rgba(255, 255, 255, 0.05);
+	}
+
+	.sort-pill.active {
+		background: rgba(16, 185, 129, 0.15);
+		color: var(--accent-emerald);
+		border-color: rgba(16, 185, 129, 0.4);
+		font-weight: 700;
 	}
 
 	.grid-movies {

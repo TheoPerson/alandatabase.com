@@ -25,3 +25,6 @@ vite.config.ts.timestamp-*
 test-results
 
 .vercel
+
+# Sentry Config File
+.env.sentry-build-plugin

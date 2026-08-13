@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+
 	let {
 		tmdbId,
 		imdbId,
@@ -13,7 +15,7 @@
 		customVideoUrl?: string | null;
 	}>();
 
-	// Premium 2026 Movie Mirror Pipeline
+	// Premium 2026 Movie Mirror Pipeline with Distinct Providers
 	const servers = $derived(
 		customVideoUrl
 			? [
@@ -26,28 +28,28 @@
 			  ]
 			: [
 					{
-						id: 'vidlink-pro',
-						name: '💎 VidLink Pro',
-						badge: 'Ultra HD',
-						url: `https://vidlink.pro/movie/${tmdbId}?primaryColor=10b981&secondaryColor=050507`
+						id: 'vidzy-hd',
+						name: '🇫🇷 Vidzy HD',
+						badge: 'VFQ',
+						url: `https://multiembed.mov/?video_id=${tmdbId}&tmdb=1`
 					},
 					{
-						id: 'vidsrc-vip',
-						name: '⚡ VidSrc VIP',
-						badge: 'Fast',
-						url: `https://vidsrc.vip/embed/movie/${tmdbId}`
+						id: 'fstream-vostfr',
+						name: '🇬🇧 FStream (Uqload)',
+						badge: 'VOSTFR',
+						url: `https://vidsrc.me/embed/movie?tmdb=${tmdbId}`
 					},
 					{
-						id: 'vidsrc-rip',
-						name: '🌟 VidSrc RIP',
-						badge: 'Stable',
-						url: `https://vidsrc.rip/embed/movie/${tmdbId}`
+						id: 'vidsrc-pro',
+						name: '⚡ VidSrc Pro',
+						badge: 'HD',
+						url: `https://vidsrc.pro/embed/movie/${tmdbId}`
 					},
 					{
-						id: 'autoembed-co',
-						name: '🛡️ AutoEmbed',
-						badge: 'Backup',
-						url: `https://autoembed.co/movie/tmdb/${tmdbId}`
+						id: 'super-embed',
+						name: '🎥 SuperEmbed',
+						badge: 'Multi-Lang',
+						url: `https://autoembed.to/movie/tmdb/${tmdbId}`
 					},
 					...(trailerKey
 						? [
@@ -62,10 +64,11 @@
 			  ]
 	);
 
-	let activeServerId = $state('vidlink-pro');
+	let activeServerId = $state('vidzy-hd');
 	let isLoading = $state(true);
 	let isError = $state(false);
-	let fallbackTimer: ReturnType<typeof setTimeout>;
+	let playerViewportEl = $state<HTMLDivElement | null>(null);
+	let isFullscreen = $state(false);
 
 	$effect(() => {
 		if (customVideoUrl && activeServerId !== 'custom-source') {
@@ -81,46 +84,40 @@
 		activeServerId = id;
 		isLoading = true;
 		isError = false;
-		clearTimeout(fallbackTimer);
-		
-		// Auto-failover if iframe doesn't load within 12 seconds
-		fallbackTimer = setTimeout(() => {
-			if (isLoading) {
-				handleIframeError();
-			}
-		}, 12000);
 	}
 
 	function handleIframeLoad() {
 		isLoading = false;
-		clearTimeout(fallbackTimer);
 	}
 
 	function handleIframeError() {
 		isLoading = false;
 		isError = true;
-		clearTimeout(fallbackTimer);
-		
-		// Auto-switch to next server if not YouTube trailer
-		if (activeServerId !== 'youtube-trailer') {
-			const currentIndex = servers.findIndex((s) => s.id === activeServerId);
-			const nextServer = servers[(currentIndex + 1) % servers.length];
-			// Only auto-switch if we haven't looped back to the first one
-			if (currentIndex + 1 < servers.length && nextServer.id !== 'youtube-trailer') {
-				switchServer(nextServer.id);
-			}
+	}
+
+	function toggleFullscreen() {
+		if (!playerViewportEl) return;
+		if (!document.fullscreenElement) {
+			playerViewportEl.requestFullscreen?.().catch((err) => {
+				console.warn('Native fullscreen failed, fallback to iframe:', err);
+			});
+			isFullscreen = true;
+		} else {
+			document.exitFullscreen?.().catch(() => {});
+			isFullscreen = false;
 		}
 	}
-	
-	import { onMount, onDestroy } from 'svelte';
-	
+
 	onMount(() => {
-		// Initialize first timer
-		switchServer(activeServerId);
-	});
-	
-	onDestroy(() => {
-		clearTimeout(fallbackTimer);
+		const handleFsChange = () => {
+			isFullscreen = !!document.fullscreenElement;
+		};
+		document.addEventListener('fullscreenchange', handleFsChange);
+		document.addEventListener('webkitfullscreenchange', handleFsChange);
+		return () => {
+			document.removeEventListener('fullscreenchange', handleFsChange);
+			document.removeEventListener('webkitfullscreenchange', handleFsChange);
+		};
 	});
 </script>
 
@@ -132,11 +129,12 @@
 			<span class="server-heading">SELECT MOVIE STREAM SERVER:</span>
 		</div>
 		<div class="server-pills">
-			{#each servers as server}
+			{#each servers as server (server.id)}
 				<button
 					type="button"
 					class="server-pill"
 					class:active={activeServerId === server.id}
+					aria-pressed={activeServerId === server.id}
 					onclick={() => switchServer(server.id)}
 				>
 					<span class="server-name">{server.name}</span>
@@ -147,53 +145,67 @@
 	</div>
 
 	<!-- Video Player Viewport -->
-	<div class="player-viewport">
-		{#if isLoading}
-			<div class="player-loader-overlay">
-				<div class="spinner"></div>
-				<p class="loader-text">Loading stream from {activeServer.name}...</p>
-			</div>
-		{/if}
+	<div class="player-wrapper">
+		<div class="player-viewport" bind:this={playerViewportEl}>
+			{#if isLoading}
+				<div class="player-loader-overlay">
+					<div class="spinner"></div>
+					<p class="loader-text">Loading {activeServer.name}...</p>
+				</div>
+			{/if}
 
-		{#if isError}
-			<div class="player-error-overlay">
-				<span class="error-emoji">📡</span>
-				<p class="error-msg">Server mirror did not respond.</p>
-				<button
-					type="button"
-					class="retry-btn"
-					onclick={() => {
-						const currentIndex = servers.findIndex((s) => s.id === activeServerId);
-						const nextServer = servers[(currentIndex + 1) % servers.length];
-						switchServer(nextServer.id);
-					}}
-				>
-					🔄 Switch to Next Mirror
-				</button>
-			</div>
-		{/if}
+			{#if isError}
+				<div class="player-error-overlay">
+					<span class="error-emoji">📡</span>
+					<p class="error-msg">Server mirror did not respond.</p>
+					<button
+						type="button"
+						class="retry-btn"
+						onclick={() => {
+							const currentIndex = servers.findIndex((s) => s.id === activeServerId);
+							const nextServer = servers[(currentIndex + 1) % servers.length];
+							switchServer(nextServer.id);
+						}}
+					>
+						🔄 Switch to Next Mirror
+					</button>
+				</div>
+			{/if}
 
-		<!-- Standard Clean Embed Iframe (Unsandboxed for full provider compatibility) -->
-		<iframe
-			src={activeServer.url}
-			title="{title} Movie Stream"
-			class="player-iframe"
-			class:hidden={isLoading}
-			allowfullscreen
-			referrerpolicy="origin"
-			allow="autoplay; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope"
-			onload={handleIframeLoad}
-			onerror={handleIframeError}
-		></iframe>
+			<!-- Standard Clean Embed Iframe with Wildcard Fullscreen Permissions -->
+			{#key activeServer.id}
+				<iframe
+					src={activeServer.url}
+					title="{title} Movie Stream"
+					class="player-iframe"
+					allowfullscreen
+					allow="autoplay *; fullscreen *; encrypted-media *; picture-in-picture *; clipboard-write *"
+					onload={handleIframeLoad}
+					onerror={handleIframeError}
+				></iframe>
+			{/key}
+		</div>
 	</div>
 
-	<!-- Stream Metadata Footer -->
+	<!-- Stream Metadata Footer with Custom Fullscreen Button -->
 	<div class="player-footer">
 		<div class="footer-info">
 			<span class="now-playing">NOW STREAMING: <strong>{title}</strong></span>
 			<span class="server-indicator">via {activeServer.name}</span>
 		</div>
 		<div class="footer-actions">
+			<button
+				type="button"
+				class="fullscreen-toggle-btn"
+				onclick={toggleFullscreen}
+				title="Activer le mode plein écran"
+			>
+				{#if isFullscreen}
+					<span>🗗 Quitter Plein Écran</span>
+				{:else}
+					<span>⛶ Plein Écran HD</span>
+				{/if}
+			</button>
 			<span class="quality-tag">1080p Ultra HD</span>
 		</div>
 	</div>
@@ -208,6 +220,8 @@
 		border-radius: var(--radius-lg);
 		overflow: hidden;
 		box-shadow: var(--shadow-md);
+		position: relative;
+		z-index: 20;
 	}
 
 	.server-header-bar {
@@ -217,6 +231,8 @@
 		padding: 1rem 1.25rem;
 		background: var(--bg-surface-2);
 		border-bottom: 1px solid var(--border-subtle);
+		position: relative;
+		z-index: 25;
 	}
 
 	@media (min-width: 768px) {
@@ -252,6 +268,8 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.5rem;
+		position: relative;
+		z-index: 30;
 	}
 
 	.server-pill {
@@ -267,6 +285,7 @@
 		font-weight: 600;
 		cursor: pointer;
 		transition: all 150ms ease;
+		user-select: none;
 	}
 
 	.server-pill:hover {
@@ -290,6 +309,14 @@
 		color: var(--text-tertiary);
 	}
 
+	.player-wrapper {
+		width: 100%;
+		max-width: 1000px;
+		margin: 0 auto;
+		background: #000000;
+		position: relative;
+	}
+
 	.player-viewport {
 		position: relative;
 		width: 100%;
@@ -298,16 +325,40 @@
 		background: #000000;
 	}
 
+	/* Native Fullscreen styling for absolute 100% monitor takeover */
+	.player-viewport:fullscreen {
+		width: 100vw !important;
+		height: 100vh !important;
+		padding-bottom: 0 !important;
+		background: #000000 !important;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.player-viewport:-webkit-full-screen {
+		width: 100vw !important;
+		height: 100vh !important;
+		padding-bottom: 0 !important;
+		background: #000000 !important;
+	}
+
+	.player-viewport:fullscreen .player-iframe,
+	.player-viewport:-webkit-full-screen .player-iframe {
+		width: 100vw !important;
+		height: 100vh !important;
+		position: fixed !important;
+		inset: 0 !important;
+		z-index: 999999 !important;
+	}
+
 	.player-iframe {
 		position: absolute;
 		inset: 0;
 		width: 100%;
 		height: 100%;
 		border: none;
-	}
-
-	.player-iframe.hidden {
-		opacity: 0;
+		z-index: 5;
 	}
 
 	.player-loader-overlay,
@@ -319,7 +370,7 @@
 		align-items: center;
 		justify-content: center;
 		background: var(--bg-primary);
-		z-index: 10;
+		z-index: 1;
 		gap: 0.75rem;
 	}
 
@@ -372,6 +423,8 @@
 
 	.player-footer {
 		display: flex;
+		flex-wrap: wrap;
+		gap: 0.75rem;
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.85rem 1.25rem;
@@ -379,10 +432,41 @@
 		border-top: 1px solid var(--border-subtle);
 		font-size: 0.8rem;
 		color: var(--text-secondary);
+		position: relative;
+		z-index: 25;
 	}
 
 	.now-playing strong {
 		color: var(--text-primary);
+	}
+
+	.footer-actions {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.fullscreen-toggle-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.4rem 0.85rem;
+		background: rgba(16, 185, 129, 0.15);
+		border: 1px solid var(--accent-emerald);
+		color: var(--accent-emerald);
+		border-radius: var(--radius-sm);
+		font-size: 0.78rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		user-select: none;
+	}
+
+	.fullscreen-toggle-btn:hover {
+		background: var(--accent-emerald);
+		color: var(--bg-primary);
+		transform: translateY(-1px);
+		box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
 	}
 
 	.quality-tag {

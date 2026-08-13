@@ -1,9 +1,11 @@
+import { sequence } from '@sveltejs/kit/hooks';
+import * as Sentry from '@sentry/sveltekit';
 import { validateSessionToken } from '$lib/server/auth';
 import { ensureTablesExist } from '$lib/server/db/migrate';
 import { assignAllExperiments } from '$lib/server/ab-testing';
 import type { Handle } from '@sveltejs/kit';
 
-export const handle: Handle = async ({ event, resolve }) => {
+export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
 	// A/B Testing Assignment
 	let deviceId = event.cookies.get('device_id');
 	if (!deviceId) {
@@ -30,7 +32,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 			username: user.username,
 			displayName: user.displayName,
 			avatarPath: user.avatarPath,
-			settings: user.settings
+			settings: (user.settings as Record<string, any>) || {}
 		};
 	} else {
 		event.cookies.delete('session', { path: '/' });
@@ -40,8 +42,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	// Centralized Auth Guard
 	const pathname = event.url.pathname;
-	const isProtected = pathname.startsWith('/my/') || pathname.startsWith('/admin/') || pathname.includes('/edit');
-	
+	const isProtected =
+		pathname.startsWith('/my/') || pathname.startsWith('/admin/') || pathname.includes('/edit');
+
 	if (isProtected && !event.locals.user) {
 		return new Response(null, {
 			status: 302,
@@ -54,4 +57,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		response.headers.set('cache-control', 'no-cache, no-store, must-revalidate');
 	}
 	return response;
-};
+});
+import { notifyCriticalError } from '$lib/server/services/telegram.service';
+
+export const handleError = Sentry.handleErrorWithSentry(({ error, event }: { error: any; event: any }) => {
+	notifyCriticalError(`URL: ${event.url.pathname}`, error).catch(() => {});
+});

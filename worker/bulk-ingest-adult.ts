@@ -1,3 +1,4 @@
+import './env.js';
 import { ingestAdultVideo } from './src/tmdb/ingest-adult.js';
 
 async function main() {

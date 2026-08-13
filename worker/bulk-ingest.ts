@@ -1,3 +1,4 @@
+import './env.js';
 import { TMDBClient } from './src/tmdb/client.js';
 import { ingestMovie } from './src/tmdb/ingest-movies.js';
 

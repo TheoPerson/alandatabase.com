@@ -18,7 +18,9 @@
 	let loaded = $state(false);
 	let error = $state(false);
 
-	const imageUrl = $derived(path ? `https://image.tmdb.org/t/p/${size}${path}` : null);
+	const imageUrl = $derived(path 
+		? (path.startsWith('http') ? path : `https://image.tmdb.org/t/p/${size}${path.startsWith('/') ? '' : '/'}${path}`) 
+		: null);
 </script>
 
 <div class="poster-container {customClass}" style="aspect-ratio: {aspectRatio}">
@@ -27,6 +29,9 @@
 			src={imageUrl}
 			alt="{title} Poster"
 			loading="lazy"
+			decoding="async"
+			width="500"
+			height="750"
 			class="poster-img"
 			class:loaded
 			onload={() => (loaded = true)}

@@ -8,7 +8,9 @@
 		"build": "tsc",
 		"start": "node dist/index.js",
 		"ingest:genres": "tsx src/cli.ts sync-genres",
-		"ingest:popular": "tsx src/cli.ts sync-popular"
+		"ingest:popular": "tsx src/cli.ts sync-popular",
+		"ingest:public-erotic": "tsx ingest-public-erotic.ts",
+		"ingest:adult-alex": "tsx bulk-ingest-adult.ts"
 	},
 	"dependencies": {
 		"dotenv": "^16.4.7",

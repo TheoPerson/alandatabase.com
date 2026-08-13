@@ -9,6 +9,7 @@ import {
 import { eq, and } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import { logActivity } from '$lib/server/services/interaction.service';
+import { notifyMovieStreamed } from '$lib/server/services/telegram.service';
 
 export async function load({ params, locals }) {
 	const movie = await getMovieById(params.id);
@@ -19,30 +20,32 @@ export async function load({ params, locals }) {
 		});
 	}
 
+	notifyMovieStreamed(movie.title, undefined, locals.user?.username).catch(() => {});
+
 	let interaction = null;
 	let review = null;
 	let userCustomLists: any[] = [];
 
 	if (locals.user) {
-		interaction = await db.query.userMovieInteractions.findFirst({
-			where: and(
-				eq(userMovieInteractions.userId, locals.user.id),
-				eq(userMovieInteractions.movieId, movie.id)
-			)
-		});
-
-		review = await db.query.userReviews.findFirst({
-			where: and(eq(userReviews.userId, locals.user.id), eq(userReviews.movieId, movie.id))
-		});
-
-		userCustomLists = await db.query.userLists.findMany({
-			where: eq(userLists.userId, locals.user.id),
-			with: {
-				items: {
-					where: eq(userListItems.movieId, movie.id)
+		[interaction, review, userCustomLists] = await Promise.all([
+			db.query.userMovieInteractions.findFirst({
+				where: and(
+					eq(userMovieInteractions.userId, locals.user.id),
+					eq(userMovieInteractions.movieId, movie.id)
+				)
+			}),
+			db.query.userReviews.findFirst({
+				where: and(eq(userReviews.userId, locals.user.id), eq(userReviews.movieId, movie.id))
+			}),
+			db.query.userLists.findMany({
+				where: eq(userLists.userId, locals.user.id),
+				with: {
+					items: {
+						where: eq(userListItems.movieId, movie.id)
+					}
 				}
-			}
-		});
+			})
+		]);
 	}
 
 	return {
