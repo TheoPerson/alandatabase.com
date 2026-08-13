@@ -21,8 +21,8 @@
 	let messages = $state<ChatMessage[]>([]);
 	let inputValue = $state('');
 	let isLoading = $state(false);
-	let chatContainer: HTMLDivElement;
-	let inputEl: HTMLTextAreaElement;
+	let chatContainer = $state<HTMLDivElement>();
+	let inputEl = $state<HTMLTextAreaElement>();
 	let turnCount = $state(0);
 
 	const STARTER_PROMPTS = [

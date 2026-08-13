@@ -21,13 +21,15 @@ export async function load() {
 }
 
 export const actions = {
-	toggleWatchlist: async ({ request }) => {
+	toggleWatchlist: async ({ request, locals }) => {
+		if (!locals.user) {
+			return { success: false, error: 'Unauthorized' };
+		}
 		const data = await request.formData();
 		const movieId = data.get('movieId') as string;
 		if (!movieId) return { success: false };
 
-		const user = await getOrCreateDefaultUser();
-		const interaction = await toggleWatchlist(user.id, movieId);
+		const interaction = await toggleWatchlist(locals.user.id, movieId);
 		return { success: true, watchlist: interaction.watchlist };
 	}
 };

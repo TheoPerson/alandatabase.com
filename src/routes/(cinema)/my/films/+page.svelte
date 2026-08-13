@@ -16,6 +16,28 @@
 			.sort((a, b) => b[1] - a[1])
 			.slice(0, 5)
 	);
+
+	const heatmapDays = $derived.by(() => {
+		const days = [];
+		const today = new Date();
+		for (let i = 363; i >= 0; i--) {
+			const d = new Date(today);
+			d.setDate(d.getDate() - i);
+			const dateStr = d.toISOString().split('T')[0];
+			
+			const count = watched.filter((w: any) => {
+				if (!w.updatedAt) return false;
+				return new Date(w.updatedAt).toISOString().split('T')[0] === dateStr;
+			}).length;
+
+			days.push({
+				date: dateStr,
+				count,
+				level: count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : 3
+			});
+		}
+		return days;
+	});
 </script>
 
 <svelte:head>
@@ -135,6 +157,29 @@
 						<span class="box-label">All-Time Favorites</span>
 					</div>
 				</div>
+			</div>
+		</div>
+
+		<!-- 365-Day Cinema Activity Heatmap -->
+		<div class="dash-card heatmap-card">
+			<div class="heatmap-header">
+				<h3 class="card-title">📅 365-Day Cinema Activity Heatmap</h3>
+				<div class="heatmap-legend">
+					<span class="legend-label">Less</span>
+					<span class="heat-box lvl-0"></span>
+					<span class="heat-box lvl-1"></span>
+					<span class="heat-box lvl-2"></span>
+					<span class="heat-box lvl-3"></span>
+					<span class="legend-label">More</span>
+				</div>
+			</div>
+			<div class="heatmap-grid">
+				{#each heatmapDays as day}
+					<div
+						class="heat-square lvl-{day.level}"
+						title="{day.date}: {day.count} {day.count === 1 ? 'film' : 'films'} logged"
+					></div>
+				{/each}
 			</div>
 		</div>
 	{/if}
@@ -433,4 +478,60 @@
 		align-items: center;
 		gap: 1rem;
 	}
+
+	.heatmap-card {
+		margin-top: 1.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+	}
+
+	.heatmap-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 1rem;
+	}
+
+	.heatmap-legend {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.75rem;
+		color: #71717a;
+	}
+
+	.heat-box {
+		width: 10px;
+		height: 10px;
+		border-radius: 2px;
+	}
+
+	.heatmap-grid {
+		display: grid;
+		grid-template-rows: repeat(7, 1fr);
+		grid-auto-flow: column;
+		gap: 4px;
+		overflow-x: auto;
+		padding: 0.5rem 0;
+	}
+
+	.heat-square {
+		width: 11px;
+		height: 11px;
+		border-radius: 3px;
+		transition: transform 100ms ease;
+		cursor: pointer;
+	}
+
+	.heat-square:hover {
+		transform: scale(1.3);
+		z-index: 2;
+	}
+
+	.lvl-0 { background: rgba(255, 255, 255, 0.05); }
+	.lvl-1 { background: rgba(16, 185, 129, 0.35); }
+	.lvl-2 { background: rgba(16, 185, 129, 0.65); }
+	.lvl-3 { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); }
 </style>

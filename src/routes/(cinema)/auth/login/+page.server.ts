@@ -23,7 +23,7 @@ export const actions = {
 		const password = formData.get('password')?.toString();
 
 		if (!identifier || !password) {
-			return fail(400, { error: 'Username/Email and password are required.' });
+			return fail(400, { error: 'Please enter both username/email and password.' });
 		}
 
 		try {
@@ -47,8 +47,8 @@ export const actions = {
 
 			cookies.set('session', sessionToken, SESSION_COOKIE_OPTIONS);
 		} catch (err) {
-			console.error('Login failed:', err);
-			return fail(500, { error: 'Server error during login.' });
+			console.error('Production Auth Error:', err);
+			return fail(500, { error: 'An unexpected authentication error occurred.' });
 		}
 
 		throw redirect(302, '/my/films');

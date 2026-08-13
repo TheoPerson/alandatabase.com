@@ -8,7 +8,7 @@
 </script>
 
 <div class="auth-container">
-	<div class="auth-card glass-panel">
+	<div class="auth-card glass-card">
 		<h1 class="title">Join CinemaDB</h1>
 		<p class="subtitle">Create your personal cinema archive.</p>
 

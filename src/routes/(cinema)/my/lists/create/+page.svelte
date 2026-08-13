@@ -1,5 +1,7 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
+	import Card from '$lib/components/ui/Card.svelte';
+	import Input from '$lib/components/ui/Input.svelte';
 	import { enhance } from '$app/forms';
 
 	let { form } = $props();
@@ -19,7 +21,7 @@
 		<div class="error-banner">{form.error}</div>
 	{/if}
 
-	<div class="form-card glass-panel">
+	<Card padding="lg">
 		<form
 			method="POST"
 			use:enhance={() => {
@@ -35,8 +37,8 @@
 			}}
 		>
 			<div class="input-group">
-				<label for="name">List Name</label>
-				<input
+				<Input
+					label="List Name"
 					type="text"
 					id="name"
 					name="name"
@@ -46,12 +48,13 @@
 			</div>
 
 			<div class="input-group mt-4">
-				<label for="description">Description (Optional)</label>
+				<label for="description" class="input-label">Description (Optional)</label>
 				<textarea
 					id="description"
 					name="description"
 					rows="3"
-					placeholder="What is this list about?"></textarea>
+					placeholder="What is this list about?"
+					class="textarea-field"></textarea>
 			</div>
 
 			<div class="settings-group mt-6">
@@ -70,7 +73,7 @@
 				</Button>
 			</div>
 		</form>
-	</div>
+	</Card>
 </div>
 
 <style>
@@ -97,39 +100,38 @@
 		color: var(--text-secondary);
 	}
 
-	.form-card {
-		padding: 2.5rem;
-		border-radius: var(--radius-lg);
-	}
-
 	.input-group {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.4rem;
 	}
 
-	.input-group label {
-		font-size: 0.95rem;
+	.mt-4 { margin-top: 1rem; }
+	.mt-6 { margin-top: 1.5rem; }
+	.mt-8 { margin-top: 2rem; }
+	.text-right { text-align: right; }
+
+	.input-label {
+		font-size: 0.85rem;
 		font-weight: 600;
-		color: var(--text-primary);
+		color: var(--text-secondary);
 	}
 
-	.input-group input,
-	.input-group textarea {
+	.textarea-field {
 		padding: 0.75rem 1rem;
-		background: var(--bg-surface-1);
+		background: var(--bg-surface-2);
 		border: 1px solid var(--border-subtle);
 		border-radius: var(--radius-md);
 		color: var(--text-primary);
 		font-family: inherit;
-		font-size: 1rem;
+		font-size: 0.95rem;
+		resize: vertical;
 	}
 
-	.input-group input:focus,
-	.input-group textarea:focus {
+	.textarea-field:focus {
 		outline: none;
-		border-color: var(--border-accent);
-		box-shadow: 0 0 0 3px var(--accent-gold-subtle);
+		border-color: var(--accent-emerald);
+		box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
 	}
 
 	.settings-group {
@@ -148,7 +150,7 @@
 		margin-top: 0.25rem;
 		width: 1.25rem;
 		height: 1.25rem;
-		accent-color: var(--accent-gold);
+		accent-color: var(--accent-emerald);
 	}
 
 	.checkbox-text {

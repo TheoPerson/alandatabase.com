@@ -3,13 +3,13 @@
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
-	const movie = data.movie;
+	const movie = $derived(data.movie);
 
 	// Populate inputs with current effective values (overrides take precedence over official TMDB)
-	const currentTitle = movie.localOverrides?.title || movie.title;
-	const currentOriginalTitle = movie.localOverrides?.originalTitle || movie.originalTitle;
-	const currentReleaseDate = movie.localOverrides?.releaseDate || movie.releaseDate;
-	const currentOverview = movie.localOverrides?.overview || movie.overview;
+	const currentTitle = $derived(movie.localOverrides?.title || movie.title);
+	const currentOriginalTitle = $derived(movie.localOverrides?.originalTitle || movie.originalTitle);
+	const currentReleaseDate = $derived(movie.localOverrides?.releaseDate || movie.releaseDate);
+	const currentOverview = $derived(movie.localOverrides?.overview || movie.overview);
 
 	let isSubmitting = $state(false);
 </script>
@@ -27,7 +27,7 @@
 		<div class="error-banner">{form.error}</div>
 	{/if}
 
-	<div class="edit-card glass-panel">
+	<div class="edit-card glass-card">
 		<form
 			method="POST"
 			use:enhance={() => {

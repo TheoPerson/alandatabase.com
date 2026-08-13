@@ -2,8 +2,13 @@
 	import Button from '$lib/components/ui/Button.svelte';
 
 	let { data } = $props();
-	const lists = data.lists;
+	const lists = $derived(data.lists);
 </script>
+
+<svelte:head>
+	<title>My Lists | CinemaDB</title>
+	<meta name="description" content="Manage your custom movie collections." />
+</svelte:head>
 
 <div class="container lists-page">
 	<header class="page-header">
@@ -15,7 +20,7 @@
 	</header>
 
 	{#if lists.length === 0}
-		<div class="empty-state glass-panel">
+		<div class="empty-state glass-card">
 			<div class="icon">📋</div>
 			<h3>No lists yet</h3>
 			<p>Create a custom list to organize your favorite films.</p>
@@ -24,7 +29,7 @@
 	{:else}
 		<div class="lists-grid">
 			{#each lists as list}
-				<a href="/my/lists/{list.id}" class="list-card glass-panel">
+				<a href="/my/lists/{list.id}" class="list-card glass-card">
 					<div class="covers">
 						{#if list.items.length === 0}
 							<div class="empty-cover">Empty</div>
@@ -117,7 +122,7 @@
 
 	.list-card:hover {
 		transform: translateY(-4px);
-		border-color: var(--border-accent);
+		border-color: var(--border-emerald);
 	}
 
 	.covers {

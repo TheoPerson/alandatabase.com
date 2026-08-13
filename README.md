@@ -1,42 +1,93 @@
-# sv
+<div align="center">
+  
+  # 🎬 CinemaDB
+  
+  **Next-Generation Personal Movie Operating System**
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+  [![SvelteKit](https://img.shields.io/badge/SvelteKit-5-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://kit.svelte.dev/)
+  [![Drizzle](https://img.shields.io/badge/Drizzle_ORM-PostgreSQL-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-## Creating a project
+  <p align="center">
+    Discover, track, and stream cinema with the world's most elegant personal movie archive. Designed with a premium "Swiss OLED" aesthetic for true cinephiles.
+  </p>
+</div>
 
-If you're seeing this, you've probably already done this step. Congrats!
+---
 
-```sh
-# create a new project
-npx sv create my-app
+## ✨ Features
+
+- 🖤 **Swiss OLED Design**: A meticulous, premium interface crafted with pure deep blacks (`#050507`), emerald accents (`#10b981`), and minimalist typography.
+- ⚡ **Svelte 5 Runes**: Built on the absolute cutting edge of SvelteKit for unparalleled reactivity, performance, and zero-flicker transitions.
+- 🎥 **Live Streaming Pipeline**: Seamless integration with multiple premium and backup streaming mirrors (VidLink Pro, VidSrc VIP, AutoEmbed).
+- 🗃️ **Personal Data Engine**: Advanced tracking for watched history, favorites, custom dynamic lists, and deep personal analytics, powered by Drizzle ORM & PostgreSQL.
+- 🤖 **AI Discovery**: Intelligent cinematic discovery powered by next-generation AI integrations.
+
+## 🛠️ Technology Stack
+
+| Category | Technology |
+|---|---|
+| **Framework** | [SvelteKit 5](https://kit.svelte.dev/) (Vite) |
+| **Language** | [TypeScript](https://www.typescriptlang.org/) |
+| **Database** | [PostgreSQL](https://www.postgresql.org/) + [Neon](https://neon.tech) |
+| **ORM** | [Drizzle ORM](https://orm.drizzle.team/) |
+| **UI System** | Custom Vanilla CSS Tokens (No bulky CSS frameworks) |
+| **Testing** | [Vitest](https://vitest.dev/) & [Playwright](https://playwright.dev/) |
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v20+)
+- PostgreSQL Database URL (e.g., Neon or local pg)
+- TMDB API Key
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/TheoPerson/the-alans-data-base.git
+   cd the-alans-data-base
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Environment Setup**
+   Create a `.env` file at the root of the project:
+   ```env
+   DATABASE_URL="postgres://user:password@host:port/db"
+   VITE_TMDB_API_KEY="your_tmdb_api_key"
+   ```
+
+4. **Initialize Database**
+   ```bash
+   npm run db:push
+   ```
+
+5. **Start Development Server**
+   ```bash
+   npm run dev
+   ```
+   *Your personal cinema OS will be running on `http://localhost:5173`.*
+
+## 🧪 Testing
+
+Run the critical unit testing suite:
+```bash
+npm run test:unit
 ```
 
-To recreate this project with the same configuration:
+## 🗺️ Roadmap (V3)
+- [x] Complete refactoring to Svelte 5 `$state` & `$derived` runes.
+- [x] Swiss OLED Design System migration.
+- [x] Backend interaction API (Ratings, Lists, History).
+- [x] Unsandboxed iframe Player Container.
+- [ ] User Profile & Social graph extensions.
 
-```sh
-# recreate this project
-pnpm dlx sv@0.16.4 create --template minimal --types ts --add prettier eslint vitest="usages:unit" playwright sveltekit-adapter="adapter:node" drizzle="database:postgresql+postgresql:postgres.js+docker:no" --install pnpm .
-```
+## 📄 License
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
-npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
-
-## Building
-
-To create a production version of your app:
-
-```sh
-npm run build
-```
-
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+---
+*Built with passion for the love of Cinema.*

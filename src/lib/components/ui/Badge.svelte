@@ -27,9 +27,9 @@
 	}
 
 	.gold {
-		background: var(--accent-gold-subtle);
-		color: var(--accent-gold);
-		border: 1px solid rgba(245, 197, 24, 0.3);
+		background: rgba(16, 185, 129, 0.15);
+		color: var(--accent-emerald);
+		border: 1px solid rgba(16, 185, 129, 0.3);
 	}
 
 	.surface {

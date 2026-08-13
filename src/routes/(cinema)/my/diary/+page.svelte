@@ -49,7 +49,7 @@
 	</header>
 
 	{#if data.diary.length === 0}
-		<div class="empty-state glass-panel">
+		<div class="empty-state glass-card">
 			<p class="empty-icon">🎬</p>
 			<h3>Nothing here yet</h3>
 			<p>Start watching, rating, and favoriting films — your diary will build itself.</p>

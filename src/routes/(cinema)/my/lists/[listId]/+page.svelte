@@ -3,8 +3,8 @@
 	import { enhance } from '$app/forms';
 
 	let { data } = $props();
-	const list = data.list;
-	const isOwner = data.isOwner;
+	const list = $derived(data.list);
+	const isOwner = $derived(data.isOwner);
 </script>
 
 <div class="container list-page">
@@ -31,14 +31,14 @@
 
 	<div class="items-grid">
 		{#if list.items.length === 0}
-			<div class="empty-state glass-panel">
+			<div class="empty-state glass-card">
 				<div class="icon">🎬</div>
 				<h3>List is empty</h3>
 				<p>Search for movies and add them to this list.</p>
 			</div>
 		{:else}
 			{#each list.items as item (item.movieId)}
-				<div class="item-card glass-panel">
+				<div class="item-card glass-card">
 					<a href="/movies/{item.movie.id}" class="poster-link">
 						{#if item.movie.posterPath}
 							<img

@@ -3,8 +3,8 @@
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
-	const movie = data.movie;
-	const existingReview = data.existingReview;
+	const movie = $derived(data.movie);
+	const existingReview = $derived(data.existingReview);
 
 	let isSubmitting = $state(false);
 </script>
@@ -31,7 +31,7 @@
 		<div class="error-banner">{form.error}</div>
 	{/if}
 
-	<div class="review-card glass-panel">
+	<div class="review-card glass-card">
 		<form
 			method="POST"
 			use:enhance={() => {

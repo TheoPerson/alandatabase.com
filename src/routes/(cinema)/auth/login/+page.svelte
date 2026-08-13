@@ -7,14 +7,23 @@
 	let isSubmitting = $state(false);
 </script>
 
-<div class="auth-container">
-	<div class="auth-card glass-panel">
-		<h1 class="title">Welcome Back</h1>
-		<p class="subtitle">Log in to your cinema archive.</p>
+<svelte:head>
+	<title>Sign In | CinemaDB</title>
+	<meta name="description" content="Log in to your personal cinema vault." />
+</svelte:head>
+
+<div class="auth-container linear-grid-bg">
+	<div class="auth-card glass-card">
+		<div class="auth-header">
+			<span class="auth-badge">SECURE VAULT AUTHENTICATION</span>
+			<h1 class="title">Sign In</h1>
+			<p class="subtitle">Access your personal cinema database, ratings & watch history.</p>
+		</div>
 
 		{#if form?.error}
 			<div class="error-banner">
-				{form.error}
+				<span class="error-icon">⚠️</span>
+				<span>{form.error}</span>
 			</div>
 		{/if}
 
@@ -37,7 +46,7 @@
 					id="identifier"
 					name="identifier"
 					required
-					placeholder="cinephile99"
+					placeholder="your_username or name@example.com"
 					autocomplete="username"
 				/>
 			</div>
@@ -49,18 +58,18 @@
 					id="password"
 					name="password"
 					required
-					placeholder="••••••••"
+					placeholder="••••••••••••"
 					autocomplete="current-password"
 				/>
 			</div>
 
 			<Button type="submit" variant="primary" class="w-full" disabled={isSubmitting}>
-				{isSubmitting ? 'Logging in...' : 'Log In'}
+				{isSubmitting ? 'Authenticating...' : 'Sign In to Vault'}
 			</Button>
 		</form>
 
 		<div class="auth-footer">
-			<p>Don't have an account yet? <a href="/auth/register" class="link">Create one</a></p>
+			<p>Don't have a personal archive account? <a href="/auth/register" class="link">Create an account</a></p>
 		</div>
 	</div>
 </div>
@@ -70,43 +79,64 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		min-height: calc(100vh - 70px - 200px); /* Account for header/footer */
-		padding: 2rem 1rem;
+		min-height: calc(100vh - 70px - 150px);
+		padding: 2.5rem 1rem;
 	}
 
 	.auth-card {
 		width: 100%;
-		max-width: 420px;
+		max-width: 440px;
 		padding: 2.5rem;
 		border-radius: var(--radius-lg);
-		box-shadow: var(--shadow-lg);
+		background: rgba(10, 10, 15, 0.85);
+		backdrop-filter: blur(16px);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+	}
+
+	.auth-header {
+		text-align: center;
+		margin-bottom: 2rem;
+	}
+
+	.auth-badge {
+		font-size: 0.65rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		color: #10b981;
+		background: rgba(16, 185, 129, 0.1);
+		padding: 0.25rem 0.6rem;
+		border-radius: 4px;
+		border: 1px solid rgba(16, 185, 129, 0.2);
+		display: inline-block;
+		margin-bottom: 0.75rem;
 	}
 
 	.title {
-		font-size: 2rem;
+		font-size: 2.2rem;
 		font-weight: 800;
-		color: var(--text-primary);
-		margin-bottom: 0.5rem;
-		text-align: center;
+		color: #ffffff;
+		margin-bottom: 0.4rem;
 		letter-spacing: -0.02em;
 	}
 
 	.subtitle {
-		font-size: 1rem;
-		color: var(--text-secondary);
-		margin-bottom: 2rem;
-		text-align: center;
+		font-size: 0.92rem;
+		color: #a1a1aa;
+		line-height: 1.5;
 	}
 
 	.error-banner {
-		background: rgba(239, 68, 68, 0.15);
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: rgba(239, 68, 68, 0.12);
 		color: #fca5a5;
-		padding: 0.75rem 1rem;
-		border-radius: var(--radius-sm);
+		padding: 0.85rem 1rem;
+		border-radius: var(--radius-md);
 		border: 1px solid rgba(239, 68, 68, 0.3);
 		margin-bottom: 1.5rem;
-		font-size: 0.9rem;
-		text-align: center;
+		font-size: 0.88rem;
 	}
 
 	.auth-form {
@@ -122,25 +152,25 @@
 	}
 
 	.input-group label {
-		font-size: 0.9rem;
+		font-size: 0.85rem;
 		font-weight: 600;
-		color: var(--text-secondary);
+		color: #d4d4d8;
 	}
 
 	.input-group input {
-		padding: 0.75rem 1rem;
-		background: var(--bg-surface-1);
-		border: 1px solid var(--border-subtle);
+		padding: 0.85rem 1rem;
+		background: rgba(18, 18, 24, 0.9);
+		border: 1px solid rgba(255, 255, 255, 0.1);
 		border-radius: var(--radius-md);
-		color: var(--text-primary);
-		font-size: 1rem;
-		transition: all var(--transition-fast);
+		color: #ffffff;
+		font-size: 0.95rem;
+		transition: all 150ms ease;
 	}
 
 	.input-group input:focus {
 		outline: none;
-		border-color: var(--border-accent);
-		box-shadow: 0 0 0 3px var(--accent-gold-subtle);
+		border-color: #10b981;
+		box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 	}
 
 	:global(.w-full) {
@@ -151,18 +181,20 @@
 	.auth-footer {
 		margin-top: 2rem;
 		text-align: center;
-		font-size: 0.9rem;
-		color: var(--text-tertiary);
+		font-size: 0.88rem;
+		color: #71717a;
+		padding-top: 1.25rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.06);
 	}
 
 	.link {
-		color: var(--accent-gold);
+		color: #10b981;
 		font-weight: 600;
-		transition: color var(--transition-fast);
+		transition: color 150ms ease;
 	}
 
 	.link:hover {
-		color: var(--accent-gold-hover);
+		color: #34d399;
 		text-decoration: underline;
 	}
 </style>

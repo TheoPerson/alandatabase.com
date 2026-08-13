@@ -1,5 +1,6 @@
 <script lang="ts">
 	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
+	import StreamPlayerContainer from '$lib/components/player/StreamPlayerContainer.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { enhance } from '$app/forms';
@@ -101,7 +102,7 @@
 						</div>
 
 						<!-- Rate Button -->
-						<div class="rate-container glass-panel">
+						<div class="rate-container glass-card">
 							<span class="rate-label">Your Rating</span>
 							<form
 								method="POST"
@@ -132,7 +133,7 @@
 							</form>
 						</div>
 
-						<div class="lists-container glass-panel mt-4">
+						<div class="lists-container glass-card mt-4">
 							<span class="rate-label mb-2 block">Add to Lists</span>
 							{#if data.userCustomLists.length === 0}
 								<p class="text-sm text-gray-400 mb-3">You don't have any custom lists yet.</p>
@@ -166,7 +167,7 @@
 							{/if}
 						</div>
 					{:else}
-						<div class="auth-prompt glass-panel">
+						<div class="auth-prompt glass-card">
 							<p>Log in to track this film.</p>
 							<Button href="/auth/login" variant="primary" class="w-full">Sign In</Button>
 						</div>
@@ -252,19 +253,16 @@
 				</section>
 			{/if}
 
-			<!-- Trailer -->
-			{#if trailer}
-				<section class="info-section">
-					<h2 class="section-heading">Official Trailer</h2>
-					<div class="video-container">
-						<iframe
-							src="https://www.youtube.com/embed/{trailer.key}"
-							title="Trailer for {movie.title}"
-							allowfullscreen
-						></iframe>
-					</div>
-				</section>
-			{/if}
+			<!-- Multi-Server HD Cinema Player -->
+			<section class="info-section">
+				<h2 class="section-heading">🎬 Watch Cinema Stream & Official Trailer</h2>
+				<StreamPlayerContainer
+					tmdbId={movie.tmdbId || movie.id}
+					imdbId={movie.imdbId}
+					title={movie.title}
+					trailerKey={trailer?.key}
+				/>
+			</section>
 		</main>
 	</div>
 </div>
@@ -362,7 +360,7 @@
 
 	.star-btn.active,
 	.star-btn:hover {
-		color: var(--accent-gold);
+		color: var(--rating-star);
 		transform: scale(1.1);
 	}
 
@@ -494,21 +492,5 @@
 		color: var(--text-tertiary);
 	}
 
-	/* Video */
-	.video-container {
-		position: relative;
-		padding-bottom: 56.25%;
-		height: 0;
-		border-radius: var(--radius-lg);
-		overflow: hidden;
-		background: #000;
-	}
 
-	.video-container iframe {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		border: none;
-	}
 </style>

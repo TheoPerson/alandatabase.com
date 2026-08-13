@@ -3,7 +3,7 @@
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
-	const movie = data.sourceMovie;
+	const movie = $derived(data.sourceMovie);
 
 	let isSubmitting = $state(false);
 </script>
@@ -17,7 +17,7 @@
 		<Button href="/movies/{movie.id}" variant="ghost">← Back</Button>
 	</header>
 
-	<div class="warning-banner glass-panel">
+	<div class="warning-banner glass-card">
 		<span class="icon">⚠️</span>
 		<div class="banner-text">
 			<strong>Warning: This action is destructive.</strong>
@@ -32,7 +32,7 @@
 		<div class="error-banner">{form.error}</div>
 	{/if}
 
-	<div class="merge-card glass-panel">
+	<div class="merge-card glass-card">
 		<form
 			method="POST"
 			use:enhance={() => {

@@ -1,13 +1,17 @@
+import { redirect } from '@sveltejs/kit';
 import {
-	getOrCreateDefaultUser,
 	getUserWatchlist,
 	getUserFavorites,
 	getUserWatchedHistory,
 	getUserStats
 } from '$lib/server/services/interaction.service';
 
-export async function load() {
-	const user = await getOrCreateDefaultUser();
+export async function load({ locals }) {
+	if (!locals.user) {
+		throw redirect(302, '/auth/login');
+	}
+
+	const user = locals.user;
 
 	const [watchlist, favorites, watched, stats] = await Promise.all([
 		getUserWatchlist(user.id),
