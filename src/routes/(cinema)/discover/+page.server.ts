@@ -3,7 +3,7 @@ import { db } from '$lib/server/db';
 import { movies } from '$lib/server/db/schema';
 import { desc, eq, and, sql } from 'drizzle-orm';
 
-export async function load() {
+export async function load({ locals }) {
 	// 1. Trending (Popularity)
 	const trending = await getTrendingMovies(12);
 
@@ -12,7 +12,7 @@ export async function load() {
 
 	// 3. Recent Releases
 	const recentReleases = await db.query.movies.findMany({
-		where: sql`${movies.releaseDate} IS NOT NULL`,
+		where: and(sql`${movies.releaseDate} IS NOT NULL`, eq(movies.adult, false)),
 		orderBy: [desc(movies.releaseDate)],
 		limit: 12,
 		with: {
@@ -26,18 +26,24 @@ export async function load() {
 
 	// 4. Custom Private Cinema (Hidden Gems)
 	// We identify them by adult = true OR negative tmdbId
-	const customCinema = await db.query.movies.findMany({
-		where: sql`${movies.tmdbId} < 0 OR ${movies.adult} = true`,
-		orderBy: [desc(movies.createdAt)],
-		limit: 12,
-		with: {
-			genres: {
-				with: {
-					genre: true
+	let customCinema: any[] = [];
+	
+	const isAdultEnabled = locals?.user?.settings?.adultEnabled === true;
+	
+	if (isAdultEnabled) {
+		customCinema = await db.query.movies.findMany({
+			where: sql`${movies.tmdbId} < 0 OR ${movies.adult} = true`,
+			orderBy: [desc(movies.createdAt)],
+			limit: 12,
+			with: {
+				genres: {
+					with: {
+						genre: true
+					}
 				}
 			}
-		}
-	});
+		});
+	}
 
 	return {
 		trending,

@@ -40,7 +40,7 @@
 	<div class="movie-backdrop-hero">
 		{#if movie.backdropPath && movie.backdropPath !== 'null'}
 			<img
-				src="https://image.tmdb.org/t/p/original{movie.backdropPath.startsWith('/')
+				src="https://image.tmdb.org/t/p/w1280{movie.backdropPath.startsWith('/')
 					? ''
 					: '/'}{movie.backdropPath}"
 				alt="{movie.title} Backdrop"

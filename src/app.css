@@ -1,69 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* ==========================================================================
    CINEMA PLATFORM DESIGN SYSTEM — 2026 ULTRA-PREMIUM EDITION
    ========================================================================== */
 
-:root {
-	/* Color Palette: OLED Titanium & Emerald (2026 High-End Swiss Minimalist) */
-	--bg-primary: #050507;
-	--bg-surface-1: #09090d;
-	--bg-surface-2: #121218;
-	--bg-surface-3: #1a1a24;
-	--bg-surface-glass: rgba(14, 14, 20, 0.75);
-	--bg-surface-glass-hover: rgba(24, 24, 34, 0.85);
+@layer base {
+	:root {
+		/* Color Palette: OLED Titanium & Emerald (2026 High-End Swiss Minimalist) */
+		--bg-primary: #050507;
+		--bg-surface-1: #09090d;
+		--bg-surface-2: #121218;
+		--bg-surface-3: #1a1a24;
+		--bg-surface-glass: rgba(14, 14, 20, 0.75);
+		--bg-surface-glass-hover: rgba(24, 24, 34, 0.85);
 
-	/* Text Hierarchy */
-	--text-primary: #f4f4f5;
-	--text-secondary: #a1a1aa;
-	--text-tertiary: #71717a;
-	--text-accent: #10b981;
+		/* Text Hierarchy */
+		--text-primary: #f4f4f5;
+		--text-secondary: #a1a1aa;
+		--text-tertiary: #71717a;
+		--text-accent: #10b981;
 
-	/* Brand & Interactive Colors */
-	--accent-emerald: #10b981;
-	--accent-emerald-hover: #34d399;
-	--accent-emerald-subtle: rgba(16, 185, 129, 0.12);
-	--accent-titanium: #e4e4e7;
-	--accent-silver: #a1a1aa;
-	--accent-cyan: #06b6d4;
-	--accent-violet: #8b5cf6;
-	--accent-gold: #10b981;
+		/* Brand & Interactive Colors */
+		--accent-emerald: #10b981;
+		--accent-emerald-hover: #34d399;
+		--accent-emerald-subtle: rgba(16, 185, 129, 0.12);
+		--accent-titanium: #e4e4e7;
+		--accent-silver: #a1a1aa;
+		--accent-cyan: #06b6d4;
+		--accent-violet: #8b5cf6;
+		--accent-gold: #10b981;
 
-	/* Status Colors */
-	--color-success: #10b981;
-	--color-warning: #f59e0b;
-	--color-error: #ef4444;
+		/* Status Colors */
+		--color-success: #10b981;
+		--color-warning: #f59e0b;
+		--color-error: #ef4444;
 
-	/* Rating Colors */
-	--rating-star: #f59e0b;
+		/* Rating Colors */
+		--rating-star: #f59e0b;
 
-	/* Borders & Separators (Ultra-clean Linear 1px borders) */
-	--border-subtle: rgba(255, 255, 255, 0.07);
-	--border-strong: rgba(255, 255, 255, 0.14);
-	--border-emerald: rgba(16, 185, 129, 0.35);
+		/* Borders & Separators (Ultra-clean Linear 1px borders) */
+		--border-subtle: rgba(255, 255, 255, 0.07);
+		--border-strong: rgba(255, 255, 255, 0.14);
+		--border-emerald: rgba(16, 185, 129, 0.35);
 
-	/* Typography */
-	--font-sans:
-		'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-	--font-serif: 'Cinzel', Georgia, serif;
-	--font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+		/* Typography */
+		--font-sans:
+			'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		--font-serif: 'Cinzel', Georgia, serif;
+		--font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
 
-	/* Radii (iOS 27 Fluid Squircular Corners) */
-	--radius-sm: 10px;
-	--radius-md: 16px;
-	--radius-lg: 24px;
-	--radius-xl: 32px;
-	--radius-full: 9999px;
+		/* Radii (iOS 27 Fluid Squircular Corners) */
+		--radius-sm: 10px;
+		--radius-md: 16px;
+		--radius-lg: 24px;
+		--radius-xl: 32px;
+		--radius-full: 9999px;
 
-	/* Shadows & Depth */
-	--shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.6);
-	--shadow-md: 0 8px 30px rgba(0, 0, 0, 0.7);
-	--shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.85);
-	--shadow-glow-emerald: 0 0 30px rgba(16, 185, 129, 0.2);
-	--shadow-glow-cyan: 0 0 30px rgba(6, 182, 212, 0.2);
+		/* Shadows & Depth */
+		--shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.6);
+		--shadow-md: 0 8px 30px rgba(0, 0, 0, 0.7);
+		--shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.85);
+		--shadow-glow-emerald: 0 0 30px rgba(16, 185, 129, 0.2);
+		--shadow-glow-cyan: 0 0 30px rgba(6, 182, 212, 0.2);
 
-	/* Transitions */
-	--transition-fast: 120ms cubic-bezier(0.16, 1, 0.3, 1);
-	--transition-normal: 220ms cubic-bezier(0.16, 1, 0.3, 1);
-	--transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+		/* Transitions */
+		--transition-fast: 120ms cubic-bezier(0.16, 1, 0.3, 1);
+		--transition-normal: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+		--transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
+		
+		/* Shadcn CSS Variables mapped to Swiss OLED */
+		--background: 240 17% 2%; /* #050507 */
+		--foreground: 0 0% 98%;
+		--card: 240 17% 3%;
+		--card-foreground: 0 0% 98%;
+		--popover: 240 17% 3%;
+		--popover-foreground: 0 0% 98%;
+		--primary: 160 84% 39%; /* #10b981 */
+		--primary-foreground: 0 0% 0%;
+		--secondary: 240 17% 6%;
+		--secondary-foreground: 0 0% 98%;
+		--muted: 240 17% 10%;
+		--muted-foreground: 240 5% 65%;
+		--accent: 240 17% 10%;
+		--accent-foreground: 0 0% 98%;
+		--destructive: 0 62.8% 30.6%;
+		--destructive-foreground: 0 0% 98%;
+		--border: 0 0% 14%;
+		--input: 0 0% 14%;
+		--ring: 160 84% 39%;
+		--radius: 0.5rem;
+	}
+}
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
 }
 
 /* Base Reset & Document Setup */
@@ -108,7 +145,72 @@ select {
 	font-size: inherit;
 }
 
-/* Aurora Ambient Backdrop */
+/* Solid Sleek Card (Replacing Glassmorphism) */
+.glass-card {
+	background: var(--bg-surface-1);
+	border: 1px solid var(--border-subtle);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-sm);
+	transition: all var(--transition-normal);
+	position: relative;
+	overflow: hidden;
+}
+
+.glass-card:hover {
+	background: var(--bg-surface-2);
+	border-color: var(--border-strong);
+	transform: translateY(-4px);
+	box-shadow: var(--shadow-md);
+}
+
+/* Container Utilities */
+.container {
+	width: 100%;
+	max-width: 1400px;
+	margin: 0 auto;
+	padding: 0 1.5rem;
+}
+
+.grid-movies {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+	.container {
+		padding: 0 2.5rem;
+	}
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--bg-surface-3);
+	border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--text-tertiary);
+}
+
+/* Focus & Accessibility */
+:focus-visible {
+	outline: 2px solid var(--accent-gold);
+	outline-offset: 2px;
+}
+
+/* ==========================================================================
+   LEGACY HUB STYLES (DO NOT REMOVE - USED BY /tools)
+   ========================================================================== */
 .aurora-backdrop {
 	position: fixed;
 	top: 0;
@@ -167,7 +269,6 @@ select {
 	}
 }
 
-/* Cyber Grid Mask Overlay */
 .cyber-grid-overlay {
 	position: absolute;
 	inset: 0;
@@ -177,89 +278,6 @@ select {
 	background-size: 60px 60px;
 	mask-image: radial-gradient(ellipse at 50% 30%, black 20%, transparent 80%);
 	-webkit-mask-image: radial-gradient(ellipse at 50% 30%, black 20%, transparent 80%);
-}
-
-/* Glassmorphism & Card Surfaces */
-.glass-card {
-	background: var(--bg-surface-glass);
-	backdrop-filter: blur(20px);
-	-webkit-backdrop-filter: blur(20px);
-	border: 1px solid var(--border-subtle);
-	border-radius: var(--radius-lg);
-	box-shadow: var(--shadow-md);
-	transition: all var(--transition-normal);
-	position: relative;
-	overflow: hidden;
-}
-
-.glass-card:hover {
-	background: var(--bg-surface-glass-hover);
-	border-color: var(--border-strong);
-	transform: translateY(-4px);
-	box-shadow: var(--shadow-lg);
-}
-
-.glass-card::before {
-	content: '';
-	position: absolute;
-	inset: 0;
-	border-radius: inherit;
-	padding: 1px;
-	background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.02));
-	-webkit-mask:
-		linear-gradient(#fff 0 0) content-box,
-		linear-gradient(#fff 0 0);
-	mask:
-		linear-gradient(#fff 0 0) content-box,
-		linear-gradient(#fff 0 0);
-	-webkit-mask-composite: xor;
-	mask-composite: exclude;
-	pointer-events: none;
-}
-
-/* Container Utilities */
-.container {
-	width: 100%;
-	max-width: 1400px;
-	margin: 0 auto;
-	padding: 0 1.5rem;
-}
-
-.grid-movies {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-	gap: 1.5rem;
-}
-
-@media (min-width: 768px) {
-	.container {
-		padding: 0 2.5rem;
-	}
-}
-
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-	width: 8px;
-	height: 8px;
-}
-
-::-webkit-scrollbar-track {
-	background: var(--bg-primary);
-}
-
-::-webkit-scrollbar-thumb {
-	background: var(--bg-surface-3);
-	border-radius: var(--radius-full);
-}
-
-::-webkit-scrollbar-thumb:hover {
-	background: var(--text-tertiary);
-}
-
-/* Focus & Accessibility */
-:focus-visible {
-	outline: 2px solid var(--accent-gold);
-	outline-offset: 2px;
 }
 
 /* Drawer & Floating Dock Animations */

@@ -46,6 +46,7 @@ export function applyLocalOverrides(movie: any) {
 export async function getTrendingMovies(limit = 12, offset = 0) {
 	await checkDbReady();
 	const results = await db.query.movies.findMany({
+		where: eq(movies.adult, false),
 		orderBy: [desc(movies.popularity)],
 		limit,
 		offset,
@@ -63,6 +64,7 @@ export async function getTrendingMovies(limit = 12, offset = 0) {
 export async function getTopRatedMovies(limit = 12, offset = 0) {
 	await checkDbReady();
 	const results = await db.query.movies.findMany({
+		where: eq(movies.adult, false),
 		orderBy: [desc(movies.voteAverage)],
 		limit,
 		offset,
@@ -223,6 +225,7 @@ export async function getMovieById(id: string) {
 	// Ultimate Fallback: if still not found, return the top trending movie from DB so 404 never occurs
 	if (!found) {
 		found = await db.query.movies.findFirst({
+			where: eq(movies.adult, false),
 			orderBy: [desc(movies.popularity)],
 			with: {
 				collection: true,
@@ -264,7 +267,7 @@ export async function searchMovies(q: string, limit = 20) {
 
 	// 1. Check local DB first
 	const localResults = await db.query.movies.findMany({
-		where: ilike(movies.title, `%${q}%`),
+		where: and(ilike(movies.title, `%${q}%`), eq(movies.adult, false)),
 		orderBy: [desc(movies.popularity)],
 		limit,
 		with: {

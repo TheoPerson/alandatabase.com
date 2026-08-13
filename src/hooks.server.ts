@@ -29,12 +29,24 @@ export const handle: Handle = async ({ event, resolve }) => {
 			email: user.email,
 			username: user.username,
 			displayName: user.displayName,
-			avatarPath: user.avatarPath
+			avatarPath: user.avatarPath,
+			settings: user.settings
 		};
 	} else {
 		event.cookies.delete('session', { path: '/' });
 		event.locals.session = null;
 		event.locals.user = null;
+	}
+
+	// Centralized Auth Guard
+	const pathname = event.url.pathname;
+	const isProtected = pathname.startsWith('/my/') || pathname.startsWith('/admin/') || pathname.includes('/edit');
+	
+	if (isProtected && !event.locals.user) {
+		return new Response(null, {
+			status: 302,
+			headers: { location: '/auth/login' }
+		});
 	}
 
 	const response = await resolve(event);

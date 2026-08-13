@@ -1,45 +1,42 @@
 <script lang="ts">
 	import MovieCard from '$lib/components/movie/MovieCard.svelte';
-	import Badge from '$lib/components/ui/Badge.svelte';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Button } from '$lib/components/ui/button';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 
 	let { data } = $props();
 
-	let selectedGenreId = $state<number | null>(
-		$page.url.searchParams.has('genre') ? Number($page.url.searchParams.get('genre')) : null
-	);
-	let sortBy = $state<'popularity' | 'rating' | 'release'>('popularity');
+	let selectedGenreId = $state<number | null>(data.filters.genreId);
+	let sortBy = $state<'popularity' | 'rating' | 'release'>(data.filters.sortBy);
 
-	const filteredMovies = $derived.by(() => {
-		let list = [...data.allMovies];
-
-		if (selectedGenreId !== null) {
-			list = list.filter((m) => m.genres?.some((g: any) => g.genreId === selectedGenreId));
+	function updateUrl(params: Record<string, string | null>) {
+		const url = new URL($page.url);
+		for (const [key, value] of Object.entries(params)) {
+			if (value === null) {
+				url.searchParams.delete(key);
+			} else {
+				url.searchParams.set(key, value);
+			}
 		}
-
-		if (sortBy === 'rating') {
-			list.sort((a, b) => Number(b.voteAverage || 0) - Number(a.voteAverage || 0));
-		} else if (sortBy === 'release') {
-			list.sort(
-				(a, b) => new Date(b.releaseDate || 0).getTime() - new Date(a.releaseDate || 0).getTime()
-			);
-		} else {
-			list.sort((a, b) => Number(b.popularity || 0) - Number(a.popularity || 0));
+		// Reset to page 1 on filter change, unless we are explicitly changing page
+		if (!('page' in params)) {
+			url.searchParams.set('page', '1');
 		}
-
-		return list;
-	});
+		goto(url, { keepFocus: true, replaceState: true });
+	}
 
 	function setGenre(id: number | null) {
 		selectedGenreId = id;
-		const url = new URL($page.url);
-		if (id === null) {
-			url.searchParams.delete('genre');
-		} else {
-			url.searchParams.set('genre', id.toString());
-		}
-		goto(url, { keepFocus: true, replaceState: true });
+		updateUrl({ genre: id ? id.toString() : null });
+	}
+
+	function handleSortChange() {
+		updateUrl({ sort: sortBy });
+	}
+	
+	function changePage(newPage: number) {
+		updateUrl({ page: newPage.toString() });
 	}
 </script>
 
@@ -65,23 +62,17 @@
 		<!-- Genre Filter Pills -->
 		{#if data.genreList.length > 0}
 			<div class="genre-pills">
-				<button
-					type="button"
-					class="genre-pill"
-					class:active={selectedGenreId === null}
-					onclick={() => setGenre(null)}
-				>
-					All Genres
+				<button type="button" onclick={() => setGenre(null)}>
+					<Badge variant={selectedGenreId === null ? "default" : "outline"} class="cursor-pointer">
+						All Genres
+					</Badge>
 				</button>
 
 				{#each data.genreList as g}
-					<button
-						type="button"
-						class="genre-pill"
-						class:active={selectedGenreId === g.id}
-						onclick={() => setGenre(g.id)}
-					>
-						{g.name}
+					<button type="button" onclick={() => setGenre(g.id)}>
+						<Badge variant={selectedGenreId === g.id ? "default" : "outline"} class="cursor-pointer">
+							{g.name}
+						</Badge>
 					</button>
 				{/each}
 			</div>
@@ -89,11 +80,11 @@
 
 		<!-- Sorting Controls -->
 		<div class="toolbar">
-			<span class="count-badge">{filteredMovies.length} movies</span>
+			<span class="count-badge">{data.pagination.totalCount} movies</span>
 
 			<div class="sort-group">
 				<span class="sort-label">Sort by:</span>
-				<select bind:value={sortBy} class="sort-select">
+				<select bind:value={sortBy} onchange={handleSortChange} class="sort-select">
 					<option value="popularity">🔥 Popularity</option>
 					<option value="rating">⭐ Highest Rated</option>
 					<option value="release">📅 Release Date</option>
@@ -103,9 +94,9 @@
 	</header>
 
 	<!-- Movies Grid -->
-	{#if filteredMovies.length > 0}
+	{#if data.movies.length > 0}
 		<div class="grid-movies">
-			{#each filteredMovies as movie}
+			{#each data.movies as movie}
 				<MovieCard
 					id={movie.id}
 					title={movie.title}
@@ -116,6 +107,27 @@
 				/>
 			{/each}
 		</div>
+		
+		<!-- Pagination -->
+		{#if data.pagination.totalPages > 1}
+			<div class="pagination">
+				<Button 
+					variant="outline"
+					disabled={data.pagination.page === 1}
+					onclick={() => changePage(data.pagination.page - 1)}
+				>
+					Previous
+				</Button>
+				<span class="page-info">Page {data.pagination.page} of {data.pagination.totalPages}</span>
+				<Button 
+					variant="outline"
+					disabled={data.pagination.page === data.pagination.totalPages}
+					onclick={() => changePage(data.pagination.page + 1)}
+				>
+					Next
+				</Button>
+			</div>
+		{/if}
 	{:else}
 		<div class="empty-catalog">
 			<p>🎬 No movies match the selected filter.</p>
@@ -152,30 +164,6 @@
 		flex-wrap: wrap;
 		gap: 0.5rem;
 		margin-bottom: 1.75rem;
-	}
-
-	.genre-pill {
-		padding: 0.45rem 1rem;
-		background: var(--bg-surface-1);
-		border: 1px solid var(--border-subtle);
-		border-radius: var(--radius-full);
-		color: var(--text-secondary);
-		font-size: 0.85rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all var(--transition-fast);
-	}
-
-	.genre-pill:hover {
-		background: var(--bg-surface-2);
-		color: var(--text-primary);
-	}
-
-	.genre-pill.active {
-		background: var(--accent-gold);
-		color: #000;
-		border-color: var(--accent-gold);
-		font-weight: 700;
 	}
 
 	.toolbar {
@@ -220,5 +208,18 @@
 		border-radius: var(--radius-lg);
 		border: 1px solid var(--border-subtle);
 		color: var(--text-secondary);
+	}
+	
+	.pagination {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+		margin-top: 4rem;
+	}
+	
+	.page-info {
+		color: var(--text-secondary);
+		font-size: 0.9rem;
 	}
 </style>

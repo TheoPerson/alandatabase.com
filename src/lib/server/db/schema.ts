@@ -233,6 +233,7 @@ export const users = pgTable(
 		passwordHash: varchar('password_hash', { length: 255 }).notNull(),
 		displayName: varchar('display_name', { length: 100 }),
 		avatarPath: varchar('avatar_path', { length: 255 }),
+		settings: jsonb('settings').default('{}'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').defaultNow().notNull()
 	},
