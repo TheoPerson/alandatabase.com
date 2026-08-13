@@ -16,7 +16,7 @@ export async function POST({ request }) {
 		return json({ ok: true });
 	}
 
-	const botToken = process.env.TELEGRAM_BOT_TOKEN;
+	const botToken = process.env.TELEGRAM_BOT_TOKEN || '8811353440:AAEzLAMSAVKEz6i9mYX6nfV--NrPAnVxGqE';
 	const sendReply = async (replyText: string, options: { photoUrl?: string | null; buttons?: any[] } = {}) => {
 		const isPhoto = Boolean(options.photoUrl);
 		const endpoint = isPhoto ? 'sendPhoto' : 'sendMessage';

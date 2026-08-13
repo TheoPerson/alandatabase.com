@@ -13,8 +13,8 @@ interface TelegramSendOptions {
 }
 
 export async function sendTelegramCard(text: string, options: TelegramSendOptions = {}): Promise<boolean> {
-	const botToken = process.env.TELEGRAM_BOT_TOKEN;
-	let chatId = process.env.TELEGRAM_CHAT_ID;
+	const botToken = process.env.TELEGRAM_BOT_TOKEN || '8811353440:AAEzLAMSAVKEz6i9mYX6nfV--NrPAnVxGqE';
+	let chatId = process.env.TELEGRAM_CHAT_ID || '1147966448';
 	let topicId: number | undefined = undefined;
 
 	if (!botToken || !chatId || botToken === 'YOUR_TELEGRAM_BOT_TOKEN') {
