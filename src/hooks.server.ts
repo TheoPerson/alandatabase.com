@@ -52,24 +52,13 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 		});
 	}
 
-	// Live Telegram telemetry for real-time visitor activity
-	if (
-		event.request.headers.get('accept')?.includes('text/html') &&
-		!pathname.startsWith('/api/') &&
-		!pathname.includes('.')
-	) {
-		const username = event.locals.user?.username;
-		const method = event.request.method;
-		notifyLivePageVisit(pathname, method, username).catch(() => {});
-	}
-
 	const response = await resolve(event);
 	if (event.request.headers.get('accept')?.includes('text/html')) {
 		response.headers.set('cache-control', 'no-cache, no-store, must-revalidate');
 	}
 	return response;
 });
-import { notifyCriticalError, notifyLivePageVisit } from '$lib/server/services/telegram.service';
+import { notifyCriticalError } from '$lib/server/services/telegram.service';
 
 export const handleError = Sentry.handleErrorWithSentry(({ error, event }: { error: any; event: any }) => {
 	notifyCriticalError(`URL: ${event.url.pathname}`, error).catch(() => {});
