@@ -182,4 +182,23 @@ export class TMDBClient {
 	): Promise<{ results: TMDBMovieSummary[]; total_pages: number }> {
 		return this.request<{ results: TMDBMovieSummary[]; total_pages: number }>('/discover/movie', params);
 	}
+
+	async getTopRatedTV(page = 1): Promise<{ results: any[]; total_pages: number }> {
+		return this.request<{ results: any[]; total_pages: number }>('/tv/top_rated', {
+			page: page.toString()
+		});
+	}
+
+	async getTVDetails(tmdbId: number): Promise<any> {
+		return this.request<any>(`/tv/${tmdbId}`, {
+			append_to_response: 'credits,videos,external_ids'
+		});
+	}
+
+	async searchTV(query: string, page = 1): Promise<{ results: any[]; total_pages: number }> {
+		return this.request<{ results: any[]; total_pages: number }>('/search/tv', {
+			query,
+			page: page.toString()
+		});
+	}
 }

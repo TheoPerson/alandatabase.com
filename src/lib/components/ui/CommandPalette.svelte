@@ -13,6 +13,7 @@
 		{ label: '⚡ Hub', href: '/', category: 'Navigation' },
 		{ label: '🎬 Movie DB', href: '/movies', category: 'Navigation' },
 		{ label: '🍿 Cinema Catalog', href: '/movies/catalog', category: 'Navigation' },
+		{ label: '📺 Top 50 IMDb TV Shows', href: '/tv', category: 'Navigation' },
 		{ label: '🔍 Advanced Search', href: '/search', category: 'Navigation' },
 		{ label: '📽️ My Personal Archive', href: '/my/films', category: 'Personal OS' },
 		{ label: '📖 My Diary', href: '/my/diary', category: 'Personal OS' },

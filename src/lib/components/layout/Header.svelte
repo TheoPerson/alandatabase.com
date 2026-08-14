@@ -37,6 +37,7 @@
 		<nav class="main-nav">
 			<a href="/discover" class="nav-link">Discover</a>
 			<a href="/movies/catalog" class="nav-link">All Movies</a>
+			<a href="/tv" class="nav-link">Top 50 TV</a>
 			<a href="/my/films" class="nav-link">Personal OS</a>
 		</nav>
 
@@ -96,6 +97,7 @@
 			<nav class="mobile-nav">
 				<a href="/discover" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Discover</a>
 				<a href="/movies/catalog" class="mobile-nav-link" onclick={() => (menuOpen = false)}>All Movies</a>
+				<a href="/tv" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Top 50 TV Shows</a>
 				<a href="/my/films" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Personal OS</a>
 			</nav>
 		</div>
