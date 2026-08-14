@@ -4,20 +4,39 @@ console.clear();
 console.log('\x1b[32m%s\x1b[0m', '════════════════════════════════════════════════════════════');
 console.log('\x1b[32m%s\x1b[0m', '  ALAN DATABASE / CINEMADB • LIVE TELEMETRY RADAR (2026)');
 console.log('\x1b[32m%s\x1b[0m', '════════════════════════════════════════════════════════════');
-console.log('\x1b[90m%s\x1b[0m', '📡 Connecting to Live Server-Sent Events Stream...');
 
-const targetUrl = process.env.LIVE_RADAR_URL || 'http://localhost:5173/api/telemetry/events';
+const localUrl = 'http://localhost:5173/api/telemetry/events';
+const prodUrl = 'https://alandatabase.com/api/telemetry/events';
 
 async function startMonitor() {
+	let targetUrl = localUrl;
+	let label = 'LOCAL (localhost:5173)';
+
+	// First try connecting to local
 	try {
+		console.log('\x1b[90m%s\x1b[0m', '📡 Probing local dev server (http://localhost:5173)...');
+		const localCheck = await fetch(localUrl, { signal: AbortSignal.timeout(1200) }).catch(() => null);
+		if (!localCheck || !localCheck.ok) {
+			console.log('\x1b[33m%s\x1b[0m', 'ℹ️ Local dev server offline. Switching to LIVE PRODUCTION (alandatabase.com)...');
+			targetUrl = prodUrl;
+			label = 'LIVE PROD (alandatabase.com)';
+		}
+	} catch {
+		targetUrl = prodUrl;
+		label = 'LIVE PROD (alandatabase.com)';
+	}
+
+	try {
+		console.log(`\x1b[90mConnecting to ${targetUrl}...\x1b[0m`);
 		const res = await fetch(targetUrl);
 		if (!res.ok || !res.body) {
 			console.error(`\x1b[31m[Connection Failed] HTTP ${res.status}\x1b[0m`);
-			console.log('\x1b[90mMake sure the local server is running with `npm run dev`\x1b[0m');
+			console.log('\x1b[90mRetrying in 5 seconds...\x1b[0m');
+			setTimeout(startMonitor, 5000);
 			return;
 		}
 
-		console.log('\x1b[32m%s\x1b[0m', '✅ Connected! Listening to real-time events:\n');
+		console.log('\x1b[32m%s\x1b[0m', `✅ Connected to [${label}]! Listening to real-time events:\n`);
 
 		const reader = res.body.getReader();
 		const decoder = new TextDecoder();
@@ -39,7 +58,7 @@ async function startMonitor() {
 					try {
 						const event = JSON.parse(trimmed.replace('data: ', ''));
 						const time = new Date(event.timestamp).toLocaleTimeString();
-						
+
 						let color = '\x1b[36m'; // Cyan
 						if (event.level === 'SUCCESS') color = '\x1b[32m'; // Green
 						if (event.level === 'STREAM') color = '\x1b[35m'; // Magenta
@@ -55,7 +74,7 @@ async function startMonitor() {
 			}
 		}
 	} catch (err) {
-		console.error('\x1b[31m%s\x1b[0m', `Connection error: ${err}`);
+		console.error('\x1b[31m%s\x1b[0m', `Connection error: ${(err as Error).message}`);
 		console.log('\x1b[90mRetrying in 5 seconds...\x1b[0m');
 		setTimeout(startMonitor, 5000);
 	}
