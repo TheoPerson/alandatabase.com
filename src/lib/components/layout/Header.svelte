@@ -52,7 +52,31 @@
 				<button type="submit" aria-label="Search" class="search-btn"> 🔍 </button>
 			</form>
 
-			<div class="desktop-only">
+			<div class="desktop-only flex items-center gap-2">
+				<a
+					href="https://github.com/TheoPerson/the-alans-data-base"
+					target="_blank"
+					rel="noreferrer"
+					class="header-repo-icon"
+					title="GitHub Repository"
+					aria-label="GitHub Repository"
+				>
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+						<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+					</svg>
+				</a>
+				<a
+					href="https://gitlab.com/TheoPerson/the-alans-data-base"
+					target="_blank"
+					rel="noreferrer"
+					class="header-repo-icon gitlab"
+					title="GitLab Mirror"
+					aria-label="GitLab Mirror"
+				>
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="#fc6d26">
+						<path d="M23.955 13.587l-1.342-4.135-2.664-8.189c-.135-.423-.73-.423-.867 0L16.418 9.45H7.582L4.918 1.263c-.136-.423-.731-.423-.867 0L1.387 9.452.045 13.587c-.121.375.014.787.331 1.023L12 23.054l11.624-8.444c.317-.236.452-.648.331-1.023z"/>
+					</svg>
+				</a>
 				<Button href="/my/films" variant="outline" size="sm">Personal OS</Button>
 			</div>
 
@@ -231,9 +255,36 @@
 		display: none;
 	}
 
+	.header-repo-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		border-radius: var(--radius-md, 8px);
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		color: #a1a1aa;
+		transition: all 0.2s ease;
+	}
+
+	.header-repo-icon:hover {
+		background: rgba(255, 255, 255, 0.12);
+		color: #ffffff;
+		border-color: rgba(255, 255, 255, 0.2);
+		transform: translateY(-1px);
+	}
+
+	.header-repo-icon.gitlab:hover {
+		background: rgba(252, 109, 38, 0.15);
+		border-color: rgba(252, 109, 38, 0.4);
+	}
+
 	@media (min-width: 768px) {
 		.desktop-only {
-			display: block;
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
 		}
 	}
 

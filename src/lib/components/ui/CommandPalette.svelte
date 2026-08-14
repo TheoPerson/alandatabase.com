@@ -18,7 +18,9 @@
 		{ label: '📖 My Diary', href: '/my/diary', category: 'Personal OS' },
 		{ label: '✨ AI Curator', href: '/discover/ai', category: 'Personal OS' },
 		{ label: '📡 Live Telemetry & Radar', href: '/status', category: 'System Radar' },
-		{ label: '🚨 Sentry Test & Error Verify', href: '/sentry-example-page', category: 'System Radar' }
+		{ label: '🚨 Sentry Test & Error Verify', href: '/sentry-example-page', category: 'System Radar' },
+		{ label: '🐙 GitHub Repository', href: 'https://github.com/TheoPerson/the-alans-data-base', category: 'Source Code' },
+		{ label: '🦊 GitLab Mirror Repository', href: 'https://gitlab.com/TheoPerson/the-alans-data-base', category: 'Source Code' }
 	];
 
 	const filteredLinks = $derived(
@@ -42,7 +44,13 @@
 		open = false;
 		query = '';
 		movies = [];
-		goto(href);
+		if (href.startsWith('http')) {
+			if (typeof window !== 'undefined') {
+				window.open(href, '_blank', 'noopener,noreferrer');
+			}
+		} else {
+			goto(href);
+		}
 	}
 
 	function handlePaletteKeydown(e: KeyboardEvent) {

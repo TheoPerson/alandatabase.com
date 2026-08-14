@@ -158,6 +158,30 @@
 			<span class="version-tag">2026.1 OS</span>
 		</div>
 		<div class="header-right">
+			<a
+				href="https://github.com/TheoPerson/the-alans-data-base"
+				target="_blank"
+				rel="noreferrer"
+				class="repo-link-badge github"
+				title="GitHub Repository (TheoPerson/the-alans-data-base)"
+			>
+				<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+					<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+				</svg>
+				<span>GitHub</span>
+			</a>
+			<a
+				href="https://gitlab.com/TheoPerson/the-alans-data-base"
+				target="_blank"
+				rel="noreferrer"
+				class="repo-link-badge gitlab"
+				title="GitLab Repository (TheoPerson/the-alans-data-base)"
+			>
+				<svg viewBox="0 0 24 24" width="13" height="13" fill="#fc6d26">
+					<path d="M23.955 13.587l-1.342-4.135-2.664-8.189c-.135-.423-.73-.423-.867 0L16.418 9.45H7.582L4.918 1.263c-.136-.423-.731-.423-.867 0L1.387 9.452.045 13.587c-.121.375.014.787.331 1.023L12 23.054l11.624-8.444c.317-.236.452-.648.331-1.023z"/>
+				</svg>
+				<span>GitLab</span>
+			</a>
 			<span class="ping-badge">POSTGRES {dbLatency}ms</span>
 			<span class="sys-badge">VERCEL EDGE</span>
 		</div>
@@ -492,6 +516,42 @@
 		display: flex;
 		align-items: center;
 		gap: 0.6rem;
+	}
+
+	.repo-link-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.72rem;
+		font-weight: 700;
+		padding: 0.25rem 0.6rem;
+		border-radius: 6px;
+		text-decoration: none;
+		transition: all 0.2s ease;
+	}
+
+	.repo-link-badge.github {
+		color: #ffffff;
+		background: rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+	}
+
+	.repo-link-badge.github:hover {
+		background: rgba(255, 255, 255, 0.15);
+		border-color: rgba(255, 255, 255, 0.25);
+		transform: translateY(-1px);
+	}
+
+	.repo-link-badge.gitlab {
+		color: #fc6d26;
+		background: rgba(252, 109, 38, 0.08);
+		border: 1px solid rgba(252, 109, 38, 0.2);
+	}
+
+	.repo-link-badge.gitlab:hover {
+		background: rgba(252, 109, 38, 0.16);
+		border-color: rgba(252, 109, 38, 0.4);
+		transform: translateY(-1px);
 	}
 
 	.ping-badge,
