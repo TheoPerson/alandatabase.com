@@ -17,7 +17,7 @@
 <header class="glass-header sticky-header">
 	<div class="container header-content">
 		<!-- Brand Logo -->
-		<a href="/movies" class="brand-logo" onclick={() => (menuOpen = false)}>
+		<a href="/cinema/movies" class="brand-logo" onclick={() => (menuOpen = false)}>
 			<div class="logo-symbol-wrapper">
 				<svg class="brand-logo-svg" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
 					<circle cx="18" cy="18" r="15" stroke="rgba(16, 185, 129, 0.3)" stroke-width="1.5" stroke-dasharray="3 2" class="pulse-ring" />
@@ -35,9 +35,9 @@
 
 		<!-- Main Nav Navigation Links -->
 		<nav class="main-nav">
-			<a href="/discover" class="nav-link">Discover</a>
-			<a href="/movies/catalog" class="nav-link">All Movies</a>
-			<a href="/tv" class="nav-link">Top 50 TV</a>
+			<a href="/cinema/movies" class="nav-link">Movies</a>
+			<a href="/cinema/tvshow" class="nav-link">TV Shows</a>
+			<a href="/movies/catalog" class="nav-link">Catalog</a>
 			<a href="/my/films" class="nav-link">Personal OS</a>
 		</nav>
 
@@ -95,9 +95,9 @@
 	{#if menuOpen}
 		<div class="mobile-menu">
 			<nav class="mobile-nav">
-				<a href="/discover" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Discover</a>
-				<a href="/movies/catalog" class="mobile-nav-link" onclick={() => (menuOpen = false)}>All Movies</a>
-				<a href="/tv" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Top 50 TV Shows</a>
+				<a href="/cinema/movies" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Movies</a>
+				<a href="/cinema/tvshow" class="mobile-nav-link" onclick={() => (menuOpen = false)}>TV Shows</a>
+				<a href="/movies/catalog" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Catalog</a>
 				<a href="/my/films" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Personal OS</a>
 			</nav>
 		</div>

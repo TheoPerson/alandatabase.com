@@ -64,7 +64,7 @@
 			id: 'cinemadb',
 			name: 'Cinema DB',
 			icon: '🎬',
-			url: '/movies',
+			url: '/cinema/movies',
 			color: '#10b981',
 			desc: 'Movie Archive & TMDB Engine'
 		},
@@ -72,7 +72,7 @@
 			id: 'tv-top50',
 			name: 'Top 50 TV Shows',
 			icon: '📺',
-			url: '/tv',
+			url: '/cinema/tvshow',
 			color: '#f5c518',
 			desc: 'IMDb Rated All-Time Masterpieces'
 		},
