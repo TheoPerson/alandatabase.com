@@ -9,7 +9,6 @@ import {
 import { eq, and } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import { logActivity } from '$lib/server/services/interaction.service';
-import { notifyMovieStreamed } from '$lib/server/services/telegram.service';
 
 export async function load({ params, locals }) {
 	const movie = await getMovieById(params.id);
@@ -19,8 +18,6 @@ export async function load({ params, locals }) {
 			message: 'Movie not found in the database.'
 		});
 	}
-
-	notifyMovieStreamed(movie.title, undefined, locals.user?.username, movie.posterPath).catch(() => {});
 
 	let interaction = null;
 	let review = null;

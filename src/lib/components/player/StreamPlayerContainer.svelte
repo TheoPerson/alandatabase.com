@@ -80,10 +80,26 @@
 		servers.find((s) => s.id === activeServerId) || servers[0]
 	);
 
+	function dispatchStreamTelemetry(serverName: string) {
+		if (typeof window === 'undefined') return;
+		fetch('/api/telemetry/stream-play', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				title,
+				serverName
+			})
+		}).catch(() => {});
+	}
+
 	function switchServer(id: string) {
 		activeServerId = id;
 		isLoading = true;
 		isError = false;
+		const targetServer = servers.find((s) => s.id === id);
+		if (targetServer) {
+			dispatchStreamTelemetry(targetServer.name);
+		}
 	}
 
 	function handleIframeLoad() {

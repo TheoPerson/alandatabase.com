@@ -3,6 +3,14 @@ import { TMDBClient } from '$lib/server/tmdb';
 import { ingestMovie } from '$lib/server/tmdb';
 
 export async function POST({ request }) {
+	const secretToken = process.env.TELEGRAM_WEBHOOK_SECRET;
+	if (secretToken) {
+		const incomingSecret = request.headers.get('x-telegram-bot-api-secret-token');
+		if (incomingSecret !== secretToken) {
+			return json({ error: 'Unauthorized webhook request' }, { status: 401 });
+		}
+	}
+
 	const body = await request.json().catch(() => null);
 	if (!body || !body.message) {
 		return json({ ok: true });

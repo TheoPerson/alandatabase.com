@@ -466,14 +466,6 @@
 		}
 	}
 
-	.live-dot {
-		width: 8px;
-		height: 8px;
-		background: #10b981;
-		border-radius: 50%;
-		box-shadow: 0 0 12px #10b981;
-		animation: pulseGlow 2s ease-in-out infinite;
-	}
 
 	.brand-name {
 		font-size: 1.15rem;

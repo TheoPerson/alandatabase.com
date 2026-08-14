@@ -5,8 +5,12 @@
 
 	let { data, form } = $props();
 	
-	let adultEnabled = $state(data.user?.settings?.adultEnabled || false);
+	let adultEnabled = $state(false);
 	let isSaving = $state(false);
+
+	$effect(() => {
+		adultEnabled = data.user?.settings?.adultEnabled || false;
+	});
 </script>
 
 <svelte:head>

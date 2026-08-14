@@ -7,8 +7,13 @@
 
 	let { data } = $props();
 
-	let selectedGenreId = $state<number | null>(data.filters.genreId);
-	let sortBy = $state<'popularity' | 'rating' | 'release'>(data.filters.sortBy as 'popularity' | 'rating' | 'release');
+	let selectedGenreId = $state<number | null>(null);
+	let sortBy = $state<'popularity' | 'rating' | 'release'>('popularity');
+
+	$effect(() => {
+		selectedGenreId = data.filters.genreId;
+		sortBy = data.filters.sortBy as 'popularity' | 'rating' | 'release';
+	});
 
 	function updateUrl(params: Record<string, string | null>) {
 		const url = new URL($page.url);
