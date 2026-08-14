@@ -88,8 +88,12 @@ export async function countMovies() {
 export async function getMovieById(id: string) {
 	await checkDbReady();
 
-	// Check by UUID or TMDB ID
 	const isNumeric = /^\d+$/.test(id);
+	const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+	if (!isNumeric && !isUuid) {
+		return null;
+	}
 
 	let found = await db.query.movies.findFirst({
 		where: isNumeric ? eq(movies.tmdbId, parseInt(id, 10)) : eq(movies.id, id),
