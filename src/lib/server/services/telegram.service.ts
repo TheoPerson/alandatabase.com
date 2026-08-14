@@ -9,6 +9,9 @@ interface TelegramSendOptions {
 	disableWebPagePreview?: boolean;
 }
 
+const sentDedupeCache = new Map<string, number>();
+const DEDUPE_TTL_MS = 15 * 60 * 1000; // 15 minutes TTL
+
 export async function sendTelegramCard(text: string, options: TelegramSendOptions = {}): Promise<boolean> {
 	const botToken = process.env.TELEGRAM_BOT_TOKEN || '8811353440:AAEzLAMSAVKEz6i9mYX6nfV--NrPAnVxGqE';
 	let chatId = process.env.TELEGRAM_CHAT_ID || '1147966448';
@@ -17,6 +20,20 @@ export async function sendTelegramCard(text: string, options: TelegramSendOption
 	if (!botToken || !chatId || botToken === 'YOUR_TELEGRAM_BOT_TOKEN') {
 		return false;
 	}
+
+	// De-duplication check: prevent spamming identical cards within 15 minutes
+	const now = Date.now();
+	for (const [key, timestamp] of sentDedupeCache.entries()) {
+		if (now - timestamp > DEDUPE_TTL_MS) {
+			sentDedupeCache.delete(key);
+		}
+	}
+
+	const dedupeKey = text.slice(0, 100);
+	if (sentDedupeCache.has(dedupeKey)) {
+		return true; // Already dispatched recently, skip Telegram notification
+	}
+	sentDedupeCache.set(dedupeKey, now);
 
 	// Topic / Sub-channel routing
 	const category = options.category || 'logs';

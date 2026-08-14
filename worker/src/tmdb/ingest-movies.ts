@@ -3,7 +3,10 @@ import { TMDBClient, type TMDBMovieDetail } from './client.js';
 import { eq } from 'drizzle-orm';
 import { notifyMovieIngested } from '../../../src/lib/server/services/telegram.service.js';
 
-export async function ingestMovie(tmdbId: number): Promise<string | null> {
+export async function ingestMovie(
+	tmdbId: number,
+	options: { notifyTelegram?: boolean } = { notifyTelegram: false }
+): Promise<string | null> {
 	const client = new TMDBClient();
 
 	try {
@@ -217,7 +220,9 @@ export async function ingestMovie(tmdbId: number): Promise<string | null> {
 		console.log(
 			`✅ Successfully ingested "${detail.title}" (${detail.release_date?.substring(0, 4) || 'N/A'})`
 		);
-		notifyMovieIngested(detail.title, detail.release_date?.substring(0, 4), detail.id, detail.poster_path).catch(() => {});
+		if (options.notifyTelegram) {
+			notifyMovieIngested(detail.title, detail.release_date?.substring(0, 4), detail.id, detail.poster_path).catch(() => {});
+		}
 		return movieId;
 	} catch (err) {
 		console.error(`❌ Ingestion failed for TMDB #${tmdbId}:`, err);
