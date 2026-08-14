@@ -12,30 +12,23 @@
 	let heroIndex = $state(0);
 	let carouselInterval: any = null;
 
-	const featuredHeroes = $derived([
-		data.featuredHero,
-		...(data.trending || []).filter((m: any) => m.backdropPath && m.backdropPath !== 'null').slice(0, 4)
-	].filter(Boolean));
+	const featuredMovies = $derived(
+		(data.trending || [])
+			.filter((m: any) => m.backdropPath && m.backdropPath !== 'null')
+			.slice(0, 5)
+	);
 
-	const currentHero = $derived(featuredHeroes[heroIndex] || data.featuredHero || data.trending[0] || null);
+	const currentHero = $derived(featuredMovies[heroIndex] || data.trending[0] || null);
 
 	const heroHref = $derived(
-		currentHero?.isTV
-			? `/cinema/tvshow/${currentHero.tmdbId}`
-			: `/cinema/movies/${currentHero?.id || currentHero?.tmdbId}`
+		currentHero ? `/cinema/movies/${currentHero.id || currentHero.tmdbId}` : '/movies/catalog'
 	);
 
 	const top10Today = $derived((data.trending || []).slice(0, 10));
 
 	function nextHero() {
-		if (featuredHeroes.length > 1) {
-			heroIndex = (heroIndex + 1) % featuredHeroes.length;
-		}
-	}
-
-	function prevHero() {
-		if (featuredHeroes.length > 1) {
-			heroIndex = (heroIndex - 1 + featuredHeroes.length) % featuredHeroes.length;
+		if (featuredMovies.length > 1) {
+			heroIndex = (heroIndex + 1) % featuredMovies.length;
 		}
 	}
 
@@ -46,7 +39,7 @@
 
 	function resetTimer() {
 		if (carouselInterval) clearInterval(carouselInterval);
-		carouselInterval = setInterval(nextHero, 9000);
+		carouselInterval = setInterval(nextHero, 8000);
 	}
 
 	onMount(() => {
@@ -59,10 +52,10 @@
 </script>
 
 <svelte:head>
-	<title>CinemaDB — Next-Gen 4K Streaming & Movie Archive</title>
+	<title>CinemaDB — Next-Gen 4K Movies & Cinema Archive</title>
 	<meta
 		name="description"
-		content="Discover, stream, and archive the greatest movies and TV series in history with seamless 4K backdrops."
+		content="Discover, stream, and archive the greatest films in cinematic history with seamless 4K backdrops."
 	/>
 </svelte:head>
 
@@ -94,7 +87,7 @@
 					<div class="hero-meta-row">
 						<span class="imdb-score-badge">
 							<span class="star">★</span>
-							<span>{Number(currentHero.voteAverage || 8.1).toFixed(1)}</span>
+							<span>{Number(currentHero.voteAverage || 8.0).toFixed(1)}</span>
 						</span>
 
 						{#if currentHero.releaseDate}
@@ -144,9 +137,9 @@
 					</div>
 
 					<!-- Featured Carousel Dots -->
-					{#if featuredHeroes.length > 1}
+					{#if featuredMovies.length > 1}
 						<div class="carousel-dots-row">
-							{#each featuredHeroes as _, idx}
+							{#each featuredMovies as _, idx}
 								<button
 									type="button"
 									class="carousel-dot"
@@ -174,7 +167,7 @@
 			<div class="top10-horizontal-grid">
 				{#each top10Today as movie, idx (movie.id || movie.tmdbId)}
 					<a
-						href="/movies/{movie.id || movie.tmdbId}"
+						href="/cinema/movies/{movie.id || movie.tmdbId}"
 						class="top10-card"
 						data-sveltekit-preload-data="hover"
 					>
@@ -192,7 +185,7 @@
 			<div class="section-title-bar">
 				<span class="title-accent-bar emerald"></span>
 				<h2 class="section-heading">Trending Movies</h2>
-				<a href="/movies/catalog" class="view-all-link">Browse All →</a>
+				<a href="/movies/catalog" class="view-all-link">Browse All Catalog →</a>
 			</div>
 
 			<div class="movies-media-grid">
@@ -211,41 +204,25 @@
 			</div>
 		</section>
 
-		<!-- 3. TOP 50 TV SHOWS PREVIEW (IMDb RANKED) -->
-		{#if data.topTV && data.topTV.length > 0}
-			<section class="catalog-section">
-				<div class="section-title-bar">
-					<span class="title-accent-bar gold"></span>
-					<h2 class="section-heading">Top Rated Television Masterpieces</h2>
-					<a href="/tv" class="view-all-link gold">View Top 50 IMDb Chart →</a>
-				</div>
-
-				<div class="tv-horizontal-scroller">
-					{#each data.topTV as show (show.tmdbId)}
-						<a href="/tv/{show.tmdbId}" class="tv-preview-card" data-sveltekit-preload-data="hover">
-							<div class="tv-rank-pill">#{show.rank}</div>
-							<div class="tv-poster-box">
-								<MoviePoster path={show.posterPath} title={show.title} />
-							</div>
-							<div class="tv-preview-info">
-								<span class="tv-preview-title">{show.title}</span>
-								<div class="tv-preview-meta">
-									<span class="tv-score">★ {show.imdbRating}</span>
-									<span class="meta-dot">•</span>
-									<span>{show.year}</span>
-								</div>
-							</div>
-						</a>
-					{/each}
-				</div>
-			</section>
-		{/if}
+		<!-- 3. TV SERIES DISCOVERY BANNER (Cross-Navigation) -->
+		<section class="tv-crossover-banner glass-card">
+			<div class="crossover-content">
+				<span class="crossover-badge">📺 TELEVISION ARCHIVE</span>
+				<h3 class="crossover-title">Explore the Top 50 IMDb-Ranked TV Series</h3>
+				<p class="crossover-desc">
+					Stream Breaking Bad, Reacher, Planet Earth, Chernobyl, Arcane, and the greatest television sagas in history.
+				</p>
+			</div>
+			<a href="/cinema/tvshow" class="crossover-btn">
+				<span>Explore TV Shows Chart →</span>
+			</a>
+		</section>
 
 		<!-- 4. HIGHEST RATED CINEMA MASTERPIECES -->
 		<section class="catalog-section">
 			<div class="section-title-bar">
 				<span class="title-accent-bar"></span>
-				<h2 class="section-heading">Top Rated Masterpieces</h2>
+				<h2 class="section-heading">Top Rated Cinema Masterpieces</h2>
 				<a href="/movies/catalog?sort=rating" class="view-all-link">Explore Top Rated →</a>
 			</div>
 
@@ -379,29 +356,29 @@
 		gap: 0.65rem;
 		font-size: 0.9rem;
 		font-weight: 600;
-		color: #d4d4d8;
+		color: #e2e8f0;
 	}
 
 	.imdb-score-badge {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.3rem;
-		color: #f87171;
+		color: #f59e0b;
 		font-weight: 800;
 	}
 
 	.imdb-score-badge .star {
-		color: #ef4444;
+		color: #f59e0b;
 	}
 
 	.meta-dot {
-		color: #52525b;
+		color: #64748b;
 	}
 
 	.hero-synopsis {
 		font-size: 0.95rem;
 		line-height: 1.6;
-		color: #a1a1aa;
+		color: #cbd5e1;
 		display: -webkit-box;
 		-webkit-line-clamp: 3;
 		line-clamp: 3;
@@ -424,7 +401,7 @@
 		align-items: center;
 		gap: 0.5rem;
 		background: #ffffff;
-		color: #050507;
+		color: #0a0e17;
 		font-size: 0.95rem;
 		font-weight: 800;
 		padding: 0.75rem 1.6rem;
@@ -436,13 +413,9 @@
 
 	.cineby-play-btn:hover {
 		background: #10b981;
-		color: #050507;
+		color: #0a0e17;
 		transform: scale(1.04);
 		box-shadow: 0 6px 25px rgba(16, 185, 129, 0.4);
-	}
-
-	.cineby-play-btn:active {
-		transform: scale(0.97);
 	}
 
 	.cineby-info-btn {
@@ -467,10 +440,6 @@
 		transform: scale(1.04);
 	}
 
-	.cineby-info-btn:active {
-		transform: scale(0.97);
-	}
-
 	.cineby-watchlist-btn {
 		width: 44px;
 		height: 44px;
@@ -490,7 +459,7 @@
 
 	.cineby-watchlist-btn:hover {
 		background: #10b981;
-		color: #050507;
+		color: #0a0e17;
 		border-color: #10b981;
 		transform: scale(1.08);
 	}
@@ -548,14 +517,10 @@
 		background: #10b981;
 	}
 
-	.title-accent-bar.gold {
-		background: #f5c518;
-	}
-
 	.section-heading {
 		font-size: 1.4rem;
 		font-weight: 800;
-		color: #ffffff;
+		color: #f1f5f9;
 		letter-spacing: -0.02em;
 		margin: 0;
 	}
@@ -567,10 +532,6 @@
 		color: #10b981;
 		text-decoration: none;
 		transition: color 0.15s ease;
-	}
-
-	.view-all-link.gold {
-		color: #f5c518;
 	}
 
 	.view-all-link:hover {
@@ -603,8 +564,8 @@
 		font-size: 6.5rem;
 		font-weight: 900;
 		line-height: 0.8;
-		color: #050507;
-		-webkit-text-stroke: 3px rgba(255, 255, 255, 0.35);
+		color: #0a0e17;
+		-webkit-text-stroke: 3px rgba(255, 255, 255, 0.25);
 		font-family: 'Plus Jakarta Sans', sans-serif;
 		margin-right: -25px;
 		z-index: 2;
@@ -640,70 +601,69 @@
 		}
 	}
 
-	/* TV HORIZONTAL SCROLLER */
-	.tv-horizontal-scroller {
-		display: flex;
-		gap: 1.25rem;
-		overflow-x: auto;
-		padding-bottom: 1rem;
-		scrollbar-width: none;
-	}
-
-	.tv-preview-card {
-		position: relative;
-		min-width: 170px;
-		max-width: 180px;
+	/* CROSSOVER BANNER */
+	.tv-crossover-banner {
+		padding: 2rem 2.5rem;
+		border-radius: 20px;
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
-		text-decoration: none;
-		transition: transform 0.2s ease;
+		gap: 1.5rem;
+		align-items: flex-start;
+		background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(16, 22, 35, 0.95) 100%);
+		border: 1px solid rgba(245, 158, 11, 0.25);
 	}
 
-	.tv-preview-card:hover {
-		transform: translateY(-4px);
+	@media (min-width: 768px) {
+		.tv-crossover-banner {
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+		}
 	}
 
-	.tv-rank-pill {
-		position: absolute;
-		top: 0.5rem;
-		left: 0.5rem;
-		z-index: 10;
-		background: #f5c518;
-		color: #000000;
+	.crossover-content {
+		max-width: 680px;
+	}
+
+	.crossover-badge {
 		font-size: 0.72rem;
-		font-weight: 900;
-		padding: 0.1rem 0.45rem;
-		border-radius: 4px;
+		font-weight: 800;
+		letter-spacing: 0.1em;
+		color: #f59e0b;
+		margin-bottom: 0.5rem;
+		display: block;
 		font-family: monospace;
 	}
 
-	.tv-poster-box {
-		border-radius: 12px;
-		overflow: hidden;
-		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
-		border: 1px solid rgba(255, 255, 255, 0.08);
-	}
-
-	.tv-preview-title {
-		font-size: 0.85rem;
-		font-weight: 700;
-		color: #ffffff;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.tv-preview-meta {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-		font-size: 0.75rem;
-		color: #a1a1aa;
-	}
-
-	.tv-score {
-		color: #f5c518;
+	.crossover-title {
+		font-size: 1.5rem;
 		font-weight: 800;
+		color: #f1f5f9;
+		margin: 0 0 0.5rem 0;
+	}
+
+	.crossover-desc {
+		font-size: 0.9rem;
+		color: #94a3b8;
+		line-height: 1.5;
+		margin: 0;
+	}
+
+	.crossover-btn {
+		background: #f59e0b;
+		color: #000000;
+		font-size: 0.88rem;
+		font-weight: 800;
+		padding: 0.75rem 1.4rem;
+		border-radius: 12px;
+		text-decoration: none;
+		white-space: nowrap;
+		transition: all 0.2s ease;
+	}
+
+	.crossover-btn:hover {
+		background: #fbbf24;
+		transform: translateY(-2px);
+		box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
 	}
 </style>

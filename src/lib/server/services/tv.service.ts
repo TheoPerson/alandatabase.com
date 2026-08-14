@@ -52,15 +52,15 @@ export const TOP_50_IMDB_TV: Array<{
 	{
 		rank: 2,
 		title: 'Planet Earth II',
-		tmdbId: 68507,
+		tmdbId: 68595,
 		imdbId: 'tt5491994',
 		imdbRating: 9.5,
 		year: '2016',
 		seasons: 1,
 		genres: ['Documentary'],
 		overview: 'David Attenborough presents a documentary series exploring the unique characteristics of Earth’s most iconic habitats and the extraordinary ways animals survive within them.',
-		posterPath: '/9koc385aLp2BsuE7Xp6J0l2Nf4J.jpg',
-		backdropPath: '/r9tVhsoj2R0qKsm731gUms9R8Lw.jpg'
+		posterPath: '/5maYKYzWpE68ycxGh1luu4P2LOS.jpg',
+		backdropPath: '/1DYpBOVdb7Mzc9DgMCdIBTN1JEC.jpg'
 	},
 	{
 		rank: 3,
@@ -117,7 +117,7 @@ export const TOP_50_IMDB_TV: Array<{
 	{
 		rank: 7,
 		title: 'Avatar: The Last Airbender',
-		tmdbId: 387,
+		tmdbId: 246,
 		imdbId: 'tt0417299',
 		imdbRating: 9.3,
 		year: '2005–2008',
@@ -143,7 +143,7 @@ export const TOP_50_IMDB_TV: Array<{
 	{
 		rank: 9,
 		title: 'The Sopranos',
-		tmdbId: 1399,
+		tmdbId: 1398,
 		imdbId: 'tt0141842',
 		imdbRating: 9.2,
 		year: '1999–2007',
