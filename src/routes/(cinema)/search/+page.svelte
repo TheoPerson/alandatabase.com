@@ -108,7 +108,7 @@
 			<div class="grid-movies">
 				{#each sortedResults as movie (movie.id || movie.tmdbId)}
 					<MovieCard
-						id={movie.id}
+						id={movie.id || movie.tmdbId}
 						title={movie.title}
 						posterPath={movie.posterPath}
 						releaseDate={movie.releaseDate}

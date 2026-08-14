@@ -3,6 +3,7 @@
 	import StreamPlayerContainer from '$lib/components/player/StreamPlayerContainer.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import { addToast } from '$lib/stores/toast';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
@@ -108,7 +109,7 @@
 							onclick={() => {
 								if (typeof navigator !== 'undefined') {
 									navigator.clipboard.writeText(window.location.href);
-									alert('🔗 Movie link copied to clipboard!');
+									addToast('🔗 Movie link copied to clipboard!', 'success');
 								}
 							}}
 						>
