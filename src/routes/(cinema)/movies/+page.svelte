@@ -13,18 +13,18 @@
 	let carouselInterval: any = null;
 
 	const featuredMovies = $derived(
-		(data.trending || [])
+		(data.top10 || [])
 			.filter((m: any) => m.backdropPath && m.backdropPath !== 'null')
 			.slice(0, 5)
 	);
 
-	const currentHero = $derived(featuredMovies[heroIndex] || data.trending[0] || null);
+	const currentHero = $derived(featuredMovies[heroIndex] || data.top10?.[0] || data.trending?.[0] || null);
 
 	const heroHref = $derived(
 		currentHero ? `/cinema/movies/${currentHero.id || currentHero.tmdbId}` : '/movies/catalog'
 	);
 
-	const top10Today = $derived((data.trending || []).slice(0, 10));
+	const top10Today = $derived(data.top10 || []);
 
 	function nextHero() {
 		if (featuredMovies.length > 1) {
