@@ -8,29 +8,29 @@
 
 @layer base {
 	:root {
-		/* Color Palette: OLED Titanium & Emerald (2026 High-End Swiss Minimalist) */
-		--bg-primary: #050507;
-		--bg-surface-1: #09090d;
-		--bg-surface-2: #121218;
-		--bg-surface-3: #1a1a24;
-		--bg-surface-glass: rgba(14, 14, 20, 0.75);
-		--bg-surface-glass-hover: rgba(24, 24, 34, 0.85);
+		/* Color Palette: Velvet Midnight Slate & Emerald (2026 Digest & Eye-Friendly Dark Edition) */
+		--bg-primary: #0a0e17;
+		--bg-surface-1: #101623;
+		--bg-surface-2: #161e30;
+		--bg-surface-3: #1e2840;
+		--bg-surface-glass: rgba(16, 22, 35, 0.85);
+		--bg-surface-glass-hover: rgba(22, 30, 48, 0.92);
 
-		/* Text Hierarchy */
-		--text-primary: #f4f4f5;
-		--text-secondary: #a1a1aa;
-		--text-tertiary: #71717a;
+		/* Text Hierarchy (Soft Slate for High Readability & Low Eye Strain) */
+		--text-primary: #f1f5f9;
+		--text-secondary: #94a3b8;
+		--text-tertiary: #64748b;
 		--text-accent: #10b981;
 
 		/* Brand & Interactive Colors */
 		--accent-emerald: #10b981;
 		--accent-emerald-hover: #34d399;
 		--accent-emerald-subtle: rgba(16, 185, 129, 0.12);
-		--accent-titanium: #e4e4e7;
-		--accent-silver: #a1a1aa;
+		--accent-titanium: #e2e8f0;
+		--accent-silver: #94a3b8;
 		--accent-cyan: #06b6d4;
 		--accent-violet: #8b5cf6;
-		--accent-gold: #10b981;
+		--accent-gold: #f59e0b;
 
 		/* Status Colors */
 		--color-success: #10b981;
@@ -38,11 +38,11 @@
 		--color-error: #ef4444;
 
 		/* Rating Colors */
-		--rating-star: var(--accent-emerald);
+		--rating-star: #f59e0b;
 
-		/* Borders & Separators (Ultra-clean Linear 1px borders) */
-		--border-subtle: rgba(255, 255, 255, 0.07);
-		--border-strong: rgba(255, 255, 255, 0.14);
+		/* Borders & Separators (Soft Ambient 1px borders) */
+		--border-subtle: rgba(255, 255, 255, 0.08);
+		--border-strong: rgba(255, 255, 255, 0.15);
 		--border-emerald: rgba(16, 185, 129, 0.35);
 
 		/* Typography */
@@ -59,9 +59,9 @@
 		--radius-full: 9999px;
 
 		/* Shadows & Depth */
-		--shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.6);
-		--shadow-md: 0 8px 30px rgba(0, 0, 0, 0.7);
-		--shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.85);
+		--shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.4);
+		--shadow-md: 0 8px 30px rgba(0, 0, 0, 0.5);
+		--shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.65);
 		--shadow-glow-emerald: 0 0 30px rgba(16, 185, 129, 0.2);
 		--shadow-glow-cyan: 0 0 30px rgba(6, 182, 212, 0.2);
 
@@ -70,25 +70,25 @@
 		--transition-normal: 220ms cubic-bezier(0.16, 1, 0.3, 1);
 		--transition-slow: 400ms cubic-bezier(0.16, 1, 0.3, 1);
 		
-		/* Shadcn CSS Variables mapped to Swiss OLED */
-		--background: 240 17% 2%; /* #050507 */
-		--foreground: 0 0% 98%;
-		--card: 240 17% 3%;
-		--card-foreground: 0 0% 98%;
-		--popover: 240 17% 3%;
-		--popover-foreground: 0 0% 98%;
+		/* Shadcn CSS Variables mapped to Velvet Midnight */
+		--background: 222 47% 7%; /* #0a0e17 */
+		--foreground: 210 40% 98%;
+		--card: 222 47% 9%;
+		--card-foreground: 210 40% 98%;
+		--popover: 222 47% 9%;
+		--popover-foreground: 210 40% 98%;
 		--primary: 160 84% 39%; /* #10b981 */
 		--primary-foreground: 0 0% 0%;
-		--secondary: 240 17% 6%;
-		--secondary-foreground: 0 0% 98%;
-		--muted: 240 17% 10%;
-		--muted-foreground: 240 5% 65%;
-		--accent: 240 17% 10%;
-		--accent-foreground: 0 0% 98%;
+		--secondary: 222 47% 12%;
+		--secondary-foreground: 210 40% 98%;
+		--muted: 222 47% 15%;
+		--muted-foreground: 215 20% 65%;
+		--accent: 222 47% 15%;
+		--accent-foreground: 210 40% 98%;
 		--destructive: 0 62.8% 30.6%;
 		--destructive-foreground: 0 0% 98%;
-		--border: 0 0% 14%;
-		--input: 0 0% 14%;
+		--border: 215 20% 18%;
+		--input: 215 20% 18%;
 		--ring: 160 84% 39%;
 		--radius: 0.5rem;
 	}
@@ -117,6 +117,9 @@ body {
 	min-height: 100vh;
 	width: 100%;
 	background-color: var(--bg-primary);
+	background-image: 
+		radial-gradient(circle at 50% 0%, rgba(26, 42, 74, 0.28) 0%, rgba(10, 14, 23, 0.95) 60%, #0a0e17 100%);
+	background-attachment: fixed;
 	color: var(--text-primary);
 	font-family: var(--font-sans);
 	font-size: 16px;

@@ -269,8 +269,8 @@
 
 <style>
 	.cineby-home-root {
-		background: #050507;
-		color: #ffffff;
+		background: transparent;
+		color: #f1f5f9;
 		min-height: 100vh;
 	}
 
@@ -306,17 +306,17 @@
 		to { opacity: 1; transform: scale(1); }
 	}
 
-	/* 4-Way Vignette Masking for Ultra-Seamless Blending */
+	/* 4-Way Vignette Masking for Ultra-Seamless Blending (Soft Midnight Slate) */
 	.vignette-left {
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(90deg, #050507 0%, rgba(5, 5, 7, 0.85) 30%, rgba(5, 5, 7, 0.2) 65%, transparent 100%);
+		background: linear-gradient(90deg, #0a0e17 0%, rgba(10, 14, 23, 0.9) 32%, rgba(10, 14, 23, 0.3) 65%, transparent 100%);
 	}
 
 	.vignette-bottom {
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(0deg, #050507 0%, rgba(5, 5, 7, 0.7) 25%, transparent 60%);
+		background: linear-gradient(0deg, #0a0e17 0%, rgba(10, 14, 23, 0.8) 25%, transparent 60%);
 	}
 
 	.vignette-top {
@@ -325,13 +325,13 @@
 		left: 0;
 		right: 0;
 		height: 120px;
-		background: linear-gradient(180deg, rgba(5, 5, 7, 0.6) 0%, transparent 100%);
+		background: linear-gradient(180deg, rgba(10, 14, 23, 0.5) 0%, transparent 100%);
 	}
 
 	.vignette-ambient {
 		position: absolute;
 		inset: 0;
-		background: radial-gradient(circle at 70% 30%, rgba(16, 185, 129, 0.04) 0%, transparent 60%);
+		background: radial-gradient(circle at 70% 30%, rgba(16, 185, 129, 0.08) 0%, transparent 60%);
 	}
 
 	/* Hero Text & Controls */
