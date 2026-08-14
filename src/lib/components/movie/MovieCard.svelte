@@ -17,7 +17,7 @@
 	const ratingFormatted = $derived(voteAverage ? Number(voteAverage).toFixed(1) : null);
 </script>
 
-<a href="/movies/{id}" class="movie-card">
+<a href="/movies/{id}" class="movie-card" data-sveltekit-preload-data="hover">
 	<div class="poster-wrapper">
 		<MoviePoster path={posterPath} {title} />
 
@@ -48,11 +48,19 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.6rem;
-		transition: transform var(--transition-fast);
+		text-decoration: none;
+		cursor: pointer;
+		user-select: none;
+		-webkit-tap-highlight-color: transparent;
+		transition: transform 150ms cubic-bezier(0.2, 0.8, 0.2, 1);
 	}
 
 	.movie-card:hover {
 		transform: translateY(-4px);
+	}
+
+	.movie-card:active {
+		transform: scale(0.97) translateY(0);
 	}
 
 	.poster-wrapper {

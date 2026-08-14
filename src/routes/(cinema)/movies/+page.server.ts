@@ -1,7 +1,11 @@
 import { getTrendingMovies, getTopRatedMovies } from '$lib/server/services/movie.service';
 import { getOrCreateDefaultUser, toggleWatchlist } from '$lib/server/services/interaction.service';
 
-export async function load() {
+export async function load({ setHeaders }) {
+	setHeaders({
+		'cache-control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600'
+	});
+
 	try {
 		const [trending, topRated] = await Promise.all([getTrendingMovies(12), getTopRatedMovies(12)]);
 

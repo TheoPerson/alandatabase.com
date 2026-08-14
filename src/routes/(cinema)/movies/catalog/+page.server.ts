@@ -26,7 +26,11 @@ const STANDARD_GENRES = [
 	{ id: 37, name: 'Western' }
 ];
 
-export async function load({ url }) {
+export async function load({ url, setHeaders }) {
+	setHeaders({
+		'cache-control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600'
+	});
+
 	const page = Number(url.searchParams.get('page')) || 1;
 	const limit = 24;
 	const offset = (page - 1) * limit;

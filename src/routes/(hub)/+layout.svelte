@@ -1,9 +1,11 @@
 <script lang="ts">
 	import '../../app.css';
+	import NavigationProgressBar from '$lib/components/layout/NavigationProgressBar.svelte';
 	let { children } = $props();
 </script>
 
-<div class="hub-app">
+<div class="hub-app" data-sveltekit-preload-data="hover" data-sveltekit-preload-code="eager">
+	<NavigationProgressBar />
 	{@render children()}
 </div>
 

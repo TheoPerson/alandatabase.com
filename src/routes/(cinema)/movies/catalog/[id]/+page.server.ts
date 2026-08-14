@@ -40,12 +40,18 @@ async function resolveMovieUuid(movieIdOrTmdb: string): Promise<string | null> {
 	return null;
 }
 
-export async function load({ params, locals }) {
+export async function load({ params, locals, setHeaders }) {
 	const movie = await getMovieById(params.id);
 
 	if (!movie) {
 		throw error(404, {
 			message: 'Movie not found in the database.'
+		});
+	}
+
+	if (!locals.user) {
+		setHeaders({
+			'cache-control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600'
 		});
 	}
 
