@@ -1,5 +1,6 @@
 import { getTrendingMovies, getTopRatedMovies } from '$lib/server/services/movie.service';
-import { getOrCreateDefaultUser, toggleWatchlist } from '$lib/server/services/interaction.service';
+import { getTop50IMDbTVShows } from '$lib/server/services/tv.service';
+import { toggleWatchlist } from '$lib/server/services/interaction.service';
 
 export async function load({ setHeaders }) {
 	setHeaders({
@@ -7,18 +8,23 @@ export async function load({ setHeaders }) {
 	});
 
 	try {
-		const [trending, topRated] = await Promise.all([getTrendingMovies(12), getTopRatedMovies(12)]);
+		const [trending, topRated, allTV] = await Promise.all([
+			getTrendingMovies(20),
+			getTopRatedMovies(12),
+			getTop50IMDbTVShows().catch(() => [])
+		]);
 
 		return {
 			trending,
-			topRated
+			topRated,
+			topTV: allTV.slice(0, 10)
 		};
 	} catch (err: any) {
 		console.error('LOAD ERROR:', err);
-		// Fallback empty list if DB is not connected yet
 		return {
 			trending: [],
 			topRated: [],
+			topTV: [],
 			error: err?.message || String(err)
 		};
 	}

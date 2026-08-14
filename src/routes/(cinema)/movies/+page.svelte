@@ -2,284 +2,701 @@
 	import MovieCard from '$lib/components/movie/MovieCard.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
 	import { enhance } from '$app/forms';
 	import { addToast } from '$lib/stores/toast';
+	import { onMount, onDestroy } from 'svelte';
 
 	let { data } = $props();
 
-	const heroMovie = $derived(data.trending[0] || null);
+	let heroIndex = $state(0);
+	let carouselInterval: any = null;
 
-	const btnColorTest = $derived(data.abTests?.cta_button_color || 'control');
-	const ctaVariant = $derived(btnColorTest === 'test_green' ? 'success' : 'primary');
+	const featuredMovies = $derived(
+		(data.trending || []).filter((m: any) => m.backdropPath && m.backdropPath !== 'null').slice(0, 5)
+	);
+
+	const currentHero = $derived(featuredMovies[heroIndex] || data.trending[0] || null);
+
+	const top10Today = $derived((data.trending || []).slice(0, 10));
+
+	function nextHero() {
+		if (featuredMovies.length > 1) {
+			heroIndex = (heroIndex + 1) % featuredMovies.length;
+		}
+	}
+
+	function prevHero() {
+		if (featuredMovies.length > 1) {
+			heroIndex = (heroIndex - 1 + featuredMovies.length) % featuredMovies.length;
+		}
+	}
+
+	function setHero(idx: number) {
+		heroIndex = idx;
+		resetTimer();
+	}
+
+	function resetTimer() {
+		if (carouselInterval) clearInterval(carouselInterval);
+		carouselInterval = setInterval(nextHero, 7000);
+	}
+
+	onMount(() => {
+		resetTimer();
+	});
+
+	onDestroy(() => {
+		if (carouselInterval) clearInterval(carouselInterval);
+	});
 </script>
 
 <svelte:head>
-	<title>CinemaDB — Your Personal Cinema Archive</title>
+	<title>CinemaDB — Next-Gen 4K Streaming & Movie Archive</title>
 	<meta
 		name="description"
-		content="Explore millions of movies, track your personal cinema history, and discover film as art."
+		content="Discover, stream, and archive the greatest movies and TV series in history with seamless 4K backdrops."
 	/>
-	<meta property="og:title" content="CinemaDB — Your Personal Cinema Archive" />
-	<meta
-		property="og:description"
-		content="Explore millions of movies, track your personal cinema history, and discover film as art."
-	/>
-	<meta property="og:type" content="website" />
 </svelte:head>
 
-<!-- Hero Section -->
-<section class="hero-section">
-	{#if heroMovie?.backdropPath && heroMovie.backdropPath !== 'null'}
-		<div class="hero-backdrop">
-			<img
-				src={heroMovie.backdropPath.startsWith('http') 
-					? heroMovie.backdropPath 
-					: `https://image.tmdb.org/t/p/w1280${heroMovie.backdropPath.startsWith('/') ? '' : '/'}${heroMovie.backdropPath}`}
-				alt="{heroMovie.title} Backdrop"
-				class="backdrop-img"
-			/>
-			<div class="backdrop-overlay"></div>
-		</div>
-	{:else}
-		<div class="hero-backdrop fallback-bg"></div>
-	{/if}
-
-	<div class="container hero-content">
-		<div class="hero-badge">
-			<Badge variant="gold">✨ 2026 CINEMA OPERATING SYSTEM</Badge>
-		</div>
-
-		{#if heroMovie}
-			<h1 class="hero-title">{heroMovie.title}</h1>
-			<p class="hero-overview">{heroMovie.overview}</p>
-
-			<div class="hero-actions">
-				<Button href="/movies/{heroMovie.id}" variant={ctaVariant} size="lg">▶ View Details</Button>
-				<form
-					action="?/toggleWatchlist"
-					method="POST"
-					use:enhance={() => {
-						addToast(`Added "${heroMovie.title}" to watchlist ✓`, 'success');
-					}}
-				>
-					<input type="hidden" name="movieId" value={heroMovie.id} />
-					<Button type="submit" variant="secondary" size="lg">+ Add to Watchlist</Button>
-				</form>
+<div class="cineby-home-root">
+	<!-- 4K IMMERSIVE HERO STAGE -->
+	<section class="cineby-hero">
+		{#if currentHero}
+			<!-- Full-Bleed 4K Backdrop with Seamless Multi-Stop Vignette -->
+			<div class="hero-stage-bg">
+				<img
+					src={currentHero.backdropPath?.startsWith('http')
+						? currentHero.backdropPath
+						: `https://image.tmdb.org/t/p/original${currentHero.backdropPath?.startsWith('/') ? '' : '/'}${currentHero.backdropPath}`}
+					alt="{currentHero.title} 4K Backdrop"
+					class="hero-4k-image"
+				/>
+				<div class="vignette-left"></div>
+				<div class="vignette-bottom"></div>
+				<div class="vignette-top"></div>
+				<div class="vignette-ambient"></div>
 			</div>
-		{:else}
-			<h1 class="hero-title">The Next Generation Cinema Database</h1>
-			<p class="hero-overview">
-				Explore millions of movies, track your personal cinema history, and discover film as art.
-				Self-hosted, private, and open-source.
-			</p>
-			<div class="hero-actions">
-				<Button href="/search" variant="primary" size="lg">🔍 Start Exploring</Button>
-			</div>
-		{/if}
-	</div>
-</section>
 
-<!-- Main Feed -->
-<div class="container page-feed">
-	<!-- Trending Movies -->
-	<section class="section-block">
-		<div class="section-header">
-			<h2 class="section-title">🔥 Trending Movies</h2>
-			<a href="/search" class="see-all">See All →</a>
-		</div>
+			<!-- Left-Aligned Cinematic Information Card -->
+			<div class="container hero-container">
+				<div class="hero-text-block">
+					<h1 class="hero-main-title">{currentHero.title}</h1>
 
-		{#if data.trending.length > 0}
-			<div class="grid-movies">
-				{#each data.trending as movie}
-					<MovieCard
-						id={movie.id}
-						title={movie.title}
-						posterPath={movie.posterPath}
-						releaseDate={movie.releaseDate}
-						voteAverage={movie.voteAverage}
-						genres={movie.genres?.map((g: any) => g.genre.name)}
-					/>
-				{/each}
-			</div>
-		{:else}
-			<div class="empty-state">
-				<p>🎬 Database is initializing...</p>
-				{#if data.error}
-					<p class="subtext" style="color: var(--accent-red); margin-top: 1rem;">
-						<strong>Error:</strong>
-						{data.error}
-					</p>
-				{/if}
-				<p class="subtext">
-					Run <code>pnpm --filter cinema-worker ingest:popular</code> to populate movies!
-				</p>
+					<!-- Rating & Meta Row -->
+					<div class="hero-meta-row">
+						<span class="imdb-score-badge">
+							<span class="star">★</span>
+							<span>{Number(currentHero.voteAverage || 8.5).toFixed(1)}</span>
+						</span>
+
+						{#if currentHero.releaseDate}
+							<span class="meta-item">{new Date(currentHero.releaseDate).getFullYear()}</span>
+						{/if}
+
+						{#if currentHero.genres && currentHero.genres.length > 0}
+							<span class="meta-dot">•</span>
+							<span class="meta-genres">
+								{currentHero.genres
+									.slice(0, 3)
+									.map((g: any) => g.genre?.name || g.name || (typeof g === 'string' ? g : ''))
+									.filter(Boolean)
+									.join(' • ')}
+							</span>
+						{/if}
+					</div>
+
+					<!-- Crisp Overview -->
+					<p class="hero-synopsis">{currentHero.overview}</p>
+
+					<!-- Action Buttons -->
+					<div class="hero-btn-row">
+						<a href="/movies/{currentHero.id || currentHero.tmdbId}" class="cineby-play-btn">
+							<span class="play-icon">▶</span>
+							<span>Play</span>
+						</a>
+
+						<a href="/movies/{currentHero.id || currentHero.tmdbId}" class="cineby-info-btn">
+							<span class="info-icon">ⓘ</span>
+							<span>See More</span>
+						</a>
+
+						<form
+							action="?/toggleWatchlist"
+							method="POST"
+							use:enhance={() => {
+								addToast(`Updated watchlist for ${currentHero.title}`, 'success');
+							}}
+							class="inline-block"
+						>
+							<input type="hidden" name="movieId" value={currentHero.id} />
+							<button type="submit" class="cineby-watchlist-btn" title="Add to Watchlist">
+								<span>+</span>
+							</button>
+						</form>
+					</div>
+
+					<!-- Featured Carousel Dots -->
+					{#if featuredMovies.length > 1}
+						<div class="carousel-dots-row">
+							{#each featuredMovies as _, idx}
+								<button
+									type="button"
+									class="carousel-dot"
+									class:active={heroIndex === idx}
+									onclick={() => setHero(idx)}
+									aria-label="Slide {idx + 1}"
+								></button>
+							{/each}
+						</div>
+					{/if}
+				</div>
 			</div>
 		{/if}
 	</section>
 
-	<!-- Top Rated Movies -->
-	{#if data.topRated.length > 0}
-		<section class="section-block">
-			<div class="section-header">
-				<h2 class="section-title">⭐ Highest Rated</h2>
-				<a href="/search" class="see-all">See All →</a>
+	<!-- CONTENT CATALOG SECTIONS -->
+	<div class="container content-sections-wrap">
+		<!-- 1. TOP 10 TODAY (With Rank Numbers) -->
+		<section class="catalog-section">
+			<div class="section-title-bar">
+				<span class="title-accent-bar"></span>
+				<h2 class="section-heading">TOP 10 Today</h2>
 			</div>
 
-			<div class="grid-movies">
-				{#each data.topRated as movie}
+			<div class="top10-horizontal-grid">
+				{#each top10Today as movie, idx (movie.id || movie.tmdbId)}
+					<a
+						href="/movies/{movie.id || movie.tmdbId}"
+						class="top10-card"
+						data-sveltekit-preload-data="hover"
+					>
+						<span class="top10-rank-num">{idx + 1}</span>
+						<div class="top10-poster-wrap">
+							<MoviePoster path={movie.posterPath} title={movie.title} />
+						</div>
+					</a>
+				{/each}
+			</div>
+		</section>
+
+		<!-- 2. TRENDING MOVIES -->
+		<section class="catalog-section">
+			<div class="section-title-bar">
+				<span class="title-accent-bar emerald"></span>
+				<h2 class="section-heading">Trending Movies</h2>
+				<a href="/movies/catalog" class="view-all-link">Browse All →</a>
+			</div>
+
+			<div class="movies-media-grid">
+				{#each (data.trending || []).slice(0, 12) as movie (movie.id || movie.tmdbId)}
 					<MovieCard
-						id={movie.id}
+						id={movie.id || movie.tmdbId}
 						title={movie.title}
 						posterPath={movie.posterPath}
 						releaseDate={movie.releaseDate}
 						voteAverage={movie.voteAverage}
-						genres={movie.genres?.map((g: any) => g.genre.name)}
+						genres={movie.genres?.map(
+							(g: any) => g.genre?.name || g.name || (typeof g === 'string' ? g : '')
+						)}
 					/>
 				{/each}
 			</div>
 		</section>
-	{/if}
+
+		<!-- 3. TOP 50 TV SHOWS PREVIEW (IMDb RANKED) -->
+		{#if data.topTV && data.topTV.length > 0}
+			<section class="catalog-section">
+				<div class="section-title-bar">
+					<span class="title-accent-bar gold"></span>
+					<h2 class="section-heading">Top Rated Television Masterpieces</h2>
+					<a href="/tv" class="view-all-link gold">View Top 50 IMDb Chart →</a>
+				</div>
+
+				<div class="tv-horizontal-scroller">
+					{#each data.topTV as show (show.tmdbId)}
+						<a href="/tv/{show.tmdbId}" class="tv-preview-card" data-sveltekit-preload-data="hover">
+							<div class="tv-rank-pill">#{show.rank}</div>
+							<div class="tv-poster-box">
+								<MoviePoster path={show.posterPath} title={show.title} />
+							</div>
+							<div class="tv-preview-info">
+								<span class="tv-preview-title">{show.title}</span>
+								<div class="tv-preview-meta">
+									<span class="tv-score">★ {show.imdbRating}</span>
+									<span class="meta-dot">•</span>
+									<span>{show.year}</span>
+								</div>
+							</div>
+						</a>
+					{/each}
+				</div>
+			</section>
+		{/if}
+
+		<!-- 4. HIGHEST RATED CINEMA MASTERPIECES -->
+		<section class="catalog-section">
+			<div class="section-title-bar">
+				<span class="title-accent-bar"></span>
+				<h2 class="section-heading">Top Rated Masterpieces</h2>
+				<a href="/movies/catalog?sort=rating" class="view-all-link">Explore Top Rated →</a>
+			</div>
+
+			<div class="movies-media-grid">
+				{#each (data.topRated || []).slice(0, 12) as movie (movie.id || movie.tmdbId)}
+					<MovieCard
+						id={movie.id || movie.tmdbId}
+						title={movie.title}
+						posterPath={movie.posterPath}
+						releaseDate={movie.releaseDate}
+						voteAverage={movie.voteAverage}
+						genres={movie.genres?.map(
+							(g: any) => g.genre?.name || g.name || (typeof g === 'string' ? g : '')
+						)}
+					/>
+				{/each}
+			</div>
+		</section>
+	</div>
 </div>
 
 <style>
-	/* Hero Section */
-	.hero-section {
+	.cineby-home-root {
+		background: #050507;
+		color: #ffffff;
+		min-height: 100vh;
+	}
+
+	/* 4K IMMERSIVE HERO STAGE */
+	.cineby-hero {
 		position: relative;
-		min-height: 520px;
+		width: 100%;
+		height: 80vh;
+		min-height: 560px;
+		max-height: 860px;
 		display: flex;
-		align-items: flex-end;
-		padding-bottom: 4rem;
-		padding-top: 6rem;
+		align-items: center;
 		overflow: hidden;
 	}
 
-	.hero-backdrop {
+	.hero-stage-bg {
 		position: absolute;
 		inset: 0;
 		z-index: 0;
+		overflow: hidden;
 	}
 
-	.backdrop-img {
+	.hero-4k-image {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		filter: brightness(0.65) saturate(1.2);
+		object-position: center 20%;
+		animation: heroFadeIn 0.8s ease-out;
 	}
 
-	.backdrop-overlay {
+	@keyframes heroFadeIn {
+		from { opacity: 0; transform: scale(1.02); }
+		to { opacity: 1; transform: scale(1); }
+	}
+
+	/* 4-Way Vignette Masking for Ultra-Seamless Blending */
+	.vignette-left {
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(
-			to bottom,
-			rgba(7, 8, 11, 0.4) 0%,
-			rgba(7, 8, 11, 0.8) 70%,
-			var(--bg-primary) 100%
-		);
+		background: linear-gradient(90deg, #050507 0%, rgba(5, 5, 7, 0.85) 30%, rgba(5, 5, 7, 0.2) 65%, transparent 100%);
 	}
 
-	.fallback-bg {
-		background: radial-gradient(circle at 50% 30%, var(--bg-surface-3), var(--bg-primary));
+	.vignette-bottom {
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(0deg, #050507 0%, rgba(5, 5, 7, 0.7) 25%, transparent 60%);
 	}
 
-	.hero-content {
+	.vignette-top {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 120px;
+		background: linear-gradient(180deg, rgba(5, 5, 7, 0.6) 0%, transparent 100%);
+	}
+
+	.vignette-ambient {
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(circle at 70% 30%, rgba(16, 185, 129, 0.04) 0%, transparent 60%);
+	}
+
+	/* Hero Text & Controls */
+	.hero-container {
 		position: relative;
-		z-index: 10;
-		max-width: 800px;
+		z-index: 2;
+		width: 100%;
+		display: flex;
+		align-items: center;
 	}
 
-	.hero-badge {
-		margin-bottom: 1rem;
+	.hero-text-block {
+		max-width: 620px;
+		display: flex;
+		flex-direction: column;
+		gap: 1.1rem;
+		animation: textSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
-	.hero-title {
-		font-size: 2.75rem;
-		font-weight: 800;
-		line-height: 1.15;
+	@keyframes textSlideUp {
+		from { opacity: 0; transform: translateY(15px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+
+	.hero-main-title {
+		font-size: 3.5rem;
+		font-weight: 900;
+		letter-spacing: -0.04em;
+		line-height: 1.05;
 		color: #ffffff;
-		margin-bottom: 1rem;
-		letter-spacing: -0.02em;
-		word-break: break-word;
+		text-transform: uppercase;
+		text-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+		margin: 0;
 	}
 
-	@media (min-width: 768px) {
-		.hero-title {
-			font-size: 3.75rem;
+	@media (max-width: 768px) {
+		.hero-main-title {
+			font-size: 2.25rem;
 		}
 	}
 
-	.hero-overview {
-		font-size: 1.05rem;
-		color: var(--text-secondary);
-		line-height: 1.6;
-		margin-bottom: 2rem;
-		display: -webkit-box;
-		line-clamp: 3;
-		-webkit-line-clamp: 3;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-		max-width: 680px;
-	}
-
-	.hero-actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1rem;
-	}
-
-	/* Sections */
-	.page-feed {
-		padding-top: 2rem;
-	}
-
-	.section-block {
-		margin-bottom: 3.5rem;
-	}
-
-	.section-header {
+	.hero-meta-row {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 1.5rem;
-	}
-
-	.section-title {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: var(--text-primary);
-		letter-spacing: -0.01em;
-	}
-
-	.see-all {
+		gap: 0.65rem;
 		font-size: 0.9rem;
 		font-weight: 600;
-		color: var(--accent-gold);
-		transition: opacity var(--transition-fast);
+		color: #d4d4d8;
 	}
 
-	.see-all:hover {
-		opacity: 0.8;
+	.imdb-score-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		color: #f87171;
+		font-weight: 800;
 	}
 
-	.empty-state {
-		padding: 3rem;
-		text-align: center;
-		background: var(--bg-surface-1);
-		border-radius: var(--radius-lg);
-		border: 1px solid var(--border-subtle);
-		color: var(--text-secondary);
+	.imdb-score-badge .star {
+		color: #ef4444;
 	}
 
-	.subtext {
-		font-size: 0.9rem;
-		color: var(--text-tertiary);
+	.meta-dot {
+		color: #52525b;
+	}
+
+	.hero-synopsis {
+		font-size: 0.95rem;
+		line-height: 1.6;
+		color: #a1a1aa;
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		margin: 0;
+		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+	}
+
+	/* Hero Button Row */
+	.hero-btn-row {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
 		margin-top: 0.5rem;
 	}
 
-	code {
-		background: var(--bg-surface-3);
-		padding: 0.2rem 0.5rem;
-		border-radius: var(--radius-sm);
-		color: var(--accent-gold);
+	.cineby-play-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: #ffffff;
+		color: #050507;
+		font-size: 0.95rem;
+		font-weight: 800;
+		padding: 0.75rem 1.6rem;
+		border-radius: 9999px;
+		text-decoration: none;
+		box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.cineby-play-btn:hover {
+		background: #10b981;
+		color: #050507;
+		transform: scale(1.04);
+		box-shadow: 0 6px 25px rgba(16, 185, 129, 0.4);
+	}
+
+	.cineby-play-btn:active {
+		transform: scale(0.97);
+	}
+
+	.cineby-info-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: rgba(255, 255, 255, 0.12);
+		color: #ffffff;
+		font-size: 0.95rem;
+		font-weight: 700;
+		padding: 0.75rem 1.4rem;
+		border-radius: 9999px;
+		text-decoration: none;
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		backdrop-filter: blur(12px);
+		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.cineby-info-btn:hover {
+		background: rgba(255, 255, 255, 0.22);
+		border-color: rgba(255, 255, 255, 0.3);
+		transform: scale(1.04);
+	}
+
+	.cineby-info-btn:active {
+		transform: scale(0.97);
+	}
+
+	.cineby-watchlist-btn {
+		width: 44px;
+		height: 44px;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		color: #ffffff;
+		font-size: 1.3rem;
+		font-weight: 700;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		backdrop-filter: blur(12px);
+		transition: all 0.2s ease;
+	}
+
+	.cineby-watchlist-btn:hover {
+		background: #10b981;
+		color: #050507;
+		border-color: #10b981;
+		transform: scale(1.08);
+	}
+
+	.carousel-dots-row {
+		display: flex;
+		gap: 0.45rem;
+		margin-top: 0.5rem;
+	}
+
+	.carousel-dot {
+		width: 24px;
+		height: 4px;
+		border-radius: 2px;
+		background: rgba(255, 255, 255, 0.2);
+		border: none;
+		cursor: pointer;
+		transition: all 0.25s ease;
+	}
+
+	.carousel-dot.active {
+		width: 38px;
+		background: #10b981;
+		box-shadow: 0 0 8px #10b981;
+	}
+
+	/* CONTENT CATALOG SECTIONS */
+	.content-sections-wrap {
+		display: flex;
+		flex-direction: column;
+		gap: 3.5rem;
+		padding-bottom: 5rem;
+	}
+
+	.catalog-section {
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+	}
+
+	.section-title-bar {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.title-accent-bar {
+		width: 4px;
+		height: 22px;
+		border-radius: 2px;
+		background: #ef4444;
+	}
+
+	.title-accent-bar.emerald {
+		background: #10b981;
+	}
+
+	.title-accent-bar.gold {
+		background: #f5c518;
+	}
+
+	.section-heading {
+		font-size: 1.4rem;
+		font-weight: 800;
+		color: #ffffff;
+		letter-spacing: -0.02em;
+		margin: 0;
+	}
+
+	.view-all-link {
+		margin-left: auto;
 		font-size: 0.85rem;
+		font-weight: 700;
+		color: #10b981;
+		text-decoration: none;
+		transition: color 0.15s ease;
+	}
+
+	.view-all-link.gold {
+		color: #f5c518;
+	}
+
+	.view-all-link:hover {
+		text-decoration: underline;
+	}
+
+	/* TOP 10 HORIZONTAL GRID */
+	.top10-horizontal-grid {
+		display: flex;
+		gap: 1.25rem;
+		overflow-x: auto;
+		padding: 0.5rem 0 1rem 0;
+		scrollbar-width: none;
+	}
+
+	.top10-card {
+		position: relative;
+		display: flex;
+		align-items: flex-end;
+		min-width: 200px;
+		text-decoration: none;
+		transition: transform 0.2s ease;
+	}
+
+	.top10-card:hover {
+		transform: translateY(-6px);
+	}
+
+	.top10-rank-num {
+		font-size: 6.5rem;
+		font-weight: 900;
+		line-height: 0.8;
+		color: #050507;
+		-webkit-text-stroke: 3px rgba(255, 255, 255, 0.35);
+		font-family: 'Plus Jakarta Sans', sans-serif;
+		margin-right: -25px;
+		z-index: 2;
+		pointer-events: none;
+		user-select: none;
+		transition: -webkit-text-stroke 0.2s ease;
+	}
+
+	.top10-card:hover .top10-rank-num {
+		-webkit-text-stroke: 3px #ef4444;
+	}
+
+	.top10-poster-wrap {
+		position: relative;
+		z-index: 1;
+		width: 140px;
+		border-radius: 12px;
+		overflow: hidden;
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+	}
+
+	/* MOVIES MEDIA GRID */
+	.movies-media-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+		gap: 1.25rem;
+	}
+
+	@media (min-width: 1024px) {
+		.movies-media-grid {
+			grid-template-columns: repeat(6, 1fr);
+		}
+	}
+
+	/* TV HORIZONTAL SCROLLER */
+	.tv-horizontal-scroller {
+		display: flex;
+		gap: 1.25rem;
+		overflow-x: auto;
+		padding-bottom: 1rem;
+		scrollbar-width: none;
+	}
+
+	.tv-preview-card {
+		position: relative;
+		min-width: 170px;
+		max-width: 180px;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		text-decoration: none;
+		transition: transform 0.2s ease;
+	}
+
+	.tv-preview-card:hover {
+		transform: translateY(-4px);
+	}
+
+	.tv-rank-pill {
+		position: absolute;
+		top: 0.5rem;
+		left: 0.5rem;
+		z-index: 10;
+		background: #f5c518;
+		color: #000000;
+		font-size: 0.72rem;
+		font-weight: 900;
+		padding: 0.1rem 0.45rem;
+		border-radius: 4px;
+		font-family: monospace;
+	}
+
+	.tv-poster-box {
+		border-radius: 12px;
+		overflow: hidden;
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+	}
+
+	.tv-preview-title {
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: #ffffff;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.tv-preview-meta {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.75rem;
+		color: #a1a1aa;
+	}
+
+	.tv-score {
+		color: #f5c518;
+		font-weight: 800;
 	}
 </style>
