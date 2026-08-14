@@ -12,23 +12,30 @@
 	let heroIndex = $state(0);
 	let carouselInterval: any = null;
 
-	const featuredMovies = $derived(
-		(data.trending || []).filter((m: any) => m.backdropPath && m.backdropPath !== 'null').slice(0, 5)
-	);
+	const featuredHeroes = $derived([
+		data.featuredHero,
+		...(data.trending || []).filter((m: any) => m.backdropPath && m.backdropPath !== 'null').slice(0, 4)
+	].filter(Boolean));
 
-	const currentHero = $derived(featuredMovies[heroIndex] || data.trending[0] || null);
+	const currentHero = $derived(featuredHeroes[heroIndex] || data.featuredHero || data.trending[0] || null);
+
+	const heroHref = $derived(
+		currentHero?.isTV
+			? `/cinema/tvshow/${currentHero.tmdbId}`
+			: `/cinema/movies/${currentHero?.id || currentHero?.tmdbId}`
+	);
 
 	const top10Today = $derived((data.trending || []).slice(0, 10));
 
 	function nextHero() {
-		if (featuredMovies.length > 1) {
-			heroIndex = (heroIndex + 1) % featuredMovies.length;
+		if (featuredHeroes.length > 1) {
+			heroIndex = (heroIndex + 1) % featuredHeroes.length;
 		}
 	}
 
 	function prevHero() {
-		if (featuredMovies.length > 1) {
-			heroIndex = (heroIndex - 1 + featuredMovies.length) % featuredMovies.length;
+		if (featuredHeroes.length > 1) {
+			heroIndex = (heroIndex - 1 + featuredHeroes.length) % featuredHeroes.length;
 		}
 	}
 
@@ -39,7 +46,7 @@
 
 	function resetTimer() {
 		if (carouselInterval) clearInterval(carouselInterval);
-		carouselInterval = setInterval(nextHero, 7000);
+		carouselInterval = setInterval(nextHero, 9000);
 	}
 
 	onMount(() => {
@@ -87,7 +94,7 @@
 					<div class="hero-meta-row">
 						<span class="imdb-score-badge">
 							<span class="star">★</span>
-							<span>{Number(currentHero.voteAverage || 8.5).toFixed(1)}</span>
+							<span>{Number(currentHero.voteAverage || 8.1).toFixed(1)}</span>
 						</span>
 
 						{#if currentHero.releaseDate}
@@ -111,12 +118,12 @@
 
 					<!-- Action Buttons -->
 					<div class="hero-btn-row">
-						<a href="/movies/{currentHero.id || currentHero.tmdbId}" class="cineby-play-btn">
+						<a href={heroHref} class="cineby-play-btn">
 							<span class="play-icon">▶</span>
 							<span>Play</span>
 						</a>
 
-						<a href="/movies/{currentHero.id || currentHero.tmdbId}" class="cineby-info-btn">
+						<a href={heroHref} class="cineby-info-btn">
 							<span class="info-icon">ⓘ</span>
 							<span>See More</span>
 						</a>
@@ -137,9 +144,9 @@
 					</div>
 
 					<!-- Featured Carousel Dots -->
-					{#if featuredMovies.length > 1}
+					{#if featuredHeroes.length > 1}
 						<div class="carousel-dots-row">
-							{#each featuredMovies as _, idx}
+							{#each featuredHeroes as _, idx}
 								<button
 									type="button"
 									class="carousel-dot"
