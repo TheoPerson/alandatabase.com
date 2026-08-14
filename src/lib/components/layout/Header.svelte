@@ -36,7 +36,7 @@
 		<!-- Main Nav Navigation Links -->
 		<nav class="main-nav">
 			<a href="/cinema/movies" class="nav-link">Movies</a>
-			<a href="/cinema/tvshow" class="nav-link">TV Shows</a>
+			<a href="/tvshows" class="nav-link">TV Shows</a>
 			<a href="/movies/catalog" class="nav-link">Catalog</a>
 			<a href="/my/films" class="nav-link">Personal OS</a>
 		</nav>
@@ -96,7 +96,7 @@
 		<div class="mobile-menu">
 			<nav class="mobile-nav">
 				<a href="/cinema/movies" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Movies</a>
-				<a href="/cinema/tvshow" class="mobile-nav-link" onclick={() => (menuOpen = false)}>TV Shows</a>
+				<a href="/tvshows" class="mobile-nav-link" onclick={() => (menuOpen = false)}>TV Shows</a>
 				<a href="/movies/catalog" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Catalog</a>
 				<a href="/my/films" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Personal OS</a>
 			</nav>

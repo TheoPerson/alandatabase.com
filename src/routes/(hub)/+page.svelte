@@ -72,7 +72,7 @@
 			id: 'tv-top50',
 			name: 'Top 50 TV Shows',
 			icon: '📺',
-			url: '/cinema/tvshow',
+			url: '/tvshows',
 			color: '#f5c518',
 			desc: 'IMDb Rated All-Time Masterpieces'
 		},
