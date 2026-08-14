@@ -1,8 +1,4 @@
-/**
- * High-Precision Multi-Channel Telegram Telemetry Service
- * The Alan's Database / CinemaDB Core Telemetry Engine
- * Language: English (Technical & System-Grade)
- */
+import { telemetryBus } from '../telemetry-bus';
 
 export type ChannelCategory = 'major' | 'ingest' | 'users' | 'logs';
 
@@ -90,6 +86,14 @@ export async function sendTelegramCard(text: string, options: TelegramSendOption
 export async function notifyCriticalError(context: string, error: any) {
 	const errorMsg = error instanceof Error ? error.message : String(error);
 	const timestamp = new Date().toISOString();
+	
+	telemetryBus.emit({
+		level: 'ERROR',
+		source: 'SERVER_EXCEPTION',
+		message: `${context} -> ${errorMsg.slice(0, 150)}`,
+		metadata: { context, error: errorMsg }
+	});
+
 	const text =
 		`🔴 <b>[CORE ENGINE] CRITICAL RUNTIME EXCEPTION</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -108,6 +112,13 @@ export async function notifyCriticalError(context: string, error: any) {
 export async function notifyMajorEvent(title: string, message: string, severity: 'CRITICAL' | 'WARNING' | 'NOTICE' = 'NOTICE') {
 	const icon = severity === 'CRITICAL' ? '🔴' : severity === 'WARNING' ? '🟠' : '🟢';
 	const timestamp = new Date().toISOString();
+
+	telemetryBus.emit({
+		level: severity === 'CRITICAL' ? 'ERROR' : severity === 'WARNING' ? 'WARN' : 'INFO',
+		source: 'CLUSTER_EVENT',
+		message: `${title}: ${message}`
+	});
+
 	const text =
 		`${icon} <b>[SYSTEM TELEMETRY] CLUSTER EVENT • ${severity}</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -134,6 +145,13 @@ export async function notifyMovieIngested(
 			? posterPath
 			: `https://image.tmdb.org/t/p/w500${posterPath}`
 		: null;
+
+	telemetryBus.emit({
+		level: 'INGEST',
+		source: 'TMDB_INGEST',
+		message: `Movie Ingested: "${title}" (${year || 'N/A'}) [TMDB #${tmdbId || 'N/A'}]`,
+		metadata: { title, tmdbId, year }
+	});
 
 	const text =
 		`🟣 <b>[INGESTION PIPELINE] TMDB ASSET INGEST COMPLETE</b>\n` +
@@ -164,6 +182,13 @@ export async function notifyMovieIngested(
 // -------------------------------------------------------------
 export async function notifyUserRegistered(username: string, email?: string) {
 	const timestamp = new Date().toISOString();
+
+	telemetryBus.emit({
+		level: 'SUCCESS',
+		source: 'AUTH_RADAR',
+		message: `User Registered: @${username} (${email || 'no-email'})`
+	});
+
 	const text =
 		`👤 <b>[AUTH RADAR] IDENTITY PROVISIONED</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -182,6 +207,13 @@ export async function notifyUserRegistered(username: string, email?: string) {
 
 export async function notifyUserLogin(username: string, ip?: string) {
 	const timestamp = new Date().toISOString();
+
+	telemetryBus.emit({
+		level: 'INFO',
+		source: 'AUTH_RADAR',
+		message: `User Session Started: @${username} [${ip || 'unknown-ip'}]`
+	});
+
 	const text =
 		`🔑 <b>[AUTH RADAR] SESSION ESTABLISHED</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -199,6 +231,12 @@ export async function notifyUserLogin(username: string, ip?: string) {
 export async function notifyMovieStreamed(movieTitle: string, serverName?: string, user?: string, posterPath?: string | null) {
 	const timestamp = new Date().toISOString();
 	const fullPosterUrl = posterPath ? (posterPath.startsWith('http') ? posterPath : `https://image.tmdb.org/t/p/w500${posterPath}`) : null;
+
+	telemetryBus.emit({
+		level: 'STREAM',
+		source: 'STREAM_PIPELINE',
+		message: `Stream Playback: "${movieTitle}" via ${serverName || 'Vidzy HD'} by @${user || 'Guest'}`
+	});
 
 	const text =
 		`🟢 <b>[STREAM PIPELINE] PLAYBACK SESSION INITIALIZED</b>\n` +
@@ -219,6 +257,13 @@ export async function notifyMovieStreamed(movieTitle: string, serverName?: strin
 
 export async function notifySearchPerformed(query: string, resultCount: number) {
 	const timestamp = new Date().toISOString();
+
+	telemetryBus.emit({
+		level: 'SEARCH',
+		source: 'SEARCH_ENGINE',
+		message: `Search Query: "${query}" -> ${resultCount} hits resolved`
+	});
+
 	const text =
 		`🔍 <b>[TELEMETRY] SEARCH QUERY VECTOR DISPATCHED</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +

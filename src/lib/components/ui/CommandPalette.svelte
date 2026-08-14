@@ -16,7 +16,8 @@
 		{ label: '🔍 Advanced Search', href: '/search', category: 'Navigation' },
 		{ label: '📽️ My Personal Archive', href: '/my/films', category: 'Personal OS' },
 		{ label: '📖 My Diary', href: '/my/diary', category: 'Personal OS' },
-		{ label: '✨ AI Curator', href: '/discover/ai', category: 'Personal OS' }
+		{ label: '✨ AI Curator', href: '/discover/ai', category: 'Personal OS' },
+		{ label: '📡 Live Telemetry & Radar', href: '/status', category: 'System Radar' }
 	];
 
 	const filteredLinks = $derived(
