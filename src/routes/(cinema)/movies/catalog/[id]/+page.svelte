@@ -60,8 +60,12 @@
 							method="POST"
 							action="?/logInteraction"
 							use:enhance={() => {
+								const previous = watched;
 								watched = !watched;
-								return async ({ update }) => {
+								return async ({ result, update }) => {
+									if (result.type === 'error' || result.type === 'failure') {
+										watched = previous;
+									}
 									await update({ reset: false });
 								};
 							}}
@@ -69,7 +73,7 @@
 							<input type="hidden" name="movieId" value={movie.id} />
 							<input type="hidden" name="type" value="watched" />
 							<input type="hidden" name="value" value={(!watched).toString()} />
-							<Button variant={watched ? 'success' : 'primary'} class="w-full">
+							<Button type="submit" variant={watched ? 'success' : 'outline'} class="w-full">
 								{watched ? '✔ Watched' : 'Mark as Watched'}
 							</Button>
 						</form>
@@ -79,8 +83,12 @@
 							method="POST"
 							action="?/logInteraction"
 							use:enhance={() => {
+								const previous = watchlist;
 								watchlist = !watchlist;
-								return async ({ update }) => {
+								return async ({ result, update }) => {
+									if (result.type === 'error' || result.type === 'failure') {
+										watchlist = previous;
+									}
 									await update({ reset: false });
 								};
 							}}
@@ -88,18 +96,24 @@
 							<input type="hidden" name="movieId" value={movie.id} />
 							<input type="hidden" name="type" value="watchlist" />
 							<input type="hidden" name="value" value={(!watchlist).toString()} />
-							<Button variant={watchlist ? 'success' : 'secondary'} class="w-full">
+							<Button type="submit" variant={watchlist ? 'success' : 'outline'} class="w-full">
 								{watchlist ? '✔ On Watchlist' : '+ Add to Watchlist'}
 							</Button>
 						</form>
 
-						<!-- Edit Metadata Button -->
-						<div class="flex gap-2">
-							<Button href="/movies/{movie.id}/edit" variant="ghost" class="w-full">✏️ Edit</Button>
-							<Button href="/movies/{movie.id}/merge" variant="ghost" class="w-full text-red-400">
-								🔗 Merge
-							</Button>
-						</div>
+						<!-- Share Movie Button -->
+						<Button
+							variant="ghost"
+							class="w-full"
+							onclick={() => {
+								if (typeof navigator !== 'undefined') {
+									navigator.clipboard.writeText(window.location.href);
+									alert('🔗 Movie link copied to clipboard!');
+								}
+							}}
+						>
+							🔗 Share Film
+						</Button>
 
 						<!-- Rate Button -->
 						<div class="rate-container glass-card">

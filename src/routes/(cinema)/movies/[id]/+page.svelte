@@ -1,8 +1,8 @@
 <script lang="ts">
 	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
 	import StreamPlayerContainer from '$lib/components/player/StreamPlayerContainer.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { Badge } from '$lib/components/ui/badge';
+	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
 	import { enhance } from '$app/forms';
 
 	let { data, form } = $props();
@@ -77,7 +77,7 @@
 								<input type="hidden" name="movieId" value={movie.id} />
 								<input type="hidden" name="type" value="watched" />
 								<input type="hidden" name="value" value={(!watched).toString()} />
-								<Button variant={watched ? 'default' : 'secondary'} class="w-full">
+								<Button type="submit" variant={watched ? 'success' : 'outline'} class="w-full">
 									{watched ? '✔ Watched' : 'Mark as Watched'}
 								</Button>
 							</form>
@@ -100,15 +100,24 @@
 								<input type="hidden" name="movieId" value={movie.id} />
 								<input type="hidden" name="type" value="watchlist" />
 								<input type="hidden" name="value" value={(!watchlist).toString()} />
-								<Button variant={watchlist ? 'default' : 'secondary'} class="w-full">
+								<Button type="submit" variant={watchlist ? 'success' : 'outline'} class="w-full">
 									{watchlist ? '✔ On Watchlist' : '+ Add to Watchlist'}
 								</Button>
 							</form>
 
-							<!-- Edit Metadata Button -->
-							<div class="flex gap-2">
-								<Button href="/movies/catalog/{movie.id}/edit" variant="ghost" class="w-full">✏️ Edit</Button>
-							</div>
+							<!-- Share Movie Button -->
+							<Button
+								variant="ghost"
+								class="w-full"
+								onclick={() => {
+									if (typeof navigator !== 'undefined') {
+										navigator.clipboard.writeText(window.location.href);
+										alert('🔗 Movie link copied to clipboard!');
+									}
+								}}
+							>
+								🔗 Share Film
+							</Button>
 
 							<!-- Rate Button -->
 							<div class="rate-container glass-card">
@@ -148,7 +157,7 @@
 						{:else}
 							<div class="auth-prompt glass-card">
 								<p>Log in to track this film.</p>
-								<Button href="/auth/login" variant="default" class="w-full">Sign In</Button>
+								<Button href="/auth/login" variant="primary" class="w-full">Sign In</Button>
 							</div>
 						{/if}
 					</div>
@@ -171,11 +180,11 @@
 					<!-- Key Specs & Badges -->
 					<div class="meta-pills">
 						{#if movie.voteAverage}
-							<Badge variant="secondary">★ {Number(movie.voteAverage).toFixed(1)} / 10</Badge>
+							<Badge variant="gold">★ {Number(movie.voteAverage).toFixed(1)} / 10</Badge>
 						{/if}
 
 						{#if movie.runtime}
-							<Badge variant="secondary">⏱ {movie.runtime} min</Badge>
+							<Badge variant="surface">⏱ {movie.runtime} min</Badge>
 						{/if}
 
 						{#if movie.originalLanguage}
@@ -184,7 +193,7 @@
 
 						{#if movie.genres}
 							{#each movie.genres as g}
-								<Badge variant="secondary">{(g as any).genre?.name || ''}</Badge>
+								<Badge variant="surface">{(g as any).genre?.name || ''}</Badge>
 							{/each}
 						{/if}
 					</div>

@@ -1,6 +1,7 @@
 import { getMovieById } from '$lib/server/services/movie.service';
 import { db } from '$lib/server/db';
 import {
+	movies,
 	userMovieInteractions,
 	userReviews,
 	userLists,
@@ -9,6 +10,35 @@ import {
 import { eq, and } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import { logActivity } from '$lib/server/services/interaction.service';
+import { ingestMovie } from '$lib/server/tmdb';
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function resolveMovieUuid(movieIdOrTmdb: string): Promise<string | null> {
+	if (UUID_REGEX.test(movieIdOrTmdb)) {
+		return movieIdOrTmdb;
+	}
+
+	if (/^\d+$/.test(movieIdOrTmdb)) {
+		const tmdbId = parseInt(movieIdOrTmdb, 10);
+		const existing = await db.query.movies.findFirst({
+			where: eq(movies.tmdbId, tmdbId)
+		}).catch(() => null);
+
+		if (existing) {
+			return existing.id;
+		}
+
+		try {
+			const newUuid = await ingestMovie(tmdbId, { notifyTelegram: false });
+			if (newUuid) return newUuid;
+		} catch (err) {
+			console.warn('Auto-ingest on resolveMovieUuid failed:', err);
+		}
+	}
+
+	return null;
+}
 
 export async function load({ params, locals }) {
 	const movie = await getMovieById(params.id);
@@ -24,25 +54,35 @@ export async function load({ params, locals }) {
 	let userCustomLists: any[] = [];
 
 	if (locals.user) {
-		[interaction, review, userCustomLists] = await Promise.all([
-			db.query.userMovieInteractions.findFirst({
-				where: and(
-					eq(userMovieInteractions.userId, locals.user.id),
-					eq(userMovieInteractions.movieId, movie.id)
-				)
-			}),
-			db.query.userReviews.findFirst({
-				where: and(eq(userReviews.userId, locals.user.id), eq(userReviews.movieId, movie.id))
-			}),
-			db.query.userLists.findMany({
-				where: eq(userLists.userId, locals.user.id),
-				with: {
-					items: {
-						where: eq(userListItems.movieId, movie.id)
-					}
-				}
-			})
-		]);
+		const dbUuid = await resolveMovieUuid(movie.id);
+
+		if (dbUuid) {
+			[interaction, review, userCustomLists] = await Promise.all([
+				db.query.userMovieInteractions
+					.findFirst({
+						where: and(
+							eq(userMovieInteractions.userId, locals.user.id),
+							eq(userMovieInteractions.movieId, dbUuid)
+						)
+					})
+					.catch(() => null),
+				db.query.userReviews
+					.findFirst({
+						where: and(eq(userReviews.userId, locals.user.id), eq(userReviews.movieId, dbUuid))
+					})
+					.catch(() => null),
+				db.query.userLists
+					.findMany({
+						where: eq(userLists.userId, locals.user.id),
+						with: {
+							items: {
+								where: eq(userListItems.movieId, dbUuid)
+							}
+						}
+					})
+					.catch(() => [])
+			]);
+		}
 	}
 
 	return {
@@ -61,12 +101,17 @@ export const actions = {
 		}
 
 		const formData = await request.formData();
-		const movieId = formData.get('movieId')?.toString();
+		const rawMovieId = formData.get('movieId')?.toString();
 		const type = formData.get('type')?.toString(); // 'watched' | 'watchlist' | 'favorite' | 'rating'
 		const value = formData.get('value')?.toString();
 
-		if (!movieId || !type) {
+		if (!rawMovieId || !type) {
 			return fail(400, { error: 'Invalid payload.' });
+		}
+
+		const movieId = await resolveMovieUuid(rawMovieId);
+		if (!movieId) {
+			return fail(404, { error: 'Could not resolve movie record.' });
 		}
 
 		try {
@@ -127,10 +172,15 @@ export const actions = {
 
 		const formData = await request.formData();
 		const listId = formData.get('listId')?.toString();
-		const movieId = formData.get('movieId')?.toString();
+		const rawMovieId = formData.get('movieId')?.toString();
 
-		if (!listId || !movieId) {
+		if (!listId || !rawMovieId) {
 			return fail(400, { error: 'Invalid payload.' });
+		}
+
+		const movieId = await resolveMovieUuid(rawMovieId);
+		if (!movieId) {
+			return fail(404, { error: 'Movie not found.' });
 		}
 
 		try {
