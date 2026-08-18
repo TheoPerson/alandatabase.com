@@ -1,6 +1,7 @@
 import { sentrySvelteKit } from '@sentry/sveltekit';
 import { defineConfig } from 'vitest/config';
 import { sveltekit } from '@sveltejs/kit/vite';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
 	plugins: [
@@ -8,6 +9,7 @@ export default defineConfig({
 			org: 'alandatabase',
 			project: 'javascript-sveltekit'
 		}),
+		tailwindcss(),
 		sveltekit()
 	],
 	ssr: {

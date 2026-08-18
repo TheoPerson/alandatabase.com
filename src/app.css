@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* ==========================================================================
    CINEMA PLATFORM DESIGN SYSTEM — 2026 ULTRA-PREMIUM EDITION
