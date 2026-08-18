@@ -54,6 +54,22 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 		});
 	}
 
+	// Adult Content Gate Check
+	if (
+		isCinemaRoute(pathname) &&
+		event.locals.user &&
+		!pathname.startsWith('/disclaimer') &&
+		!pathname.startsWith('/api/')
+	) {
+		const settings = event.locals.user.settings || {};
+		if (!settings.hasAcceptedAdultGate) {
+			return new Response(null, {
+				status: 302,
+				headers: { location: '/disclaimer' }
+			});
+		}
+	}
+
 	const response = await resolve(event);
 	
 	// Ensure private cinema routes are never cached publicly

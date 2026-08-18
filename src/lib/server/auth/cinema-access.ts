@@ -7,7 +7,8 @@ export const CINEMA_PREFIXES = [
 	'/cinema',
 	'/discover',
 	'/my',
-	'/search'
+	'/search',
+	'/disclaimer'
 ];
 
 export const PUBLIC_ROUTES = [
