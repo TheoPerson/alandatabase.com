@@ -159,14 +159,14 @@
 
 	.radar-scan {
 		transform-origin: 18px 18px;
-		animation: radarSpin 5s linear infinite;
+		animation: -global-radarSpin 5s linear infinite;
 	}
 
 	.pulse-ring {
-		animation: pulseOpacity 2.5s ease-in-out infinite;
+		animation: -global-pulseOpacity 2.5s ease-in-out infinite;
 	}
 
-	@keyframes radarSpin {
+	@keyframes -global-radarSpin {
 		from {
 			transform: rotate(0deg);
 		}
@@ -175,7 +175,7 @@
 		}
 	}
 
-	@keyframes pulseOpacity {
+	@keyframes -global-pulseOpacity {
 		0%, 100% {
 			opacity: 0.25;
 		}
