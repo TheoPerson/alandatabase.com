@@ -8,10 +8,11 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.js';
+import { building } from '$app/environment';
 
 const connectionString = (process.env.PREVIEW_DATABASE_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL)?.trim();
 
-if (!connectionString) {
+if (!connectionString && !building) {
 	throw new Error('DATABASE_URL or POSTGRES_URL is not set. Please configure it in your environment variables.');
 }
 

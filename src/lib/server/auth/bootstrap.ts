@@ -40,7 +40,7 @@ export async function ensureAdminUser() {
 		} else {
 			console.log('Admin user exists.');
 			// Ensure admin has accepted the adult gate so you don't see it
-			const settings = existingUser.settings || {};
+			const settings = (existingUser.settings as any) || {};
 			if (!settings.hasAcceptedAdultGate) {
 				await db.update(users)
 					.set({ settings: { ...settings, hasAcceptedAdultGate: true } })

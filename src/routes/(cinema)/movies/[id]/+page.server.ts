@@ -13,7 +13,7 @@ export async function load({ params }) {
 
 		return {
 			movie,
-			credits: []
+			credits: [] as any[]
 		};
 	} catch (e) {
 		console.error('Error fetching movie details:', e);
