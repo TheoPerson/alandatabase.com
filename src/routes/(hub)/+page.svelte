@@ -6,7 +6,6 @@
 	import TerminalIcon from 'lucide-svelte/icons/terminal';
 	import DatabaseIcon from 'lucide-svelte/icons/database';
 	import ExternalLinkIcon from 'lucide-svelte/icons/external-link';
-	import GithubIcon from 'lucide-svelte/icons/github';
 	import ArrowRightIcon from 'lucide-svelte/icons/arrow-right';
 
 	let scratchpadText = $state('');
