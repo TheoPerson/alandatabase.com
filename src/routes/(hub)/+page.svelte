@@ -1,19 +1,33 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
-	import Button from '$lib/components/ui/Button.svelte';
 	import FilmIcon from 'lucide-svelte/icons/film';
 	import TerminalIcon from 'lucide-svelte/icons/terminal';
 	import DatabaseIcon from 'lucide-svelte/icons/database';
-	import ExternalLinkIcon from 'lucide-svelte/icons/external-link';
 	import ArrowRightIcon from 'lucide-svelte/icons/arrow-right';
+	import ExternalLinkIcon from 'lucide-svelte/icons/external-link';
+	import CommandIcon from 'lucide-svelte/icons/command';
+	import CodeIcon from 'lucide-svelte/icons/code';
+	import ZapIcon from 'lucide-svelte/icons/zap';
+	import LayoutDashboardIcon from 'lucide-svelte/icons/layout-dashboard';
 
 	let scratchpadText = $state('');
 	let isClient = $state(false);
+	let currentTime = $state('');
+	let currentDate = $state('');
 
 	onMount(() => {
 		isClient = true;
 		scratchpadText = localStorage.getItem('alan_vault_scratchpad') || '';
+
+		const updateTime = () => {
+			const now = new Date();
+			currentTime = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+			currentDate = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+		};
+		updateTime();
+		const interval = setInterval(updateTime, 1000);
+		return () => clearInterval(interval);
 	});
 
 	function handleScratchInput() {
@@ -21,337 +35,128 @@
 	}
 
 	const devSuites = [
-		{ id: 'json', name: 'JSON Studio', url: '/tools/json', desc: 'Format, Validate & CSV' },
-		{ id: 'diff', name: 'Diff & Text', url: '/tools/diff', desc: 'Side-by-Side & Regex' },
-		{ id: 'image', name: 'Image Studio', url: '/tools/image', desc: 'Compress & Base64' },
-		{ id: 'file', name: 'File Utils', url: '/tools/file', desc: 'Hashes & Converters' },
-		{ id: 'generators', name: 'Generators', url: '/tools/generators', desc: 'UUIDs & Passwords' }
+		{ name: 'JSON Studio', url: '/tools/json', icon: CodeIcon },
+		{ name: 'Diff & Regex', url: '/tools/diff', icon: TerminalIcon },
+		{ name: 'Image Studio', url: '/tools/image', icon: ZapIcon },
+		{ name: 'Generators', url: '/tools/generators', icon: DatabaseIcon }
 	];
 
-	const bookmarks = [
-		{ name: 'GitHub', url: 'https://github.com' },
-		{ name: 'ChatGPT', url: 'https://chat.openai.com' },
+	const links = [
 		{ name: 'Vercel', url: 'https://vercel.com' },
+		{ name: 'GitHub', url: 'https://github.com' },
 		{ name: 'Cloudflare', url: 'https://dash.cloudflare.com' }
 	];
 </script>
 
 <svelte:head>
-	<title>Alan's Vault</title>
+	<title>Vault OS</title>
 </svelte:head>
 
-<div class="vault-container">
-	<div class="linear-grid-bg"></div>
-	
-	<div class="vault-content" in:fade={{ duration: 400 }}>
-		<header class="vault-header">
-			<h1 class="vault-title">Vault<span class="dot">.</span></h1>
-			<p class="vault-subtitle">Personal Operating System</p>
+<main class="min-h-screen bg-black text-zinc-100 font-sans relative overflow-hidden selection:bg-emerald-500/30">
+	<!-- Ambient Background Glow -->
+	<div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-emerald-900/20 blur-[120px] rounded-full pointer-events-none"></div>
+	<div class="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-900/10 blur-[120px] rounded-full pointer-events-none"></div>
+	<div class="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] pointer-events-none mix-blend-overlay"></div>
+
+	<div class="max-w-6xl mx-auto px-6 py-12 lg:py-24 relative z-10">
+		
+		<!-- Header Section -->
+		<header class="flex flex-col md:flex-row md:items-end justify-between mb-12" in:fade={{ duration: 500 }}>
+			<div>
+				<div class="flex items-center gap-3 mb-2">
+					<div class="p-2 bg-zinc-900 rounded-lg border border-zinc-800">
+						<CommandIcon size={20} class="text-emerald-400" />
+					</div>
+					<h1 class="text-xl font-bold tracking-tight text-zinc-100">Alan's Vault</h1>
+				</div>
+				<p class="text-zinc-500 font-medium ml-1">Personal Operating System</p>
+			</div>
+			
+			<div class="mt-6 md:mt-0 text-left md:text-right">
+				<div class="text-3xl font-bold tracking-tighter text-zinc-100">{currentTime}</div>
+				<div class="text-sm font-medium text-zinc-500">{currentDate}</div>
+			</div>
 		</header>
 
-		<div class="bento-grid">
-			<!-- MAIN CINEMA CARD -->
-			<a href="/movies" class="bento-card cinema-card group" in:fly={{ y: 20, duration: 400, delay: 100 }}>
-				<div class="card-bg-glow"></div>
-				<div class="cinema-content">
-					<div class="icon-wrapper">
-						<FilmIcon size={32} class="text-emerald-500" />
+		<!-- Bento Grid -->
+		<div class="grid grid-cols-1 md:grid-cols-12 gap-4 auto-rows-[120px]">
+			
+			<!-- CINEMA OS (Hero Card) -->
+			<a href="/movies" class="group relative col-span-1 md:col-span-8 row-span-2 md:row-span-3 rounded-3xl overflow-hidden border border-zinc-800/50 bg-zinc-950 transition-all hover:border-emerald-500/30" in:fly={{ y: 20, duration: 500, delay: 100 }}>
+				<!-- Card Background -->
+				<div class="absolute inset-0 bg-gradient-to-br from-emerald-950/40 via-zinc-950/80 to-zinc-950 z-0"></div>
+				<div class="absolute right-0 top-0 w-3/4 h-full bg-gradient-to-l from-emerald-500/10 to-transparent blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+				
+				<div class="relative z-10 h-full flex flex-col justify-between p-8">
+					<div class="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center backdrop-blur-md">
+						<FilmIcon size={28} class="text-emerald-400" />
 					</div>
-					<div>
-						<h2 class="card-title text-2xl mb-2">Cinema OS</h2>
-						<p class="card-desc max-w-md">Access your private, high-fidelity media library and streaming platform.</p>
+					
+					<div class="mt-8">
+						<h2 class="text-4xl md:text-5xl font-extrabold tracking-tight text-white mb-4">Cinema OS</h2>
+						<p class="text-lg text-zinc-400 max-w-md font-medium leading-relaxed">
+							Your private, high-fidelity media library and streaming platform.
+						</p>
 					</div>
-					<div class="action-arrow group-hover:translate-x-2 transition-transform">
+
+					<div class="absolute bottom-8 right-8 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center transform translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300 shadow-[0_0_30px_rgba(255,255,255,0.3)]">
 						<ArrowRightIcon size={24} />
 					</div>
 				</div>
 			</a>
 
+			<!-- DEV SUITES (List Card) -->
+			<div class="col-span-1 md:col-span-4 row-span-2 rounded-3xl border border-zinc-800/50 bg-zinc-900/30 backdrop-blur-sm p-6 flex flex-col" in:fly={{ y: 20, duration: 500, delay: 200 }}>
+				<div class="flex items-center gap-2 mb-6 text-zinc-400">
+					<LayoutDashboardIcon size={16} />
+					<h3 class="text-xs font-bold uppercase tracking-widest">Developer Suites</h3>
+				</div>
+				
+				<div class="flex flex-col gap-2 flex-1 justify-center">
+					{#each devSuites as suite}
+						{@const Icon = suite.icon}
+						<a href={suite.url} class="group/item flex items-center justify-between p-3 rounded-xl hover:bg-zinc-800/50 transition-colors border border-transparent hover:border-zinc-700/50">
+							<div class="flex items-center gap-3">
+								<div class="p-2 rounded-lg bg-zinc-800/50 text-zinc-400 group-hover/item:text-emerald-400 group-hover/item:bg-emerald-950/50 transition-colors">
+									<Icon size={16} />
+								</div>
+								<span class="font-medium text-zinc-200 group-hover/item:text-white transition-colors">{suite.name}</span>
+							</div>
+							<ArrowRightIcon size={14} class="text-zinc-600 group-hover/item:text-zinc-300 transition-colors" />
+						</a>
+					{/each}
+				</div>
+			</div>
+
 			<!-- SCRATCHPAD -->
-			<div class="bento-card scratchpad-card" in:fly={{ y: 20, duration: 400, delay: 150 }}>
-				<div class="card-header">
-					<TerminalIcon size={16} class="text-zinc-400" />
-					<span class="header-title">Scratchpad</span>
+			<div class="col-span-1 md:col-span-8 row-span-2 rounded-3xl border border-zinc-800/50 bg-zinc-900/30 backdrop-blur-sm p-6 flex flex-col group focus-within:border-zinc-600/50 transition-colors" in:fly={{ y: 20, duration: 500, delay: 300 }}>
+				<div class="flex items-center gap-2 mb-4 text-zinc-400">
+					<CodeIcon size={16} />
+					<h3 class="text-xs font-bold uppercase tracking-widest">Local Scratchpad</h3>
 				</div>
 				<textarea
 					bind:value={scratchpadText}
 					oninput={handleScratchInput}
-					placeholder="Type notes, JSON, or snippets here. Autosaves locally."
-					class="scratchpad-input"
+					placeholder="Paste JSON, write a query, or drop temporary notes here..."
+					class="w-full flex-1 bg-transparent border-none outline-none text-emerald-400/90 font-mono text-sm leading-relaxed resize-none placeholder:text-zinc-700"
 					spellcheck="false"
 				></textarea>
 			</div>
 
-			<!-- DEV SUITES -->
-			<div class="bento-card dev-card" in:fly={{ y: 20, duration: 400, delay: 200 }}>
-				<div class="card-header mb-4">
-					<DatabaseIcon size={16} class="text-zinc-400" />
-					<span class="header-title">Developer Suites</span>
-				</div>
-				<div class="tools-grid">
-					{#each devSuites as tool}
-						<a href={tool.url} class="tool-btn">
-							<span class="tool-name">{tool.name}</span>
-							<span class="tool-desc">{tool.desc}</span>
+			<!-- QUICK LINKS -->
+			<div class="col-span-1 md:col-span-4 row-span-1 rounded-3xl border border-zinc-800/50 bg-zinc-900/30 backdrop-blur-sm p-6 flex flex-col justify-center" in:fly={{ y: 20, duration: 500, delay: 400 }}>
+				<div class="flex items-center gap-4 justify-between">
+					{#each links as link}
+						<a href={link.url} target="_blank" rel="noopener noreferrer" class="flex flex-col items-center gap-2 text-zinc-500 hover:text-white transition-colors">
+							<div class="w-10 h-10 rounded-full bg-zinc-800/50 flex items-center justify-center border border-zinc-700/30 hover:border-zinc-500 transition-colors">
+								<ExternalLinkIcon size={16} />
+							</div>
+							<span class="text-[10px] font-bold uppercase tracking-wider">{link.name}</span>
 						</a>
 					{/each}
 				</div>
 			</div>
 
-			<!-- BOOKMARKS -->
-			<div class="bento-card bookmarks-card" in:fly={{ y: 20, duration: 400, delay: 250 }}>
-				<div class="card-header mb-4">
-					<ExternalLinkIcon size={16} class="text-zinc-400" />
-					<span class="header-title">Quick Links</span>
-				</div>
-				<div class="bookmarks-list">
-					{#each bookmarks as bm}
-						<a href={bm.url} target="_blank" rel="noopener noreferrer" class="bookmark-link">
-							{bm.name}
-							<ArrowRightIcon size={14} class="opacity-50" />
-						</a>
-					{/each}
-				</div>
-			</div>
 		</div>
 	</div>
-</div>
-
-<style>
-	.vault-container {
-		min-height: 100vh;
-		position: relative;
-		display: flex;
-		justify-content: center;
-		padding: 4rem 1.5rem;
-		background: #09090b; /* Deep zinc */
-		color: #f4f4f5;
-		overflow-x: hidden;
-	}
-
-	.linear-grid-bg {
-		position: absolute;
-		inset: 0;
-		background-image: 
-			linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
-			linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
-		background-size: 60px 60px;
-		mask-image: radial-gradient(circle at 50% 0%, black, transparent 70%);
-		-webkit-mask-image: radial-gradient(circle at 50% 0%, black, transparent 70%);
-		pointer-events: none;
-		z-index: 0;
-	}
-
-	.vault-content {
-		position: relative;
-		z-index: 10;
-		width: 100%;
-		max-width: 1000px;
-	}
-
-	.vault-header {
-		margin-bottom: 3rem;
-	}
-
-	.vault-title {
-		font-size: 3rem;
-		font-weight: 800;
-		letter-spacing: -0.04em;
-		line-height: 1;
-		margin-bottom: 0.5rem;
-	}
-
-	.dot {
-		color: #10b981;
-	}
-
-	.vault-subtitle {
-		color: #a1a1aa;
-		font-size: 1.1rem;
-		font-weight: 500;
-	}
-
-	/* BENTO GRID */
-	.bento-grid {
-		display: grid;
-		grid-template-columns: repeat(12, 1fr);
-		gap: 1.5rem;
-		grid-auto-rows: minmax(180px, auto);
-	}
-
-	.bento-card {
-		background: rgba(24, 24, 27, 0.6);
-		border: 1px solid rgba(255, 255, 255, 0.05);
-		border-radius: 1.5rem;
-		padding: 1.75rem;
-		backdrop-filter: blur(20px);
-		transition: all 0.2s ease;
-		display: flex;
-		flex-direction: column;
-		position: relative;
-		overflow: hidden;
-	}
-
-	.bento-card:hover {
-		border-color: rgba(255, 255, 255, 0.1);
-		background: rgba(24, 24, 27, 0.8);
-	}
-
-	.card-header {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-	}
-
-	.header-title {
-		font-size: 0.8rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		font-weight: 600;
-		color: #71717a;
-	}
-
-	/* SPECIFIC CARDS */
-	.cinema-card {
-		grid-column: span 12;
-		background: linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(0,0,0,0) 100%);
-		border: 1px solid rgba(16,185,129,0.2);
-		justify-content: center;
-	}
-	
-	.cinema-card:hover {
-		border-color: rgba(16,185,129,0.4);
-		box-shadow: 0 0 40px rgba(16,185,129,0.1);
-	}
-
-	.card-bg-glow {
-		position: absolute;
-		top: -50%;
-		right: -10%;
-		width: 300px;
-		height: 300px;
-		background: radial-gradient(circle, rgba(16,185,129,0.15) 0%, transparent 70%);
-		pointer-events: none;
-	}
-
-	.cinema-content {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 2rem;
-		position: relative;
-		z-index: 2;
-	}
-
-	.icon-wrapper {
-		background: rgba(16,185,129,0.1);
-		padding: 1rem;
-		border-radius: 1rem;
-	}
-
-	.action-arrow {
-		background: #fff;
-		color: #000;
-		padding: 1rem;
-		border-radius: 50%;
-		display: flex;
-	}
-
-	.scratchpad-card {
-		grid-column: span 12;
-		min-height: 250px;
-	}
-
-	@media (min-width: 768px) {
-		.scratchpad-card {
-			grid-column: span 7;
-		}
-	}
-
-	.scratchpad-input {
-		flex: 1;
-		width: 100%;
-		background: transparent;
-		border: none;
-		color: #e4e4e7;
-		font-family: 'JetBrains Mono', monospace;
-		font-size: 0.9rem;
-		line-height: 1.6;
-		resize: none;
-		outline: none;
-		margin-top: 1rem;
-	}
-	
-	.scratchpad-input::placeholder {
-		color: #52525b;
-	}
-
-	.dev-card {
-		grid-column: span 12;
-	}
-
-	@media (min-width: 768px) {
-		.dev-card {
-			grid-column: span 5;
-		}
-	}
-
-	.tools-grid {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: 0.75rem;
-	}
-
-	.tool-btn {
-		display: flex;
-		flex-direction: column;
-		padding: 0.75rem 1rem;
-		background: rgba(255,255,255,0.03);
-		border-radius: 0.75rem;
-		transition: all 0.2s;
-	}
-
-	.tool-btn:hover {
-		background: rgba(255,255,255,0.06);
-		transform: translateX(4px);
-	}
-
-	.tool-name {
-		font-weight: 500;
-		color: #e4e4e7;
-		font-size: 0.95rem;
-	}
-
-	.tool-desc {
-		font-size: 0.75rem;
-		color: #71717a;
-	}
-
-	.bookmarks-card {
-		grid-column: span 12;
-	}
-
-	.bookmarks-list {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1rem;
-	}
-
-	.bookmark-link {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1.25rem;
-		background: rgba(255,255,255,0.03);
-		border: 1px solid rgba(255,255,255,0.05);
-		border-radius: 99px;
-		font-size: 0.9rem;
-		font-weight: 500;
-		transition: all 0.2s;
-	}
-
-	.bookmark-link:hover {
-		background: #fff;
-		color: #000;
-	}
-</style>
+</main>
