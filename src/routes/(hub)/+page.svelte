@@ -10,6 +10,8 @@
 	import CodeIcon from 'lucide-svelte/icons/code';
 	import ZapIcon from 'lucide-svelte/icons/zap';
 	import LayoutDashboardIcon from 'lucide-svelte/icons/layout-dashboard';
+	import SettingsIcon from 'lucide-svelte/icons/settings';
+	import ActivityIcon from 'lucide-svelte/icons/activity';
 
 	let scratchpadText = $state('');
 	let isClient = $state(false);
@@ -35,6 +37,8 @@
 	}
 
 	const devSuites = [
+		{ name: 'Telemetry Dashboard', url: '/status', icon: ActivityIcon },
+		{ name: 'Config Inspector', url: '/setup', icon: SettingsIcon },
 		{ name: 'JSON Studio', url: '/tools/json', icon: CodeIcon },
 		{ name: 'Diff & Regex', url: '/tools/diff', icon: TerminalIcon },
 		{ name: 'Image Studio', url: '/tools/image', icon: ZapIcon },
