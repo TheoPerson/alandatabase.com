@@ -9,46 +9,18 @@
 
 	let { data } = $props();
 
-	let heroIndex = $state(0);
-	let carouselInterval: any = null;
-
-	const featuredMovies = $derived(
-		(data.top10 || [])
-			.filter((m: any) => m.backdropPath && m.backdropPath !== 'null')
-			.slice(0, 5)
+	const currentHero = $derived(
+		(data.top10 || []).find((m: any) => m.backdropPath && m.backdropPath !== 'null') || 
+		data.top10?.[0] || 
+		data.trending?.[0] || 
+		null
 	);
 
-	const currentHero = $derived(featuredMovies[heroIndex] || data.top10?.[0] || data.trending?.[0] || null);
-
 	const heroHref = $derived(
-		currentHero ? `/cinema/movies/${currentHero.id || currentHero.tmdbId}` : '/movies/catalog'
+		currentHero ? `/movies/${currentHero.id || currentHero.tmdbId}` : '/movies/catalog'
 	);
 
 	const top10Today = $derived(data.top10 || []);
-
-	function nextHero() {
-		if (featuredMovies.length > 1) {
-			heroIndex = (heroIndex + 1) % featuredMovies.length;
-		}
-	}
-
-	function setHero(idx: number) {
-		heroIndex = idx;
-		resetTimer();
-	}
-
-	function resetTimer() {
-		if (carouselInterval) clearInterval(carouselInterval);
-		carouselInterval = setInterval(nextHero, 8000);
-	}
-
-	onMount(() => {
-		resetTimer();
-	});
-
-	onDestroy(() => {
-		if (carouselInterval) clearInterval(carouselInterval);
-	});
 </script>
 
 <svelte:head>
@@ -135,21 +107,6 @@
 							</button>
 						</form>
 					</div>
-
-					<!-- Featured Carousel Dots -->
-					{#if featuredMovies.length > 1}
-						<div class="carousel-dots-row">
-							{#each featuredMovies as _, idx}
-								<button
-									type="button"
-									class="carousel-dot"
-									class:active={heroIndex === idx}
-									onclick={() => setHero(idx)}
-									aria-label="Slide {idx + 1}"
-								></button>
-							{/each}
-						</div>
-					{/if}
 				</div>
 			</div>
 		{/if}
@@ -462,28 +419,6 @@
 		color: #0a0e17;
 		border-color: #10b981;
 		transform: scale(1.08);
-	}
-
-	.carousel-dots-row {
-		display: flex;
-		gap: 0.45rem;
-		margin-top: 0.5rem;
-	}
-
-	.carousel-dot {
-		width: 24px;
-		height: 4px;
-		border-radius: 2px;
-		background: rgba(255, 255, 255, 0.2);
-		border: none;
-		cursor: pointer;
-		transition: all 0.25s ease;
-	}
-
-	.carousel-dot.active {
-		width: 38px;
-		background: #10b981;
-		box-shadow: 0 0 8px #10b981;
 	}
 
 	/* CONTENT CATALOG SECTIONS */
