@@ -213,7 +213,7 @@
 					Stream Breaking Bad, Reacher, Planet Earth, Chernobyl, Arcane, and the greatest television sagas in history.
 				</p>
 			</div>
-			<a href="/tvshows" class="crossover-btn">
+			<a href="/tv" class="crossover-btn">
 				<span>Explore TV Shows Chart →</span>
 			</a>
 		</section>
