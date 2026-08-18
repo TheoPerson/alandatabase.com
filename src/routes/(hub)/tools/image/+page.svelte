@@ -7,7 +7,7 @@
 
 	let targetWidth = $state(0);
 	let targetHeight = $state(0);
-	let targetFormat: 'png' | 'jpeg' | 'webp' = $state('webp');
+	let targetFormat: 'png' | 'jpeg' | 'webp' | 'gif' = $state('webp');
 	let targetQuality = $state(85);
 	let keepAspect = $state(true);
 
@@ -126,7 +126,7 @@
 			<span class="tool-badge">CANVAS ENGINE</span>
 		</div>
 		<p class="tool-subtitle">
-			Convert formats (WebP, PNG, JPEG), resize dimensions, compress quality, and encode Base64 Data
+			Convert formats (WebP, PNG, JPEG, GIF), resize dimensions, compress quality, and encode Base64 Data
 			URIs.
 		</p>
 	</div>
@@ -188,6 +188,11 @@
 								class="fmt-btn"
 								class:active={targetFormat === 'jpeg'}
 								onclick={() => (targetFormat = 'jpeg')}>JPEG</button
+							>
+							<button
+								class="fmt-btn"
+								class:active={targetFormat === 'gif'}
+								onclick={() => (targetFormat = 'gif')}>GIF</button
 							>
 						</div>
 					</div>
