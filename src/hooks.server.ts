@@ -4,9 +4,17 @@ import { validateSessionToken } from '$lib/server/auth';
 import { isCinemaRoute } from '$lib/server/auth/cinema-access';
 import { ensureTablesExist } from '$lib/server/db/migrate';
 import { assignAllExperiments } from '$lib/server/ab-testing';
+import { ensureAdminUser } from '$lib/server/auth/bootstrap';
 import type { Handle } from '@sveltejs/kit';
 
+let isBootstrapped = false;
+
 export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
+	if (!isBootstrapped) {
+		await ensureAdminUser();
+		isBootstrapped = true;
+	}
+
 	// A/B Testing Assignment
 	let deviceId = event.cookies.get('device_id');
 	if (!deviceId) {
