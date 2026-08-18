@@ -9,10 +9,10 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.js';
 
-const connectionString = process.env.DATABASE_URL?.trim();
+const connectionString = (process.env.PREVIEW_DATABASE_URL || process.env.POSTGRES_URL || process.env.DATABASE_URL)?.trim();
 
 if (!connectionString) {
-	throw new Error('DATABASE_URL is not set. Please configure it in your environment variables.');
+	throw new Error('DATABASE_URL or POSTGRES_URL is not set. Please configure it in your environment variables.');
 }
 
 // Single instance pattern for serverless environments

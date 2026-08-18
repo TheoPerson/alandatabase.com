@@ -1,6 +1,7 @@
 import { sequence } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
 import { validateSessionToken } from '$lib/server/auth';
+import { isCinemaRoute } from '$lib/server/auth/cinema-access';
 import { ensureTablesExist } from '$lib/server/db/migrate';
 import { assignAllExperiments } from '$lib/server/ab-testing';
 import type { Handle } from '@sveltejs/kit';
@@ -15,47 +16,53 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 	event.locals.abTests = assignAllExperiments(deviceId);
 
 	const token = event.cookies.get('session');
+	event.locals.session = null;
+	event.locals.user = null;
 
-	if (!token) {
-		event.locals.user = null;
-		event.locals.session = null;
-		return resolve(event);
-	}
-
-	const { session, user } = await validateSessionToken(token);
-
-	if (session && user) {
-		event.locals.session = session;
-		event.locals.user = {
-			id: user.id,
-			email: user.email,
-			username: user.username,
-			displayName: user.displayName,
-			avatarPath: user.avatarPath,
-			settings: (user.settings as Record<string, any>) || {}
-		};
-	} else {
-		event.cookies.delete('session', { path: '/' });
-		event.locals.session = null;
-		event.locals.user = null;
+	if (token) {
+		const { session, user } = await validateSessionToken(token);
+		if (session && user) {
+			event.locals.session = session;
+			event.locals.user = {
+				id: user.id,
+				email: user.email,
+				username: user.username,
+				displayName: user.displayName,
+				avatarPath: user.avatarPath,
+				settings: (user.settings as Record<string, any>) || {}
+			};
+		} else {
+			event.cookies.delete('session', { path: '/' });
+		}
 	}
 
 	// Centralized Auth Guard
 	const pathname = event.url.pathname;
-	const isProtected =
-		pathname.startsWith('/my/') || pathname.startsWith('/admin/') || pathname.includes('/edit');
-
-	if (isProtected && !event.locals.user) {
+	
+	if (isCinemaRoute(pathname) && !event.locals.user) {
+		if (pathname.startsWith('/api/')) {
+			return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+				status: 401,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+		
+		const returnTo = encodeURIComponent(pathname + event.url.search);
 		return new Response(null, {
 			status: 302,
-			headers: { location: '/auth/login' }
+			headers: { location: `/auth/login?returnTo=${returnTo}` }
 		});
 	}
 
 	const response = await resolve(event);
-	if (event.request.headers.get('accept')?.includes('text/html')) {
-		response.headers.set('cache-control', 'no-cache, no-store, must-revalidate');
+	
+	// Ensure private cinema routes are never cached publicly
+	if (isCinemaRoute(pathname) && event.locals.user) {
+		response.headers.set('cache-control', 'private, no-cache, no-store, must-revalidate');
+		response.headers.set('pragma', 'no-cache');
+		response.headers.set('expires', '0');
 	}
+	
 	return response;
 });
 import { notifyCriticalError } from '$lib/server/services/telegram.service';

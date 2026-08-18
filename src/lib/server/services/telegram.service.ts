@@ -13,8 +13,8 @@ const sentDedupeCache = new Map<string, number>();
 const DEDUPE_TTL_MS = 15 * 60 * 1000; // 15 minutes TTL
 
 export async function sendTelegramCard(text: string, options: TelegramSendOptions = {}): Promise<boolean> {
-	const botToken = process.env.TELEGRAM_BOT_TOKEN || '8811353440:AAEzLAMSAVKEz6i9mYX6nfV--NrPAnVxGqE';
-	let chatId = process.env.TELEGRAM_CHAT_ID || '1147966448';
+	const botToken = process.env.TELEGRAM_BOT_TOKEN;
+	let chatId = process.env.TELEGRAM_CHAT_ID;
 	let topicId: number | undefined = undefined;
 
 	if (!botToken || !chatId || botToken === 'YOUR_TELEGRAM_BOT_TOKEN') {

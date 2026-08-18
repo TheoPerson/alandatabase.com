@@ -7,20 +7,23 @@ import {
 	generateSessionToken,
 	SESSION_COOKIE_OPTIONS
 } from '$lib/server/auth';
+import { validateReturnTo } from '$lib/server/auth/cinema-access';
 import { eq, or } from 'drizzle-orm';
 
-export async function load({ locals }) {
+export async function load({ locals, url }) {
+	const returnTo = url.searchParams.get('returnTo');
 	if (locals.user) {
-		throw redirect(302, '/my/films');
+		throw redirect(302, validateReturnTo(returnTo));
 	}
-	return {};
+	return { returnTo };
 }
 
 export const actions = {
-	login: async ({ request, cookies }) => {
+	login: async ({ request, cookies, url }) => {
 		const formData = await request.formData();
 		const identifier = formData.get('identifier')?.toString().trim().toLowerCase();
 		const password = formData.get('password')?.toString();
+		const returnTo = url.searchParams.get('returnTo');
 
 		if (!identifier || !password) {
 			return fail(400, { error: 'Please enter both username/email and password.' });
@@ -51,6 +54,6 @@ export const actions = {
 			return fail(500, { error: 'An unexpected authentication error occurred.' });
 		}
 
-		throw redirect(302, '/my/films');
+		throw redirect(302, validateReturnTo(returnTo));
 	}
 };
