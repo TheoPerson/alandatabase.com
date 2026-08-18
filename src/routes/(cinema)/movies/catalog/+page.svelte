@@ -16,8 +16,8 @@
 	let currentPage = $state(1);
 	let hasMore = $state(true);
 	let isLoading = $state(false);
-	let sentinelEl: HTMLDivElement | null = null;
-	let observer: IntersectionObserver | null = null;
+	let sentinelEl = $state<HTMLDivElement | null>(null);
+	let observer = $state<IntersectionObserver | null>(null);
 
 	// Reset list when server-loaded data changes (e.g. genre/sort query change)
 	$effect(() => {

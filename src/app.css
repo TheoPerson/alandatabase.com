@@ -8,16 +8,16 @@
 
 @layer base {
 	:root {
-		/* Color Palette: Velvet Midnight Slate & Emerald (2026 Digest & Eye-Friendly Dark Edition) */
-		--bg-primary: #0a0e17;
-		--bg-surface-1: #101623;
-		--bg-surface-2: #161e30;
-		--bg-surface-3: #1e2840;
-		--bg-surface-glass: rgba(16, 22, 35, 0.85);
-		--bg-surface-glass-hover: rgba(22, 30, 48, 0.92);
+		/* Color Palette: Zinc Soft Midnight & Emerald (2026 Digest & Eye-Friendly Dark Edition) */
+		--bg-primary: #121214;
+		--bg-surface-1: #18181b;
+		--bg-surface-2: #27272a;
+		--bg-surface-3: #3f3f46;
+		--bg-surface-glass: rgba(24, 24, 27, 0.85);
+		--bg-surface-glass-hover: rgba(39, 39, 42, 0.92);
 
-		/* Text Hierarchy (Soft Slate for High Readability & Low Eye Strain) */
-		--text-primary: #f1f5f9;
+		/* Text Hierarchy (Soft Zinc for High Readability & Low Eye Strain) */
+		--text-primary: #f4f4f5;
 		--text-secondary: #94a3b8;
 		--text-tertiary: #64748b;
 		--text-accent: #10b981;

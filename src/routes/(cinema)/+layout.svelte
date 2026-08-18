@@ -4,7 +4,6 @@
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import ToastContainer from '$lib/components/ui/ToastContainer.svelte';
 	import CommandPalette from '$lib/components/ui/CommandPalette.svelte';
-	import LiveTelemetryHUD from '$lib/components/telemetry/LiveTelemetryHUD.svelte';
 	import NavigationProgressBar from '$lib/components/layout/NavigationProgressBar.svelte';
 	import type { Snippet } from 'svelte';
 
@@ -25,7 +24,6 @@
 	<Footer />
 	<ToastContainer />
 	<CommandPalette />
-	<LiveTelemetryHUD />
 </div>
 
 <style>
