@@ -1,18 +1,11 @@
 import { error } from '@sveltejs/kit';
-import { getMovieById, getMovieCredits } from '$lib/server/services/tmdb.service';
+import { getMovieById } from '$lib/server/services/movie.service';
 
 export async function load({ params }) {
-	const movieId = parseInt(params.id);
+	const movieId = params.id;
 	
-	if (isNaN(movieId)) {
-		throw error(404, 'Invalid movie ID');
-	}
-
 	try {
-		const [movie, credits] = await Promise.all([
-			getMovieById(movieId),
-			getMovieCredits(movieId)
-		]);
+		const movie = await getMovieById(movieId);
 
 		if (!movie) {
 			throw error(404, 'Movie not found');
@@ -20,7 +13,7 @@ export async function load({ params }) {
 
 		return {
 			movie,
-			credits: credits?.cast?.slice(0, 10) || []
+			credits: []
 		};
 	} catch (e) {
 		console.error('Error fetching movie details:', e);

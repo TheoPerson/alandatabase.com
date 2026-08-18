@@ -6,7 +6,9 @@
 	let { movie, onClose } = $props();
 </script>
 
-<div class="sheet-overlay" transition:fade={{ duration: 200 }} onclick={onClose}>
+<div class="sheet-overlay" transition:fade={{ duration: 200 }} onclick={onClose} role="presentation">
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div class="sheet-content" transition:fly={{ y: 100, duration: 300, opacity: 1 }} onclick={(e) => e.stopPropagation()}>
 		<div class="sheet-header">
 			<h3 class="sheet-title">Watch {movie.title}</h3>
