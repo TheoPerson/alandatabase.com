@@ -166,7 +166,7 @@
 
 		<!-- Sorting Controls -->
 		<div class="toolbar">
-			<span class="count-badge">{moviesList.length} films loaded</span>
+			<span class="count-badge">Showing {moviesList.length} of {data.pagination.totalCount.toLocaleString()} films</span>
 
 			<div class="sort-group">
 				<span class="sort-label">Sort by:</span>
