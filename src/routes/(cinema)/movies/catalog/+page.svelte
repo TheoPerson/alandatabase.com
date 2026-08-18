@@ -118,39 +118,50 @@
 		<h1 class="page-title">Cinema Catalog</h1>
 		<p class="subtitle">Endless movie exploration with real-time genre filtering and sorting.</p>
 
-		<!-- Genre Filter Pills -->
-		{#if data.genreList.length > 0}
-			<div class="genre-pills">
-				<button type="button" onclick={() => setGenre(null)}>
-					<Badge variant={selectedGenreId === null ? "default" : "outline"} class="cursor-pointer">
+		<!-- Filters Container -->
+		<div class="filters-container">
+			<!-- Genre Filters -->
+			{#if data.genreList.length > 0}
+				<div class="chip-row">
+					<button 
+						type="button" 
+						class="filter-chip {selectedGenreId === null ? 'active' : ''}" 
+						onclick={() => setGenre(null)}
+					>
 						All Genres
-					</Badge>
-				</button>
+					</button>
 
-				{#each data.genreList as g}
-					<button type="button" onclick={() => setGenre(g.id)}>
-						<Badge variant={selectedGenreId === g.id ? "default" : "outline"} class="cursor-pointer">
+					{#each data.genreList as g}
+						<button 
+							type="button" 
+							class="filter-chip {selectedGenreId === g.id ? 'active' : ''}" 
+							onclick={() => setGenre(g.id)}
+						>
 							{g.name}
-						</Badge>
+						</button>
+					{/each}
+				</div>
+			{/if}
+
+			<!-- Decade Filters -->
+			<div class="chip-row mt-3">
+				<button 
+					type="button" 
+					class="filter-chip {!$page.url.searchParams.get('decade') ? 'active' : ''}" 
+					onclick={() => updateUrl({ decade: null })}
+				>
+					All Time
+				</button>
+				{#each [2020, 2010, 2000, 1990, 1980, 1970] as decade}
+					<button 
+						type="button" 
+						class="filter-chip {$page.url.searchParams.get('decade') === decade.toString() ? 'active' : ''}" 
+						onclick={() => updateUrl({ decade: decade.toString() })}
+					>
+						{decade}s
 					</button>
 				{/each}
 			</div>
-		{/if}
-
-		<!-- Decade Filters -->
-		<div class="genre-pills" style="margin-top: 1rem; margin-bottom: 2rem;">
-			<button type="button" onclick={() => updateUrl({ decade: null })}>
-				<Badge variant={!$page.url.searchParams.get('decade') ? "default" : "outline"} class="cursor-pointer">
-					All Time
-				</Badge>
-			</button>
-			{#each [2020, 2010, 2000, 1990, 1980, 1970] as decade}
-				<button type="button" onclick={() => updateUrl({ decade: decade.toString() })}>
-					<Badge variant={$page.url.searchParams.get('decade') === decade.toString() ? "default" : "outline"} class="cursor-pointer">
-						{decade}s
-					</Badge>
-				</button>
-			{/each}
 		</div>
 
 		<!-- Sorting Controls -->
@@ -228,10 +239,51 @@
 		margin: 0 0 1.5rem 0;
 	}
 
-	.genre-pills {
+	.filters-container {
+		margin-bottom: 2rem;
+		position: relative;
+	}
+
+	.chip-row {
 		display: flex;
-		flex-wrap: wrap;
+		overflow-x: auto;
 		gap: 0.5rem;
+		padding-bottom: 0.5rem;
+		scrollbar-width: none; /* Firefox */
+		-ms-overflow-style: none; /* IE/Edge */
+	}
+	
+	.chip-row::-webkit-scrollbar {
+		display: none;
+	}
+
+	.filter-chip {
+		white-space: nowrap;
+		padding: 0.4rem 1.1rem;
+		border-radius: 9999px;
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		color: #a1a1aa;
+		font-size: 0.85rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+
+	.filter-chip:hover {
+		background: rgba(255, 255, 255, 0.1);
+		color: #f4f4f5;
+	}
+
+	.filter-chip.active {
+		background: #f4f4f5;
+		color: #09090b;
+		border-color: #f4f4f5;
+		font-weight: 600;
+	}
+
+	.mt-3 {
+		margin-top: 0.75rem;
 	}
 
 	.toolbar {
