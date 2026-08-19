@@ -1,10 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import Button from '$lib/components/ui/Button.svelte';
-	import Input from '$lib/components/ui/Input.svelte';
-
-	let isSubmitting = $state(false);
-	let { form } = $props();
 </script>
 
 <svelte:head>
@@ -13,111 +8,22 @@
 
 <div class="container custom-movie-page">
 	<div class="page-header">
-		<h1 class="page-title">Add a private title</h1>
+		<h1 class="page-title">Private title intake</h1>
 		<p class="page-subtitle">
-			Create catalog metadata without attaching an unapproved playback source.
+			Custom titles are paused while their private content boundary is completed.
 		</p>
 	</div>
 
-	<div class="form-wrapper glass-card">
-		<form
-			method="POST"
-			action="?/createCustomMovie"
-			use:enhance={() => {
-				isSubmitting = true;
-				return async ({ update }) => {
-					await update();
-					isSubmitting = false;
-				};
-			}}
-			class="custom-movie-form"
-		>
-			{#if form?.error}
-				<div class="error-banner">
-					{form.error}
-				</div>
-			{/if}
-
-			<div class="form-grid">
-				<div class="input-group full-width">
-					<Input
-						label="Movie Title *"
-						name="title"
-						id="title"
-						placeholder="e.g., My Private Movie"
-						required
-					/>
-				</div>
-
-				<div class="input-group">
-					<Input
-						label="Poster Image URL *"
-						name="posterUrl"
-						id="posterUrl"
-						type="url"
-						placeholder="https://..."
-						required
-					/>
-				</div>
-
-				<div class="input-group">
-					<Input
-						label="Backdrop Image URL"
-						name="backdropUrl"
-						id="backdropUrl"
-						type="url"
-						placeholder="https://..."
-					/>
-				</div>
-
-				<div class="input-group">
-					<Input
-						label="Release Year"
-						name="releaseYear"
-						id="releaseYear"
-						type="number"
-						min="1800"
-						max="2100"
-						placeholder="2026"
-					/>
-				</div>
-
-				<div class="input-group">
-					<Input
-						label="Runtime (Minutes)"
-						name="runtime"
-						id="runtime"
-						type="number"
-						min="1"
-						placeholder="120"
-					/>
-				</div>
-
-				<div class="input-group full-width">
-					<label for="overview" class="textarea-label">Synopsis / Overview</label>
-					<textarea
-						id="overview"
-						name="overview"
-						rows="4"
-						class="oled-textarea"
-						placeholder="A brief description of this movie..."></textarea>
-				</div>
-
-				<div class="input-group checkbox-group full-width">
-					<label class="checkbox-label">
-						<input type="checkbox" name="isAdult" value="true" checked class="oled-checkbox" />
-						<span>Mark as Adult Content (18+)</span>
-					</label>
-				</div>
-			</div>
-
-			<div class="form-actions">
-				<Button type="button" variant="ghost" href="/movies">Cancel</Button>
-				<Button type="submit" variant="primary" disabled={isSubmitting}>
-					{isSubmitting ? 'Creating...' : 'Add Custom Movie'}
-				</Button>
-			</div>
-		</form>
+	<div class="form-wrapper glass-card" role="status" aria-labelledby="intake-status-title">
+		<span class="status-mark" aria-hidden="true">◇</span>
+		<h2 id="intake-status-title">No custom data is being accepted yet</h2>
+		<p>
+			Existing records remain untouched. Intake will return with owner-only authorization, reviewed
+			visibility labels, private artwork handling, and approved source records.
+		</p>
+		<div class="form-actions">
+			<Button type="button" variant="primary" href="/movies">Return to movies</Button>
+		</div>
 	</div>
 </div>
 
@@ -154,91 +60,44 @@
 		box-shadow: var(--shadow-md);
 	}
 
-	.error-banner {
-		padding: 1rem;
-		background: rgba(220, 38, 38, 0.1);
-		border: 1px solid rgba(220, 38, 38, 0.2);
-		color: #f87171;
-		border-radius: var(--radius-md);
-		margin-bottom: 2rem;
-		font-weight: 500;
-		text-align: center;
-	}
-
-	.form-grid {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: 1.5rem;
-	}
-
-	@media (min-width: 640px) {
-		.form-grid {
-			grid-template-columns: 1fr 1fr;
-		}
-
-		.full-width {
-			grid-column: span 2;
-		}
-	}
-
-	.textarea-label {
-		display: block;
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--text-secondary);
-		margin-bottom: 0.5rem;
-	}
-
-	.oled-textarea {
-		width: 100%;
-		padding: 0.85rem 1rem;
-		background: var(--bg-surface-2);
-		border: 1px solid var(--border-subtle);
-		border-radius: var(--radius-md);
-		color: var(--text-primary);
-		font-family: inherit;
-		font-size: 0.95rem;
-		transition: all var(--transition-fast);
-		resize: vertical;
-	}
-
-	.oled-textarea:focus {
-		outline: none;
-		border-color: var(--border-emerald);
-		background: var(--bg-surface-3);
-		box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
-	}
-
-	.checkbox-group {
-		margin-top: 0.5rem;
-		padding: 1rem;
-		background: var(--bg-surface-2);
-		border-radius: var(--radius-md);
-		border: 1px solid var(--border-subtle);
-	}
-
-	.checkbox-label {
+	.form-wrapper {
 		display: flex;
+		flex-direction: column;
 		align-items: center;
-		gap: 0.75rem;
-		cursor: pointer;
-		font-weight: 500;
-		color: var(--text-primary);
+		text-align: center;
+		gap: 1rem;
 	}
 
-	.oled-checkbox {
-		width: 1.2rem;
-		height: 1.2rem;
-		accent-color: var(--accent-emerald);
-		cursor: pointer;
+	.status-mark {
+		display: grid;
+		place-items: center;
+		width: 3rem;
+		height: 3rem;
+		border: 1px solid var(--border-emerald);
+		border-radius: 50%;
+		color: var(--accent-emerald);
+		font-size: 1.4rem;
+	}
+
+	.form-wrapper h2 {
+		margin: 0;
+		font-size: 1.35rem;
+	}
+
+	.form-wrapper p {
+		max-width: 56ch;
+		margin: 0;
+		color: var(--text-secondary);
+		line-height: 1.65;
 	}
 
 	.form-actions {
 		display: flex;
-		justify-content: flex-end;
+		justify-content: center;
 		gap: 1rem;
-		margin-top: 3rem;
+		margin-top: 1rem;
 		padding-top: 1.5rem;
+		width: 100%;
 		border-top: 1px solid var(--border-subtle);
 	}
 </style>

@@ -1,5 +1,6 @@
 import { db, schema } from '../db.js';
 import { TMDBClient, type TMDBMovieDetail } from './client.js';
+import { evaluateTMDBIngestionSafety } from './ingest-safety.js';
 import { eq } from 'drizzle-orm';
 import { notifyMovieIngested } from '../../../src/lib/server/services/telegram.service.js';
 
@@ -11,6 +12,19 @@ export async function ingestMovie(
 
 	try {
 		const detail: TMDBMovieDetail = await client.getMovieDetails(tmdbId);
+		const safetyDecision = evaluateTMDBIngestionSafety(detail);
+
+		// Classification must succeed before the first database write below.
+		if (!safetyDecision.allowed) {
+			const keywordContext =
+				safetyDecision.reason === 'explicit-keyword'
+					? ` (keyword ${safetyDecision.keywordId})`
+					: '';
+			console.warn(
+				`Blocked TMDB #${tmdbId} before ingestion: ${safetyDecision.reason}${keywordContext}.`
+			);
+			return null;
+		}
 
 		// Quality threshold check
 		if (!detail.poster_path || !detail.overview || detail.vote_count < 5) {
@@ -221,7 +235,12 @@ export async function ingestMovie(
 			`✅ Successfully ingested "${detail.title}" (${detail.release_date?.substring(0, 4) || 'N/A'})`
 		);
 		if (options.notifyTelegram) {
-			notifyMovieIngested(detail.title, detail.release_date?.substring(0, 4), detail.id, detail.poster_path).catch(() => {});
+			notifyMovieIngested(
+				detail.title,
+				detail.release_date?.substring(0, 4),
+				detail.id,
+				detail.poster_path
+			).catch(() => {});
 		}
 		return movieId;
 	} catch (err) {

@@ -38,10 +38,18 @@ export const actions = {
 		if (!content || content.trim() === '') {
 			return fail(400, { error: 'Review content cannot be empty' });
 		}
+		if (content.length > 5_000) {
+			return fail(400, { error: 'Review content must be 5,000 characters or fewer' });
+		}
 
 		try {
+			const movie = await getMovieById(params.id);
+			if (!movie) {
+				return fail(404, { error: 'Movie not found' });
+			}
+
 			const existingReview = await db.query.userReviews.findFirst({
-				where: and(eq(userReviews.userId, locals.user.id), eq(userReviews.movieId, params.id))
+				where: and(eq(userReviews.userId, locals.user.id), eq(userReviews.movieId, movie.id))
 			});
 
 			if (existingReview) {
@@ -52,7 +60,7 @@ export const actions = {
 			} else {
 				await db.insert(userReviews).values({
 					userId: locals.user.id,
-					movieId: params.id,
+					movieId: movie.id,
 					content,
 					containsSpoilers
 				});

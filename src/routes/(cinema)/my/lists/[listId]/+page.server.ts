@@ -1,7 +1,8 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { userLists, userListItems } from '$lib/server/db/schema';
-import { eq, and, asc } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
+import { prepareStandardMovie } from '$lib/server/services/movie.service';
 
 export async function load({ params, locals }) {
 	const listId = params.listId;
@@ -12,7 +13,9 @@ export async function load({ params, locals }) {
 			items: {
 				orderBy: (items, { asc }) => [asc(items.position)],
 				with: {
-					movie: true
+					movie: {
+						with: { keywords: true }
+					}
 				}
 			},
 			user: {
@@ -36,7 +39,15 @@ export async function load({ params, locals }) {
 	}
 
 	return {
-		list,
+		list: {
+			...list,
+			items: list.items
+				.map((item) => {
+					const movie = prepareStandardMovie(item.movie);
+					return movie ? { ...item, movie } : null;
+				})
+				.filter((item): item is NonNullable<typeof item> => item !== null)
+		},
 		isOwner
 	};
 }

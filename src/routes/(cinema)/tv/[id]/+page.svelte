@@ -15,7 +15,13 @@
 		show.seasons?.find((s: any) => s.season_number === selectedSeason) || show.seasons?.[0]
 	);
 
-	const episodeCount = $derived(currentSeasonObj?.episode_count || 10);
+	const episodeCount = $derived(currentSeasonObj?.episode_count ?? 0);
+	const hasEpisodeIndex = $derived(episodeCount > 0);
+	const playbackLabel = $derived(
+		hasEpisodeIndex
+			? `${show.name} · S${selectedSeason} E${selectedEpisode}`
+			: `${show.name} · Season ${selectedSeason}`
+	);
 
 	function shareShow() {
 		if (typeof navigator !== 'undefined') {
@@ -63,7 +69,7 @@
 			</aside>
 
 			<!-- Right Column: Player & Series Details -->
-			<main class="right-col">
+			<div class="right-col">
 				<!-- Title & Badges -->
 				<header class="show-header">
 					<div class="tag-row">
@@ -72,9 +78,13 @@
 							>{show.first_air_date ? new Date(show.first_air_date).getFullYear() : ''}</span
 						>
 						<span class="meta-dot">•</span>
-						<span class="meta-seasons"
-							>{show.number_of_seasons} Seasons ({show.number_of_episodes} Episodes)</span
-						>
+						<span class="meta-seasons">
+							{show.number_of_seasons}
+							{show.number_of_seasons === 1 ? 'Season' : 'Seasons'}
+							{#if show.number_of_episodes}
+								({show.number_of_episodes} Episodes)
+							{/if}
+						</span>
 					</div>
 					<h1 class="show-title">{show.name}</h1>
 					{#if show.tagline}
@@ -99,17 +109,26 @@
 
 						<div class="selector-group">
 							<label for="episode-select" class="selector-label">Episode</label>
-							<select id="episode-select" bind:value={selectedEpisode} class="custom-select">
-								{#each Array.from({ length: episodeCount }, (_, i) => i + 1) as ep}
-									<option value={ep}>Episode {ep}</option>
-								{/each}
+							<select
+								id="episode-select"
+								bind:value={selectedEpisode}
+								class="custom-select"
+								disabled={!hasEpisodeIndex}
+							>
+								{#if hasEpisodeIndex}
+									{#each Array.from({ length: episodeCount }, (_, i) => i + 1) as ep}
+										<option value={ep}>Episode {ep}</option>
+									{/each}
+								{:else}
+									<option value={1}>Episodes not indexed</option>
+								{/if}
 							</select>
 						</div>
 					</div>
 
 					<PlaybackUnavailable
-						title={`${show.name} · S${selectedSeason} E${selectedEpisode}`}
-						context="This episode has no owner-approved source. The title and episode selection are preserved without loading third-party players."
+						title={playbackLabel}
+						context="This series has no owner-approved source. Its local catalog context remains available without loading third-party players."
 						compact
 					/>
 				</section>
@@ -125,7 +144,7 @@
 						{/each}
 					</div>
 				</section>
-			</main>
+			</div>
 		</div>
 	</div>
 </div>

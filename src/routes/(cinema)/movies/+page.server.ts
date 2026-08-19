@@ -1,11 +1,7 @@
 import { getTrendingMovies, getTopRatedMovies } from '$lib/server/services/movie.service';
 import { toggleWatchlist } from '$lib/server/services/interaction.service';
 
-export async function load({ setHeaders }) {
-	setHeaders({
-		'cache-control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600'
-	});
-
+export async function load() {
 	try {
 		// Zero duplicate guarantee:
 		// top10 = #1 to #10

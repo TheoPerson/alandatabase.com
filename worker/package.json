@@ -7,10 +7,9 @@
 		"dev": "tsx watch src/index.ts",
 		"build": "tsc",
 		"start": "node dist/index.js",
+		"test": "tsx --test src/tmdb/ingest-safety.test.ts",
 		"ingest:genres": "tsx src/cli.ts sync-genres",
 		"ingest:popular": "tsx src/cli.ts sync-popular",
-		"ingest:public-erotic": "tsx ingest-public-erotic.ts",
-		"ingest:adult-alex": "tsx bulk-ingest-adult.ts",
 		"monitor": "tsx ../scripts/monitor.ts"
 	},
 	"dependencies": {

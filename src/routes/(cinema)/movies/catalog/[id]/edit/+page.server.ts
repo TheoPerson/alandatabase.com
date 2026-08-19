@@ -34,37 +34,61 @@ export const actions = {
 		const isLocked = formData.get('isLocked') === 'on';
 
 		try {
-			// Get current movie to merge existing overrides if any
-			const movie = await db.query.movies.findFirst({
-				where: eq(movies.id, params.id)
-			});
+			// Re-resolve inside the action so a direct POST cannot target a
+			// quarantined adult, custom, or explicit-keyword record.
+			const visibleMovie = await getMovieById(params.id);
 
-			if (!movie) {
+			if (!visibleMovie) {
 				return fail(404, { error: 'Movie not found' });
 			}
 
-			let localOverrides: any = movie.localOverrides || {};
+			// Raw override JSON is read only after visibility validation and is never
+			// returned to the browser. This preserves unrelated safe overrides while
+			// keeping legacy source fields out of serialized movie data.
+			const movie = await db.query.movies.findFirst({
+				where: eq(movies.id, visibleMovie.id),
+				columns: {
+					id: true,
+					title: true,
+					originalTitle: true,
+					releaseDate: true,
+					overview: true,
+					localOverrides: true
+				}
+			});
+			if (!movie) return fail(404, { error: 'Movie not found' });
 
-			if (title && title !== movie.title) localOverrides.title = title;
-			if (originalTitle && originalTitle !== movie.originalTitle)
-				localOverrides.originalTitle = originalTitle;
-			if (releaseDate && releaseDate !== movie.releaseDate)
-				localOverrides.releaseDate = releaseDate;
-			if (overview && overview !== movie.overview) localOverrides.overview = overview;
-
-			// If empty, set to null
-			if (Object.keys(localOverrides).length === 0) {
-				localOverrides = null;
+			const allowedFields = ['title', 'originalTitle', 'releaseDate', 'overview'] as const;
+			const existingOverrides =
+				movie.localOverrides &&
+				typeof movie.localOverrides === 'object' &&
+				!Array.isArray(movie.localOverrides)
+					? (movie.localOverrides as Record<string, unknown>)
+					: {};
+			const localOverrides: Record<string, string> = {};
+			for (const field of allowedFields) {
+				if (typeof existingOverrides[field] === 'string') {
+					localOverrides[field] = existingOverrides[field];
+				}
 			}
+
+			const submitted = { title, originalTitle, releaseDate, overview };
+			for (const field of allowedFields) {
+				const value = submitted[field];
+				if (!value || value === movie[field]) delete localOverrides[field];
+				else localOverrides[field] = value;
+			}
+
+			const storedOverrides = Object.keys(localOverrides).length === 0 ? null : localOverrides;
 
 			await db
 				.update(movies)
 				.set({
-					localOverrides,
+					localOverrides: storedOverrides,
 					isLocked,
 					updatedAt: new Date()
 				})
-				.where(eq(movies.id, params.id));
+				.where(eq(movies.id, visibleMovie.id));
 		} catch (err) {
 			console.error('Failed to update overrides:', err);
 			return fail(500, { error: 'Failed to update metadata overrides' });

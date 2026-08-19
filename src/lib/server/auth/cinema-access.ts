@@ -13,7 +13,7 @@ export const CINEMA_PREFIXES = [
 	'/api'
 ];
 
-export const PUBLIC_ROUTES = ['/auth/login', '/auth/register', '/sentry-example-page', '/404'];
+export const PUBLIC_ROUTES = ['/auth/login', '/auth/register', '/404'];
 
 // Service callbacks authenticate themselves instead of using a browser session.
 export const SESSION_EXEMPT_ROUTES = ['/api/telegram/webhook'];

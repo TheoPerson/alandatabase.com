@@ -15,11 +15,7 @@ const REACHER_HERO = {
 	isTV: true
 };
 
-export async function load({ setHeaders }) {
-	setHeaders({
-		'cache-control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800'
-	});
-
+export async function load() {
 	const shows = await getTop50IMDbTVShows();
 
 	return {

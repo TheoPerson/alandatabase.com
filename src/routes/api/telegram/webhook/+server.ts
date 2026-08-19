@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { TMDBClient } from '$lib/server/tmdb';
+import { searchMovies } from '$lib/server/services/movie.service';
 import type { RequestHandler } from './$types';
 
 const MAX_WEBHOOK_BYTES = 32_768;
@@ -133,11 +133,9 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: 'A movie title is required' }, { status: 400 });
 	}
 
-	// Search TMDB
+	// Search only the approved local catalog. Bot searches never ingest or call TMDB.
 	try {
-		const client = new TMDBClient();
-		const searchRes = await client.searchMovies(query, 1);
-		const topMovie = searchRes.results?.[0];
+		const [topMovie] = await searchMovies(query, 1);
 
 		if (!topMovie) {
 			await sendReply(
@@ -147,12 +145,12 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ ok: true });
 		}
 
-		const posterUrl = topMovie.poster_path
-			? `https://image.tmdb.org/t/p/w500${topMovie.poster_path}`
+		const posterUrl = topMovie.posterPath?.startsWith('/')
+			? `https://image.tmdb.org/t/p/w500${topMovie.posterPath}`
 			: null;
 
-		const releaseYear = topMovie.release_date ? topMovie.release_date.substring(0, 4) : 'N/A';
-		const rating = topMovie.vote_average ? topMovie.vote_average.toFixed(1) : 'N/A';
+		const releaseYear = topMovie.releaseDate ? String(topMovie.releaseDate).substring(0, 4) : 'N/A';
+		const rating = topMovie.voteAverage ? Number(topMovie.voteAverage).toFixed(1) : 'N/A';
 
 		const replyCard =
 			`🎬 <b>CATALOG RESULT</b>\n` +
@@ -164,7 +162,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		const buttons = [
 			[
 				{ text: 'View in CinemaDB', url: `https://alandatabase.com/movies/${topMovie.id}` },
-				{ text: '🔗 TMDB Details', url: `https://www.themoviedb.org/movie/${topMovie.id}` }
+				{
+					text: '🔗 TMDB Details',
+					url: `https://www.themoviedb.org/movie/${topMovie.tmdbId}`
+				}
 			]
 		];
 

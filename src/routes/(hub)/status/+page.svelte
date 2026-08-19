@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-
 	let { data } = $props();
 	const telemetry = $derived(data.telemetry);
 
@@ -14,12 +12,9 @@
 	}
 
 	let logs = $state<TelemetryLog[]>([]);
-	let isConnected = $state(false);
-	let isPaused = $state(false);
 	let activeFilter = $state<string>('ALL');
 	let cmdInput = $state('');
 	let terminalOutputEl = $state<HTMLDivElement | null>(null);
-	let eventSource: EventSource | null = null;
 
 	const filteredLogs = $derived(
 		logs.filter((log) => {
@@ -32,31 +27,6 @@
 			return true;
 		})
 	);
-
-	function connectSSE() {
-		if (typeof window === 'undefined') return;
-
-		eventSource = new EventSource('/api/telemetry/events');
-
-		eventSource.onopen = () => {
-			isConnected = true;
-		};
-
-		eventSource.onmessage = (e) => {
-			if (isPaused) return;
-			try {
-				const log = JSON.parse(e.data) as TelemetryLog;
-				logs = [...logs.slice(-150), log];
-				scrollToBottom();
-			} catch (err) {
-				// Heartbeat or malformed
-			}
-		};
-
-		eventSource.onerror = () => {
-			isConnected = false;
-		};
-	}
 
 	function scrollToBottom() {
 		if (terminalOutputEl) {
@@ -90,7 +60,7 @@
 					timestamp: time,
 					level: 'INFO',
 					source: 'TERMINAL_CLI',
-					message: 'Commands: ping, stats, clear, help, alert-test, search <query>'
+					message: 'Commands: ping, stats, clear, help'
 				}
 			];
 			cmdInput = '';
@@ -104,9 +74,9 @@
 				{
 					id: crypto.randomUUID(),
 					timestamp: time,
-					level: 'SUCCESS',
-					source: 'PING_PROBE',
-					message: `PONG! Edge Server Latency: ${telemetry.serverLatencyMs || 12}ms | DB Latency: ${telemetry.db.latencyMs || 14}ms`
+					level: 'INFO',
+					source: 'PUBLIC_STATUS',
+					message: 'Private infrastructure probes are disabled on this public page.'
 				}
 			];
 			cmdInput = '';
@@ -152,20 +122,10 @@
 		navigator.clipboard.writeText(text);
 		alert('Telemetry logs copied to clipboard!');
 	}
-
-	onMount(() => {
-		connectSSE();
-	});
-
-	onDestroy(() => {
-		if (eventSource) {
-			eventSource.close();
-		}
-	});
 </script>
 
 <svelte:head>
-	<title>Live Telemetry & Radar Console | Alan Vault</title>
+	<title>Public Status | Alan Vault</title>
 </svelte:head>
 
 <!-- Micro Grid Background -->
@@ -176,13 +136,12 @@
 	<div class="tool-header">
 		<a href="/" class="back-link">← Back to Vault Hub</a>
 		<div class="title-row">
-			<h1 class="tool-title"><span class="icon">📡</span> Live System Telemetry & Radar</h1>
-			<span class="tool-badge green" class:offline={!isConnected}>
-				{isConnected ? 'LIVE RADAR CONNECTED' : 'RECONNECTING SSE...'}
-			</span>
+			<h1 class="tool-title"><span class="icon">📡</span> Public System Status</h1>
+			<span class="tool-badge green">SAFE STATIC VIEW</span>
 		</div>
 		<p class="tool-subtitle">
-			Real-time event streaming, video playback dispatches, search vectors, and database health metrics.
+			This public page does not query private databases, activity streams, or external media
+			services.
 		</p>
 	</div>
 
@@ -200,8 +159,8 @@
 				<span class="card-title">Postgres Database</span>
 				<span class="card-sub">{telemetry.db.provider}</span>
 				<div class="metric-row">
-					<span class="metric-val">{telemetry.db.latencyMs} ms</span>
-					<span class="metric-lbl">Query Latency</span>
+					<span class="metric-val">—</span>
+					<span class="metric-lbl">Not measured publicly</span>
 				</div>
 			</div>
 		</div>
@@ -218,47 +177,39 @@
 				<span class="card-title">TMDB Gateway</span>
 				<span class="card-sub">{telemetry.tmdb.endpoint}</span>
 				<div class="metric-row">
-					<span class="metric-val">{telemetry.tmdb.latencyMs} ms</span>
-					<span class="metric-lbl">API Ping</span>
+					<span class="metric-val">—</span>
+					<span class="metric-lbl">Not measured publicly</span>
 				</div>
 			</div>
 		</div>
 
-		<!-- Server Latency Card (Vercel Edge) -->
+		<!-- Application availability card -->
 		<div class="telemetry-card">
 			<div class="card-header">
 				<div class="icon-wrap server"><span class="icon">▲</span></div>
-				<span class="status-badge online">ACTIVE</span>
+				<span class="status-badge online">AVAILABLE</span>
 			</div>
 			<div class="card-body">
-				<span class="card-title">Vercel SSR Edge</span>
+				<span class="card-title">Application Server</span>
 				<span class="card-sub">Env: {telemetry.nodeEnv}</span>
 				<div class="metric-row">
-					<span class="metric-val">{telemetry.serverLatencyMs} ms</span>
-					<span class="metric-lbl">SSR Execution</span>
+					<span class="metric-val">—</span>
+					<span class="metric-lbl">Request timing disabled</span>
 				</div>
 			</div>
 		</div>
 	</div>
 
-	<!-- 2026 LIVE STREAMING TERMINAL CONSOLE -->
+	<!-- Local-only scratch console. It never subscribes to private telemetry. -->
 	<section class="live-terminal-panel">
 		<div class="terminal-header">
 			<div class="terminal-title-group">
-				<span class="status-radar-dot" class:pulsing={isConnected}></span>
-				<span class="terminal-title">LIVE TELEMETRY STREAM CONSOLE</span>
-				<span class="log-count-badge">{filteredLogs.length} events</span>
+				<span class="status-radar-dot"></span>
+				<span class="terminal-title">LOCAL STATUS SCRATCHPAD</span>
+				<span class="log-count-badge">{filteredLogs.length} local entries</span>
 			</div>
 
 			<div class="terminal-actions">
-				<button
-					type="button"
-					class="terminal-action-btn"
-					onclick={() => (isPaused = !isPaused)}
-					title={isPaused ? 'Resume stream' : 'Pause stream'}
-				>
-					{isPaused ? '▶ Resume' : '⏸ Pause'}
-				</button>
 				<button type="button" class="terminal-action-btn" onclick={copyAllLogs}>
 					📋 Copy Logs
 				</button>
@@ -286,7 +237,8 @@
 		<div class="terminal-screen" bind:this={terminalOutputEl}>
 			{#if filteredLogs.length === 0}
 				<div class="empty-terminal">
-					<span class="terminal-cursor">></span> Waiting for live events... Perform a search or watch a movie to see real-time telemetry stream.
+					<span class="terminal-cursor">></span> No private activity is exposed here. Type
+					<code>help</code> for local commands.
 				</div>
 			{:else}
 				{#each filteredLogs as log (log.id)}
@@ -320,7 +272,7 @@
 		inset: 0;
 		z-index: 0;
 		background-color: #050507;
-		background-image: 
+		background-image:
 			linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
 			linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 		background-size: 32px 32px;
@@ -503,7 +455,9 @@
 		border: 1px solid rgba(16, 185, 129, 0.25);
 		border-radius: 16px;
 		overflow: hidden;
-		box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), 0 0 15px rgba(16, 185, 129, 0.05);
+		box-shadow:
+			0 0 40px rgba(0, 0, 0, 0.8),
+			0 0 15px rgba(16, 185, 129, 0.05);
 		display: flex;
 		flex-direction: column;
 	}
@@ -539,7 +493,8 @@
 	}
 
 	@keyframes dotPulse {
-		0%, 100% {
+		0%,
+		100% {
 			transform: scale(1);
 			opacity: 1;
 		}
@@ -660,8 +615,13 @@
 	}
 
 	@keyframes cursorBlink {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0;
+		}
 	}
 
 	.terminal-log-row {
@@ -685,13 +645,34 @@
 		flex-shrink: 0;
 	}
 
-	.badge-info { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-	.badge-success { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-	.badge-stream { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
-	.badge-search { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-	.badge-ingest { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
-	.badge-warn { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
-	.badge-error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+	.badge-info {
+		background: rgba(59, 130, 246, 0.15);
+		color: #60a5fa;
+	}
+	.badge-success {
+		background: rgba(16, 185, 129, 0.15);
+		color: #34d399;
+	}
+	.badge-stream {
+		background: rgba(168, 85, 247, 0.15);
+		color: #c084fc;
+	}
+	.badge-search {
+		background: rgba(245, 158, 11, 0.15);
+		color: #fbbf24;
+	}
+	.badge-ingest {
+		background: rgba(236, 72, 153, 0.15);
+		color: #f472b6;
+	}
+	.badge-warn {
+		background: rgba(249, 115, 22, 0.15);
+		color: #fb923c;
+	}
+	.badge-error {
+		background: rgba(239, 68, 68, 0.2);
+		color: #f87171;
+	}
 
 	.log-source {
 		color: #71717a;
@@ -703,10 +684,18 @@
 		color: #e4e4e7;
 	}
 
-	.level-error .log-msg { color: #f87171; }
-	.level-stream .log-msg { color: #e9d5ff; }
-	.level-search .log-msg { color: #fef08a; }
-	.level-ingest .log-msg { color: #fbcfe8; }
+	.level-error .log-msg {
+		color: #f87171;
+	}
+	.level-stream .log-msg {
+		color: #e9d5ff;
+	}
+	.level-search .log-msg {
+		color: #fef08a;
+	}
+	.level-ingest .log-msg {
+		color: #fbcfe8;
+	}
 
 	/* Interactive CLI Command Form */
 	.terminal-cli-form {
