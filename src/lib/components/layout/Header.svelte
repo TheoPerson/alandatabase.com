@@ -17,7 +17,7 @@
 <header class="glass-header sticky-header">
 	<div class="container header-content">
 		<!-- Brand Logo -->
-		<a href="/cinema/movies" class="brand-logo" onclick={() => (menuOpen = false)}>
+		<a href="/movies" class="brand-logo" onclick={() => (menuOpen = false)}>
 			<div class="logo-symbol-wrapper">
 				<svg class="brand-logo-svg" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
 					<circle cx="18" cy="18" r="15" stroke="rgba(16, 185, 129, 0.3)" stroke-width="1.5" stroke-dasharray="3 2" class="pulse-ring" />
@@ -39,6 +39,10 @@
 			<a href="/tv" class="nav-link">TV Shows</a>
 			<a href="/movies/catalog" class="nav-link">Catalog</a>
 			<a href="/my/films" class="nav-link">Personal OS</a>
+			<a href="/live" class="nav-link flex items-center gap-1.5 text-red-400 hover:text-red-300">
+				<span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+				Live Sports
+			</a>
 		</nav>
 
 		<!-- Search Bar & User Actions -->
