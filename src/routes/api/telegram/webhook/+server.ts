@@ -1,18 +1,65 @@
 import { json } from '@sveltejs/kit';
 import { TMDBClient } from '$lib/server/tmdb';
-import { ingestMovie } from '$lib/server/tmdb';
+import type { RequestHandler } from './$types';
 
-export async function POST({ request }) {
-	const secretToken = process.env.TELEGRAM_WEBHOOK_SECRET;
-	if (secretToken) {
-		const incomingSecret = request.headers.get('x-telegram-bot-api-secret-token');
-		if (incomingSecret !== secretToken) {
-			return json({ error: 'Unauthorized webhook request' }, { status: 401 });
-		}
+const MAX_WEBHOOK_BYTES = 32_768;
+const MAX_QUERY_LENGTH = 120;
+
+type TelegramMessage = {
+	chat?: { id?: string | number };
+	text?: string;
+};
+
+type TelegramUpdate = {
+	message?: TelegramMessage;
+};
+
+type TelegramButton = {
+	text: string;
+	url: string;
+};
+
+function escapeTelegramHtml(value: string): string {
+	return value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+}
+
+export const POST: RequestHandler = async ({ request }) => {
+	const secretToken = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
+	const botToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
+	const allowedChatIds = new Set(
+		(process.env.TELEGRAM_ALLOWED_CHAT_IDS || '')
+			.split(',')
+			.map((value) => value.trim())
+			.filter(Boolean)
+	);
+
+	if (!secretToken || !botToken || allowedChatIds.size === 0) {
+		return json({ error: 'Telegram integration is not configured' }, { status: 503 });
 	}
 
-	const body = await request.json().catch(() => null);
-	if (!body || !body.message) {
+	const incomingSecret = request.headers.get('x-telegram-bot-api-secret-token');
+	if (incomingSecret !== secretToken) {
+		return json({ error: 'Unauthorized webhook request' }, { status: 401 });
+	}
+
+	const declaredLength = Number(request.headers.get('content-length') || 0);
+	if (declaredLength > MAX_WEBHOOK_BYTES) {
+		return json({ error: 'Webhook request is too large' }, { status: 413 });
+	}
+
+	const rawBody = await request.text();
+	if (rawBody.length > MAX_WEBHOOK_BYTES) {
+		return json({ error: 'Webhook request is too large' }, { status: 413 });
+	}
+
+	let body: TelegramUpdate;
+	try {
+		body = JSON.parse(rawBody) as TelegramUpdate;
+	} catch {
+		return json({ error: 'Invalid webhook payload' }, { status: 400 });
+	}
+
+	if (!body.message) {
 		return json({ ok: true });
 	}
 
@@ -24,11 +71,21 @@ export async function POST({ request }) {
 		return json({ ok: true });
 	}
 
-	const botToken = process.env.TELEGRAM_BOT_TOKEN || '8811353440:AAEzLAMSAVKEz6i9mYX6nfV--NrPAnVxGqE';
-	const sendReply = async (replyText: string, options: { photoUrl?: string | null; buttons?: any[] } = {}) => {
+	if (!allowedChatIds.has(String(chatId))) {
+		return json({ error: 'Webhook chat is not allowed' }, { status: 403 });
+	}
+
+	if (text.length > MAX_QUERY_LENGTH) {
+		return json({ error: 'Webhook message is too long' }, { status: 400 });
+	}
+
+	const sendReply = async (
+		replyText: string,
+		options: { photoUrl?: string | null; buttons?: TelegramButton[][] } = {}
+	) => {
 		const isPhoto = Boolean(options.photoUrl);
 		const endpoint = isPhoto ? 'sendPhoto' : 'sendMessage';
-		const payload: Record<string, any> = {
+		const payload: Record<string, unknown> = {
 			chat_id: chatId,
 			parse_mode: 'HTML'
 		};
@@ -51,11 +108,10 @@ export async function POST({ request }) {
 	// 1. Command: /start or /help
 	if (text.startsWith('/start') || text.startsWith('/help')) {
 		const helpText =
-			`🍿 <b>CinemaDB On-Demand Assistant</b>\n` +
+			`🍿 <b>CinemaDB Catalog Assistant</b>\n` +
 			`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-			`Type any movie title or command to ingest and stream films instantly:\n\n` +
-			`• <code>/ingest &lt;movie title&gt;</code> - Add any film to your vault\n` +
-			`• <code>/watch &lt;movie title&gt;</code> - Get instant HD stream\n` +
+			`Search the approved catalog without changing it:\n\n` +
+			`• <code>/search &lt;movie title&gt;</code> - Find a title\n` +
 			`• Or simply type: <b>Inception</b>, <b>Interstellar</b>, etc.\n\n` +
 			`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
 			`🚀 <i>Directly connected to Alan's Database</i>`;
@@ -68,9 +124,14 @@ export async function POST({ request }) {
 
 	// 2. Extract Movie Query
 	let query = text;
-	if (query.startsWith('/ingest ')) query = query.replace('/ingest ', '').trim();
-	else if (query.startsWith('/watch ')) query = query.replace('/watch ', '').trim();
-	else if (query.startsWith('/search ')) query = query.replace('/search ', '').trim();
+	if (query.startsWith('/search ')) query = query.replace('/search ', '').trim();
+	else if (query.startsWith('/ingest ') || query.startsWith('/watch ')) {
+		return json({ error: 'Catalog mutation and playback commands are disabled' }, { status: 400 });
+	}
+
+	if (!query) {
+		return json({ error: 'A movie title is required' }, { status: 400 });
+	}
 
 	// Search TMDB
 	try {
@@ -80,14 +141,11 @@ export async function POST({ request }) {
 
 		if (!topMovie) {
 			await sendReply(
-				`🔍 <b>No matching film found for:</b> "<code>${query}</code>"\n\n` +
-				`Try checking spelling or type another movie title.`
+				`🔍 <b>No matching film found for:</b> "<code>${escapeTelegramHtml(query)}</code>"\n\n` +
+					`Try checking spelling or type another movie title.`
 			);
 			return json({ ok: true });
 		}
-
-		// Auto-ingest into DB in background
-		ingestMovie(topMovie.id).catch(() => null);
 
 		const posterUrl = topMovie.poster_path
 			? `https://image.tmdb.org/t/p/w500${topMovie.poster_path}`
@@ -97,25 +155,23 @@ export async function POST({ request }) {
 		const rating = topMovie.vote_average ? topMovie.vote_average.toFixed(1) : 'N/A';
 
 		const replyCard =
-			`🎬 <b>MOVIE READY TO STREAM!</b>\n` +
+			`🎬 <b>CATALOG RESULT</b>\n` +
 			`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-			`🍿 <b>${topMovie.title}</b> (${releaseYear})\n` +
-			`⭐ <b>IMDb / TMDB:</b> <code>★ ${rating}/10</code>\n` +
-			`📝 <i>${(topMovie.overview || 'No overview available.').slice(0, 220)}...</i>\n` +
-			`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-			`⚡ <b>Status:</b> Ingested & Stream Ready (Vidzy HD / 1080p)`;
+			`🍿 <b>${escapeTelegramHtml(topMovie.title)}</b> (${releaseYear})\n` +
+			`⭐ <b>TMDB:</b> <code>★ ${rating}/10</code>\n` +
+			`📝 <i>${escapeTelegramHtml((topMovie.overview || 'No overview available.').slice(0, 220))}</i>`;
 
 		const buttons = [
 			[
-				{ text: '▶️ Watch Now (Vidzy HD)', url: `https://alandatabase.com/movies/${topMovie.id}` },
+				{ text: 'View in CinemaDB', url: `https://alandatabase.com/movies/${topMovie.id}` },
 				{ text: '🔗 TMDB Details', url: `https://www.themoviedb.org/movie/${topMovie.id}` }
 			]
 		];
 
 		await sendReply(replyCard, { photoUrl: posterUrl, buttons });
-	} catch (err) {
-		await sendReply(`⚠️ <b>Error processing movie request:</b> <code>${String(err)}</code>`);
+	} catch {
+		await sendReply('⚠️ <b>The catalog search is temporarily unavailable.</b>');
 	}
 
 	return json({ ok: true });
-}
+};
