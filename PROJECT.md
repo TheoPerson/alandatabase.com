@@ -6,10 +6,10 @@ Verified against `agent/v3-foundation-core` at `9e724ce` plus current working-tr
 
 Alan's Data Base is a personal web application with two current surfaces:
 
-- public project-and-tools routes; and
+- a public project-and-tools landing page; and
 - an authenticated Movies/TV area being developed as V3.
 
-The root URL now redirects to `/movies`; the former Vault OS dashboard remains available only through its direct tool routes during this V3 transition.
+The root URL is the public project landing page; Cinema is the primary entry point and the focused developer tools remain available below it.
 
 Movies/TV V3 is intended to become Alan's private, owner- or invite-controlled cinema: a calm, premium place to browse a personal catalog, open a title, use an approved player, resume viewing, and organize progress, history, favorites, watchlists, lists, and recommendations. The intended core journey is mobile browse → detail → playback → resume/organization.
 

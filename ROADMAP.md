@@ -1,6 +1,6 @@
 # Movies / TV V3 Roadmap
 
-Verified against `agent/v3-foundation-core` at `9e724ce` plus current working-tree P0 hardening edits on 2026-08-19. States use the canonical vocabulary in `AGENTS.md`.
+Verified against `agent/v3-foundation-core` at `11cb3a7` plus current working-tree landing refresh edits on 2026-08-19. States use the canonical vocabulary in `AGENTS.md`.
 
 Nothing below is `merged` to `main` or `deployed` unless explicitly labeled. The Product/Project Lead approves scope and phase transitions.
 
@@ -45,10 +45,17 @@ Evidence at `9e724ce`: `pnpm check` passed with 0 diagnostics; app unit tests pa
 
 Evidence in the current working tree: focused app tests passed 11/11; full app unit tests passed 96/96; `pnpm check` passed with 0 diagnostics; worker safety tests passed 11/11. Full repo lint still has unrelated formatting debt, and local build remains blocked by the apostrophe-containing Windows workspace path/tooling issue.
 
+### P0.5 — public entry experience
+
+- Replaced the Vault OS dashboard as the first-arrival experience with a Cinema-first landing page.
+- Added explicit project discipline signals for product, frontend, backend, responsive UX, SEO/hosting, security, and QA.
+- Added page-level title, description, and social metadata for the public entry route.
+- Live smoke check: `/` returned `200` with the new hero and discipline sections; `pnpm check` passed with 0 diagnostics.
+
 ## `in_review` — agentic operating context
 
 - Root `AGENTS.md`, `PROJECT.md`, `ARCHITECTURE.md`, and `ROADMAP.md` establish worktree isolation, authority, canonical states, approval gates, current facts, and V3 priorities.
-- Application behavior is unchanged by this documentation phase.
+- The public entry experience changed in P0.5; protected cinema behavior remains unchanged.
 
 ## `approved` — remaining P0 foundations
 
