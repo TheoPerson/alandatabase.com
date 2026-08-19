@@ -1,7 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { movies } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
 
 export const actions = {
 	createCustomMovie: async ({ request, locals }) => {
@@ -13,7 +12,6 @@ export const actions = {
 		// 2. Parse form data
 		const formData = await request.formData();
 		const title = formData.get('title')?.toString();
-		const customVideoUrl = formData.get('customVideoUrl')?.toString();
 		const posterUrl = formData.get('posterUrl')?.toString();
 		const backdropUrl = formData.get('backdropUrl')?.toString() || null;
 		const releaseYear = formData.get('releaseYear')?.toString();
@@ -22,9 +20,9 @@ export const actions = {
 		const isAdult = formData.get('isAdult') === 'true';
 
 		// 3. Validate
-		if (!title || !customVideoUrl || !posterUrl) {
+		if (!title || !posterUrl) {
 			return fail(400, {
-				error: 'Missing required fields: Title, Video URL, and Poster URL are mandatory.'
+				error: 'Missing required fields: Title and Poster URL are mandatory.'
 			});
 		}
 
@@ -50,10 +48,7 @@ export const actions = {
 					overview,
 					releaseDate: parsedDate,
 					runtime: parsedRuntime,
-					adult: isAdult,
-					localOverrides: {
-						customVideoUrl: customVideoUrl
-					}
+					adult: isAdult
 				})
 				.returning();
 
@@ -63,7 +58,6 @@ export const actions = {
 
 			// Redirect to the newly created movie page
 			throw redirect(303, `/movies/${movie.id}`);
-			
 		} catch (err: any) {
 			if (err?.status === 303) {
 				throw err; // Re-throw SvelteKit redirects

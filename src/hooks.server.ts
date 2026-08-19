@@ -7,6 +7,7 @@ import {
 	requiresCinemaSession
 } from '$lib/server/auth/cinema-access';
 import { assignAllExperiments } from '$lib/server/ab-testing';
+import { denyFrameSources } from '$lib/server/security/response-policy';
 import type { Handle, HandleServerError } from '@sveltejs/kit';
 
 const PRIVATE_RESPONSE_HEADERS = {
@@ -87,6 +88,11 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 		for (const [name, value] of Object.entries(PRIVATE_RESPONSE_HEADERS)) {
 			response.headers.set(name, value);
 		}
+
+		response.headers.set(
+			'content-security-policy',
+			denyFrameSources(response.headers.get('content-security-policy'))
+		);
 	}
 
 	return response;

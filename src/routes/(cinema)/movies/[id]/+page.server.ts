@@ -1,9 +1,10 @@
-import { error } from '@sveltejs/kit';
+import { error, isHttpError } from '@sveltejs/kit';
 import { getMovieById } from '$lib/server/services/movie.service';
+import type { PageServerLoad } from './$types';
 
-export async function load({ params }) {
+export const load: PageServerLoad = async ({ params }) => {
 	const movieId = params.id;
-	
+
 	try {
 		const movie = await getMovieById(movieId);
 
@@ -15,8 +16,9 @@ export async function load({ params }) {
 			movie,
 			credits: [] as any[]
 		};
-	} catch (e) {
+	} catch (e: unknown) {
+		if (isHttpError(e)) throw e;
 		console.error('Error fetching movie details:', e);
 		throw error(500, 'Failed to load movie details');
 	}
-}
+};

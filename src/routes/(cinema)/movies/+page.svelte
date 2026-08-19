@@ -9,14 +9,14 @@
 	import { onMount, onDestroy } from 'svelte';
 
 	let { data } = $props();
-	
+
 	let isPlayerOpen = $state(false);
 
 	const currentHero = $derived(
-		(data.top10 || []).find((m: any) => m.backdropPath && m.backdropPath !== 'null') || 
-		data.top10?.[0] || 
-		data.trending?.[0] || 
-		null
+		(data.top10 || []).find((m: any) => m.backdropPath && m.backdropPath !== 'null') ||
+			data.top10?.[0] ||
+			data.trending?.[0] ||
+			null
 	);
 
 	const heroHref = $derived(
@@ -27,10 +27,10 @@
 </script>
 
 <svelte:head>
-	<title>CinemaDB — Next-Gen 4K Movies & Cinema Archive</title>
+	<title>CinemaDB — Private Movies & TV Archive</title>
 	<meta
 		name="description"
-		content="Discover, stream, and archive the greatest films in cinematic history with seamless 4K backdrops."
+		content="Browse and organize Alan's private movie and television archive."
 	/>
 </svelte:head>
 
@@ -86,9 +86,9 @@
 
 					<!-- Action Buttons -->
 					<div class="hero-btn-row">
-						<button class="cineby-play-btn" onclick={() => isPlayerOpen = true}>
+						<button class="cineby-play-btn" onclick={() => (isPlayerOpen = true)}>
 							<span class="play-icon">▶</span>
-							<span>Play</span>
+							<span>Playback status</span>
 						</button>
 
 						<a href={heroHref} class="cineby-info-btn">
@@ -127,7 +127,7 @@
 			<div class="top10-horizontal-grid">
 				{#each top10Today as movie, idx (movie.id || movie.tmdbId)}
 					<a
-						href="/cinema/movies/{movie.id || movie.tmdbId}"
+						href="/movies/{movie.id || movie.tmdbId}"
 						class="top10-card"
 						data-sveltekit-preload-data="hover"
 					>
@@ -170,7 +170,8 @@
 				<span class="crossover-badge">📺 TELEVISION ARCHIVE</span>
 				<h3 class="crossover-title">Explore the Top 50 IMDb-Ranked TV Series</h3>
 				<p class="crossover-desc">
-					Stream Breaking Bad, Reacher, Planet Earth, Chernobyl, Arcane, and the greatest television sagas in history.
+					Browse Breaking Bad, Reacher, Planet Earth, Chernobyl, Arcane, and the greatest television
+					sagas in the archive.
 				</p>
 			</div>
 			<a href="/tv" class="crossover-btn">
@@ -205,10 +206,7 @@
 </div>
 
 {#if isPlayerOpen && currentHero}
-	<PlayerSheet 
-		movie={currentHero} 
-		onClose={() => isPlayerOpen = false} 
-	/>
+	<PlayerSheet movie={currentHero} onClose={() => (isPlayerOpen = false)} />
 {/if}
 
 <style>
@@ -246,15 +244,27 @@
 	}
 
 	@keyframes heroFadeIn {
-		from { opacity: 0; transform: scale(1.02); }
-		to { opacity: 1; transform: scale(1); }
+		from {
+			opacity: 0;
+			transform: scale(1.02);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
 	}
 
 	/* 4-Way Vignette Masking for Ultra-Seamless Blending (Soft Midnight Slate) */
 	.vignette-left {
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(90deg, #0a0e17 0%, rgba(10, 14, 23, 0.9) 32%, rgba(10, 14, 23, 0.3) 65%, transparent 100%);
+		background: linear-gradient(
+			90deg,
+			#0a0e17 0%,
+			rgba(10, 14, 23, 0.9) 32%,
+			rgba(10, 14, 23, 0.3) 65%,
+			transparent 100%
+		);
 	}
 
 	.vignette-bottom {
@@ -296,8 +306,14 @@
 	}
 
 	@keyframes textSlideUp {
-		from { opacity: 0; transform: translateY(15px); }
-		to { opacity: 1; transform: translateY(0); }
+		from {
+			opacity: 0;
+			transform: translateY(15px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
 	.hero-main-title {

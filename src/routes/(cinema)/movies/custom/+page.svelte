@@ -13,8 +13,10 @@
 
 <div class="container custom-movie-page">
 	<div class="page-header">
-		<h1 class="page-title">Add Custom Source</h1>
-		<p class="page-subtitle">Manually import a movie bypassing the TMDB registry.</p>
+		<h1 class="page-title">Add a private title</h1>
+		<p class="page-subtitle">
+			Create catalog metadata without attaching an unapproved playback source.
+		</p>
 	</div>
 
 	<div class="form-wrapper glass-card">
@@ -43,17 +45,6 @@
 						name="title"
 						id="title"
 						placeholder="e.g., My Private Movie"
-						required
-					/>
-				</div>
-
-				<div class="input-group full-width">
-					<Input
-						label="Custom Video Embed URL (iFrame Source) *"
-						name="customVideoUrl"
-						id="customVideoUrl"
-						type="url"
-						placeholder="https://..."
 						required
 					/>
 				</div>
@@ -109,10 +100,9 @@
 						name="overview"
 						rows="4"
 						class="oled-textarea"
-						placeholder="A brief description of this movie..."
-					></textarea>
+						placeholder="A brief description of this movie..."></textarea>
 				</div>
-				
+
 				<div class="input-group checkbox-group full-width">
 					<label class="checkbox-label">
 						<input type="checkbox" name="isAdult" value="true" checked class="oled-checkbox" />
@@ -185,7 +175,7 @@
 		.form-grid {
 			grid-template-columns: 1fr 1fr;
 		}
-		
+
 		.full-width {
 			grid-column: span 2;
 		}
