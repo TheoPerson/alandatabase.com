@@ -8,6 +8,7 @@ import {
 } from '$lib/server/auth/cinema-access';
 import { assignAllExperiments } from '$lib/server/ab-testing';
 import { denyFrameSources } from '$lib/server/security/response-policy';
+import { DEV_BYPASS_USER, isDevAuthBypassEnabled } from '$lib/server/auth/dev-access';
 import type { Handle, HandleServerError } from '@sveltejs/kit';
 
 const PRIVATE_RESPONSE_HEADERS = {
@@ -33,9 +34,9 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 
 	const token = event.cookies.get('session');
 	event.locals.session = null;
-	event.locals.user = null;
+	event.locals.user = isDevAuthBypassEnabled() ? DEV_BYPASS_USER : null;
 
-	if (token) {
+	if (token && !event.locals.user) {
 		const { session, user } = await validateSessionToken(token);
 		if (session && user) {
 			event.locals.session = session;

@@ -78,3 +78,16 @@ test('legacy adult launch paths and package aliases remain quarantined', () => {
 	assert.doesNotMatch(adultLauncher, /fetch\(|ingestAdultVideo/);
 	assert.doesNotMatch(publicExplicitLauncher, /fetch\(|discoverMovies|ingestMovie/);
 });
+
+test('worker cli validates commands before database setup or network actions', () => {
+	const cliSource = readFileSync(new URL('../cli.ts', import.meta.url), 'utf8');
+	const commandValidationIndex = cliSource.indexOf('!validCommands.has(command)');
+	const databaseSetupIndex = cliSource.indexOf('await ensureTablesExist()');
+	const firstNetworkActionIndex = cliSource.indexOf('await syncGenres()');
+
+	assert.notEqual(commandValidationIndex, -1);
+	assert.notEqual(databaseSetupIndex, -1);
+	assert.notEqual(firstNetworkActionIndex, -1);
+	assert.ok(commandValidationIndex < databaseSetupIndex);
+	assert.ok(commandValidationIndex < firstNetworkActionIndex);
+});

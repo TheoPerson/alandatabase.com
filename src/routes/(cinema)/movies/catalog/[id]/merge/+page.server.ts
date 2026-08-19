@@ -3,11 +3,13 @@ import { getMovieById } from '$lib/server/services/movie.service';
 import { db } from '$lib/server/db';
 import { movies, userMovieInteractions, userListItems, userReviews } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { requireOwnerUser } from '$lib/server/auth/owner';
 
 export async function load({ params, locals }) {
 	if (!locals.user) {
 		throw redirect(302, '/auth/login');
 	}
+	requireOwnerUser(locals.user);
 
 	const sourceMovie = await getMovieById(params.id);
 	if (!sourceMovie) {
@@ -24,6 +26,7 @@ export const actions = {
 		if (!locals.user) {
 			return fail(401, { error: 'Unauthorized' });
 		}
+		requireOwnerUser(locals.user);
 
 		const formData = await request.formData();
 		const targetTmdbId = formData.get('targetTmdbId')?.toString();
