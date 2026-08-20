@@ -44,7 +44,7 @@
 			<div class="nav-links">
 				<a href="#craft">How it is built</a>
 				<a
-					href="https://github.com/TheoPerson/the-alans-data-base"
+					href="https://github.com/TheoPerson/alandatabase.com"
 					target="_blank"
 					rel="noreferrer"
 				>
@@ -123,7 +123,7 @@
 	<footer class="footer page-width">
 		<span class="brand dark-brand"><CommandIcon size={15} /> Alan's Database</span><span
 			>Private cinema, considered software.</span
-		><a href="https://github.com/TheoPerson/the-alans-data-base" target="_blank" rel="noreferrer"
+		><a href="https://github.com/TheoPerson/alandatabase.com" target="_blank" rel="noreferrer"
 			><ExternalLinkIcon size={16} /> Source on GitHub</a
 		>
 	</footer>

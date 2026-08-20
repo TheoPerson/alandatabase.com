@@ -77,7 +77,7 @@
 
 			<div class="desktop-only flex items-center gap-2">
 				<a
-					href="https://github.com/TheoPerson/the-alans-data-base"
+					href="https://github.com/TheoPerson/alandatabase.com"
 					target="_blank"
 					rel="noreferrer"
 					class="header-repo-icon"
