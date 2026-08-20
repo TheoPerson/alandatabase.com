@@ -4,7 +4,7 @@
 	import { Switch } from '$lib/components/ui/switch';
 
 	let { data, form } = $props();
-	
+
 	let adultEnabled = $state(false);
 	let isSaving = $state(false);
 
@@ -25,9 +25,9 @@
 
 	<section class="settings-section">
 		<h2>Content Preferences</h2>
-		
-		<form 
-			method="POST" 
+
+		<form
+			method="POST"
 			action="?/updateSettings"
 			use:enhance={() => {
 				isSaving = true;
@@ -41,7 +41,10 @@
 			<div class="setting-item danger-zone">
 				<div class="setting-info">
 					<h3>Adult Content (18+)</h3>
-					<p>Enable access to explicit and 18+ content in your private cinema and searches. By enabling this, you confirm you are at least 18 years old.</p>
+					<p>
+						Enable access to explicit and 18+ content in your private cinema and searches. By
+						enabling this, you confirm you are at least 18 years old.
+					</p>
 				</div>
 				<div class="setting-control">
 					<!-- Shadcn Switch works differently, it uses checked binding or form input. We add a hidden input for the form. -->
@@ -49,9 +52,13 @@
 					<input type="hidden" name="adultEnabled" value={adultEnabled ? 'on' : 'off'} />
 				</div>
 			</div>
-			
+
 			<div class="form-actions">
-				<Button type="submit" disabled={isSaving} class="bg-accent-gold text-black hover:bg-accent-gold/90">
+				<Button
+					type="submit"
+					disabled={isSaving}
+					class="bg-accent-gold text-black hover:bg-accent-gold/90"
+				>
 					{isSaving ? 'Saving...' : 'Save Settings'}
 				</Button>
 				{#if form?.success}
@@ -88,7 +95,7 @@
 		color: var(--text-secondary);
 		margin-top: 0.5rem;
 	}
-	
+
 	.settings-section h2 {
 		font-size: 1.5rem;
 		margin-bottom: 1.5rem;
@@ -96,7 +103,7 @@
 		border-bottom: 1px solid var(--border-subtle);
 		padding-bottom: 0.5rem;
 	}
-	
+
 	.setting-item {
 		display: flex;
 		justify-content: space-between;
@@ -107,36 +114,36 @@
 		border-radius: var(--radius-lg);
 		margin-bottom: 1.5rem;
 	}
-	
+
 	.setting-item.danger-zone {
 		border-color: rgba(239, 68, 68, 0.3);
 	}
-	
+
 	.setting-info h3 {
 		font-size: 1.1rem;
 		color: #ffffff;
 		margin-bottom: 0.25rem;
 	}
-	
+
 	.setting-info p {
 		font-size: 0.9rem;
 		color: var(--text-secondary);
 		max-width: 500px;
 		line-height: 1.4;
 	}
-	
+
 	.form-actions {
 		display: flex;
 		align-items: center;
 		gap: 1rem;
 		margin-top: 2rem;
 	}
-	
+
 	.success-message {
 		color: #10b981;
 		font-size: 0.9rem;
 	}
-	
+
 	.error-message {
 		color: #ef4444;
 		font-size: 0.9rem;

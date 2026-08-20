@@ -8,16 +8,33 @@
 <div class="gate-container">
 	<div class="gate-card glass-card">
 		<div class="icon-wrapper">
-			<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-alert text-red-500"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2-1 4-2 7-2 2 0 5 1 7 2a1 1 0 0 1 1 1v7z"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="48"
+				height="48"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				class="lucide lucide-shield-alert text-red-500"
+				><path
+					d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2-1 4-2 7-2 2 0 5 1 7 2a1 1 0 0 1 1 1v7z"
+				/><path d="M12 8v4" /><path d="M12 16h.01" /></svg
+			>
 		</div>
 		<h1 class="title">Content Advisory</h1>
 		<p class="subtitle">
-			CinemaDB contains unfiltered content including R-rated movies, explicit themes, and mature TV shows. 
-			This library is completely uncensored.
+			CinemaDB contains unfiltered content including R-rated movies, explicit themes, and mature TV
+			shows. This library is completely uncensored.
 		</p>
 
 		<div class="warning-box">
-			<p>By proceeding, you acknowledge that you are of legal age and consent to viewing mature content.</p>
+			<p>
+				By proceeding, you acknowledge that you are of legal age and consent to viewing mature
+				content.
+			</p>
 		</div>
 
 		<form
@@ -32,7 +49,12 @@
 				};
 			}}
 		>
-			<Button type="button" variant="ghost" class="w-full text-muted-foreground" onclick={() => window.history.back()}>
+			<Button
+				type="button"
+				variant="ghost"
+				class="w-full text-muted-foreground"
+				onclick={() => window.history.back()}
+			>
 				Go Back
 			</Button>
 			<Button type="submit" variant="primary" class="w-full" disabled={isSubmitting}>
@@ -63,7 +85,9 @@
 		border-radius: 1.5rem;
 		background: rgba(15, 15, 18, 0.85);
 		border: 1px solid rgba(239, 68, 68, 0.2);
-		box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255,255,255,0.05) inset;
+		box-shadow:
+			0 25px 50px -12px rgba(0, 0, 0, 0.7),
+			0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 		display: flex;
 		flex-direction: column;
 		align-items: center;

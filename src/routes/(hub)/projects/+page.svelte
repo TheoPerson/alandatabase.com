@@ -38,16 +38,86 @@
 		}
 	];
 	const projects = [
-		{ name: 'Sylepse', icon: '✈️', desc: 'Radar aérien PWA — scan, trajectoires, audio', status: 'live', stack: 'Vanilla JS · PWA', url: 'https://theoperson.github.io/Sylepse/' },
-		{ name: 'Rareness', icon: '💎', desc: 'Rarity tracker pour collections gaming', status: 'live', stack: 'React · Vite · Vercel', url: 'https://rareness.vercel.app/' },
-		{ name: 'JUG_SEC.COM', icon: '🛡️', desc: 'Site vitrine cybersécurité — revamp complet', status: 'repo', stack: 'HTML · JS', url: 'https://github.com/TheoPerson/JUG_SEC.COM' },
-		{ name: 'Gradus Tracker', icon: '📈', desc: 'Suivi de progression multi-objectifs', status: 'repo', stack: 'Vue · Vite', url: 'https://github.com/TheoPerson/Gradus-Tracker' },
-		{ name: 'Challenges Tracker', icon: '🎯', desc: 'Tableau de bord challenges League of Legends', status: 'repo', stack: 'React · Vite', url: 'https://github.com/DarkIntaqt/challenges' },
-		{ name: 'Draftin', icon: '📝', desc: 'Éditeur de texte collaboratif temps réel', status: 'dev', stack: 'Next.js · React', url: '' },
-		{ name: 'eSport Profiler', icon: '🎮', desc: 'Profil joueur eSport multi-jeux', status: 'dev', stack: 'Next.js · React', url: '' },
-		{ name: 'Jelp', icon: '🍕', desc: 'Découverte de restaurants locale', status: 'dev', stack: 'Express · Node.js', url: '' },
-		{ name: 'Movie Picker', icon: '🎬', desc: 'Recommandation de films intelligente', status: 'dev', stack: 'Next.js · React', url: '' },
-		{ name: 'Stasher', icon: '📦', desc: 'Gestionnaire de fichiers et assets', status: 'dev', stack: 'Next.js · React', url: '' }
+		{
+			name: 'Sylepse',
+			icon: '✈️',
+			desc: 'Radar aérien PWA — scan, trajectoires, audio',
+			status: 'live',
+			stack: 'Vanilla JS · PWA',
+			url: 'https://theoperson.github.io/Sylepse/'
+		},
+		{
+			name: 'Rareness',
+			icon: '💎',
+			desc: 'Rarity tracker pour collections gaming',
+			status: 'live',
+			stack: 'React · Vite · Vercel',
+			url: 'https://rareness.vercel.app/'
+		},
+		{
+			name: 'JUG_SEC.COM',
+			icon: '🛡️',
+			desc: 'Site vitrine cybersécurité — revamp complet',
+			status: 'repo',
+			stack: 'HTML · JS',
+			url: 'https://github.com/TheoPerson/JUG_SEC.COM'
+		},
+		{
+			name: 'Gradus Tracker',
+			icon: '📈',
+			desc: 'Suivi de progression multi-objectifs',
+			status: 'repo',
+			stack: 'Vue · Vite',
+			url: 'https://github.com/TheoPerson/Gradus-Tracker'
+		},
+		{
+			name: 'Challenges Tracker',
+			icon: '🎯',
+			desc: 'Tableau de bord challenges League of Legends',
+			status: 'repo',
+			stack: 'React · Vite',
+			url: 'https://github.com/DarkIntaqt/challenges'
+		},
+		{
+			name: 'Draftin',
+			icon: '📝',
+			desc: 'Éditeur de texte collaboratif temps réel',
+			status: 'dev',
+			stack: 'Next.js · React',
+			url: ''
+		},
+		{
+			name: 'eSport Profiler',
+			icon: '🎮',
+			desc: 'Profil joueur eSport multi-jeux',
+			status: 'dev',
+			stack: 'Next.js · React',
+			url: ''
+		},
+		{
+			name: 'Jelp',
+			icon: '🍕',
+			desc: 'Découverte de restaurants locale',
+			status: 'dev',
+			stack: 'Express · Node.js',
+			url: ''
+		},
+		{
+			name: 'Movie Picker',
+			icon: '🎬',
+			desc: 'Recommandation de films intelligente',
+			status: 'dev',
+			stack: 'Next.js · React',
+			url: ''
+		},
+		{
+			name: 'Stasher',
+			icon: '📦',
+			desc: 'Gestionnaire de fichiers et assets',
+			status: 'dev',
+			stack: 'Next.js · React',
+			url: ''
+		}
 	];
 
 	const statusLabels: Record<string, string> = { live: 'EN LIGNE', repo: 'REPO', dev: 'EN DEV' };
@@ -104,7 +174,7 @@
 	<div class="tool-header" style="margin-top: 1rem;">
 		<div class="title-row">
 			<h1 class="tool-title"><span class="icon">🚀</span> All Projects</h1>
-			<span class="tool-badge blue">{projects.filter(p => p.status === 'live').length} LIVE</span>
+			<span class="tool-badge blue">{projects.filter((p) => p.status === 'live').length} LIVE</span>
 		</div>
 		<p class="tool-subtitle">
 			All web projects — click to open live apps, repos, or view development status.
@@ -114,10 +184,20 @@
 	<div class="projects-grid">
 		{#each projects as p}
 			{#if p.url}
-				<a href={p.url} target="_blank" rel="noopener noreferrer" class="project-card" style="--p-color: {statusColors[p.status]}">
+				<a
+					href={p.url}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="project-card"
+					style="--p-color: {statusColors[p.status]}"
+				>
 					<div class="project-top">
 						<span class="project-icon">{p.icon}</span>
-						<span class="project-status" style="color: {statusColors[p.status]}; background: {statusColors[p.status]}15">{statusLabels[p.status]}</span>
+						<span
+							class="project-status"
+							style="color: {statusColors[p.status]}; background: {statusColors[p.status]}15"
+							>{statusLabels[p.status]}</span
+						>
 					</div>
 					<span class="project-name">{p.name}</span>
 					<span class="project-desc">{p.desc}</span>
@@ -127,7 +207,11 @@
 				<div class="project-card disabled" style="--p-color: {statusColors[p.status]}">
 					<div class="project-top">
 						<span class="project-icon">{p.icon}</span>
-						<span class="project-status" style="color: {statusColors[p.status]}; background: {statusColors[p.status]}15">{statusLabels[p.status]}</span>
+						<span
+							class="project-status"
+							style="color: {statusColors[p.status]}; background: {statusColors[p.status]}15"
+							>{statusLabels[p.status]}</span
+						>
 					</div>
 					<span class="project-name">{p.name}</span>
 					<span class="project-desc">{p.desc}</span>

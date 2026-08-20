@@ -51,8 +51,12 @@
 	.nav-progress-bar {
 		height: 100%;
 		background: linear-gradient(90deg, #10b981, #34d399, #6ee7b7);
-		box-shadow: 0 0 10px #10b981, 0 0 5px #34d399;
-		transition: width 150ms ease-out, opacity 250ms ease-in;
+		box-shadow:
+			0 0 10px #10b981,
+			0 0 5px #34d399;
+		transition:
+			width 150ms ease-out,
+			opacity 250ms ease-in;
 		border-radius: 0 2px 2px 0;
 	}
 </style>

@@ -18,9 +18,9 @@ export async function load({ locals, url }) {
 	if (locals.user) {
 		throw redirect(302, validateReturnTo(returnTo));
 	}
-	
+
 	const allowSetup = env.ALLOW_OWNER_SETUP === 'true';
-	
+
 	return { returnTo, allowSetup };
 }
 
@@ -30,7 +30,7 @@ export const actions = {
 		if (!allowSetup) {
 			return fail(403, { error: 'Registration is currently disabled. Contact the administrator.' });
 		}
-		
+
 		const formData = await request.formData();
 		const email = formData.get('email')?.toString().trim().toLowerCase();
 		const username = formData.get('username')?.toString().trim();

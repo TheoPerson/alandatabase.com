@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 
-
 test.describe('Public cinema and API integration', () => {
 	test('API metadata advertises the real V3 endpoints', async ({ request }) => {
 		const response = await request.get('/api');

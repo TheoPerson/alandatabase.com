@@ -1,6 +1,6 @@
 <script lang="ts">
 	import MovieCard from '$lib/components/movie/MovieCard.svelte';
-	
+
 	let { data } = $props();
 </script>
 
@@ -11,12 +11,12 @@
 <div class="discover-page">
 	<header class="hero-banner">
 		{#if data.dailyMasterpiece?.backdropPath}
-			<img 
-				src={data.dailyMasterpiece.backdropPath.startsWith('http') 
-					? data.dailyMasterpiece.backdropPath 
+			<img
+				src={data.dailyMasterpiece.backdropPath.startsWith('http')
+					? data.dailyMasterpiece.backdropPath
 					: `https://image.tmdb.org/t/p/w1280${data.dailyMasterpiece.backdropPath.startsWith('/') ? '' : '/'}${data.dailyMasterpiece.backdropPath}`}
-				alt="Masterpiece" 
-				class="hero-bg" 
+				alt="Masterpiece"
+				class="hero-bg"
 			/>
 		{/if}
 		<div class="hero-overlay"></div>
@@ -36,7 +36,6 @@
 	</header>
 
 	<div class="container sections-container">
-		
 		<!-- Vibe Clusters -->
 		{#each data.vibes as vibe}
 			{#if vibe.movies.length > 0}
@@ -99,7 +98,7 @@
 		margin-bottom: 3rem;
 		overflow: hidden;
 	}
-	
+
 	.hero-bg {
 		position: absolute;
 		inset: 0;
@@ -118,7 +117,7 @@
 		margin: 0 auto;
 		padding: 0 1.5rem;
 	}
-	
+
 	.eyebrow {
 		display: inline-block;
 		color: var(--accent-gold);
@@ -145,12 +144,12 @@
 		max-width: 600px;
 		margin-bottom: 2rem;
 	}
-	
+
 	.hero-actions {
 		display: flex;
 		gap: 1rem;
 	}
-	
+
 	.btn-primary {
 		padding: 0.75rem 1.5rem;
 		background: var(--accent-gold);
@@ -159,11 +158,11 @@
 		border-radius: var(--radius-md);
 		transition: all var(--transition-fast);
 	}
-	
+
 	.btn-primary:hover {
 		filter: brightness(1.1);
 	}
-	
+
 	.btn-secondary {
 		padding: 0.75rem 1.5rem;
 		background: var(--bg-surface-glass);
@@ -174,7 +173,7 @@
 		transition: all var(--transition-fast);
 		backdrop-filter: blur(10px);
 	}
-	
+
 	.btn-secondary:hover {
 		background: var(--bg-surface-2);
 		border-color: var(--border-strong);

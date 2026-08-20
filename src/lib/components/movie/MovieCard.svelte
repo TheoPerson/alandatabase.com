@@ -91,7 +91,7 @@
 		font-size: 0.9rem;
 		font-weight: 800;
 		color: var(--text-primary);
-		box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+		box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 	}
 
 	.imdb-tag {

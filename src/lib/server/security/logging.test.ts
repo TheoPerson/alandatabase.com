@@ -8,9 +8,7 @@ afterEach(() => {
 describe('server logging safety', () => {
 	it('redacts URLs, bearer credentials and secret assignments', () => {
 		const diagnostic = safeDiagnostic(
-			new Error(
-				'postgres://user:pass@db.example/app Bearer abc.def token=secret-value <unsafe>'
-			)
+			new Error('postgres://user:pass@db.example/app Bearer abc.def token=secret-value <unsafe>')
 		);
 
 		expect(diagnostic).toContain('[redacted-url]');

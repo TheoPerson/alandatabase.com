@@ -3,7 +3,9 @@
 	import { page } from '$app/stores';
 
 	const status = $derived($page.status || 404);
-	const message = $derived($page.error?.message || 'The requested vault resource could not be found.');
+	const message = $derived(
+		$page.error?.message || 'The requested vault resource could not be found.'
+	);
 
 	function goBack() {
 		if (typeof window !== 'undefined') {
@@ -29,24 +31,43 @@
 		<!-- Animated Film Radar Symbol -->
 		<div class="symbol-container">
 			<svg class="radar-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<circle cx="32" cy="32" r="28" stroke="rgba(16, 185, 129, 0.15)" stroke-width="2" stroke-dasharray="4 4" class="outer-ring" />
+				<circle
+					cx="32"
+					cy="32"
+					r="28"
+					stroke="rgba(16, 185, 129, 0.15)"
+					stroke-width="2"
+					stroke-dasharray="4 4"
+					class="outer-ring"
+				/>
 				<circle cx="32" cy="32" r="20" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1.5" />
 				<circle cx="32" cy="32" r="14" fill="#0c111a" stroke="#10b981" stroke-width="2" />
 				<circle cx="32" cy="32" r="4" fill="#10b981" />
-				
+
 				<!-- Film Holes -->
 				<circle cx="32" cy="24" r="1.8" fill="#10b981" />
 				<circle cx="32" cy="40" r="1.8" fill="#10b981" />
 				<circle cx="24" cy="32" r="1.8" fill="#10b981" />
 				<circle cx="40" cy="32" r="1.8" fill="#10b981" />
-				
-				<line x1="32" y1="32" x2="48" y2="16" stroke="#34d399" stroke-width="2" stroke-linecap="round" class="radar-sweep" />
+
+				<line
+					x1="32"
+					y1="32"
+					x2="48"
+					y2="16"
+					stroke="#34d399"
+					stroke-width="2"
+					stroke-linecap="round"
+					class="radar-sweep"
+				/>
 			</svg>
 		</div>
 
 		<!-- Status Code & Tag -->
 		<div class="status-header">
-			<span class="status-pill">{status === 404 ? '404 // MISSING REEL' : `STATUS CODE ${status}`}</span>
+			<span class="status-pill"
+				>{status === 404 ? '404 // MISSING REEL' : `STATUS CODE ${status}`}</span
+			>
 		</div>
 
 		<!-- Main Headline -->
@@ -63,7 +84,8 @@
 		<!-- Explanatory Subtitle -->
 		<p class="error-description">
 			{#if status === 404}
-				The film reel or page you are trying to access does not exist in our catalog archive or has been moved.
+				The film reel or page you are trying to access does not exist in our catalog archive or has
+				been moved.
 			{:else}
 				{message}
 			{/if}
@@ -94,7 +116,9 @@
 
 		<!-- Keyboard Shortcut Hint -->
 		<div class="footer-hint">
-			<span>Tip: Press <kbd>Ctrl</kbd> + <kbd>K</kbd> to open the Command Palette from anywhere</span>
+			<span
+				>Tip: Press <kbd>Ctrl</kbd> + <kbd>K</kbd> to open the Command Palette from anywhere</span
+			>
 		</div>
 	</div>
 </div>
@@ -111,7 +135,13 @@
 		padding: 2rem 1.5rem;
 		position: relative;
 		overflow: hidden;
-		font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+		font-family:
+			'Plus Jakarta Sans',
+			-apple-system,
+			BlinkMacSystemFont,
+			'Segoe UI',
+			Roboto,
+			sans-serif;
 	}
 
 	.ambient-glow {
@@ -136,7 +166,9 @@
 		border-radius: 24px;
 		padding: 3rem 2.5rem;
 		text-align: center;
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(16, 185, 129, 0.05);
+		box-shadow:
+			0 20px 60px rgba(0, 0, 0, 0.8),
+			0 0 30px rgba(16, 185, 129, 0.05);
 		backdrop-filter: blur(20px);
 		-webkit-backdrop-filter: blur(20px);
 	}
@@ -163,8 +195,12 @@
 	}
 
 	@keyframes radarSpin {
-		from { transform: rotate(0deg); }
-		to { transform: rotate(360deg); }
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	.status-header {

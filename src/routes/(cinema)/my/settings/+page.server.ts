@@ -34,7 +34,7 @@ export const actions = {
 					updatedAt: new Date()
 				})
 				.where(eq(users.id, locals.user.id));
-				
+
 			return { success: true };
 		} catch (err) {
 			logServerError('Settings update failed', err);

@@ -72,17 +72,17 @@ const health = await request('api health', 'https://api.alandatabase.com/health'
 assert.equal(health.response.status, 200);
 assert.deepEqual(JSON.parse(health.body), { status: 'ok', db: true });
 
-const privateApi = await request(
-	'api owner gate',
-	'https://api.alandatabase.com/search?q=test'
-);
+const privateApi = await request('api owner gate', 'https://api.alandatabase.com/search?q=test');
 assert.equal(privateApi.response.status, 401);
 assert.deepEqual(JSON.parse(privateApi.body), { error: 'Unauthorized' });
 
 const allowedCors = await request('api allowed CORS', 'https://api.alandatabase.com/', {
 	headers: { Origin: 'https://alandatabase.com' }
 });
-assert.equal(allowedCors.response.headers.get('access-control-allow-origin'), 'https://alandatabase.com');
+assert.equal(
+	allowedCors.response.headers.get('access-control-allow-origin'),
+	'https://alandatabase.com'
+);
 assert.equal(allowedCors.response.headers.get('access-control-allow-credentials'), 'true');
 
 const rejectedCors = await request('api rejected CORS', 'https://api.alandatabase.com/', {

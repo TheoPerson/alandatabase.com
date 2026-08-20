@@ -28,9 +28,7 @@ export const actions = {
 			hasAcceptedAdultGate: true
 		};
 
-		await db.update(users)
-			.set({ settings: newSettings })
-			.where(eq(users.id, locals.user.id));
+		await db.update(users).set({ settings: newSettings }).where(eq(users.id, locals.user.id));
 
 		throw redirect(302, '/movies');
 	}

@@ -34,11 +34,15 @@
 
 		const nextPage = currentPage + 1;
 		const genreParam = selectedGenreId ? `&genre=${selectedGenreId}` : '';
-		const decadeParam = $page.url.searchParams.get('decade') ? `&decade=${$page.url.searchParams.get('decade')}` : '';
+		const decadeParam = $page.url.searchParams.get('decade')
+			? `&decade=${$page.url.searchParams.get('decade')}`
+			: '';
 		const sortParam = sortBy ? `&sort=${sortBy}` : '';
 
 		try {
-			const res = await fetch(`/api/movies/catalog?page=${nextPage}${genreParam}${decadeParam}${sortParam}`);
+			const res = await fetch(
+				`/api/movies/catalog?page=${nextPage}${genreParam}${decadeParam}${sortParam}`
+			);
 			if (!res.ok) throw new Error('Failed to load next page');
 
 			const resData = await res.json();
@@ -123,18 +127,18 @@
 			<!-- Genre Filters -->
 			{#if data.genreList.length > 0}
 				<div class="chip-row">
-					<button 
-						type="button" 
-						class="filter-chip {selectedGenreId === null ? 'active' : ''}" 
+					<button
+						type="button"
+						class="filter-chip {selectedGenreId === null ? 'active' : ''}"
 						onclick={() => setGenre(null)}
 					>
 						All Genres
 					</button>
 
 					{#each data.genreList as g}
-						<button 
-							type="button" 
-							class="filter-chip {selectedGenreId === g.id ? 'active' : ''}" 
+						<button
+							type="button"
+							class="filter-chip {selectedGenreId === g.id ? 'active' : ''}"
 							onclick={() => setGenre(g.id)}
 						>
 							{g.name}
@@ -145,17 +149,19 @@
 
 			<!-- Decade Filters -->
 			<div class="chip-row mt-3">
-				<button 
-					type="button" 
-					class="filter-chip {!$page.url.searchParams.get('decade') ? 'active' : ''}" 
+				<button
+					type="button"
+					class="filter-chip {!$page.url.searchParams.get('decade') ? 'active' : ''}"
 					onclick={() => updateUrl({ decade: null })}
 				>
 					All Time
 				</button>
 				{#each [2020, 2010, 2000, 1990, 1980, 1970] as decade}
-					<button 
-						type="button" 
-						class="filter-chip {$page.url.searchParams.get('decade') === decade.toString() ? 'active' : ''}" 
+					<button
+						type="button"
+						class="filter-chip {$page.url.searchParams.get('decade') === decade.toString()
+							? 'active'
+							: ''}"
 						onclick={() => updateUrl({ decade: decade.toString() })}
 					>
 						{decade}s
@@ -166,7 +172,9 @@
 
 		<!-- Sorting Controls -->
 		<div class="toolbar">
-			<span class="count-badge">Showing {moviesList.length} of {data.pagination.totalCount.toLocaleString()} films</span>
+			<span class="count-badge"
+				>Showing {moviesList.length} of {data.pagination.totalCount.toLocaleString()} films</span
+			>
 
 			<div class="sort-group">
 				<span class="sort-label">Sort by:</span>
@@ -189,7 +197,9 @@
 					posterPath={movie.posterPath}
 					releaseDate={movie.releaseDate}
 					voteAverage={movie.voteAverage}
-					genres={movie.genres?.map((g: any) => g.genre?.name || g.name || (typeof g === 'string' ? g : ''))}
+					genres={movie.genres?.map(
+						(g: any) => g.genre?.name || g.name || (typeof g === 'string' ? g : '')
+					)}
 				/>
 			{/each}
 		</div>
@@ -252,7 +262,7 @@
 		scrollbar-width: none; /* Firefox */
 		-ms-overflow-style: none; /* IE/Edge */
 	}
-	
+
 	.chip-row::-webkit-scrollbar {
 		display: none;
 	}

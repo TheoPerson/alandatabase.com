@@ -43,11 +43,7 @@
 			</a>
 			<div class="nav-links">
 				<a href="#craft">How it is built</a>
-				<a
-					href="https://github.com/TheoPerson/alandatabase.com"
-					target="_blank"
-					rel="noreferrer"
-				>
+				<a href="https://github.com/TheoPerson/alandatabase.com" target="_blank" rel="noreferrer">
 					GitHub <ArrowUpRightIcon size={14} />
 				</a>
 			</div>

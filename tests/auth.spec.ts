@@ -13,7 +13,9 @@ test.describe('Authentication Middleware (hooks.server.ts)', () => {
 		expect(page.url()).toContain('returnTo=%2Fadmin');
 	});
 
-	test('API requests to protected routes without auth return 401 Unauthorized', async ({ request }) => {
+	test('API requests to protected routes without auth return 401 Unauthorized', async ({
+		request
+	}) => {
 		const response = await request.get('/api/search?q=test');
 		expect(response.status()).toBe(401);
 

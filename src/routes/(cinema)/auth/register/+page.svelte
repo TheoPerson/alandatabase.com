@@ -75,12 +75,19 @@
 		{:else}
 			<div class="empty-state">
 				<p>Registration is currently disabled for security reasons.</p>
-				<p class="text-sm mt-4 text-muted-foreground">If you are the owner, set ALLOW_OWNER_SETUP=true in your environment variables to bootstrap your account.</p>
+				<p class="text-sm mt-4 text-muted-foreground">
+					If you are the owner, set ALLOW_OWNER_SETUP=true in your environment variables to
+					bootstrap your account.
+				</p>
 			</div>
 		{/if}
 
 		<div class="auth-footer">
-			<p>Already have an account? <a href="/auth/login{data.returnTo ? `?returnTo=${data.returnTo}` : ''}">Log in</a></p>
+			<p>
+				Already have an account? <a
+					href="/auth/login{data.returnTo ? `?returnTo=${data.returnTo}` : ''}">Log in</a
+				>
+			</p>
 		</div>
 	</div>
 </div>
@@ -174,7 +181,7 @@
 		font-size: 0.875rem;
 		color: #a1a1aa;
 	}
-	
+
 	.empty-state {
 		text-align: center;
 		padding: 2rem 0;

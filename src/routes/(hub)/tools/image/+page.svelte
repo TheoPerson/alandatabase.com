@@ -126,8 +126,8 @@
 			<span class="tool-badge">CANVAS ENGINE</span>
 		</div>
 		<p class="tool-subtitle">
-			Convert formats (WebP, PNG, JPEG, GIF), resize dimensions, compress quality, and encode Base64 Data
-			URIs.
+			Convert formats (WebP, PNG, JPEG, GIF), resize dimensions, compress quality, and encode Base64
+			Data URIs.
 		</p>
 	</div>
 
