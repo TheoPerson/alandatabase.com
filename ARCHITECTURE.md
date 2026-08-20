@@ -36,10 +36,15 @@ creating parallel applications:
 - `status.alandatabase.com/` rewrites to the existing public `/status` page.
 - `api.alandatabase.com/` rewrites to `/api`; `/health` rewrites to
   `/api/health`. API metadata and liveness are public, while catalog and
-  mutation routes retain the session guard.
-- `auth.alandatabase.com` redirects to the existing session login flow on the
-  canonical host. Authentication remains the repository's session-based
-  SvelteKit flow; no separate auth service is invented.
+  mutation routes are owner-gated.
+- `auth.alandatabase.com` is the first-class session login portal. It rewrites
+  `/` to `/auth/login`, keeps the auth hostname for login/register/logout, and
+  shares only the Secure, HttpOnly session cookie with sibling production
+  hosts. Authentication remains the repository's session-based SvelteKit flow;
+  no separate auth service is invented.
+- The public cinema catalogue remains browseable without an account.
+  Personal data, playback, owner operations, and data APIs require an
+  authenticated owner configured through `OWNER_USER_IDS` or `OWNER_EMAILS`.
 
 The server hook applies HTTPS canonicalization, security headers, narrow API
 CORS, and production cookie policy before route handling. `vercel.json` mirrors
@@ -59,29 +64,39 @@ paths are left untouched.
 
 ## Repository map
 
-| Path                      | Responsibility                                                                                                                      |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `src/routes/(hub)`        | Public vault, projects, setup/status displays, and developer tools. Route groups do not appear in URLs.                             |
-| `src/routes/(cinema)`     | Mixed route group: public session exceptions (`/auth/login`, `/auth/register`) plus cinema pages protected by the centralized hook. |
-| `src/routes/api`          | Session-protected cinema APIs plus the separately authenticated Telegram webhook.                                                   |
-| `src/lib/components`      | Layout, movie/player, and reusable UI components.                                                                                   |
-| `src/lib/server/auth`     | Password/session helpers and centralized route classification.                                                                      |
-| `src/lib/server/policies` | Fail-closed content visibility policy.                                                                                              |
-| `src/lib/server/queries`  | Bounded local read models such as search.                                                                                           |
-| `src/lib/server/services` | Movie, TV, interaction, AI/Telegram, and related application logic.                                                                 |
-| `src/lib/server/db`       | Drizzle schema, connection, seed data, and the misleading legacy `ensureTablesExist` helper.                                        |
-| `drizzle`                 | Generated PostgreSQL migration SQL and metadata.                                                                                    |
-| `worker`                  | TMDB metadata ingestion, ingestion safety checks, and optional search-index setup.                                                  |
-| `tests`                   | Playwright E2E specifications.                                                                                                      |
-| `docs` / `Artifacts.MD`   | Audit and historical discovery; not all claims describe current code.                                                               |
+| Path                      | Responsibility                                                                                           |
+| ------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `src/routes/(hub)`        | Public vault/status plus the owner-only admin and setup surfaces. Route groups do not appear in URLs.    |
+| `src/routes/(cinema)`     | Public catalogue/detail pages, owner-only personal/playback operations, and the session auth portal.     |
+| `src/routes/api`          | Public API metadata/health, owner-gated cinema APIs, plus the separately authenticated Telegram webhook. |
+| `src/lib/components`      | Layout, movie/player, and reusable UI components.                                                        |
+| `src/lib/server/auth`     | Password/session helpers and centralized route classification.                                           |
+| `src/lib/server/policies` | Fail-closed content visibility policy.                                                                   |
+| `src/lib/server/queries`  | Bounded local read models such as search.                                                                |
+| `src/lib/server/services` | Movie, TV, interaction, AI/Telegram, and related application logic.                                      |
+| `src/lib/server/db`       | Drizzle schema, connection, seed data, and the misleading legacy `ensureTablesExist` helper.             |
+| `drizzle`                 | Generated PostgreSQL migration SQL and metadata.                                                         |
+| `worker`                  | TMDB metadata ingestion, ingestion safety checks, and optional search-index setup.                       |
+| `tests`                   | Playwright E2E specifications.                                                                           |
+| `docs` / `Artifacts.MD`   | Audit and historical discovery; not all claims describe current code.                                    |
 
 ## Request, authentication, and privacy flow
 
 `src/hooks.server.ts` sequences Sentry with the application handler. It creates a long-lived anonymous device ID for A/B assignment, validates the `session` cookie, populates `event.locals`, and applies route policy.
 
-`src/lib/server/auth/cinema-access.ts` protects the Movies/TV/discover/personal/search/live/API prefixes. Anonymous protected pages redirect to login; anonymous protected APIs return JSON 401. `/auth/login` and `/auth/register` are explicit public exceptions. `/api/telegram/webhook` is session-exempt because it requires Telegram configuration, a webhook secret, and an allowed chat ID.
+`src/lib/server/auth/cinema-access.ts` keeps catalogue, detail, TV, discovery,
+and search pages public for browsing. Personal data, playback, catalogue
+mutation routes, and non-public APIs are owner-gated. Anonymous protected pages
+redirect to `auth.alandatabase.com`; anonymous protected APIs return JSON 401.
+Authenticated non-owners receive 403. `/auth/login`, `/auth/register`, and the
+public API metadata/liveness routes are explicit public exceptions.
+`/api/telegram/webhook` is session-exempt because it requires Telegram
+configuration, a webhook secret, and an allowed chat ID.
 
-Authenticated cinema pages also pass through a stored `hasAcceptedAdultGate` warning. This is a cinema-wide acknowledgement, not a complete separate adult-content authorization model. Global catalog edit/merge actions additionally require the current user to match `OWNER_USER_IDS` or `OWNER_EMAILS`. After resolution, cinema responses receive private/no-store headers and a CSP with `frame-src 'none'`.
+Owner-only cinema pages also pass through a stored `hasAcceptedAdultGate`
+warning. This is a cinema-wide acknowledgement, not a complete separate
+adult-content authorization model. Owner-only responses receive private/no-store
+headers and a CSP with `frame-src 'none'`.
 
 Passwords use salted scrypt. Session tokens are 32 random bytes stored in PostgreSQL with a 30-day expiry. Authorization remains incomplete: there is no normalized role/invite schema, and env owner configuration is an interim boundary rather than a reusable invite model. Session-cookie `Secure` behavior also depends on the Vercel environment rather than every production host.
 
@@ -95,6 +110,10 @@ Passwords use salted scrypt. Session tokens are 32 random bytes stored in Postgr
 - `/api/search` and `/api/movies/catalog` are bounded local reads.
 - `/api/ai/chat` sends filtered personal taste/review context to Gemini and stores bounded conversation history.
 - `/api/telemetry/stream-play` and `/api/telemetry/events` return HTTP 410 until an approved source pipeline and owner-only redacted telemetry stream exist.
+- `/admin` is an owner-only surface map for the production project hosts; it
+  never displays secret values.
+- `/status` performs a live PostgreSQL liveness probe and reports only safe
+  availability/latency information.
 - The public hub is a separate surface with legacy tools/demo pages.
 
 ## Data model and data flows

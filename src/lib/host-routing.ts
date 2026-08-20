@@ -42,7 +42,7 @@ export function getHostnameRoute(url: URL): string | undefined {
 		return `/api${pathname}`;
 	}
 
-	if (host === AUTH_HOST && pathname === '/') {
+	if (host === AUTH_HOST && (pathname === '/' || pathname === '/auth')) {
 		return '/auth/login';
 	}
 
@@ -55,11 +55,16 @@ export function getHostnameRoute(url: URL): string | undefined {
  */
 export function getCanonicalRedirect(url: URL, forwardedProto?: string | null): URL | null {
 	const host = normalizeHostname(url.hostname);
+	const pathname = url.pathname || '/';
 	const firstForwardedProto = forwardedProto?.split(',')[0]?.trim().toLowerCase();
 	const effectiveProto = firstForwardedProto || url.protocol.replace(':', '').toLowerCase();
 
+	const isAuthPortalPath =
+		pathname === '/' || pathname === '/auth' || pathname.startsWith('/auth/');
 	const shouldUseCanonicalHost =
-		host === WWW_HOST || host === VERCEL_PRODUCTION_HOST || host === AUTH_HOST;
+		host === WWW_HOST ||
+		host === VERCEL_PRODUCTION_HOST ||
+		(host === AUTH_HOST && !isAuthPortalPath);
 	const shouldUseHttps = isProductionHostname(host) && effectiveProto === 'http';
 
 	if (!shouldUseCanonicalHost && !shouldUseHttps) return null;
@@ -70,10 +75,16 @@ export function getCanonicalRedirect(url: URL, forwardedProto?: string | null): 
 
 	if (shouldUseCanonicalHost) {
 		target.hostname = CANONICAL_HOST;
-		if (host === AUTH_HOST && (target.pathname === '/' || target.pathname === '/auth')) {
-			target.pathname = '/auth/login';
-		}
 	}
 
 	return target;
+}
+
+export function getAuthPortalUrl(url: URL, returnTo: string): string {
+	const query = `?returnTo=${encodeURIComponent(returnTo)}`;
+	if (isProductionHostname(url.hostname)) {
+		return `https://${AUTH_HOST}/auth/login${query}`;
+	}
+
+	return `/auth/login${query}`;
 }

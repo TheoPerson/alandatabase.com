@@ -2,17 +2,15 @@ import { sequence } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
 import { dev } from '$app/environment';
 import { validateSessionToken } from '$lib/server/auth';
-import {
-	isCinemaPageRoute,
-	isCinemaRoute,
-	requiresCinemaSession
-} from '$lib/server/auth/cinema-access';
+import { requiresCinemaSession } from '$lib/server/auth/cinema-access';
+import { isOwnerUser } from '$lib/server/auth/owner';
 import { assignAllExperiments } from '$lib/server/ab-testing';
 import { denyFrameSources } from '$lib/server/security/response-policy';
 import { DEV_BYPASS_USER, isDevAuthBypassEnabled } from '$lib/server/auth/dev-access';
 import {
 	API_HOST,
 	CANONICAL_HOST,
+	getAuthPortalUrl,
 	getCanonicalRedirect,
 	getHostnameRoute,
 	isProductionHostname,
@@ -78,6 +76,12 @@ function safeDiagnostic(value: unknown): string {
 		.replace(/(?:token|secret|password|authorization|api[_-]?key)[=:][^\s&]+/gi, '[redacted]')
 		.replace(/[<>"']/g, '')
 		.slice(0, 350);
+}
+
+function authPortalLocation(event: Parameters<Handle>[0]['event'], returnTo: string): string {
+	return !dev && isProductionHostname(normalizeHostname(event.url.hostname))
+		? getAuthPortalUrl(event.url, returnTo)
+		: `/auth/login?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
 export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
@@ -166,18 +170,39 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 			);
 		}
 
-		const returnTo = encodeURIComponent(pathname + event.url.search);
 		return applySecurityHeaders(
 			new Response(null, {
 				status: 302,
-				headers: { location: `/auth/login?returnTo=${returnTo}`, ...PRIVATE_RESPONSE_HEADERS }
+				headers: {
+					location: authPortalLocation(event, pathname + event.url.search),
+					...PRIVATE_RESPONSE_HEADERS
+				}
 			}),
 			event
 		);
 	}
 
+	if (requiresCinemaSession(pathname) && event.locals.user && !isOwnerUser(event.locals.user)) {
+		const isApiRequest = pathname === '/api' || pathname.startsWith('/api/');
+		return applySecurityHeaders(
+			new Response(
+				isApiRequest
+					? JSON.stringify({ error: 'Owner access required' })
+					: 'Owner access required.',
+				{
+					status: 403,
+					headers: {
+						'content-type': isApiRequest ? 'application/json' : 'text/plain; charset=utf-8',
+						...PRIVATE_RESPONSE_HEADERS
+					}
+				}
+			),
+			event
+		);
+	}
+
 	// Adult Content Gate Check
-	if (isCinemaPageRoute(pathname) && event.locals.user && !pathname.startsWith('/disclaimer')) {
+	if (requiresCinemaSession(pathname) && event.locals.user && !pathname.startsWith('/disclaimer')) {
 		const settings = event.locals.user.settings || {};
 		if (!settings.hasAcceptedAdultGate) {
 			return applySecurityHeaders(
@@ -193,7 +218,7 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 	const response = await resolve(event);
 
 	// Ensure private cinema routes are never cached publicly
-	if (isCinemaRoute(pathname)) {
+	if (requiresCinemaSession(pathname)) {
 		for (const [name, value] of Object.entries(PRIVATE_RESPONSE_HEADERS)) {
 			response.headers.set(name, value);
 		}

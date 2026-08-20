@@ -6,6 +6,7 @@ import {
 	STATUS_HOST,
 	VERCEL_PRODUCTION_HOST,
 	WWW_HOST,
+	getAuthPortalUrl,
 	getCanonicalRedirect,
 	getHostnameRoute,
 	normalizeHostname
@@ -48,9 +49,23 @@ describe('hostname routing', () => {
 		expect(getCanonicalRedirect(new URL(`http://${CANONICAL_HOST}/`))?.toString()).toBe(
 			`https://${CANONICAL_HOST}/`
 		);
-		expect(getCanonicalRedirect(new URL(`https://${AUTH_HOST}/`), 'https')?.toString()).toBe(
-			`https://${CANONICAL_HOST}/auth/login`
+		expect(getCanonicalRedirect(new URL(`https://${AUTH_HOST}/`), 'https')).toBeNull();
+		expect(getCanonicalRedirect(new URL(`https://${AUTH_HOST}/auth/login`), 'https')).toBeNull();
+		expect(getCanonicalRedirect(new URL(`https://${AUTH_HOST}/movies`), 'https')?.toString()).toBe(
+			`https://${CANONICAL_HOST}/movies`
+		);
+		expect(getCanonicalRedirect(new URL(`http://${AUTH_HOST}/`), 'http')?.toString()).toBe(
+			`https://${AUTH_HOST}/`
 		);
 		expect(getCanonicalRedirect(new URL(`https://${CANONICAL_HOST}/`), 'https')).toBeNull();
+	});
+
+	it('builds a first-class auth portal URL for production redirects', () => {
+		expect(getAuthPortalUrl(new URL(`https://${CANONICAL_HOST}/`), '/admin')).toBe(
+			`https://${AUTH_HOST}/auth/login?returnTo=%2Fadmin`
+		);
+		expect(getAuthPortalUrl(new URL('http://localhost:5173/'), '/admin')).toBe(
+			'/auth/login?returnTo=%2Fadmin'
+		);
 	});
 });

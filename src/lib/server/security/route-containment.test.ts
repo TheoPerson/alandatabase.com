@@ -42,7 +42,7 @@ describe('route side-effect containment', () => {
 		});
 	}
 
-	it('keeps the public status route free of infrastructure probes', () => {
+	it('keeps the public status route safe while exposing bounded liveness', () => {
 		const serverSource = readFileSync(
 			resolve(sourceRoot, 'routes/(hub)/status/+page.server.ts'),
 			'utf8'
@@ -52,8 +52,10 @@ describe('route side-effect containment', () => {
 			'utf8'
 		);
 
-		expect(serverSource).not.toMatch(/\$lib\/server\/db|drizzle-orm|TMDB_API_KEY/iu);
-		expect(serverSource).not.toMatch(/\bfetch\s*\(|\.execute\s*\(/u);
+		expect(serverSource).toMatch(/\$lib\/server\/db|drizzle-orm|SELECT 1/iu);
+		expect(serverSource).not.toMatch(/\bfetch\s*\(/u);
+		expect(serverSource).toMatch(/\.execute\s*\(/u);
+		expect(serverSource).not.toMatch(/error\.message|stack|connectionString|DATABASE_URL/iu);
 		expect(pageSource).not.toMatch(/EventSource|\/api\/telemetry\/events/u);
 	});
 });

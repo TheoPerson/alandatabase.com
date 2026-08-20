@@ -13,6 +13,12 @@ export const SESSION_COOKIE_OPTIONS = {
 	httpOnly: true,
 	sameSite: 'lax' as const,
 	secure: process.env.NODE_ENV === 'production' && process.env.VERCEL === '1',
+	// The login portal is a first-class subdomain. Share only the hardened
+	// session cookie with the sibling application/API hosts in production.
+	domain:
+		process.env.NODE_ENV === 'production' && process.env.VERCEL === '1'
+			? '.alandatabase.com'
+			: undefined,
 	maxAge: 60 * 60 * 24 * SESSION_EXPIRY_DAYS
 };
 

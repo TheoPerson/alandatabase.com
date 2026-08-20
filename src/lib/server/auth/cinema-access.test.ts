@@ -14,11 +14,20 @@ describe('cinema-access rules', () => {
 		expect(isCinemaRoute('/404')).toBe(false);
 	});
 
-	it('should identify protected cinema routes', () => {
+	it('keeps the public cinema catalogue browseable', () => {
 		expect(isCinemaRoute('/movies')).toBe(true);
 		expect(isCinemaRoute('/movies/123')).toBe(true);
 		expect(isCinemaRoute('/tv')).toBe(true);
 		expect(isCinemaRoute('/search')).toBe(true);
+		expect(requiresCinemaSession('/movies')).toBe(false);
+		expect(requiresCinemaSession('/movies/123')).toBe(false);
+		expect(requiresCinemaSession('/movies/catalog/123')).toBe(false);
+		expect(requiresCinemaSession('/tv')).toBe(false);
+		expect(requiresCinemaSession('/discover')).toBe(false);
+		expect(requiresCinemaSession('/search')).toBe(false);
+	});
+
+	it('protects personal, playback, mutation and data API surfaces', () => {
 		expect(isCinemaRoute('/my/films')).toBe(true);
 		expect(isCinemaRoute('/live')).toBe(true);
 		expect(isCinemaRoute('/api/search')).toBe(true);
@@ -27,6 +36,11 @@ describe('cinema-access rules', () => {
 		expect(requiresCinemaSession('/api/search')).toBe(true);
 		expect(requiresCinemaSession('/api/movies/catalog')).toBe(true);
 		expect(requiresCinemaSession('/live')).toBe(true);
+		expect(requiresCinemaSession('/my/films')).toBe(true);
+		expect(requiresCinemaSession('/movies/custom')).toBe(true);
+		expect(requiresCinemaSession('/movies/catalog/123/edit')).toBe(true);
+		expect(requiresCinemaSession('/movies/catalog/123/merge')).toBe(true);
+		expect(requiresCinemaSession('/movies/catalog/123/review')).toBe(true);
 	});
 
 	it('should exempt only explicitly authenticated service routes from browser sessions', () => {

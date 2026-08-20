@@ -160,8 +160,10 @@
 				<span class="card-title">Postgres Database</span>
 				<span class="card-sub">{telemetry.db.provider}</span>
 				<div class="metric-row">
-					<span class="metric-val">—</span>
-					<span class="metric-lbl">Not measured publicly</span>
+					<span class="metric-val"
+						>{telemetry.db.latencyMs === null ? '—' : telemetry.db.latencyMs + ' ms'}</span
+					>
+					<span class="metric-lbl">Live database probe</span>
 				</div>
 			</div>
 		</div>
@@ -170,7 +172,7 @@
 		<div class="telemetry-card">
 			<div class="card-header">
 				<div class="icon-wrap tmdb"><span class="icon">🎬</span></div>
-				<span class="status-badge" class:online={telemetry.tmdb.status === 'ONLINE'}>
+				<span class="status-badge" class:online={telemetry.tmdb.status === 'CONFIGURED'}>
 					{telemetry.tmdb.status}
 				</span>
 			</div>
@@ -178,8 +180,8 @@
 				<span class="card-title">TMDB Gateway</span>
 				<span class="card-sub">{telemetry.tmdb.endpoint}</span>
 				<div class="metric-row">
-					<span class="metric-val">—</span>
-					<span class="metric-lbl">Not measured publicly</span>
+					<span class="metric-val">SAFE</span>
+					<span class="metric-lbl">Credential state only</span>
 				</div>
 			</div>
 		</div>
@@ -194,8 +196,8 @@
 				<span class="card-title">Application Server</span>
 				<span class="card-sub">Env: {telemetry.nodeEnv}</span>
 				<div class="metric-row">
-					<span class="metric-val">—</span>
-					<span class="metric-lbl">Request timing disabled</span>
+					<span class="metric-val">{telemetry.serverLatencyMs} ms</span>
+					<span class="metric-lbl">Server response path</span>
 				</div>
 			</div>
 		</div>

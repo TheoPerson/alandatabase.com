@@ -1,6 +1,17 @@
 import type { PageServerLoad } from './$types';
+import { error, redirect } from '@sveltejs/kit';
+import { getAuthPortalUrl } from '$lib/host-routing';
+import { isOwnerUser } from '$lib/server/auth/owner';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async ({ locals, url }) => {
+	if (!locals.user) {
+		throw redirect(302, getAuthPortalUrl(url, '/setup'));
+	}
+
+	if (!isOwnerUser(locals.user)) {
+		throw error(403, 'Owner access required.');
+	}
+
 	return {
 		envVariables: [
 			{
