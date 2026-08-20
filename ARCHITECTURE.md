@@ -42,8 +42,10 @@ creating parallel applications:
   SvelteKit flow; no separate auth service is invented.
 
 The server hook applies HTTPS canonicalization, security headers, narrow API
-CORS, and production cookie policy before route handling. Static assets,
-`_app` files, query strings, and existing API paths are left untouched.
+CORS, and production cookie policy before route handling. `vercel.json` mirrors
+the non-sensitive security headers at the Vercel edge so static assets receive
+the same baseline. Static assets, `_app` files, query strings, and existing API
+paths are left untouched.
 
 ## Stack
 
