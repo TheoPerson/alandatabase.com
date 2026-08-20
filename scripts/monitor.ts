@@ -15,9 +15,14 @@ async function startMonitor() {
 	// First try connecting to local
 	try {
 		console.log('\x1b[90m%s\x1b[0m', '📡 Probing local dev server (http://localhost:5173)...');
-		const localCheck = await fetch(localUrl, { signal: AbortSignal.timeout(1200) }).catch(() => null);
+		const localCheck = await fetch(localUrl, { signal: AbortSignal.timeout(1200) }).catch(
+			() => null
+		);
 		if (!localCheck || !localCheck.ok) {
-			console.log('\x1b[33m%s\x1b[0m', 'ℹ️ Local dev server offline. Switching to LIVE PRODUCTION (alandatabase.com)...');
+			console.log(
+				'\x1b[33m%s\x1b[0m',
+				'ℹ️ Local dev server offline. Switching to LIVE PRODUCTION (alandatabase.com)...'
+			);
 			targetUrl = prodUrl;
 			label = 'LIVE PROD (alandatabase.com)';
 		}
@@ -36,7 +41,10 @@ async function startMonitor() {
 			return;
 		}
 
-		console.log('\x1b[32m%s\x1b[0m', `✅ Connected to [${label}]! Listening to real-time events:\n`);
+		console.log(
+			'\x1b[32m%s\x1b[0m',
+			`✅ Connected to [${label}]! Listening to real-time events:\n`
+		);
 
 		const reader = res.body.getReader();
 		const decoder = new TextDecoder();
@@ -69,7 +77,9 @@ async function startMonitor() {
 						console.log(
 							`\x1b[90m[${time}]\x1b[0m ${color}[${event.level}]\x1b[0m \x1b[1m[${event.source}]\x1b[0m ${event.message}`
 						);
-					} catch (e) {}
+					} catch {
+						// Ignore malformed telemetry events and keep monitoring.
+					}
 				}
 			}
 		}
