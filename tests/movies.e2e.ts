@@ -16,6 +16,6 @@ test.describe('Public cinema and API integration', () => {
 	test('public search preserves its query and renders a bounded result state', async ({ page }) => {
 		await page.goto('/search?q=Inception');
 		await expect(page.getByRole('heading', { name: /Results for/i })).toContainText('Inception');
-		await expect(page.locator('input[type="search"]')).toHaveValue('Inception');
+		await expect(page.getByPlaceholder(/Type a movie title/)).toHaveValue('Inception');
 	});
 });

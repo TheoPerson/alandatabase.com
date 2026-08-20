@@ -4,6 +4,7 @@ const externalBaseUrl = process.env.PLAYWRIGHT_BASE_URL?.trim();
 const baseURL = externalBaseUrl || 'http://127.0.0.1:4173';
 
 export default defineConfig({
+	testDir: './tests',
 	testMatch: '**/*.{e2e,spec}.{ts,js}',
 	use: {
 		baseURL,
