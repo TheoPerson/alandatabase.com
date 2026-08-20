@@ -19,7 +19,8 @@ export default defineConfig({
 	plugins: [
 		sentrySvelteKit({
 			org: 'alandatabase',
-			project: 'javascript-sveltekit'
+			project: 'javascript-sveltekit',
+			telemetry: false
 		}),
 		tailwindcss(),
 		sveltekit()
