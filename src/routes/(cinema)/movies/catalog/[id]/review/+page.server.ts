@@ -3,6 +3,7 @@ import { getMovieById } from '$lib/server/services/movie.service';
 import { db } from '$lib/server/db';
 import { userReviews } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { logServerError } from '$lib/server/security/logging';
 
 export async function load({ params, locals }) {
 	if (!locals.user) {
@@ -68,7 +69,7 @@ export const actions = {
 
 			return { success: true };
 		} catch (err) {
-			console.error('Failed to save review:', err);
+			logServerError('Review save failed', err);
 			return fail(500, { error: 'Failed to save review' });
 		}
 	}

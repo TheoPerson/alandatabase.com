@@ -1,5 +1,6 @@
 import { getTrendingMovies, getTopRatedMovies } from '$lib/server/services/movie.service';
 import { toggleWatchlist } from '$lib/server/services/interaction.service';
+import { logServerError } from '$lib/server/security/logging';
 
 export async function load() {
 	try {
@@ -18,13 +19,13 @@ export async function load() {
 			trending,
 			topRated
 		};
-	} catch (err: any) {
-		console.error('LOAD ERROR:', err);
+	} catch (err: unknown) {
+		logServerError('Movie catalogue load failed', err);
 		return {
 			top10: [],
 			trending: [],
 			topRated: [],
-			error: err?.message || String(err)
+			error: 'The catalogue is temporarily unavailable.'
 		};
 	}
 }

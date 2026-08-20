@@ -1,6 +1,7 @@
 import { error, isHttpError } from '@sveltejs/kit';
 import { getMovieById } from '$lib/server/services/movie.service';
 import type { PageServerLoad } from './$types';
+import { logServerError } from '$lib/server/security/logging';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const movieId = params.id;
@@ -18,7 +19,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		};
 	} catch (e: unknown) {
 		if (isHttpError(e)) throw e;
-		console.error('Error fetching movie details:', e);
+		logServerError('Movie details load failed', e);
 		throw error(500, 'Failed to load movie details');
 	}
 };

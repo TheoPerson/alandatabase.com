@@ -1,11 +1,12 @@
 import { sequence } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
 import { dev } from '$app/environment';
-import { validateSessionToken } from '$lib/server/auth';
-import { requiresCinemaSession } from '$lib/server/auth/cinema-access';
+import { SESSION_COOKIE_DELETE_OPTIONS, validateSessionToken } from '$lib/server/auth';
+import { isCinemaPageRoute, requiresCinemaSession } from '$lib/server/auth/cinema-access';
 import { isOwnerUser } from '$lib/server/auth/owner';
 import { assignAllExperiments } from '$lib/server/ab-testing';
 import { denyFrameSources } from '$lib/server/security/response-policy';
+import { safeDiagnostic } from '$lib/server/security/logging';
 import { DEV_BYPASS_USER, isDevAuthBypassEnabled } from '$lib/server/auth/dev-access';
 import {
 	API_HOST,
@@ -68,14 +69,6 @@ function applySecurityHeaders(response: Response, event: Parameters<Handle>[0]['
 	}
 
 	return response;
-}
-
-function safeDiagnostic(value: unknown): string {
-	return String(value)
-		.replace(/(?:postgres(?:ql)?|https?):\/\/[^\s]+/gi, '[redacted-url]')
-		.replace(/(?:token|secret|password|authorization|api[_-]?key)[=:][^\s&]+/gi, '[redacted]')
-		.replace(/[<>"']/g, '')
-		.slice(0, 350);
 }
 
 function authPortalLocation(event: Parameters<Handle>[0]['event'], returnTo: string): string {
@@ -148,7 +141,7 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 				settings: (user.settings as Record<string, any>) || {}
 			};
 		} else {
-			event.cookies.delete('session', { path: '/' });
+			event.cookies.delete('session', SESSION_COOKIE_DELETE_OPTIONS);
 		}
 	}
 
@@ -202,7 +195,12 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 	}
 
 	// Adult Content Gate Check
-	if (requiresCinemaSession(pathname) && event.locals.user && !pathname.startsWith('/disclaimer')) {
+	if (
+		requiresCinemaSession(pathname) &&
+		isCinemaPageRoute(pathname) &&
+		event.locals.user &&
+		!pathname.startsWith('/disclaimer')
+	) {
 		const settings = event.locals.user.settings || {};
 		if (!settings.hasAcceptedAdultGate) {
 			return applySecurityHeaders(

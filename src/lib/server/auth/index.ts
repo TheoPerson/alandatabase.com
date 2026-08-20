@@ -7,19 +7,25 @@ import { eq } from 'drizzle-orm';
 const scryptAsync = promisify(scrypt);
 
 const SESSION_EXPIRY_DAYS = 30;
+const IS_VERCEL_RUNTIME = process.env.VERCEL === '1';
+const IS_VERCEL_PRODUCTION = IS_VERCEL_RUNTIME && process.env.VERCEL_ENV === 'production';
 
 export const SESSION_COOKIE_OPTIONS = {
 	path: '/',
 	httpOnly: true,
 	sameSite: 'lax' as const,
-	secure: process.env.NODE_ENV === 'production' && process.env.VERCEL === '1',
+	secure: process.env.NODE_ENV === 'production' || IS_VERCEL_RUNTIME,
 	// The login portal is a first-class subdomain. Share only the hardened
-	// session cookie with the sibling application/API hosts in production.
-	domain:
-		process.env.NODE_ENV === 'production' && process.env.VERCEL === '1'
-			? '.alandatabase.com'
-			: undefined,
+	// session cookie with sibling application/API hosts in Vercel Production.
+	// Preview deployments must retain a host-only cookie because their
+	// `*.vercel.app` hostname cannot set a cookie for alandatabase.com.
+	domain: IS_VERCEL_PRODUCTION ? '.alandatabase.com' : undefined,
 	maxAge: 60 * 60 * 24 * SESSION_EXPIRY_DAYS
+};
+
+export const SESSION_COOKIE_DELETE_OPTIONS = {
+	path: SESSION_COOKIE_OPTIONS.path,
+	domain: SESSION_COOKIE_OPTIONS.domain
 };
 
 // Password Hashing with Scrypt (Salt + Hash)

@@ -11,6 +11,7 @@ import { eq, and } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import { standardMovieVisibilityWhere } from '$lib/server/policies/movie-visibility';
 import { logActivity } from '$lib/server/services/interaction.service';
+import { logServerError } from '$lib/server/security/logging';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -160,7 +161,7 @@ export const actions = {
 
 			return { success: true };
 		} catch (err) {
-			console.error('Interaction error:', err);
+			logServerError('Movie interaction update failed', err);
 			return fail(500, { error: 'Failed to update interaction.' });
 		}
 	},
@@ -218,7 +219,7 @@ export const actions = {
 
 			return { success: true };
 		} catch (err) {
-			console.error('Toggle list error:', err);
+			logServerError('Movie list update failed', err);
 			return fail(500, { error: 'Failed to update list.' });
 		}
 	}

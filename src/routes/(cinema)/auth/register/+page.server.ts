@@ -11,6 +11,7 @@ import {
 import { validateReturnTo } from '$lib/server/auth/cinema-access';
 import { eq, or } from 'drizzle-orm';
 import { notifyUserRegistered } from '$lib/server/services/telegram.service';
+import { logServerError } from '$lib/server/security/logging';
 
 export async function load({ locals, url }) {
 	const returnTo = url.searchParams.get('returnTo');
@@ -74,7 +75,7 @@ export const actions = {
 			// Trigger Telegram notification
 			notifyUserRegistered(newUser.username, newUser.email).catch(() => {});
 		} catch (err) {
-			console.error('Registration failed:', err);
+			logServerError('Registration failed', err);
 			return fail(500, { error: 'Server error during registration.' });
 		}
 

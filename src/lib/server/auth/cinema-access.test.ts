@@ -28,6 +28,8 @@ describe('cinema-access rules', () => {
 	});
 
 	it('protects personal, playback, mutation and data API surfaces', () => {
+		expect(requiresCinemaSession('/admin')).toBe(true);
+		expect(requiresCinemaSession('/setup')).toBe(true);
 		expect(isCinemaRoute('/my/films')).toBe(true);
 		expect(isCinemaRoute('/live')).toBe(true);
 		expect(isCinemaRoute('/api/search')).toBe(true);
@@ -62,6 +64,8 @@ describe('cinema-access rules', () => {
 		expect(validateReturnTo('/auth/login')).toBe('/movies'); // Shouldn't redirect to login
 		expect(validateReturnTo('/api/search')).toBe('/movies');
 		expect(validateReturnTo('/live')).toBe('/live');
+		expect(validateReturnTo('/admin')).toBe('/admin');
+		expect(validateReturnTo('/setup?step=hosting')).toBe('/setup?step=hosting');
 		expect(validateReturnTo('https://evil.com/movies')).toBe('/movies'); // No absolute URLs allowed
 	});
 });

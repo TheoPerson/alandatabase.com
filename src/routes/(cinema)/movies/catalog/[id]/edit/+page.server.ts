@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import { movies } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import { requireOwnerUser } from '$lib/server/auth/owner';
+import { logServerError } from '$lib/server/security/logging';
 
 export async function load({ params, locals }) {
 	// Only authenticated users can edit
@@ -93,7 +94,7 @@ export const actions = {
 				})
 				.where(eq(movies.id, visibleMovie.id));
 		} catch (err) {
-			console.error('Failed to update overrides:', err);
+			logServerError('Metadata override update failed', err);
 			return fail(500, { error: 'Failed to update metadata overrides' });
 		}
 

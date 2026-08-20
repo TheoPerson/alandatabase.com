@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import { movies, userMovieInteractions, userListItems, userReviews } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { requireOwnerUser } from '$lib/server/auth/owner';
+import { logServerError } from '$lib/server/security/logging';
 
 export async function load({ params, locals }) {
 	if (!locals.user) {
@@ -162,7 +163,7 @@ export const actions = {
 
 			return { success: true, newId: targetMovieId };
 		} catch (err) {
-			console.error('Merge failed:', err);
+			logServerError('Movie merge failed', err);
 			return fail(500, { error: 'Failed to merge movies' });
 		}
 	}

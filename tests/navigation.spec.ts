@@ -1,16 +1,15 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Navigation and Search Flow', () => {
-	test('homepage loads and displays trending movies', async ({ page }) => {
+	test('public landing page exposes the primary cinema journey', async ({ page }) => {
 		await page.goto('/');
+		await expect(page.getByRole('heading', { level: 1 })).toContainText('A quieter way');
+		await expect(page.getByRole('link', { name: /Enter Cinema/i })).toBeVisible();
+	});
 
-		// The hero section or trending section should exist
-		await expect(page.locator('.hero-content')).toBeVisible();
-
-		// Verify that at least one movie card is rendered in the trending grid
-		const movieCards = page.locator('.movie-grid .movie-card');
-		// We can't guarantee TMDB API is seeded in CI, but the grid container should exist
-		await expect(page.locator('.movie-grid').first()).toBeVisible();
+	test('movie catalogue shell stays visible even when the database is empty', async ({ page }) => {
+		await page.goto('/movies');
+		await expect(page.getByRole('heading', { name: 'TOP 10 Today' })).toBeVisible();
 	});
 
 	test('search page allows searching', async ({ page }) => {
@@ -19,11 +18,7 @@ test.describe('Navigation and Search Flow', () => {
 		const searchInput = page.locator('input[type="search"]');
 		await expect(searchInput).toBeVisible();
 
-		// Type a search query
 		await searchInput.fill('inception');
-
-		// Note: we don't necessarily await API responses in this basic test unless we mock TMDB/Meilisearch
-		// but we can verify the search input updates correctly.
 		await expect(searchInput).toHaveValue('inception');
 	});
 });

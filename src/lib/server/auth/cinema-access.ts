@@ -22,7 +22,16 @@ export const SESSION_EXEMPT_ROUTES = ['/api/telegram/webhook'];
 // data-changing and catalog endpoints remain session-protected.
 export const PUBLIC_API_ROUTES = ['/api', '/api/health'];
 
-const OWNER_ONLY_ROUTES = ['/my', '/live', '/disclaimer', '/movies/custom'];
+export const OWNER_ONLY_ROUTES = [
+	'/admin',
+	'/setup',
+	'/my',
+	'/live',
+	'/disclaimer',
+	'/movies/custom'
+];
+
+const OWNER_PORTAL_RETURN_ROUTES = ['/admin', '/setup'];
 
 function matchesRoute(pathname: string, route: string): boolean {
 	return pathname === route || pathname.startsWith(`${route}/`);
@@ -41,6 +50,7 @@ export function isCinemaRoute(pathname: string): boolean {
 }
 
 export function requiresCinemaSession(pathname: string): boolean {
+	if (OWNER_ONLY_ROUTES.some((route) => matchesRoute(pathname, route))) return true;
 	if (!isCinemaRoute(pathname)) return false;
 	if (SESSION_EXEMPT_ROUTES.includes(pathname)) return false;
 	if (PUBLIC_API_ROUTES.includes(pathname)) return false;
@@ -48,7 +58,6 @@ export function requiresCinemaSession(pathname: string): boolean {
 	// Public catalogue, movie detail, TV, discovery and search pages remain
 	// browseable. Personal data, playback and catalogue mutation surfaces do
 	// not. The latter are owner-gated again in their server actions/loaders.
-	if (OWNER_ONLY_ROUTES.some((route) => matchesRoute(pathname, route))) return true;
 	if (/^\/movies\/catalog\/[^/]+\/(edit|merge|review)(?:\/|$)/.test(pathname)) return true;
 	if (pathname === '/api' || pathname.startsWith('/api/')) return true;
 
@@ -68,6 +77,9 @@ export function validateReturnTo(url: string | null): string {
 		if (parsed.hostname !== 'localhost') return '/movies';
 
 		const path = parsed.pathname;
+		if (OWNER_PORTAL_RETURN_ROUTES.some((route) => matchesRoute(path, route))) {
+			return path + parsed.search;
+		}
 		if (isCinemaPageRoute(path) && !PUBLIC_ROUTES.some((route) => matchesRoute(path, route))) {
 			return path + parsed.search;
 		}

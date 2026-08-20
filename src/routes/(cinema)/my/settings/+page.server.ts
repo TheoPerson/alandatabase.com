@@ -2,6 +2,7 @@ import { db } from '$lib/server/db/index.js';
 import { users } from '$lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
 import { redirect, fail } from '@sveltejs/kit';
+import { logServerError } from '$lib/server/security/logging';
 
 export async function load({ locals }) {
 	if (!locals.user) {
@@ -36,7 +37,7 @@ export const actions = {
 				
 			return { success: true };
 		} catch (err) {
-			console.error('Failed to update settings:', err);
+			logServerError('Settings update failed', err);
 			return fail(500, { error: 'Failed to save settings' });
 		}
 	}

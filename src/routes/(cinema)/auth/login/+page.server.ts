@@ -8,6 +8,7 @@ import {
 	SESSION_COOKIE_OPTIONS
 } from '$lib/server/auth';
 import { validateReturnTo } from '$lib/server/auth/cinema-access';
+import { logServerError } from '$lib/server/security/logging';
 import { eq, or } from 'drizzle-orm';
 
 export async function load({ locals, url }) {
@@ -50,7 +51,7 @@ export const actions = {
 
 			cookies.set('session', sessionToken, SESSION_COOKIE_OPTIONS);
 		} catch (err) {
-			console.error('Production Auth Error:', err);
+			logServerError('Authentication failed', err);
 			return fail(500, { error: 'An unexpected authentication error occurred.' });
 		}
 
