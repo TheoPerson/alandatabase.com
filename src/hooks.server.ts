@@ -79,7 +79,7 @@ function safeDiagnostic(value: unknown): string {
 }
 
 function authPortalLocation(event: Parameters<Handle>[0]['event'], returnTo: string): string {
-	return !dev && isProductionHostname(normalizeHostname(event.url.hostname))
+	return isProductionHostname(normalizeHostname(event.url.hostname))
 		? getAuthPortalUrl(event.url, returnTo)
 		: `/auth/login?returnTo=${encodeURIComponent(returnTo)}`;
 }
