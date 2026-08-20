@@ -14,6 +14,7 @@ import {
 	API_HOST,
 	CANONICAL_HOST,
 	getCanonicalRedirect,
+	getHostnameRoute,
 	isProductionHostname,
 	normalizeHostname
 } from '$lib/host-routing';
@@ -148,7 +149,11 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 	}
 
 	// Centralized Auth Guard
-	const pathname = event.url.pathname;
+	// `reroute` changes the route selected by SvelteKit, while the request URL
+	// remains the browser-facing hostname/path. Use the mapped path for policy
+	// decisions so API subdomain requests receive API responses, not HTML login
+	// redirects.
+	const pathname = getHostnameRoute(event.url) ?? event.url.pathname;
 
 	if (requiresCinemaSession(pathname) && !event.locals.user) {
 		if (pathname.startsWith('/api/')) {
