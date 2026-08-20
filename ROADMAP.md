@@ -1,6 +1,7 @@
 # Movies / TV V3 Roadmap
 
-Verified against `agent/v3-foundation-core` at `11cb3a7` plus current working-tree landing refresh edits on 2026-08-19. States use the canonical vocabulary in `AGENTS.md`.
+Verified against `agent/v3-foundation-core` on 2026-08-21. States use the
+canonical vocabulary in `AGENTS.md`.
 
 Nothing below is `merged` to `main` or `deployed` unless explicitly labeled. The Product/Project Lead approves scope and phase transitions.
 
@@ -16,9 +17,9 @@ Nothing below is `merged` to `main` or `deployed` unless explicitly labeled. The
 - API catalog routes remain session-protected and reject an untrusted CORS
   origin. Static assets receive the same baseline security headers as dynamic
   responses.
-- Evidence: production deployment `dpl_HubH22zQ2n9pcvGYZpeErtDP5Uen`, Vercel
-  build completed, browser smoke checks passed for apex/www/status/api/auth,
-  and HTTP-to-HTTPS checks passed for all production hosts.
+- Release evidence is recorded by `pnpm test:production`, Playwright, Vercel's
+  completed production build, and direct checks for apex/www/status/api/auth,
+  HTTPS canonicalization, CORS, and private route containment.
 
 ## `verified` — V3 foundation outcomes
 
@@ -59,7 +60,11 @@ Evidence at `9e724ce`: `pnpm check` passed with 0 diagnostics; app unit tests pa
 - Disabled `/api/telemetry/events` with HTTP 410 until an owner-only redacted event stream is designed.
 - Hardened the worker CLI so unsupported commands and invalid `ingest-id` arguments exit before database setup or network work.
 
-Evidence in the current working tree: focused app tests passed 11/11; full app unit tests passed 96/96; `pnpm check` passed with 0 diagnostics; worker safety tests passed 11/11. Full repo lint still has unrelated formatting debt, and local build remains blocked by the apostrophe-containing Windows workspace path/tooling issue.
+Current evidence: full app unit tests pass 109/109; `pnpm check` passes with 0
+diagnostics; worker safety tests pass 11/11; repository lint has no errors. The
+legacy apostrophe-containing Windows path still triggers a Vite/Rolldown parser
+defect, so production-package proof also uses a neutral-path clean checkout and
+Vercel.
 
 ### P0.5 — public entry experience
 
@@ -67,6 +72,18 @@ Evidence in the current working tree: focused app tests passed 11/11; full app u
 - Added explicit project discipline signals for product, frontend, backend, responsive UX, SEO/hosting, security, and QA.
 - Added page-level title, description, and social metadata for the public entry route.
 - Live smoke check: `/` returned `200` with the new hero and discipline sections; `pnpm check` passed with 0 diagnostics.
+
+### P0.6 — production access, telemetry, and release checks
+
+- Kept safe catalogue browse public while owner-gating personal data,
+  playback, setup, administration, and non-public APIs.
+- Added first-class hostname routing for the canonical, status, API, and auth
+  surfaces without duplicating the SvelteKit application.
+- Corrected owner return paths, production/preview cookie scope, private cache
+  policy, safe server diagnostics, and Sentry data minimization.
+- Replaced stale/destructive Playwright flows and added non-destructive
+  production host/CORS/header smoke verification.
+- Established a repository-wide Prettier baseline and removed lint errors.
 
 ## `in_review` — agentic operating context
 
@@ -94,9 +111,9 @@ Implementation may proceed autonomously only within the approved item and accept
    - Add roles/invites and content classification/provenance only through reviewed, rollback-safe schema changes.
 
 4. **Trustworthy quality baseline**
-   - Repair formatting/lint debt without mixing it into features.
-   - Replace stale Playwright assumptions with authenticated fixtures and current routes.
-   - Add V3 CI, required service provisioning, mobile/keyboard/accessibility coverage, and a supported production-package path.
+   - Add V3 CI triggers and required service provisioning.
+   - Add authenticated-owner Playwright fixtures without committing credentials.
+   - Expand mobile, keyboard, accessibility, and clean-checkout release coverage.
 
 ## `proposed` — P1 usable private cinema loop
 

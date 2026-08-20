@@ -1,6 +1,7 @@
 # Architecture
 
-Verified against `agent/v3-foundation-core` at `9e724ce` plus current working-tree P0 hardening edits on 2026-08-19. Provisional or incomplete areas are explicit below.
+Verified against `agent/v3-foundation-core` on 2026-08-21. Provisional or
+incomplete areas are explicit below.
 
 ## System shape
 
@@ -98,7 +99,13 @@ warning. This is a cinema-wide acknowledgement, not a complete separate
 adult-content authorization model. Owner-only responses receive private/no-store
 headers and a CSP with `frame-src 'none'`.
 
-Passwords use salted scrypt. Session tokens are 32 random bytes stored in PostgreSQL with a 30-day expiry. Authorization remains incomplete: there is no normalized role/invite schema, and env owner configuration is an interim boundary rather than a reusable invite model. Session-cookie `Secure` behavior also depends on the Vercel environment rather than every production host.
+Passwords use salted scrypt. Session tokens are 32 random bytes stored in
+PostgreSQL with a 30-day expiry. Production cookies are Secure, HttpOnly,
+SameSite=Lax, and scoped to `.alandatabase.com` so the auth portal can establish
+a session for sibling hosts. Preview cookies remain host-only because a preview
+hostname cannot set the production apex domain. Authorization remains
+incomplete: there is no normalized role/invite schema, and env owner
+configuration is an interim boundary rather than a reusable invite model.
 
 ## Application surfaces
 
@@ -141,10 +148,16 @@ Other optional integrations:
 
 - Gemini: authenticated chat/recommendations; personal ratings, favorites, and review text can leave the system.
 - Telegram: notifications plus a fail-closed, allowlisted, local-search-only webhook.
-- Sentry: browser/server error and trace instrumentation.
+- Sentry: browser/server error and trace instrumentation with request payload,
+  cookies, headers, query strings, DB values, and AI inputs/outputs disabled or
+  scrubbed before transmission. Build-plugin telemetry is disabled.
 - Meilisearch: optional worker setup; application reads currently use PostgreSQL.
 
-Server configuration is environment-driven. `.env.example` documents core database, owner identification, TMDB, Meilisearch, Gemini, and webhook values. Code also recognizes `POSTGRES_URL`, `PREVIEW_DATABASE_URL`, `ALLOW_OWNER_SETUP`, Sentry/Vercel variables, and additional Telegram routing variables not fully catalogued there.
+Server configuration is environment-driven. `.env.example` documents the
+non-sensitive shape of database, owner identification, TMDB, Meilisearch,
+Gemini, Sentry, and Telegram configuration, including `POSTGRES_URL`,
+`PREVIEW_DATABASE_URL`, and `ALLOW_OWNER_SETUP`. Vercel supplies `VERCEL`,
+`VERCEL_ENV`, and `NODE_ENV`; no secret uses a client-visible `PUBLIC_` prefix.
 
 ## UI conventions
 
@@ -160,9 +173,17 @@ Root commands:
 - `pnpm test:unit -- --run` — Vitest tests under `src`.
 - `pnpm --dir worker test` — ingestion safety tests.
 - `pnpm lint` — repository-wide Prettier then ESLint.
-- `pnpm test:e2e` — Playwright; its config currently invokes `npm run build && npm run preview` internally.
+- `pnpm test:e2e` — Playwright against a local production preview, or against
+  `PLAYWRIGHT_BASE_URL` when verifying an external deployment.
+- `pnpm test:production` — production hostname, routing, CORS, and header smoke
+  checks.
 - `pnpm build` — Vite/SvelteKit production build using the Vercel adapter.
 
-Current verification evidence belongs in `ROADMAP.md` or a task handoff rather than this architectural reference. Repository-wide formatting/lint debt and stale Playwright assumptions remain. Local packaging is also affected by the Windows apostrophe-containing workspace path and Vercel symlink permissions, so it is not yet a clean release signal.
+Current verification evidence belongs in `ROADMAP.md` or a task handoff rather
+than this architectural reference. The repository-wide Prettier baseline and
+current public/owner Playwright assumptions are maintained by the quality
+commands above. A Vite/Rolldown parser defect still affects builds from the
+legacy Windows directory whose name contains an apostrophe; build validation is
+therefore also run from a neutral-path clean checkout and by Vercel.
 
 GitHub Actions runs lint, check, unit/E2E, and build for `main` pushes and PRs to `main`, using Node 20 and pnpm 9. It does not target the V3 branch or provision PostgreSQL/Meilisearch test services. `netlify.toml` remains committed with Node 22 and a `build` publish directory, but Netlify is not the active SvelteKit adapter. Deployment configuration is evolving and must not be inferred from that file alone.

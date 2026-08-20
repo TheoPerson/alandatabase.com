@@ -1,20 +1,30 @@
 # Alan's Data Base
 
-Alan's Data Base is a SvelteKit application for a private, owner-first cinema workspace: discovering, launching approved playback, resuming, and organising personal films and series.
+Alan's Data Base is a SvelteKit application with a public, read-only Movies/TV
+catalogue and an owner-first personal cinema workspace.
 
-The GitHub repository is public, but the cinema product is not a public catalogue or social streaming service. Cinema routes and APIs are intended to remain authenticated and private, with optional sharing to a small group of trusted people later. The public hub and operational pages are separate from the private cinema surface.
+The GitHub repository and safe catalogue are public. Personal lists, settings,
+playback, catalogue mutation, setup, and administration remain server-enforced
+owner-only surfaces. The application is not a public streaming directory and
+does not embed unapproved media sources.
 
 ## Current status
 
-V3 is being developed on `agent/v3-foundation-core` through [PR #2](https://github.com/TheoPerson/alandatabase.com/pull/2). `main` remains the protected production baseline until the V3 work is reviewed and explicitly integrated.
+V3 is being developed on `agent/v3-foundation-core` in the canonical public
+repository, [TheoPerson/alandatabase.com](https://github.com/TheoPerson/alandatabase.com).
+`main` remains protected until V3 is explicitly reviewed and integrated.
 
-This branch is a foundation, not a production-ready release. Authentication, authorization, adult-content isolation, database migration reconciliation, approved playback sources, resume/progress tracking, and the production-quality baseline still have outstanding work.
+The production host integration, access boundaries, and release checks are in
+place. The product remains an evolving V3: normalized owner/invite roles,
+database migration reconciliation, approved playback sources, TV persistence,
+and resume/progress tracking still require product work.
 
 The latest recorded audit is available in [V3 Foundation Report](docs/V3_FOUNDATION_REPORT.md). It contains the verified architecture, route/data maps, security findings, validation evidence, operational constraints, and prioritised roadmap. Do not infer that the application is production-ready from a successful preview deployment alone.
 
 ## Product boundaries
 
-- Private, authenticated Movies/TV experience for the owner first.
+- Public, side-effect-free browse/search/detail for the safe catalogue.
+- Owner-only personal data, playback, setup, administration, and non-public APIs.
 - Adult or explicit content is quarantined behind explicit intent and must stay out of normal browse, search, recommendations, artwork, SEO, previews, caches, and prefetches.
 - Browse, search, catalogue, and detail reads should remain bounded and side-effect free.
 - Global catalogue mutations require owner authorisation.
@@ -27,9 +37,10 @@ Canonical cinema surfaces include:
 
 - `/movies` and `/movies/[id]`
 - `/tv` and `/tv/[id]`
-- `/discover`, `/search`, and `/my/*`
+- public `/discover` and `/search`; owner-only `/my/*`
 - `/auth/login`, `/auth/register`, and `/disclaimer`
-- Protected local-read APIs such as `/api/search` and `/api/movies/catalog`
+- public `/api` metadata and `/api/health`; owner-only local data APIs such as
+  `/api/search` and `/api/movies/catalog`
 
 Legacy aliases and redirects may remain for compatibility while the route tree is consolidated. The current implementation does not yet provide a complete TV episode/progress model or a dependable cross-device resume loop.
 
@@ -41,21 +52,26 @@ The configured deployment uses one SvelteKit application with hostname routing:
 - `www.alandatabase.com` and `alans-database.vercel.app` — canonical redirects.
 - `status.alandatabase.com` — public status surface.
 - `api.alandatabase.com` — API hostname mapped to the existing `/api` routes.
+- `auth.alandatabase.com` — first-class login/logout portal using the existing
+  SvelteKit session flow.
 
-Hosted environment variables, database state, migrations, and external integrations must be verified separately before any production change.
+Vercel Development, Preview, and Production variables are separate. Copy only
+the non-sensitive names from `.env.example`; never commit hosted values. Owner
+access fails closed until `OWNER_USER_IDS` or `OWNER_EMAILS` identifies the
+existing owner account.
 
 ## Stack
 
-| Category | Technology |
-| --- | --- |
-| Framework | SvelteKit 2, Svelte 5 runes, TypeScript, Vite 8 |
-| UI | Tailwind CSS 4, project CSS tokens, Bits UI/shadcn-style primitives |
-| Database | PostgreSQL with Neon-compatible deployments |
-| ORM | Drizzle ORM with `postgres` |
-| Testing | Vitest and Playwright |
-| Observability | Sentry; optional Telegram operational notifications |
-| Integrations | Optional TMDB, Meilisearch, Gemini, and PGlite/local development support |
-| Deployment | Vercel adapter; pnpm package manager |
+| Category      | Technology                                                               |
+| ------------- | ------------------------------------------------------------------------ |
+| Framework     | SvelteKit 2, Svelte 5 runes, TypeScript, Vite 8                          |
+| UI            | Tailwind CSS 4, project CSS tokens, Bits UI/shadcn-style primitives      |
+| Database      | PostgreSQL with Neon-compatible deployments                              |
+| ORM           | Drizzle ORM with `postgres`                                              |
+| Testing       | Vitest and Playwright                                                    |
+| Observability | Sentry; optional Telegram operational notifications                      |
+| Integrations  | Optional TMDB, Meilisearch, Gemini, and PGlite/local development support |
+| Deployment    | Vercel adapter; pnpm package manager                                     |
 
 ## Local setup
 
@@ -82,14 +98,14 @@ pnpm test:e2e
 pnpm build
 ```
 
-The latest recorded audit (2026-08-19) found:
+Current branch evidence (2026-08-21):
 
-- Unit suite: passed — 5 files, 12 tests.
-- `pnpm check`: failed on database connection-string typing and `/live` warnings.
-- Formatting/lint: failed with existing formatting and ESLint issues.
-- `pnpm build`: failed during the audited environment.
-- E2E: not run because the preview server depends on the failing build.
-- The documentation commit currently has a pending Vercel preview check; an earlier V3 head reported a successful preview status. Neither result is equivalent to full QA or production readiness.
+- Unit suite: 25 files and 109 tests pass.
+- Worker safety suite: 11 tests pass.
+- `pnpm check`: 0 errors and 0 warnings.
+- `pnpm lint`: passes with no errors; advisory warnings remain tracked.
+- Production build, Playwright, and live hostname evidence are required for each
+  release and reported with the deployment rather than inferred from a preview.
 
 ## Development rules
 
