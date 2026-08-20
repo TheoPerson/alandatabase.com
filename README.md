@@ -89,7 +89,7 @@ The latest recorded audit (2026-08-19) found:
 - Formatting/lint: failed with existing formatting and ESLint issues.
 - `pnpm build`: failed during the audited environment.
 - E2E: not run because the preview server depends on the failing build.
-- Latest Vercel status observed for the current V3 head: successful preview status; this is not equivalent to full QA or production readiness.
+- The documentation commit currently has a pending Vercel preview check; an earlier V3 head reported a successful preview status. Neither result is equivalent to full QA or production readiness.
 
 ## Development rules
 
