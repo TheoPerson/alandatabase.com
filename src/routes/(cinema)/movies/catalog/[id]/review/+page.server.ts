@@ -3,6 +3,7 @@ import { getMovieById } from '$lib/server/services/movie.service';
 import { db } from '$lib/server/db';
 import { userReviews } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { logServerError } from '$lib/server/security/logging';
 
 export async function load({ params, locals }) {
 	if (!locals.user) {
@@ -38,10 +39,18 @@ export const actions = {
 		if (!content || content.trim() === '') {
 			return fail(400, { error: 'Review content cannot be empty' });
 		}
+		if (content.length > 5_000) {
+			return fail(400, { error: 'Review content must be 5,000 characters or fewer' });
+		}
 
 		try {
+			const movie = await getMovieById(params.id);
+			if (!movie) {
+				return fail(404, { error: 'Movie not found' });
+			}
+
 			const existingReview = await db.query.userReviews.findFirst({
-				where: and(eq(userReviews.userId, locals.user.id), eq(userReviews.movieId, params.id))
+				where: and(eq(userReviews.userId, locals.user.id), eq(userReviews.movieId, movie.id))
 			});
 
 			if (existingReview) {
@@ -52,7 +61,7 @@ export const actions = {
 			} else {
 				await db.insert(userReviews).values({
 					userId: locals.user.id,
-					movieId: params.id,
+					movieId: movie.id,
 					content,
 					containsSpoilers
 				});
@@ -60,7 +69,7 @@ export const actions = {
 
 			return { success: true };
 		} catch (err) {
-			console.error('Failed to save review:', err);
+			logServerError('Review save failed', err);
 			return fail(500, { error: 'Failed to save review' });
 		}
 	}

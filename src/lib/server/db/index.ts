@@ -8,11 +8,24 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema.js';
+import { building } from '$app/environment';
 
-const connectionString = process.env.DATABASE_URL?.trim();
+const configuredConnectionString = (
+	process.env.PREVIEW_DATABASE_URL ||
+	process.env.POSTGRES_URL ||
+	process.env.DATABASE_URL
+)?.trim();
+
+// postgres-js connects lazily. SvelteKit still imports server modules while
+// building, so use an inert, unreachable URL solely to construct the client
+// when no runtime database is expected to be queried.
+const connectionString =
+	configuredConnectionString || (building ? 'postgres://build:build@127.0.0.1:1/build' : null);
 
 if (!connectionString) {
-	throw new Error('DATABASE_URL is not set. Please configure it in your environment variables.');
+	throw new Error(
+		'DATABASE_URL or POSTGRES_URL is not set. Please configure it in your environment variables.'
+	);
 }
 
 // Single instance pattern for serverless environments

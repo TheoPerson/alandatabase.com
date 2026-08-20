@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { hashPassword, verifyPassword, generateSessionToken } from './index';
+import {
+	SESSION_COOKIE_DELETE_OPTIONS,
+	SESSION_COOKIE_OPTIONS,
+	generateSessionToken,
+	hashPassword,
+	verifyPassword
+} from './index';
 
 describe('Authentication Utilities', () => {
 	it('should hash and verify a password correctly', async () => {
@@ -25,5 +31,12 @@ describe('Authentication Utilities', () => {
 		const token = generateSessionToken();
 		expect(token.length).toBe(64);
 		expect(typeof token).toBe('string');
+	});
+
+	it('uses the same path and domain when deleting the shared session cookie', () => {
+		expect(SESSION_COOKIE_DELETE_OPTIONS).toEqual({
+			path: SESSION_COOKIE_OPTIONS.path,
+			domain: SESSION_COOKIE_OPTIONS.domain
+		});
 	});
 });

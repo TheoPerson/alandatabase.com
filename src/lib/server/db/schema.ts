@@ -466,5 +466,3 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
 export const aiChatSessionsRelations = relations(aiChatSessions, ({ one }) => ({
 	user: one(users, { fields: [aiChatSessions.userId], references: [users.id] })
 }));
-
-

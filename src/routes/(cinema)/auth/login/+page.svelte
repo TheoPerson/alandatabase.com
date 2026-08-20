@@ -69,7 +69,11 @@
 		</form>
 
 		<div class="auth-footer">
-			<p>Don't have a personal archive account? <a href="/auth/register" class="link">Create an account</a></p>
+			<p>
+				Don't have a personal archive account? <a href="/auth/register" class="link"
+					>Create an account</a
+				>
+			</p>
 		</div>
 	</div>
 </div>

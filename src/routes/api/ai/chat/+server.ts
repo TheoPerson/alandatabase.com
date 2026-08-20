@@ -4,52 +4,70 @@ import { db } from '$lib/server/db';
 import { aiChatSessions, userMovieInteractions, userReviews } from '$lib/server/db/schema';
 import { eq, desc, gte, and } from 'drizzle-orm';
 import { searchMovies } from '$lib/server/services/movie.service';
+import { isStandardMovie } from '$lib/server/policies/movie-visibility';
 import { GoogleGenAI, Type } from '@google/genai';
 
 const geminiApiKey = process.env.GEMINI_API_KEY;
 
 type GeminiMessage = { role: 'user' | 'model'; parts: Array<{ text: string }> };
 
+const MAX_REQUEST_BYTES = 16_384;
+const MAX_USER_MESSAGE_LENGTH = 2_000;
+const MAX_RECOMMENDATIONS = 8;
+
 export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 	if (!locals.user) throw error(401, 'Unauthorized');
 	if (!geminiApiKey || geminiApiKey === 'YOUR_GEMINI_KEY')
 		throw error(500, 'Gemini API Key not configured.');
 
-	const body = await request.json();
-	const userMessage: string = body.message?.trim();
-	const resetSession: boolean = body.reset ?? false;
+	const rawBody = await request.text();
+	if (rawBody.length > MAX_REQUEST_BYTES) throw error(413, 'Request is too large.');
 
-	if (!userMessage) throw error(400, 'No message provided.');
-
-	// ── Session management (DB-backed, survives cold starts) ──────────────────
-	let sessionKey = cookies.get('ai_chat_session');
-
-	if (!sessionKey || resetSession) {
-		sessionKey = crypto.randomUUID();
-		cookies.set('ai_chat_session', sessionKey, {
-			path: '/',
-			maxAge: 60 * 60 * 6, // 6h
-			httpOnly: true,
-			sameSite: 'lax'
-		});
+	let body: { message?: unknown; reset?: unknown };
+	try {
+		body = JSON.parse(rawBody) as { message?: unknown; reset?: unknown };
+	} catch {
+		throw error(400, 'Invalid JSON body.');
 	}
 
+	const userMessage = typeof body.message === 'string' ? body.message.trim() : '';
+	const resetSession = body.reset === true;
+
+	if (!userMessage) throw error(400, 'No message provided.');
+	if (userMessage.length > MAX_USER_MESSAGE_LENGTH) {
+		throw error(400, `Message must be ${MAX_USER_MESSAGE_LENGTH} characters or fewer.`);
+	}
+
+	// ── Session management (DB-backed, survives cold starts) ──────────────────
+	const previousSessionKey = cookies.get('ai_chat_session');
+
 	// Delete old session row if resetting
-	if (resetSession && sessionKey) {
-		await db.delete(aiChatSessions).where(eq(aiChatSessions.sessionKey, sessionKey));
-		// Issue new key for the fresh session
+	if (resetSession && previousSessionKey) {
+		await db
+			.delete(aiChatSessions)
+			.where(
+				and(
+					eq(aiChatSessions.userId, locals.user.id),
+					eq(aiChatSessions.sessionKey, previousSessionKey)
+				)
+			);
+	}
+
+	let sessionKey = resetSession ? undefined : previousSessionKey;
+	if (!sessionKey) {
 		sessionKey = crypto.randomUUID();
 		cookies.set('ai_chat_session', sessionKey, {
 			path: '/',
 			maxAge: 60 * 60 * 6,
 			httpOnly: true,
-			sameSite: 'lax'
+			sameSite: 'lax',
+			secure: process.env.NODE_ENV === 'production'
 		});
 	}
 
 	// Load or create session from DB
-	let sessionRow = await db.query.aiChatSessions.findFirst({
-		where: eq(aiChatSessions.sessionKey, sessionKey)
+	const sessionRow = await db.query.aiChatSessions.findFirst({
+		where: and(eq(aiChatSessions.userId, locals.user.id), eq(aiChatSessions.sessionKey, sessionKey))
 	});
 
 	let history: GeminiMessage[] = (sessionRow?.messages as GeminiMessage[]) ?? [];
@@ -65,7 +83,7 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 						eq(userMovieInteractions.userId, locals.user.id),
 						gte(userMovieInteractions.rating, '4')
 					),
-					with: { movie: true },
+					with: { movie: { with: { keywords: true } } },
 					limit: 20
 				}),
 				db.query.userMovieInteractions.findMany({
@@ -73,21 +91,28 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 						eq(userMovieInteractions.userId, locals.user.id),
 						eq(userMovieInteractions.favorite, true)
 					),
-					with: { movie: true },
+					with: { movie: { with: { keywords: true } } },
 					limit: 10
 				}),
 				db.query.userReviews.findMany({
 					where: eq(userReviews.userId, locals.user.id),
-					with: { movie: true },
+					with: { movie: { with: { keywords: true } } },
 					orderBy: [desc(userReviews.createdAt)],
 					limit: 5
 				})
 			]);
 
-			const topTitles = topRated.map((i: any) => `${i.movie?.title} (${i.rating}★)`).join(', ');
-			const favTitles = favorites.map((i: any) => i.movie?.title).join(', ');
+			const topTitles = topRated
+				.filter((item) => isStandardMovie(item.movie))
+				.map((item) => `${item.movie?.title} (${item.rating}★)`)
+				.join(', ');
+			const favTitles = favorites
+				.filter((item) => isStandardMovie(item.movie))
+				.map((item) => item.movie?.title)
+				.join(', ');
 			const reviews = recentReviews
-				.map((r: any) => `"${r.movie?.title}": ${r.content}`)
+				.filter((review) => isStandardMovie(review.movie))
+				.map((review) => `"${review.movie?.title}": ${review.content}`)
 				.join(' | ');
 
 			systemContext = [
@@ -153,7 +178,9 @@ Always return valid JSON:
 		await db
 			.update(aiChatSessions)
 			.set({ messages: history, updatedAt: new Date() })
-			.where(eq(aiChatSessions.sessionKey, sessionKey));
+			.where(
+				and(eq(aiChatSessions.userId, locals.user.id), eq(aiChatSessions.sessionKey, sessionKey))
+			);
 	} else {
 		await db.insert(aiChatSessions).values({
 			userId: locals.user.id,
@@ -164,8 +191,13 @@ Always return valid JSON:
 
 	// ── Resolve movie posters from TMDB ───────────────────────────────────────
 	const resolvedMovies = [];
-	for (const title of parsed.recommended_movie_titles ?? []) {
-		const results = await searchMovies(title, 1);
+	const recommendedTitles = Array.isArray(parsed.recommended_movie_titles)
+		? parsed.recommended_movie_titles
+				.filter((title: unknown): title is string => typeof title === 'string')
+				.slice(0, MAX_RECOMMENDATIONS)
+		: [];
+	for (const title of recommendedTitles) {
+		const results = await searchMovies(title.slice(0, 120), 1);
 		if (results.length > 0) resolvedMovies.push(results[0]);
 	}
 

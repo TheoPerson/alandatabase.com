@@ -1,7 +1,6 @@
 <script lang="ts">
 	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import Badge from '$lib/components/ui/Badge.svelte';
 
 	let { data } = $props();
 
@@ -11,11 +10,8 @@
 	let selectedGenre = $state('All');
 
 	const allGenres = $derived.by(() => {
-		const set = new Set<string>();
-		data.shows.forEach((show: any) => {
-			show.genres?.forEach((g: string) => set.add(g));
-		});
-		return ['All', ...Array.from(set).sort()];
+		const genres = data.shows.flatMap((show: any) => show.genres ?? []) as string[];
+		return ['All', ...genres.filter((genre, index) => genres.indexOf(genre) === index).sort()];
 	});
 
 	const filteredShows = $derived(
@@ -25,8 +21,7 @@
 				show.title.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
 				show.overview.toLowerCase().includes(searchQuery.trim().toLowerCase());
 
-			const matchesGenre =
-				selectedGenre === 'All' || show.genres?.includes(selectedGenre);
+			const matchesGenre = selectedGenre === 'All' || show.genres?.includes(selectedGenre);
 
 			return matchesQuery && matchesGenre;
 		})
@@ -37,7 +32,7 @@
 	<title>Top 50 IMDb TV Shows & Series | CinemaDB</title>
 	<meta
 		name="description"
-		content="The 50 Greatest Television Series of All Time, ranked by IMDb user ratings. Stream and discover the highest-rated TV shows."
+		content="The 50 Greatest Television Series of All Time, ranked by IMDb user ratings. Browse and organise the highest-rated TV shows."
 	/>
 </svelte:head>
 
@@ -46,11 +41,7 @@
 	{#if hero}
 		<section class="tv-hero-stage">
 			<div class="hero-stage-bg">
-				<img
-					src={hero.backdropPath}
-					alt="{hero.title} 4K Backdrop"
-					class="hero-4k-image"
-				/>
+				<img src={hero.backdropPath} alt="{hero.title} 4K Backdrop" class="hero-4k-image" />
 				<div class="vignette-left"></div>
 				<div class="vignette-bottom"></div>
 				<div class="vignette-top"></div>
@@ -78,14 +69,14 @@
 					<p class="hero-synopsis">{hero.overview}</p>
 
 					<div class="hero-btn-row">
-						<a href="/cinema/tvshow/{hero.tmdbId}" class="cineby-play-btn">
-							<span class="play-icon">▶</span>
-							<span>Play Series</span>
+						<a href="/tv/{hero.tmdbId}" class="cineby-play-btn">
+							<span class="play-icon">ⓘ</span>
+							<span>View Series</span>
 						</a>
 
-						<a href="/cinema/tvshow/{hero.tmdbId}" class="cineby-info-btn">
+						<a href="/tv/{hero.tmdbId}" class="cineby-info-btn">
 							<span class="info-icon">ⓘ</span>
-							<span>See Episodes</span>
+							<span>Episodes & playback status</span>
 						</a>
 					</div>
 				</div>
@@ -141,7 +132,13 @@
 					<p class="empty-emoji">📺</p>
 					<h3>No TV shows match your filter</h3>
 					<p class="empty-hint">Try clearing your search query or selecting a different genre.</p>
-					<Button variant="outline" onclick={() => { searchQuery = ''; selectedGenre = 'All'; }}>Reset Filters</Button>
+					<Button
+						variant="outline"
+						onclick={() => {
+							searchQuery = '';
+							selectedGenre = 'All';
+						}}>Reset Filters</Button
+					>
 				</div>
 			{:else}
 				{#each filteredShows as show (show.tmdbId)}
@@ -172,7 +169,10 @@
 								<div class="tv-meta">
 									<span class="meta-year">{show.year}</span>
 									<span class="meta-dot">•</span>
-									<span class="meta-seasons">{show.seasonsCount || 1} {(show.seasonsCount || 1) === 1 ? 'Season' : 'Seasons'}</span>
+									<span class="meta-seasons"
+										>{show.seasonsCount || 1}
+										{(show.seasonsCount || 1) === 1 ? 'Season' : 'Seasons'}</span
+									>
 								</div>
 							</div>
 
@@ -185,8 +185,8 @@
 									{/each}
 								</div>
 
-								<a href="/cinema/tvshow/{show.tmdbId}" class="watch-tv-btn">
-									<span>▶ Watch Series</span>
+								<a href="/tv/{show.tmdbId}" class="watch-tv-btn">
+									<span>View series</span>
 								</a>
 							</div>
 						</div>
@@ -234,7 +234,13 @@
 	.vignette-left {
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(90deg, #0a0e17 0%, rgba(10, 14, 23, 0.9) 32%, rgba(10, 14, 23, 0.3) 65%, transparent 100%);
+		background: linear-gradient(
+			90deg,
+			#0a0e17 0%,
+			rgba(10, 14, 23, 0.9) 32%,
+			rgba(10, 14, 23, 0.3) 65%,
+			transparent 100%
+		);
 	}
 
 	.vignette-bottom {
@@ -547,7 +553,10 @@
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+		transition:
+			transform 0.2s ease,
+			border-color 0.2s ease,
+			box-shadow 0.2s ease;
 	}
 
 	.tv-card:hover {

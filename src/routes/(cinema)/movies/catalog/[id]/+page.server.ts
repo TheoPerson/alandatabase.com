@@ -9,49 +9,44 @@ import {
 } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
+import { standardMovieVisibilityWhere } from '$lib/server/policies/movie-visibility';
 import { logActivity } from '$lib/server/services/interaction.service';
-import { ingestMovie } from '$lib/server/tmdb';
+import { logServerError } from '$lib/server/security/logging';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function resolveMovieUuid(movieIdOrTmdb: string): Promise<string | null> {
 	if (UUID_REGEX.test(movieIdOrTmdb)) {
-		return movieIdOrTmdb;
+		const existing = await db.query.movies
+			.findFirst({
+				where: and(eq(movies.id, movieIdOrTmdb), standardMovieVisibilityWhere()),
+				columns: { id: true }
+			})
+			.catch(() => null);
+		return existing?.id ?? null;
 	}
 
 	if (/^\d+$/.test(movieIdOrTmdb)) {
 		const tmdbId = parseInt(movieIdOrTmdb, 10);
-		const existing = await db.query.movies.findFirst({
-			where: eq(movies.tmdbId, tmdbId)
-		}).catch(() => null);
+		const existing = await db.query.movies
+			.findFirst({
+				where: and(eq(movies.tmdbId, tmdbId), standardMovieVisibilityWhere()),
+				columns: { id: true }
+			})
+			.catch(() => null);
 
-		if (existing) {
-			return existing.id;
-		}
-
-		try {
-			const newUuid = await ingestMovie(tmdbId, { notifyTelegram: false });
-			if (newUuid) return newUuid;
-		} catch (err) {
-			console.warn('Auto-ingest on resolveMovieUuid failed:', err);
-		}
+		return existing?.id ?? null;
 	}
 
 	return null;
 }
 
-export async function load({ params, locals, setHeaders }) {
+export async function load({ params, locals }) {
 	const movie = await getMovieById(params.id);
 
 	if (!movie) {
 		throw error(404, {
 			message: 'Movie not found in the database.'
-		});
-	}
-
-	if (!locals.user) {
-		setHeaders({
-			'cache-control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600'
 		});
 	}
 
@@ -166,7 +161,7 @@ export const actions = {
 
 			return { success: true };
 		} catch (err) {
-			console.error('Interaction error:', err);
+			logServerError('Movie interaction update failed', err);
 			return fail(500, { error: 'Failed to update interaction.' });
 		}
 	},
@@ -224,7 +219,7 @@ export const actions = {
 
 			return { success: true };
 		} catch (err) {
-			console.error('Toggle list error:', err);
+			logServerError('Movie list update failed', err);
 			return fail(500, { error: 'Failed to update list.' });
 		}
 	}

@@ -1,97 +1,121 @@
-<div align="center">
-  <picture>
-    <img src="./docs/hero-banner.jpg" width="100%" alt="CinemaDB — Next-Generation Personal Movie Operating System" style="border-radius: 8px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.15);" />
-  </picture>
+# Alan's Data Base
 
-  <br />
-  <br />
+Alan's Data Base is a SvelteKit application with a public, read-only Movies/TV
+catalogue and an owner-first personal cinema workspace.
 
-  [![SvelteKit](https://img.shields.io/badge/SvelteKit-5-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://kit.svelte.dev/)
-  [![Drizzle](https://img.shields.io/badge/Drizzle_ORM-PostgreSQL-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+The GitHub repository and safe catalogue are public. Personal lists, settings,
+playback, catalogue mutation, setup, and administration remain server-enforced
+owner-only surfaces. The application is not a public streaming directory and
+does not embed unapproved media sources.
 
-  <br />
+## Current status
 
-  <p align="center">
-    <strong>Personal Movie Operating System</strong> turning raw cinema data into a highly visual, fully streamed web experience.
-  </p>
-</div>
+V3 is being developed on `agent/v3-foundation-core` in the canonical public
+repository, [TheoPerson/alandatabase.com](https://github.com/TheoPerson/alandatabase.com).
+`main` remains protected until V3 is explicitly reviewed and integrated.
 
----
+The production host integration, access boundaries, and release checks are in
+place. The product remains an evolving V3: normalized owner/invite roles,
+database migration reconciliation, approved playback sources, TV persistence,
+and resume/progress tracking still require product work.
 
-## ✨ Features
+The latest recorded audit is available in [V3 Foundation Report](docs/V3_FOUNDATION_REPORT.md). It contains the verified architecture, route/data maps, security findings, validation evidence, operational constraints, and prioritised roadmap. Do not infer that the application is production-ready from a successful preview deployment alone.
 
-- 🖤 **Swiss OLED Design**: A meticulous, premium interface crafted with pure deep blacks (`#050507`), emerald accents (`#10b981`), and minimalist typography.
-- ⚡ **Svelte 5 Runes**: Built on the absolute cutting edge of SvelteKit for unparalleled reactivity, performance, and zero-flicker transitions.
-- 🎥 **Live Streaming Pipeline**: Seamless integration with multiple premium and backup streaming mirrors (VidLink Pro, VidSrc VIP, AutoEmbed).
-- 🗃️ **Personal Data Engine**: Advanced tracking for watched history, favorites, custom dynamic lists, and deep personal analytics, powered by Drizzle ORM & PostgreSQL.
-- 🤖 **AI Discovery**: Intelligent cinematic discovery powered by next-generation AI integrations.
+## Product boundaries
 
-## 🛠️ Technology Stack
+- Public, side-effect-free browse/search/detail for the safe catalogue.
+- Owner-only personal data, playback, setup, administration, and non-public APIs.
+- Adult or explicit content is quarantined behind explicit intent and must stay out of normal browse, search, recommendations, artwork, SEO, previews, caches, and prefetches.
+- Browse, search, catalogue, and detail reads should remain bounded and side-effect free.
+- Global catalogue mutations require owner authorisation.
+- Playback must use reviewed, allowlisted sources; arbitrary URLs, untrusted mirrors, and unrestricted iframes are not part of the approved product.
+- Social graphs, public lists, broad multi-user launch, microservices, and native clients are outside the current V3 scope.
 
-| Category | Technology |
-|---|---|
-| **Framework** | [SvelteKit 5](https://kit.svelte.dev/) (Vite) |
-| **Language** | [TypeScript](https://www.typescriptlang.org/) |
-| **Database** | [PostgreSQL](https://www.postgresql.org/) + [Neon](https://neon.tech) |
-| **ORM** | [Drizzle ORM](https://orm.drizzle.team/) |
-| **UI System** | Custom Vanilla CSS Tokens (No bulky CSS frameworks) |
-| **Testing** | [Vitest](https://vitest.dev/) & [Playwright](https://playwright.dev/) |
+## Application surfaces
 
-## 🚀 Getting Started
+Canonical cinema surfaces include:
 
-### Prerequisites
-- Node.js (v20+)
-- PostgreSQL Database URL (e.g., Neon or local pg)
-- TMDB API Key
+- `/movies` and `/movies/[id]`
+- `/tv` and `/tv/[id]`
+- public `/discover` and `/search`; owner-only `/my/*`
+- `/auth/login`, `/auth/register`, and `/disclaimer`
+- public `/api` metadata and `/api/health`; owner-only local data APIs such as
+  `/api/search` and `/api/movies/catalog`
 
-### Installation
+Legacy aliases and redirects may remain for compatibility while the route tree is consolidated. The current implementation does not yet provide a complete TV episode/progress model or a dependable cross-device resume loop.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/TheoPerson/the-alans-data-base.git
-   cd the-alans-data-base
-   ```
+## Production hostnames
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+The configured deployment uses one SvelteKit application with hostname routing:
 
-3. **Environment Setup**
-   Create a `.env` file at the root of the project:
-   ```env
-   DATABASE_URL="postgres://user:password@host:port/db"
-   VITE_TMDB_API_KEY="your_tmdb_api_key"
-   ```
+- `alandatabase.com` — canonical public host.
+- `www.alandatabase.com` and `alans-database.vercel.app` — canonical redirects.
+- `status.alandatabase.com` — public status surface.
+- `api.alandatabase.com` — API hostname mapped to the existing `/api` routes.
+- `auth.alandatabase.com` — first-class login/logout portal using the existing
+  SvelteKit session flow.
 
-4. **Initialize Database**
-   ```bash
-   npm run db:push
-   ```
+Vercel Development, Preview, and Production variables are separate. Copy only
+the non-sensitive names from `.env.example`; never commit hosted values. Owner
+access fails closed until `OWNER_USER_IDS` or `OWNER_EMAILS` identifies the
+existing owner account.
 
-5. **Start Development Server**
-   ```bash
-   npm run dev
-   ```
-   *Your personal cinema OS will be running on `http://localhost:5173`.*
+## Stack
 
-## 🧪 Testing
+| Category      | Technology                                                               |
+| ------------- | ------------------------------------------------------------------------ |
+| Framework     | SvelteKit 2, Svelte 5 runes, TypeScript, Vite 8                          |
+| UI            | Tailwind CSS 4, project CSS tokens, Bits UI/shadcn-style primitives      |
+| Database      | PostgreSQL with Neon-compatible deployments                              |
+| ORM           | Drizzle ORM with `postgres`                                              |
+| Testing       | Vitest and Playwright                                                    |
+| Observability | Sentry; optional Telegram operational notifications                      |
+| Integrations  | Optional TMDB, Meilisearch, Gemini, and PGlite/local development support |
+| Deployment    | Vercel adapter; pnpm package manager                                     |
 
-Run the critical unit testing suite:
-```bash
-npm run test:unit
+## Local setup
+
+Requirements: Node.js 20+, pnpm, and PostgreSQL. Docker Compose can provide local PostgreSQL and Meilisearch with development-only credentials.
+
+```powershell
+git clone https://github.com/TheoPerson/alandatabase.com.git
+cd alandatabase.com
+pnpm install
+Copy-Item .env.example .env
+docker compose up -d
+pnpm dev
 ```
 
-## 🗺️ Roadmap (V3)
-- [x] Complete refactoring to Svelte 5 `$state` & `$derived` runes.
-- [x] Swiss OLED Design System migration.
-- [x] Backend interaction API (Ratings, Lists, History).
-- [x] Unsandboxed iframe Player Container.
-- [ ] User Profile & Social graph extensions.
+The server reads `TMDB_API_KEY`; do not expose service credentials through `VITE_` variables. Never run migration or seed commands against production data. The committed SQL migrations and runtime schema still require reconciliation before changing an existing database.
 
-## 📄 License
-This project is licensed under the MIT License - see the LICENSE file for details.
+## Quality commands
 
----
-*Built with passion for the love of Cinema.*
+```powershell
+pnpm lint
+pnpm check
+pnpm test:unit -- --run
+pnpm test:e2e
+pnpm build
+```
+
+Current branch evidence (2026-08-21):
+
+- Unit suite: 25 files and 109 tests pass.
+- Worker safety suite: 11 tests pass.
+- `pnpm check`: 0 errors and 0 warnings.
+- `pnpm lint`: passes with no errors; advisory warnings remain tracked.
+- Production build, Playwright, and live hostname evidence are required for each
+  release and reported with the deployment rather than inferred from a preview.
+
+## Development rules
+
+- Work on V3 from `agent/v3-foundation-core` or an explicitly based task branch.
+- Treat `main` as protected: do not push, merge, rebase, reset, or commit there directly.
+- Keep worktree ownership isolated; never assume another worktree's uncommitted changes exist.
+- Preserve privacy, server-side authorization, adult-content isolation, data integrity, and secret hygiene.
+- Use additive, backed-up migrations with a tested rollback path.
+- Report exact validation results; do not claim checks, deployment, or integration without evidence.
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE).

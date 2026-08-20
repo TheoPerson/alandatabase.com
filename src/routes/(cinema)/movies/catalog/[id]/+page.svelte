@@ -268,9 +268,9 @@
 				</section>
 			{/if}
 
-			<!-- Multi-Server HD Cinema Player -->
+			<!-- Approved playback status -->
 			<section class="info-section">
-				<h2 class="section-heading">🎬 Watch Cinema Stream & Official Trailer</h2>
+				<h2 class="section-heading">Playback</h2>
 				<StreamPlayerContainer
 					tmdbId={movie.tmdbId || movie.id}
 					imdbId={movie.imdbId}
@@ -506,6 +506,4 @@
 		font-size: 0.75rem;
 		color: var(--text-tertiary);
 	}
-
-
 </style>

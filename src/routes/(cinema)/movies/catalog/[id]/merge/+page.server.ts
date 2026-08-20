@@ -2,12 +2,15 @@ import { error, fail, redirect } from '@sveltejs/kit';
 import { getMovieById } from '$lib/server/services/movie.service';
 import { db } from '$lib/server/db';
 import { movies, userMovieInteractions, userListItems, userReviews } from '$lib/server/db/schema';
-import { eq, inArray, and } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
+import { requireOwnerUser } from '$lib/server/auth/owner';
+import { logServerError } from '$lib/server/security/logging';
 
 export async function load({ params, locals }) {
 	if (!locals.user) {
 		throw redirect(302, '/auth/login');
 	}
+	requireOwnerUser(locals.user);
 
 	const sourceMovie = await getMovieById(params.id);
 	if (!sourceMovie) {
@@ -24,6 +27,7 @@ export const actions = {
 		if (!locals.user) {
 			return fail(401, { error: 'Unauthorized' });
 		}
+		requireOwnerUser(locals.user);
 
 		const formData = await request.formData();
 		const targetTmdbId = formData.get('targetTmdbId')?.toString();
@@ -33,23 +37,24 @@ export const actions = {
 		}
 
 		try {
-			// Find the target movie in the database
-			const targetMovie = await db.query.movies.findFirst({
-				where: eq(movies.tmdbId, parseInt(targetTmdbId, 10))
-			});
+			// Re-resolve both records inside the action. Direct POSTs must not
+			// read, merge, or delete quarantined catalog rows.
+			const [sourceMovie, targetMovie] = await Promise.all([
+				getMovieById(params.id),
+				getMovieById(targetTmdbId)
+			]);
 
-			if (!targetMovie) {
+			if (!sourceMovie || !targetMovie) {
 				return fail(400, {
-					error:
-						'Target movie not found in local database. Please search for it first to auto-ingest.'
+					error: 'Both movies must exist in the approved local catalog.'
 				});
 			}
 
-			if (targetMovie.id === params.id) {
+			if (targetMovie.id === sourceMovie.id) {
 				return fail(400, { error: 'Cannot merge a movie into itself.' });
 			}
 
-			const sourceMovieId = params.id;
+			const sourceMovieId = sourceMovie.id;
 			const targetMovieId = targetMovie.id;
 
 			// Perform merge
@@ -158,7 +163,7 @@ export const actions = {
 
 			return { success: true, newId: targetMovieId };
 		} catch (err) {
-			console.error('Merge failed:', err);
+			logServerError('Movie merge failed', err);
 			return fail(500, { error: 'Failed to merge movies' });
 		}
 	}

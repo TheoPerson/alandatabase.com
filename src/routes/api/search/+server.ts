@@ -1,17 +1,24 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { searchMovies } from '$lib/server/services/movie.service';
+import { searchLocalMovies } from '$lib/server/queries/local-movie-search';
+import { parseSearchParameters } from '$lib/server/security/request-bounds';
 
 export const GET: RequestHandler = async ({ url }) => {
-	const query = url.searchParams.get('q') || '';
-	const limit = parseInt(url.searchParams.get('limit') || '5', 10);
-	let results: any[] = [];
+	const parsedParameters = parseSearchParameters(url, {
+		defaultLimit: 5,
+		maximumLimit: 20
+	});
+	if (!parsedParameters.ok) {
+		return json({ error: parsedParameters.error }, { status: 400 });
+	}
 
-	if (query.trim()) {
+	const { query, limit } = parsedParameters.value;
+	let results: Awaited<ReturnType<typeof searchLocalMovies>> = [];
+
+	if (query) {
 		try {
-			results = await searchMovies(query.trim(), Math.min(limit, 20));
-		} catch (err) {
-			console.error('API Search Error:', err);
+			results = await searchLocalMovies(query, limit);
+		} catch {
 			results = [];
 		}
 	}

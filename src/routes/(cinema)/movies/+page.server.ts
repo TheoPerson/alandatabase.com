@@ -1,11 +1,8 @@
 import { getTrendingMovies, getTopRatedMovies } from '$lib/server/services/movie.service';
 import { toggleWatchlist } from '$lib/server/services/interaction.service';
+import { logServerError } from '$lib/server/security/logging';
 
-export async function load({ setHeaders }) {
-	setHeaders({
-		'cache-control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600'
-	});
-
+export async function load() {
 	try {
 		// Zero duplicate guarantee:
 		// top10 = #1 to #10
@@ -22,13 +19,13 @@ export async function load({ setHeaders }) {
 			trending,
 			topRated
 		};
-	} catch (err: any) {
-		console.error('LOAD ERROR:', err);
+	} catch (err: unknown) {
+		logServerError('Movie catalogue load failed', err);
 		return {
 			top10: [],
 			trending: [],
 			topRated: [],
-			error: err?.message || String(err)
+			error: 'The catalogue is temporarily unavailable.'
 		};
 	}
 }

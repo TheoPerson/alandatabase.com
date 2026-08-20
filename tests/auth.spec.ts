@@ -1,53 +1,32 @@
 import { test, expect } from '@playwright/test';
-import { randomUUID } from 'crypto';
 
-test.describe('Authentication Flow', () => {
-	test('user can register and log in', async ({ page }) => {
-		const testUsername = `user_${randomUUID().substring(0, 8)}`;
-		const testEmail = `${testUsername}@example.com`;
-		const password = 'TestPassword123!';
-
-		// Go to registration page
-		await page.goto('/auth/register');
-		await expect(page).toHaveTitle(/Cinema Platform/); // Assuming layout has a title, or we can check header
-
-		// Fill form
-		await page.fill('input[name="username"]', testUsername);
-		await page.fill('input[name="email"]', testEmail);
-		await page.fill('input[name="password"]', password);
-
-		// Submit
-		await page.click('button[type="submit"]');
-
-		// Should redirect to /my/films upon successful registration
-		await page.waitForURL('/my/films');
-		await expect(page.locator('h1')).toContainText('My Archive');
-
-		// Clear cookies to simulate logout
-		await page.context().clearCookies();
-
-		// Go to login page
-		await page.goto('/auth/login');
-
-		// Fill login form
-		await page.fill('input[name="identifier"]', testUsername);
-		await page.fill('input[name="password"]', password);
-		await page.click('button[type="submit"]');
-
-		// Should redirect to /my/films
-		await page.waitForURL('/my/films');
-		await expect(page.locator('h1')).toContainText('My Archive');
+test.describe('Authentication Middleware (hooks.server.ts)', () => {
+	test('public cinema browsing does not require a session', async ({ page }) => {
+		const response = await page.goto('/movies');
+		expect(response?.status()).toBe(200);
+		expect(new URL(page.url()).pathname).toBe('/movies');
 	});
 
-	test('shows error on invalid login', async ({ page }) => {
-		await page.goto('/auth/login');
+	test('anonymous users are redirected from the owner console', async ({ page }) => {
+		await page.goto('/admin');
+		expect(page.url()).toContain('/auth/login');
+		expect(page.url()).toContain('returnTo=%2Fadmin');
+	});
 
-		await page.fill('input[name="identifier"]', 'nonexistent_user_999');
-		await page.fill('input[name="password"]', 'wrongpassword');
-		await page.click('button[type="submit"]');
+	test('API requests to protected routes without auth return 401 Unauthorized', async ({
+		request
+	}) => {
+		const response = await request.get('/api/search?q=test');
+		expect(response.status()).toBe(401);
 
-		// Check for error banner
-		await expect(page.locator('.error-banner')).toBeVisible();
-		await expect(page.locator('.error-banner')).toContainText('Invalid username or password');
+		const json = await response.json();
+		expect(json).toEqual({ error: 'Unauthorized' });
+	});
+
+	test('public application routes are accessible anonymously', async ({ request }) => {
+		for (const route of ['/', '/status', '/api', '/auth/login']) {
+			const response = await request.get(route);
+			expect(response.status(), route).toBe(200);
+		}
 	});
 });

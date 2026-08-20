@@ -13,11 +13,7 @@
 	{#if label}
 		<label class="input-label" for={rest.id}>{label}</label>
 	{/if}
-	<input
-		class="input-field"
-		class:has-error={!!error}
-		{...rest}
-	/>
+	<input class="input-field" class:has-error={!!error} {...rest} />
 	{#if error}
 		<span class="input-error">{error}</span>
 	{/if}
@@ -46,7 +42,9 @@
 		color: var(--text-primary);
 		font-family: inherit;
 		font-size: 0.95rem;
-		transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+		transition:
+			border-color var(--transition-fast),
+			box-shadow var(--transition-fast);
 		outline: none;
 	}
 

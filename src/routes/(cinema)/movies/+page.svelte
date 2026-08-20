@@ -3,59 +3,34 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
+	import PlayerSheet from '$lib/components/movie/PlayerSheet.svelte';
 	import { enhance } from '$app/forms';
 	import { addToast } from '$lib/stores/toast';
 	import { onMount, onDestroy } from 'svelte';
 
 	let { data } = $props();
 
-	let heroIndex = $state(0);
-	let carouselInterval: any = null;
+	let isPlayerOpen = $state(false);
 
-	const featuredMovies = $derived(
-		(data.top10 || [])
-			.filter((m: any) => m.backdropPath && m.backdropPath !== 'null')
-			.slice(0, 5)
+	const currentHero = $derived(
+		(data.top10 || []).find((m: any) => m.backdropPath && m.backdropPath !== 'null') ||
+			data.top10?.[0] ||
+			data.trending?.[0] ||
+			null
 	);
 
-	const currentHero = $derived(featuredMovies[heroIndex] || data.top10?.[0] || data.trending?.[0] || null);
-
 	const heroHref = $derived(
-		currentHero ? `/cinema/movies/${currentHero.id || currentHero.tmdbId}` : '/movies/catalog'
+		currentHero ? `/movies/${currentHero.id || currentHero.tmdbId}` : '/movies/catalog'
 	);
 
 	const top10Today = $derived(data.top10 || []);
-
-	function nextHero() {
-		if (featuredMovies.length > 1) {
-			heroIndex = (heroIndex + 1) % featuredMovies.length;
-		}
-	}
-
-	function setHero(idx: number) {
-		heroIndex = idx;
-		resetTimer();
-	}
-
-	function resetTimer() {
-		if (carouselInterval) clearInterval(carouselInterval);
-		carouselInterval = setInterval(nextHero, 8000);
-	}
-
-	onMount(() => {
-		resetTimer();
-	});
-
-	onDestroy(() => {
-		if (carouselInterval) clearInterval(carouselInterval);
-	});
 </script>
 
 <svelte:head>
-	<title>CinemaDB — Next-Gen 4K Movies & Cinema Archive</title>
+	<title>CinemaDB — Private Movies & TV Archive</title>
 	<meta
 		name="description"
-		content="Discover, stream, and archive the greatest films in cinematic history with seamless 4K backdrops."
+		content="Browse and organize Alan's private movie and television archive."
 	/>
 </svelte:head>
 
@@ -111,10 +86,10 @@
 
 					<!-- Action Buttons -->
 					<div class="hero-btn-row">
-						<a href={heroHref} class="cineby-play-btn">
+						<button class="cineby-play-btn" onclick={() => (isPlayerOpen = true)}>
 							<span class="play-icon">▶</span>
-							<span>Play</span>
-						</a>
+							<span>Playback status</span>
+						</button>
 
 						<a href={heroHref} class="cineby-info-btn">
 							<span class="info-icon">ⓘ</span>
@@ -135,21 +110,6 @@
 							</button>
 						</form>
 					</div>
-
-					<!-- Featured Carousel Dots -->
-					{#if featuredMovies.length > 1}
-						<div class="carousel-dots-row">
-							{#each featuredMovies as _, idx}
-								<button
-									type="button"
-									class="carousel-dot"
-									class:active={heroIndex === idx}
-									onclick={() => setHero(idx)}
-									aria-label="Slide {idx + 1}"
-								></button>
-							{/each}
-						</div>
-					{/if}
 				</div>
 			</div>
 		{/if}
@@ -167,7 +127,7 @@
 			<div class="top10-horizontal-grid">
 				{#each top10Today as movie, idx (movie.id || movie.tmdbId)}
 					<a
-						href="/cinema/movies/{movie.id || movie.tmdbId}"
+						href="/movies/{movie.id || movie.tmdbId}"
 						class="top10-card"
 						data-sveltekit-preload-data="hover"
 					>
@@ -210,10 +170,11 @@
 				<span class="crossover-badge">📺 TELEVISION ARCHIVE</span>
 				<h3 class="crossover-title">Explore the Top 50 IMDb-Ranked TV Series</h3>
 				<p class="crossover-desc">
-					Stream Breaking Bad, Reacher, Planet Earth, Chernobyl, Arcane, and the greatest television sagas in history.
+					Browse Breaking Bad, Reacher, Planet Earth, Chernobyl, Arcane, and the greatest television
+					sagas in the archive.
 				</p>
 			</div>
-			<a href="/tvshows" class="crossover-btn">
+			<a href="/tv" class="crossover-btn">
 				<span>Explore TV Shows Chart →</span>
 			</a>
 		</section>
@@ -243,6 +204,10 @@
 		</section>
 	</div>
 </div>
+
+{#if isPlayerOpen && currentHero}
+	<PlayerSheet movie={currentHero} onClose={() => (isPlayerOpen = false)} />
+{/if}
 
 <style>
 	.cineby-home-root {
@@ -279,15 +244,27 @@
 	}
 
 	@keyframes heroFadeIn {
-		from { opacity: 0; transform: scale(1.02); }
-		to { opacity: 1; transform: scale(1); }
+		from {
+			opacity: 0;
+			transform: scale(1.02);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
 	}
 
 	/* 4-Way Vignette Masking for Ultra-Seamless Blending (Soft Midnight Slate) */
 	.vignette-left {
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(90deg, #0a0e17 0%, rgba(10, 14, 23, 0.9) 32%, rgba(10, 14, 23, 0.3) 65%, transparent 100%);
+		background: linear-gradient(
+			90deg,
+			#0a0e17 0%,
+			rgba(10, 14, 23, 0.9) 32%,
+			rgba(10, 14, 23, 0.3) 65%,
+			transparent 100%
+		);
 	}
 
 	.vignette-bottom {
@@ -329,8 +306,14 @@
 	}
 
 	@keyframes textSlideUp {
-		from { opacity: 0; transform: translateY(15px); }
-		to { opacity: 1; transform: translateY(0); }
+		from {
+			opacity: 0;
+			transform: translateY(15px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
 	.hero-main-title {
@@ -462,28 +445,6 @@
 		color: #0a0e17;
 		border-color: #10b981;
 		transform: scale(1.08);
-	}
-
-	.carousel-dots-row {
-		display: flex;
-		gap: 0.45rem;
-		margin-top: 0.5rem;
-	}
-
-	.carousel-dot {
-		width: 24px;
-		height: 4px;
-		border-radius: 2px;
-		background: rgba(255, 255, 255, 0.2);
-		border: none;
-		cursor: pointer;
-		transition: all 0.25s ease;
-	}
-
-	.carousel-dot.active {
-		width: 38px;
-		background: #10b981;
-		box-shadow: 0 0 8px #10b981;
 	}
 
 	/* CONTENT CATALOG SECTIONS */

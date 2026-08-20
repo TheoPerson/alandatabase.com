@@ -3,55 +3,39 @@ import { db } from '$lib/server/db';
 import { sql } from 'drizzle-orm';
 
 export const load: PageServerLoad = async () => {
-	const startTime = Date.now();
+	const startedAt = performance.now();
+	let dbOnline = false;
+	let dbLatencyMs: number | null = null;
 
-	// 1. Postgres Ping
-	let dbStatus = 'OFFLINE';
-	let dbLatencyMs = -1;
 	try {
-		const dbStart = Date.now();
 		await db.execute(sql`SELECT 1`);
-		dbLatencyMs = Date.now() - dbStart;
-		dbStatus = 'ONLINE';
-	} catch (err: any) {
-		dbStatus = `ERROR: ${err.message || 'Connection failed'}`;
+		dbOnline = true;
+		dbLatencyMs = Math.max(0, Math.round(performance.now() - startedAt));
+	} catch {
+		// The public status page reports availability without exposing
+		// connection details or database error messages.
 	}
 
-	// 2. TMDB API Ping
-	let tmdbStatus = 'OFFLINE';
-	let tmdbLatencyMs = -1;
-	try {
-		const tmdbStart = Date.now();
-		const apiKey = process.env.TMDB_API_KEY;
-		if (apiKey) {
-			const res = await fetch(
-				`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&page=1`
-			);
-			if (res.ok) {
-				tmdbLatencyMs = Date.now() - tmdbStart;
-				tmdbStatus = 'ONLINE';
-			}
-		}
-	} catch (err: any) {
-		tmdbStatus = `ERROR: ${err.message || 'API request failed'}`;
-	}
-
-	const totalServerLatencyMs = Date.now() - startTime;
+	const tmdbConfigured = Boolean(process.env.TMDB_API_KEY || process.env.TMDB_READ_TOKEN);
+	const serverLatencyMs = Math.max(0, Math.round(performance.now() - startedAt));
 
 	return {
 		telemetry: {
 			timestamp: new Date().toISOString(),
-			serverLatencyMs: totalServerLatencyMs,
-			nodeEnv: process.env.NODE_ENV || 'production',
+			serverLatencyMs,
+			nodeEnv:
+				process.env.NODE_ENV === 'production'
+					? 'Production'
+					: process.env.NODE_ENV || 'Development',
 			db: {
-				status: dbStatus,
+				status: dbOnline ? 'ONLINE' : 'DEGRADED',
 				latencyMs: dbLatencyMs,
-				provider: 'Neon Postgres (Serverless Pooler)'
+				provider: 'PostgreSQL'
 			},
 			tmdb: {
-				status: tmdbStatus,
-				latencyMs: tmdbLatencyMs,
-				endpoint: 'https://api.themoviedb.org/3'
+				status: tmdbConfigured ? 'CONFIGURED' : 'NOT CONFIGURED',
+				latencyMs: null,
+				endpoint: 'Server-only integration'
 			}
 		}
 	};

@@ -106,10 +106,18 @@
 		gap: 0.4rem;
 	}
 
-	.mt-4 { margin-top: 1rem; }
-	.mt-6 { margin-top: 1.5rem; }
-	.mt-8 { margin-top: 2rem; }
-	.text-right { text-align: right; }
+	.mt-4 {
+		margin-top: 1rem;
+	}
+	.mt-6 {
+		margin-top: 1.5rem;
+	}
+	.mt-8 {
+		margin-top: 2rem;
+	}
+	.text-right {
+		text-align: right;
+	}
 
 	.input-label {
 		font-size: 0.85rem;

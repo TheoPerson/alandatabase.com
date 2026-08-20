@@ -2,6 +2,7 @@
 	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import PlaybackUnavailable from '$lib/components/player/PlaybackUnavailable.svelte';
 	import { addToast } from '$lib/stores/toast';
 
 	let { data } = $props();
@@ -9,52 +10,17 @@
 
 	let selectedSeason = $state(1);
 	let selectedEpisode = $state(1);
-	let selectedServer = $state('vidsrc-pro');
 
 	const currentSeasonObj = $derived(
 		show.seasons?.find((s: any) => s.season_number === selectedSeason) || show.seasons?.[0]
 	);
 
-	const episodeCount = $derived(currentSeasonObj?.episode_count || 10);
-
-	const trailer = $derived(
-		show.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube') ||
-		show.videos?.results?.[0]
-	);
-
-	const servers = $derived([
-		{
-			id: 'vidsrc-pro',
-			name: '⚡ VidSrc Pro HD',
-			badge: 'Multi-Sub',
-			url: `https://vidsrc.pro/embed/tv/${show.id}/${selectedSeason}/${selectedEpisode}`
-		},
-		{
-			id: 'vidsrc-me',
-			name: '🇬🇧 VidSrc ME',
-			badge: 'VOSTFR',
-			url: `https://vidsrc.me/embed/tv?tmdb=${show.id}&season=${selectedSeason}&episode=${selectedEpisode}`
-		},
-		{
-			id: 'super-embed',
-			name: '🎥 SuperEmbed TV',
-			badge: 'HD Mirror',
-			url: `https://autoembed.to/tv/tmdb/${show.id}-${selectedSeason}-${selectedEpisode}`
-		},
-		...(trailer
-			? [
-					{
-						id: 'youtube-trailer',
-						name: '▶ Official Trailer',
-						badge: '4K',
-						url: `https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&rel=0`
-					}
-			  ]
-			: [])
-	]);
-
-	const activeServerUrl = $derived(
-		servers.find((s) => s.id === selectedServer)?.url || servers[0]?.url
+	const episodeCount = $derived(currentSeasonObj?.episode_count ?? 0);
+	const hasEpisodeIndex = $derived(episodeCount > 0);
+	const playbackLabel = $derived(
+		hasEpisodeIndex
+			? `${show.name} · S${selectedSeason} E${selectedEpisode}`
+			: `${show.name} · Season ${selectedSeason}`
 	);
 
 	function shareShow() {
@@ -66,7 +32,10 @@
 </script>
 
 <svelte:head>
-	<title>{show.name} ({show.first_air_date ? new Date(show.first_air_date).getFullYear() : ''}) | CinemaDB TV</title>
+	<title
+		>{show.name} ({show.first_air_date ? new Date(show.first_air_date).getFullYear() : ''}) |
+		CinemaDB TV</title
+	>
 	<meta name="description" content={show.overview} />
 </svelte:head>
 
@@ -93,25 +62,29 @@
 					</div>
 
 					<div class="sidebar-actions">
-						<Button variant="outline" class="w-full" onclick={shareShow}>
-							🔗 Share Series
-						</Button>
-						<a href="/tv" class="back-link">
-							← Back to Top 50 Chart
-						</a>
+						<Button variant="outline" class="w-full" onclick={shareShow}>🔗 Share Series</Button>
+						<a href="/tv" class="back-link"> ← Back to Top 50 Chart </a>
 					</div>
 				</div>
 			</aside>
 
 			<!-- Right Column: Player & Series Details -->
-			<main class="right-col">
+			<div class="right-col">
 				<!-- Title & Badges -->
 				<header class="show-header">
 					<div class="tag-row">
 						<Badge variant="gold">IMDb {Number(show.vote_average || 8.9).toFixed(1)}</Badge>
-						<span class="meta-year">{show.first_air_date ? new Date(show.first_air_date).getFullYear() : ''}</span>
+						<span class="meta-year"
+							>{show.first_air_date ? new Date(show.first_air_date).getFullYear() : ''}</span
+						>
 						<span class="meta-dot">•</span>
-						<span class="meta-seasons">{show.number_of_seasons} Seasons ({show.number_of_episodes} Episodes)</span>
+						<span class="meta-seasons">
+							{show.number_of_seasons}
+							{show.number_of_seasons === 1 ? 'Season' : 'Seasons'}
+							{#if show.number_of_episodes}
+								({show.number_of_episodes} Episodes)
+							{/if}
+						</span>
 					</div>
 					<h1 class="show-title">{show.name}</h1>
 					{#if show.tagline}
@@ -119,7 +92,7 @@
 					{/if}
 				</header>
 
-				<!-- Multi-Server TV Player Console -->
+				<!-- Episode context retained while unapproved playback sources are quarantined. -->
 				<section class="tv-player-card glass-card">
 					<!-- Episode & Season Selector Header -->
 					<div class="player-controls-bar">
@@ -127,46 +100,37 @@
 							<label for="season-select" class="selector-label">Season</label>
 							<select id="season-select" bind:value={selectedSeason} class="custom-select">
 								{#each (show.seasons || []).filter((s: any) => s.season_number > 0) as s}
-									<option value={s.season_number}>Season {s.season_number} ({s.episode_count} eps)</option>
+									<option value={s.season_number}
+										>Season {s.season_number} ({s.episode_count} eps)</option
+									>
 								{/each}
 							</select>
 						</div>
 
 						<div class="selector-group">
 							<label for="episode-select" class="selector-label">Episode</label>
-							<select id="episode-select" bind:value={selectedEpisode} class="custom-select">
-								{#each Array.from({ length: episodeCount }, (_, i) => i + 1) as ep}
-									<option value={ep}>Episode {ep}</option>
-								{/each}
+							<select
+								id="episode-select"
+								bind:value={selectedEpisode}
+								class="custom-select"
+								disabled={!hasEpisodeIndex}
+							>
+								{#if hasEpisodeIndex}
+									{#each Array.from({ length: episodeCount }, (_, i) => i + 1) as ep}
+										<option value={ep}>Episode {ep}</option>
+									{/each}
+								{:else}
+									<option value={1}>Episodes not indexed</option>
+								{/if}
 							</select>
 						</div>
-
-						<!-- Server Mirrors -->
-						<div class="mirrors-group">
-							{#each servers as s}
-								<button
-									type="button"
-									class="mirror-pill"
-									class:active={selectedServer === s.id}
-									onclick={() => (selectedServer = s.id)}
-								>
-									{s.name}
-								</button>
-							{/each}
-						</div>
 					</div>
 
-					<!-- Video Iframe -->
-					<div class="player-aspect-box">
-						<iframe
-							src={activeServerUrl}
-							title="{show.name} Season {selectedSeason} Episode {selectedEpisode}"
-							class="video-iframe"
-							allowfullscreen
-							allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-							referrerpolicy="no-referrer"
-						></iframe>
-					</div>
+					<PlaybackUnavailable
+						title={playbackLabel}
+						context="This series has no owner-approved source. Its local catalog context remains available without loading third-party players."
+						compact
+					/>
 				</section>
 
 				<!-- Show Overview & Genres -->
@@ -175,12 +139,12 @@
 					<p class="synopsis-text">{show.overview}</p>
 
 					<div class="genres-row">
-						{#each (show.genres || []) as g}
+						{#each show.genres || [] as g}
 							<span class="genre-pill">{g.name}</span>
 						{/each}
 					</div>
 				</section>
-			</main>
+			</div>
 		</div>
 	</div>
 </div>
@@ -304,7 +268,9 @@
 		border: 1px solid rgba(255, 255, 255, 0.08);
 		overflow: hidden;
 		margin-bottom: 2rem;
-		box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 20px rgba(16, 185, 129, 0.05);
+		box-shadow:
+			0 20px 50px rgba(0, 0, 0, 0.9),
+			0 0 20px rgba(16, 185, 129, 0.05);
 	}
 
 	.player-controls-bar {
@@ -344,49 +310,6 @@
 
 	.custom-select:focus {
 		border-color: #10b981;
-	}
-
-	.mirrors-group {
-		display: flex;
-		gap: 0.35rem;
-		margin-left: auto;
-		flex-wrap: wrap;
-	}
-
-	.mirror-pill {
-		background: rgba(255, 255, 255, 0.04);
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		color: #a1a1aa;
-		font-size: 0.72rem;
-		font-weight: 700;
-		padding: 0.3rem 0.6rem;
-		border-radius: 6px;
-		cursor: pointer;
-		transition: all 0.15s ease;
-	}
-
-	.mirror-pill:hover {
-		color: #ffffff;
-		background: rgba(255, 255, 255, 0.1);
-	}
-
-	.mirror-pill.active {
-		background: #10b981;
-		color: #050507;
-		border-color: #10b981;
-	}
-
-	.player-aspect-box {
-		position: relative;
-		width: 100%;
-		aspect-ratio: 16/9;
-		background: #000000;
-	}
-
-	.video-iframe {
-		width: 100%;
-		height: 100%;
-		border: none;
 	}
 
 	/* Show Meta Section */
