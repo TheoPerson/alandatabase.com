@@ -126,6 +126,7 @@
 
 <svelte:head>
 	<title>Public Status | Alan Vault</title>
+	<link rel="canonical" href="https://status.alandatabase.com/" />
 </svelte:head>
 
 <!-- Micro Grid Background -->
@@ -134,7 +135,7 @@
 <main class="tool-container">
 	<!-- Header -->
 	<div class="tool-header">
-		<a href="/" class="back-link">← Back to Vault Hub</a>
+		<a href="https://alandatabase.com/" class="back-link">← Back to Vault Hub</a>
 		<div class="title-row">
 			<h1 class="tool-title"><span class="icon">📡</span> Public System Status</h1>
 			<span class="tool-badge green">SAFE STATIC VIEW</span>

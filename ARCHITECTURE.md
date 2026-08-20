@@ -23,6 +23,28 @@ Operator worker
   -> optional Meilisearch configuration
 ```
 
+## Production hostnames
+
+The Vercel project serves one SvelteKit deployment through the configured
+production hostnames. Hostname routing is implemented in `src/hooks.ts` and
+`src/lib/host-routing.ts`; it preserves the existing route tree instead of
+creating parallel applications:
+
+- `alandatabase.com` is the canonical public host.
+- `www.alandatabase.com` and `alans-database.vercel.app` redirect to the
+  canonical HTTPS host.
+- `status.alandatabase.com/` rewrites to the existing public `/status` page.
+- `api.alandatabase.com/` rewrites to `/api`; `/health` rewrites to
+  `/api/health`. API metadata and liveness are public, while catalog and
+  mutation routes retain the session guard.
+- `auth.alandatabase.com` redirects to the existing session login flow on the
+  canonical host. Authentication remains the repository's session-based
+  SvelteKit flow; no separate auth service is invented.
+
+The server hook applies HTTPS canonicalization, security headers, narrow API
+CORS, and production cookie policy before route handling. Static assets,
+`_app` files, query strings, and existing API paths are left untouched.
+
 ## Stack
 
 - SvelteKit 2.70, Svelte 5.56 runes, TypeScript 5.8 in strict mode, and Vite 8.

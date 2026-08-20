@@ -18,6 +18,10 @@ export const PUBLIC_ROUTES = ['/auth/login', '/auth/register', '/404'];
 // Service callbacks authenticate themselves instead of using a browser session.
 export const SESSION_EXEMPT_ROUTES = ['/api/telegram/webhook'];
 
+// Public API metadata and liveness are intentionally narrow exceptions. All
+// data-changing and catalog endpoints remain session-protected.
+export const PUBLIC_API_ROUTES = ['/api', '/api/health'];
+
 function matchesRoute(pathname: string, route: string): boolean {
 	return pathname === route || pathname.startsWith(`${route}/`);
 }
@@ -35,7 +39,11 @@ export function isCinemaRoute(pathname: string): boolean {
 }
 
 export function requiresCinemaSession(pathname: string): boolean {
-	return isCinemaRoute(pathname) && !SESSION_EXEMPT_ROUTES.includes(pathname);
+	return (
+		isCinemaRoute(pathname) &&
+		!SESSION_EXEMPT_ROUTES.includes(pathname) &&
+		!PUBLIC_API_ROUTES.includes(pathname)
+	);
 }
 
 export function isCinemaPageRoute(pathname: string): boolean {

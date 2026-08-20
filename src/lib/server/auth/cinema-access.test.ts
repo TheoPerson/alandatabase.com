@@ -22,6 +22,8 @@ describe('cinema-access rules', () => {
 		expect(isCinemaRoute('/my/films')).toBe(true);
 		expect(isCinemaRoute('/live')).toBe(true);
 		expect(isCinemaRoute('/api/search')).toBe(true);
+		expect(requiresCinemaSession('/api')).toBe(false);
+		expect(requiresCinemaSession('/api/health')).toBe(false);
 		expect(requiresCinemaSession('/api/search')).toBe(true);
 		expect(requiresCinemaSession('/api/movies/catalog')).toBe(true);
 		expect(requiresCinemaSession('/live')).toBe(true);
