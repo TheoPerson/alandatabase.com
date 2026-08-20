@@ -4,6 +4,22 @@ Verified against `agent/v3-foundation-core` at `11cb3a7` plus current working-tr
 
 Nothing below is `merged` to `main` or `deployed` unless explicitly labeled. The Product/Project Lead approves scope and phase transitions.
 
+## `verified` — production hostname integration
+
+- The Vercel production deployment serves the configured aliases for
+  `alandatabase.com`, `www`, `api`, `auth`, `status`, and
+  `alans-database.vercel.app`.
+- The canonical apex is live over HTTPS; `www` and the Vercel hostname return
+  permanent redirects to it without a loop.
+- `status.alandatabase.com/` serves the existing public Status page, while
+  `api.alandatabase.com/` and `/health` serve the API index and liveness probe.
+- API catalog routes remain session-protected and reject an untrusted CORS
+  origin. Static assets receive the same baseline security headers as dynamic
+  responses.
+- Evidence: production deployment `dpl_HubH22zQ2n9pcvGYZpeErtDP5Uen`, Vercel
+  build completed, browser smoke checks passed for apex/www/status/api/auth,
+  and HTTP-to-HTTPS checks passed for all production hosts.
+
 ## `verified` — V3 foundation outcomes
 
 These outcomes are verified in the current V3 worktree/branch, not in production.
