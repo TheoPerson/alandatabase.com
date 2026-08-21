@@ -6,8 +6,8 @@
   <br />
   <br />
 
-  [![CI Status](https://github.com/TheoPerson/alandatabase.com/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/TheoPerson/alandatabase.com/actions/workflows/ci.yml)
-  
+[![CI Status](https://github.com/TheoPerson/alandatabase.com/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/TheoPerson/alandatabase.com/actions/workflows/ci.yml)
+
   <br />
 
   <a href="https://github.com/TheoPerson/alandatabase.com">
