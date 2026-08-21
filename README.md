@@ -6,9 +6,13 @@
   <br />
   <br />
 
-[![SvelteKit](https://img.shields.io/badge/SvelteKit-5-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://kit.svelte.dev/)
-[![Drizzle](https://img.shields.io/badge/Drizzle_ORM-PostgreSQL-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+  [![CI Status](https://github.com/TheoPerson/alandatabase.com/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/TheoPerson/alandatabase.com/actions/workflows/ci.yml)
+  
+  <br />
+
+  <a href="https://github.com/TheoPerson/alandatabase.com">
+    <img src="https://github-readme-stats.vercel.app/api/pin/?username=TheoPerson&repo=alandatabase.com&theme=dark&bg_color=050507&title_color=10b981&icon_color=10b981&text_color=ffffff&border_color=10b981&show_icons=true" alt="CinemaDB Animated Repo Card" />
+  </a>
 
   <br />
 
