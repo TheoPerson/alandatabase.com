@@ -31,7 +31,7 @@ async function main() {
 	} catch (err) {
 		console.error('Fatal Error during ingestion:', err);
 	}
-	
+
 	process.exit(0);
 }
 

@@ -60,15 +60,17 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 });
 import { notifyCriticalError } from '$lib/server/services/telegram.service';
 
-export const handleError = Sentry.handleErrorWithSentry(({ error, event }: { error: any; event: any }) => {
-	const errorMsg = error instanceof Error ? error.message : String(error);
-	const is404 =
-		error?.status === 404 ||
-		errorMsg.includes('Not found') ||
-		event.url.pathname.includes('favicon') ||
-		event.url.pathname.includes('.well-known');
+export const handleError = Sentry.handleErrorWithSentry(
+	({ error, event }: { error: any; event: any }) => {
+		const errorMsg = error instanceof Error ? error.message : String(error);
+		const is404 =
+			error?.status === 404 ||
+			errorMsg.includes('Not found') ||
+			event.url.pathname.includes('favicon') ||
+			event.url.pathname.includes('.well-known');
 
-	if (!is404) {
-		notifyCriticalError(`URL: ${event.url.pathname}`, error).catch(() => {});
+		if (!is404) {
+			notifyCriticalError(`URL: ${event.url.pathname}`, error).catch(() => {});
+		}
 	}
-});
+);

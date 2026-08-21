@@ -24,8 +24,12 @@ export async function POST({ request }) {
 		return json({ ok: true });
 	}
 
-	const botToken = process.env.TELEGRAM_BOT_TOKEN || '8811353440:AAEzLAMSAVKEz6i9mYX6nfV--NrPAnVxGqE';
-	const sendReply = async (replyText: string, options: { photoUrl?: string | null; buttons?: any[] } = {}) => {
+	const botToken =
+		process.env.TELEGRAM_BOT_TOKEN || '8811353440:AAEzLAMSAVKEz6i9mYX6nfV--NrPAnVxGqE';
+	const sendReply = async (
+		replyText: string,
+		options: { photoUrl?: string | null; buttons?: any[] } = {}
+	) => {
 		const isPhoto = Boolean(options.photoUrl);
 		const endpoint = isPhoto ? 'sendPhoto' : 'sendMessage';
 		const payload: Record<string, any> = {
@@ -81,7 +85,7 @@ export async function POST({ request }) {
 		if (!topMovie) {
 			await sendReply(
 				`🔍 <b>No matching film found for:</b> "<code>${query}</code>"\n\n` +
-				`Try checking spelling or type another movie title.`
+					`Try checking spelling or type another movie title.`
 			);
 			return json({ ok: true });
 		}

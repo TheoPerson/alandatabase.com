@@ -13,12 +13,12 @@
 	let carouselInterval: any = null;
 
 	const featuredMovies = $derived(
-		(data.top10 || [])
-			.filter((m: any) => m.backdropPath && m.backdropPath !== 'null')
-			.slice(0, 5)
+		(data.top10 || []).filter((m: any) => m.backdropPath && m.backdropPath !== 'null').slice(0, 5)
 	);
 
-	const currentHero = $derived(featuredMovies[heroIndex] || data.top10?.[0] || data.trending?.[0] || null);
+	const currentHero = $derived(
+		featuredMovies[heroIndex] || data.top10?.[0] || data.trending?.[0] || null
+	);
 
 	const heroHref = $derived(
 		currentHero ? `/cinema/movies/${currentHero.id || currentHero.tmdbId}` : '/movies/catalog'
@@ -210,7 +210,8 @@
 				<span class="crossover-badge">📺 TELEVISION ARCHIVE</span>
 				<h3 class="crossover-title">Explore the Top 50 IMDb-Ranked TV Series</h3>
 				<p class="crossover-desc">
-					Stream Breaking Bad, Reacher, Planet Earth, Chernobyl, Arcane, and the greatest television sagas in history.
+					Stream Breaking Bad, Reacher, Planet Earth, Chernobyl, Arcane, and the greatest television
+					sagas in history.
 				</p>
 			</div>
 			<a href="/tvshows" class="crossover-btn">
@@ -279,15 +280,27 @@
 	}
 
 	@keyframes heroFadeIn {
-		from { opacity: 0; transform: scale(1.02); }
-		to { opacity: 1; transform: scale(1); }
+		from {
+			opacity: 0;
+			transform: scale(1.02);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
 	}
 
 	/* 4-Way Vignette Masking for Ultra-Seamless Blending (Soft Midnight Slate) */
 	.vignette-left {
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(90deg, #0a0e17 0%, rgba(10, 14, 23, 0.9) 32%, rgba(10, 14, 23, 0.3) 65%, transparent 100%);
+		background: linear-gradient(
+			90deg,
+			#0a0e17 0%,
+			rgba(10, 14, 23, 0.9) 32%,
+			rgba(10, 14, 23, 0.3) 65%,
+			transparent 100%
+		);
 	}
 
 	.vignette-bottom {
@@ -329,8 +342,14 @@
 	}
 
 	@keyframes textSlideUp {
-		from { opacity: 0; transform: translateY(15px); }
-		to { opacity: 1; transform: translateY(0); }
+		from {
+			opacity: 0;
+			transform: translateY(15px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
 	.hero-main-title {

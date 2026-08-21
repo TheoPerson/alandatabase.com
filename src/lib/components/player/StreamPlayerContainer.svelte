@@ -1,13 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
-	let {
-		tmdbId,
-		imdbId,
-		title,
-		trailerKey,
-		customVideoUrl
-	} = $props<{
+	let { tmdbId, imdbId, title, trailerKey, customVideoUrl } = $props<{
 		tmdbId: number | string;
 		imdbId?: string | null;
 		title: string;
@@ -25,7 +19,7 @@
 						badge: 'Private',
 						url: customVideoUrl
 					}
-			  ]
+				]
 			: [
 					{
 						id: 'vidzy-hd',
@@ -59,9 +53,9 @@
 									badge: '4K',
 									url: `https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1&rel=0`
 								}
-						  ]
+							]
 						: [])
-			  ]
+				]
 	);
 
 	let activeServerId = $state('vidzy-hd');
@@ -76,9 +70,7 @@
 		}
 	});
 
-	const activeServer = $derived(
-		servers.find((s) => s.id === activeServerId) || servers[0]
-	);
+	const activeServer = $derived(servers.find((s) => s.id === activeServerId) || servers[0]);
 
 	function dispatchStreamTelemetry(serverName: string) {
 		if (typeof window === 'undefined') return;

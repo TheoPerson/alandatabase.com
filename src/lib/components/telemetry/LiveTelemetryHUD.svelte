@@ -249,7 +249,8 @@
 				<div class="hud-screen" bind:this={terminalScrollEl}>
 					{#if filteredLogs.length === 0}
 						<div class="empty-feed">
-							<span class="cursor">></span> Listening to live events... Search or stream a movie to see telemetry.
+							<span class="cursor">></span> Listening to live events... Search or stream a movie to see
+							telemetry.
 						</div>
 					{:else}
 						{#each filteredLogs as log (log.id)}
@@ -310,7 +311,9 @@
 		font-size: 0.75rem;
 		font-weight: 800;
 		letter-spacing: 0.05em;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(16, 185, 129, 0.15);
+		box-shadow:
+			0 4px 20px rgba(0, 0, 0, 0.6),
+			0 0 12px rgba(16, 185, 129, 0.15);
 		cursor: pointer;
 		backdrop-filter: blur(12px);
 		transition: all 0.2s ease;
@@ -319,7 +322,9 @@
 	.hud-trigger-btn:hover {
 		border-color: #10b981;
 		transform: translateY(-2px);
-		box-shadow: 0 6px 24px rgba(0, 0, 0, 0.8), 0 0 16px rgba(16, 185, 129, 0.3);
+		box-shadow:
+			0 6px 24px rgba(0, 0, 0, 0.8),
+			0 0 16px rgba(16, 185, 129, 0.3);
 	}
 
 	.radar-dot {
@@ -336,8 +341,15 @@
 	}
 
 	@keyframes radarGlow {
-		0%, 100% { transform: scale(1); opacity: 1; }
-		50% { transform: scale(1.3); opacity: 0.6; }
+		0%,
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
+		50% {
+			transform: scale(1.3);
+			opacity: 0.6;
+		}
 	}
 
 	.hud-label {
@@ -360,7 +372,9 @@
 		background: rgba(6, 9, 14, 0.96);
 		border: 1px solid rgba(16, 185, 129, 0.3);
 		border-radius: 14px;
-		box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 20px rgba(16, 185, 129, 0.08);
+		box-shadow:
+			0 10px 40px rgba(0, 0, 0, 0.9),
+			0 0 20px rgba(16, 185, 129, 0.08);
 		backdrop-filter: blur(16px);
 		overflow: hidden;
 		display: flex;
@@ -373,8 +387,14 @@
 	}
 
 	@keyframes popIn {
-		from { opacity: 0; transform: scale(0.95) translateY(10px); }
-		to { opacity: 1; transform: scale(1) translateY(0); }
+		from {
+			opacity: 0;
+			transform: scale(0.95) translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1) translateY(0);
+		}
 	}
 
 	.hud-header {
@@ -507,21 +527,62 @@
 		word-break: break-all;
 	}
 
-	.time { color: #52525b; font-size: 0.68rem; flex-shrink: 0; }
-	.lvl { font-weight: 800; font-size: 0.66rem; padding: 0.05rem 0.25rem; border-radius: 2px; flex-shrink: 0; }
-	.src { color: #71717a; font-weight: 600; flex-shrink: 0; font-size: 0.68rem; }
-	.msg { color: #e4e4e7; }
+	.time {
+		color: #52525b;
+		font-size: 0.68rem;
+		flex-shrink: 0;
+	}
+	.lvl {
+		font-weight: 800;
+		font-size: 0.66rem;
+		padding: 0.05rem 0.25rem;
+		border-radius: 2px;
+		flex-shrink: 0;
+	}
+	.src {
+		color: #71717a;
+		font-weight: 600;
+		flex-shrink: 0;
+		font-size: 0.68rem;
+	}
+	.msg {
+		color: #e4e4e7;
+	}
 
-	.tag-info { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-	.tag-success { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-	.tag-stream { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
-	.tag-search { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-	.tag-ingest { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
-	.tag-error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+	.tag-info {
+		background: rgba(59, 130, 246, 0.15);
+		color: #60a5fa;
+	}
+	.tag-success {
+		background: rgba(16, 185, 129, 0.15);
+		color: #34d399;
+	}
+	.tag-stream {
+		background: rgba(168, 85, 247, 0.15);
+		color: #c084fc;
+	}
+	.tag-search {
+		background: rgba(245, 158, 11, 0.15);
+		color: #fbbf24;
+	}
+	.tag-ingest {
+		background: rgba(236, 72, 153, 0.15);
+		color: #f472b6;
+	}
+	.tag-error {
+		background: rgba(239, 68, 68, 0.2);
+		color: #f87171;
+	}
 
-	.log-error .msg { color: #f87171; }
-	.log-stream .msg { color: #e9d5ff; }
-	.log-search .msg { color: #fef08a; }
+	.log-error .msg {
+		color: #f87171;
+	}
+	.log-stream .msg {
+		color: #e9d5ff;
+	}
+	.log-search .msg {
+		color: #fef08a;
+	}
 
 	/* Footer & CLI Input */
 	.hud-footer {

@@ -109,10 +109,9 @@
 						name="overview"
 						rows="4"
 						class="oled-textarea"
-						placeholder="A brief description of this movie..."
-					></textarea>
+						placeholder="A brief description of this movie..."></textarea>
 				</div>
-				
+
 				<div class="input-group checkbox-group full-width">
 					<label class="checkbox-label">
 						<input type="checkbox" name="isAdult" value="true" checked class="oled-checkbox" />
@@ -185,7 +184,7 @@
 		.form-grid {
 			grid-template-columns: 1fr 1fr;
 		}
-		
+
 		.full-width {
 			grid-column: span 2;
 		}

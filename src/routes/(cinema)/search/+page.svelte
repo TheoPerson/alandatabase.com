@@ -113,7 +113,9 @@
 						posterPath={movie.posterPath}
 						releaseDate={movie.releaseDate}
 						voteAverage={movie.voteAverage}
-						genres={movie.genres?.map((g: any) => g?.genre?.name || g?.name || (typeof g === 'string' ? g : ''))}
+						genres={movie.genres?.map(
+							(g: any) => g?.genre?.name || g?.name || (typeof g === 'string' ? g : '')
+						)}
 					/>
 				{/each}
 			</div>

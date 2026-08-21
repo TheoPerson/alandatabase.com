@@ -39,7 +39,7 @@
 	function handleSortChange() {
 		updateUrl({ sort: sortBy });
 	}
-	
+
 	function changePage(newPage: number) {
 		updateUrl({ page: newPage.toString() });
 	}
@@ -68,14 +68,17 @@
 		{#if data.genreList.length > 0}
 			<div class="genre-pills">
 				<button type="button" onclick={() => setGenre(null)}>
-					<Badge variant={selectedGenreId === null ? "default" : "outline"} class="cursor-pointer">
+					<Badge variant={selectedGenreId === null ? 'default' : 'outline'} class="cursor-pointer">
 						All Genres
 					</Badge>
 				</button>
 
 				{#each data.genreList as g}
 					<button type="button" onclick={() => setGenre(g.id)}>
-						<Badge variant={selectedGenreId === g.id ? "default" : "outline"} class="cursor-pointer">
+						<Badge
+							variant={selectedGenreId === g.id ? 'default' : 'outline'}
+							class="cursor-pointer"
+						>
 							{g.name}
 						</Badge>
 					</button>
@@ -86,13 +89,21 @@
 		<!-- Decade Filters -->
 		<div class="genre-pills" style="margin-top: 1rem; margin-bottom: 2rem;">
 			<button type="button" onclick={() => updateUrl({ decade: null })}>
-				<Badge variant={!$page.url.searchParams.get('decade') ? "default" : "outline"} class="cursor-pointer">
+				<Badge
+					variant={!$page.url.searchParams.get('decade') ? 'default' : 'outline'}
+					class="cursor-pointer"
+				>
 					All Time
 				</Badge>
 			</button>
 			{#each [2020, 2010, 2000, 1990, 1980, 1970] as decade}
 				<button type="button" onclick={() => updateUrl({ decade: decade.toString() })}>
-					<Badge variant={$page.url.searchParams.get('decade') === decade.toString() ? "default" : "outline"} class="cursor-pointer">
+					<Badge
+						variant={$page.url.searchParams.get('decade') === decade.toString()
+							? 'default'
+							: 'outline'}
+						class="cursor-pointer"
+					>
 						{decade}s
 					</Badge>
 				</button>
@@ -128,11 +139,11 @@
 				/>
 			{/each}
 		</div>
-		
+
 		<!-- Pagination -->
 		{#if data.pagination.totalPages > 1}
 			<div class="pagination">
-				<Button 
+				<Button
 					variant="outline"
 					disabled={data.pagination.page === 1}
 					onclick={() => changePage(data.pagination.page - 1)}
@@ -140,7 +151,7 @@
 					Previous
 				</Button>
 				<span class="page-info">Page {data.pagination.page} of {data.pagination.totalPages}</span>
-				<Button 
+				<Button
 					variant="outline"
 					disabled={data.pagination.page === data.pagination.totalPages}
 					onclick={() => changePage(data.pagination.page + 1)}
@@ -230,7 +241,7 @@
 		border: 1px solid var(--border-subtle);
 		color: var(--text-secondary);
 	}
-	
+
 	.pagination {
 		display: flex;
 		align-items: center;
@@ -238,7 +249,7 @@
 		gap: 1rem;
 		margin-top: 4rem;
 	}
-	
+
 	.page-info {
 		color: var(--text-secondary);
 		font-size: 0.9rem;

@@ -226,8 +226,6 @@ export async function getMovieById(id: string) {
 		}
 	}
 
-
-
 	return applyLocalOverrides(found);
 }
 
@@ -262,22 +260,26 @@ export async function searchMovies(q: string, limit = 30) {
 	try {
 		const client = new TMDBClient();
 		const [localResults, localActors, searchMoviesRes, searchPeopleRes] = await Promise.all([
-			db.query.movies.findMany({
-				where: and(ilike(movies.title, `%${queryStr}%`), eq(movies.adult, false)),
-				orderBy: [desc(movies.popularity)],
-				limit: 15,
-				with: { genres: { with: { genre: true } } }
-			}).catch(() => []),
-			db.query.people.findMany({
-				where: ilike(people.name, `%${queryStr}%`),
-				limit: 3,
-				with: {
-					castRoles: {
-						limit: 10,
-						with: { movie: { with: { genres: { with: { genre: true } } } } }
+			db.query.movies
+				.findMany({
+					where: and(ilike(movies.title, `%${queryStr}%`), eq(movies.adult, false)),
+					orderBy: [desc(movies.popularity)],
+					limit: 15,
+					with: { genres: { with: { genre: true } } }
+				})
+				.catch(() => []),
+			db.query.people
+				.findMany({
+					where: ilike(people.name, `%${queryStr}%`),
+					limit: 3,
+					with: {
+						castRoles: {
+							limit: 10,
+							with: { movie: { with: { genres: { with: { genre: true } } } } }
+						}
 					}
-				}
-			}).catch(() => []),
+				})
+				.catch(() => []),
 			client.searchMovies(queryStr, 1).catch(() => ({ results: [] })),
 			client.searchPeople(queryStr, 1).catch(() => ({ results: [] }))
 		]);

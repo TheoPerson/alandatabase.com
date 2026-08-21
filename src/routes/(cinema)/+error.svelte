@@ -2,7 +2,9 @@
 	import { page } from '$app/stores';
 
 	const status = $derived($page.status || 404);
-	const message = $derived($page.error?.message || 'The requested film or page could not be found.');
+	const message = $derived(
+		$page.error?.message || 'The requested film or page could not be found.'
+	);
 
 	function goBack() {
 		if (typeof window !== 'undefined') {
@@ -24,17 +26,34 @@
 		<!-- Animated Film Radar Icon -->
 		<div class="symbol-box">
 			<svg class="radar-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-				<circle cx="32" cy="32" r="28" stroke="rgba(16, 185, 129, 0.2)" stroke-width="2" stroke-dasharray="4 4" class="outer-ring" />
+				<circle
+					cx="32"
+					cy="32"
+					r="28"
+					stroke="rgba(16, 185, 129, 0.2)"
+					stroke-width="2"
+					stroke-dasharray="4 4"
+					class="outer-ring"
+				/>
 				<circle cx="32" cy="32" r="20" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1.5" />
 				<circle cx="32" cy="32" r="14" fill="#0c111a" stroke="#10b981" stroke-width="2" />
 				<circle cx="32" cy="32" r="4" fill="#10b981" />
-				
+
 				<circle cx="32" cy="24" r="1.8" fill="#10b981" />
 				<circle cx="32" cy="40" r="1.8" fill="#10b981" />
 				<circle cx="24" cy="32" r="1.8" fill="#10b981" />
 				<circle cx="40" cy="32" r="1.8" fill="#10b981" />
-				
-				<line x1="32" y1="32" x2="48" y2="16" stroke="#34d399" stroke-width="2" stroke-linecap="round" class="radar-sweep" />
+
+				<line
+					x1="32"
+					y1="32"
+					x2="48"
+					y2="16"
+					stroke="#34d399"
+					stroke-width="2"
+					stroke-linecap="round"
+					class="radar-sweep"
+				/>
 			</svg>
 		</div>
 
@@ -89,7 +108,9 @@
 		border-radius: 20px;
 		padding: 3rem 2rem;
 		text-align: center;
-		box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(16, 185, 129, 0.06);
+		box-shadow:
+			0 20px 50px rgba(0, 0, 0, 0.8),
+			0 0 30px rgba(16, 185, 129, 0.06);
 		backdrop-filter: blur(20px);
 	}
 
@@ -115,8 +136,12 @@
 	}
 
 	@keyframes spin {
-		from { transform: rotate(0deg); }
-		to { transform: rotate(360deg); }
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	.status-pill {

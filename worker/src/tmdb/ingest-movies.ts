@@ -221,7 +221,12 @@ export async function ingestMovie(
 			`✅ Successfully ingested "${detail.title}" (${detail.release_date?.substring(0, 4) || 'N/A'})`
 		);
 		if (options.notifyTelegram) {
-			notifyMovieIngested(detail.title, detail.release_date?.substring(0, 4), detail.id, detail.poster_path).catch(() => {});
+			notifyMovieIngested(
+				detail.title,
+				detail.release_date?.substring(0, 4),
+				detail.id,
+				detail.poster_path
+			).catch(() => {});
 		}
 		return movieId;
 	} catch (err) {

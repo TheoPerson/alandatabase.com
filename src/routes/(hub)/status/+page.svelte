@@ -182,7 +182,8 @@
 			</span>
 		</div>
 		<p class="tool-subtitle">
-			Real-time event streaming, video playback dispatches, search vectors, and database health metrics.
+			Real-time event streaming, video playback dispatches, search vectors, and database health
+			metrics.
 		</p>
 	</div>
 
@@ -286,7 +287,8 @@
 		<div class="terminal-screen" bind:this={terminalOutputEl}>
 			{#if filteredLogs.length === 0}
 				<div class="empty-terminal">
-					<span class="terminal-cursor">></span> Waiting for live events... Perform a search or watch a movie to see real-time telemetry stream.
+					<span class="terminal-cursor">></span> Waiting for live events... Perform a search or watch
+					a movie to see real-time telemetry stream.
 				</div>
 			{:else}
 				{#each filteredLogs as log (log.id)}
@@ -320,7 +322,7 @@
 		inset: 0;
 		z-index: 0;
 		background-color: #050507;
-		background-image: 
+		background-image:
 			linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
 			linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 		background-size: 32px 32px;
@@ -503,7 +505,9 @@
 		border: 1px solid rgba(16, 185, 129, 0.25);
 		border-radius: 16px;
 		overflow: hidden;
-		box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), 0 0 15px rgba(16, 185, 129, 0.05);
+		box-shadow:
+			0 0 40px rgba(0, 0, 0, 0.8),
+			0 0 15px rgba(16, 185, 129, 0.05);
 		display: flex;
 		flex-direction: column;
 	}
@@ -539,7 +543,8 @@
 	}
 
 	@keyframes dotPulse {
-		0%, 100% {
+		0%,
+		100% {
 			transform: scale(1);
 			opacity: 1;
 		}
@@ -660,8 +665,13 @@
 	}
 
 	@keyframes cursorBlink {
-		0%, 100% { opacity: 1; }
-		50% { opacity: 0; }
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0;
+		}
 	}
 
 	.terminal-log-row {
@@ -685,13 +695,34 @@
 		flex-shrink: 0;
 	}
 
-	.badge-info { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-	.badge-success { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-	.badge-stream { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
-	.badge-search { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-	.badge-ingest { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
-	.badge-warn { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
-	.badge-error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+	.badge-info {
+		background: rgba(59, 130, 246, 0.15);
+		color: #60a5fa;
+	}
+	.badge-success {
+		background: rgba(16, 185, 129, 0.15);
+		color: #34d399;
+	}
+	.badge-stream {
+		background: rgba(168, 85, 247, 0.15);
+		color: #c084fc;
+	}
+	.badge-search {
+		background: rgba(245, 158, 11, 0.15);
+		color: #fbbf24;
+	}
+	.badge-ingest {
+		background: rgba(236, 72, 153, 0.15);
+		color: #f472b6;
+	}
+	.badge-warn {
+		background: rgba(249, 115, 22, 0.15);
+		color: #fb923c;
+	}
+	.badge-error {
+		background: rgba(239, 68, 68, 0.2);
+		color: #f87171;
+	}
 
 	.log-source {
 		color: #71717a;
@@ -703,10 +734,18 @@
 		color: #e4e4e7;
 	}
 
-	.level-error .log-msg { color: #f87171; }
-	.level-stream .log-msg { color: #e9d5ff; }
-	.level-search .log-msg { color: #fef08a; }
-	.level-ingest .log-msg { color: #fbcfe8; }
+	.level-error .log-msg {
+		color: #f87171;
+	}
+	.level-stream .log-msg {
+		color: #e9d5ff;
+	}
+	.level-search .log-msg {
+		color: #fef08a;
+	}
+	.level-ingest .log-msg {
+		color: #fbcfe8;
+	}
 
 	/* Interactive CLI Command Form */
 	.terminal-cli-form {

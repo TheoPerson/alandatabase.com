@@ -6,9 +6,9 @@
   <br />
   <br />
 
-  [![SvelteKit](https://img.shields.io/badge/SvelteKit-5-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://kit.svelte.dev/)
-  [![Drizzle](https://img.shields.io/badge/Drizzle_ORM-PostgreSQL-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
-  [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![SvelteKit](https://img.shields.io/badge/SvelteKit-5-FF3E00?style=for-the-badge&logo=svelte&logoColor=white)](https://kit.svelte.dev/)
+[![Drizzle](https://img.shields.io/badge/Drizzle_ORM-PostgreSQL-C5F74F?style=for-the-badge&logo=drizzle&logoColor=black)](https://orm.drizzle.team/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
   <br />
 
@@ -29,18 +29,19 @@
 
 ## 🛠️ Technology Stack
 
-| Category | Technology |
-|---|---|
-| **Framework** | [SvelteKit 5](https://kit.svelte.dev/) (Vite) |
-| **Language** | [TypeScript](https://www.typescriptlang.org/) |
-| **Database** | [PostgreSQL](https://www.postgresql.org/) + [Neon](https://neon.tech) |
-| **ORM** | [Drizzle ORM](https://orm.drizzle.team/) |
-| **UI System** | Custom Vanilla CSS Tokens (No bulky CSS frameworks) |
-| **Testing** | [Vitest](https://vitest.dev/) & [Playwright](https://playwright.dev/) |
+| Category      | Technology                                                            |
+| ------------- | --------------------------------------------------------------------- |
+| **Framework** | [SvelteKit 5](https://kit.svelte.dev/) (Vite)                         |
+| **Language**  | [TypeScript](https://www.typescriptlang.org/)                         |
+| **Database**  | [PostgreSQL](https://www.postgresql.org/) + [Neon](https://neon.tech) |
+| **ORM**       | [Drizzle ORM](https://orm.drizzle.team/)                              |
+| **UI System** | Custom Vanilla CSS Tokens (No bulky CSS frameworks)                   |
+| **Testing**   | [Vitest](https://vitest.dev/) & [Playwright](https://playwright.dev/) |
 
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js (v20+)
 - PostgreSQL Database URL (e.g., Neon or local pg)
 - TMDB API Key
@@ -48,24 +49,28 @@
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/TheoPerson/the-alans-data-base.git
    cd the-alans-data-base
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Environment Setup**
    Create a `.env` file at the root of the project:
+
    ```env
    DATABASE_URL="postgres://user:password@host:port/db"
    VITE_TMDB_API_KEY="your_tmdb_api_key"
    ```
 
 4. **Initialize Database**
+
    ```bash
    npm run db:push
    ```
@@ -74,16 +79,18 @@
    ```bash
    npm run dev
    ```
-   *Your personal cinema OS will be running on `http://localhost:5173`.*
+   _Your personal cinema OS will be running on `http://localhost:5173`._
 
 ## 🧪 Testing
 
 Run the critical unit testing suite:
+
 ```bash
 npm run test:unit
 ```
 
 ## 🗺️ Roadmap (V3)
+
 - [x] Complete refactoring to Svelte 5 `$state` & `$derived` runes.
 - [x] Swiss OLED Design System migration.
 - [x] Backend interaction API (Ratings, Lists, History).
@@ -91,7 +98,9 @@ npm run test:unit
 - [ ] User Profile & Social graph extensions.
 
 ## 📄 License
+
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
-*Built with passion for the love of Cinema.*
+
+_Built with passion for the love of Cinema._

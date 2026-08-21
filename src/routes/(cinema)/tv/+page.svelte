@@ -25,8 +25,7 @@
 				show.title.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
 				show.overview.toLowerCase().includes(searchQuery.trim().toLowerCase());
 
-			const matchesGenre =
-				selectedGenre === 'All' || show.genres?.includes(selectedGenre);
+			const matchesGenre = selectedGenre === 'All' || show.genres?.includes(selectedGenre);
 
 			return matchesQuery && matchesGenre;
 		})
@@ -46,11 +45,7 @@
 	{#if hero}
 		<section class="tv-hero-stage">
 			<div class="hero-stage-bg">
-				<img
-					src={hero.backdropPath}
-					alt="{hero.title} 4K Backdrop"
-					class="hero-4k-image"
-				/>
+				<img src={hero.backdropPath} alt="{hero.title} 4K Backdrop" class="hero-4k-image" />
 				<div class="vignette-left"></div>
 				<div class="vignette-bottom"></div>
 				<div class="vignette-top"></div>
@@ -141,7 +136,13 @@
 					<p class="empty-emoji">📺</p>
 					<h3>No TV shows match your filter</h3>
 					<p class="empty-hint">Try clearing your search query or selecting a different genre.</p>
-					<Button variant="outline" onclick={() => { searchQuery = ''; selectedGenre = 'All'; }}>Reset Filters</Button>
+					<Button
+						variant="outline"
+						onclick={() => {
+							searchQuery = '';
+							selectedGenre = 'All';
+						}}>Reset Filters</Button
+					>
 				</div>
 			{:else}
 				{#each filteredShows as show (show.tmdbId)}
@@ -172,7 +173,10 @@
 								<div class="tv-meta">
 									<span class="meta-year">{show.year}</span>
 									<span class="meta-dot">•</span>
-									<span class="meta-seasons">{show.seasonsCount || 1} {(show.seasonsCount || 1) === 1 ? 'Season' : 'Seasons'}</span>
+									<span class="meta-seasons"
+										>{show.seasonsCount || 1}
+										{(show.seasonsCount || 1) === 1 ? 'Season' : 'Seasons'}</span
+									>
 								</div>
 							</div>
 
@@ -234,7 +238,13 @@
 	.vignette-left {
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(90deg, #0a0e17 0%, rgba(10, 14, 23, 0.9) 32%, rgba(10, 14, 23, 0.3) 65%, transparent 100%);
+		background: linear-gradient(
+			90deg,
+			#0a0e17 0%,
+			rgba(10, 14, 23, 0.9) 32%,
+			rgba(10, 14, 23, 0.3) 65%,
+			transparent 100%
+		);
 	}
 
 	.vignette-bottom {
@@ -547,7 +557,10 @@
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+		transition:
+			transform 0.2s ease,
+			border-color 0.2s ease,
+			box-shadow 0.2s ease;
 	}
 
 	.tv-card:hover {

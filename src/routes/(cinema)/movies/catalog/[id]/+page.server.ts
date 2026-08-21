@@ -21,9 +21,11 @@ async function resolveMovieUuid(movieIdOrTmdb: string): Promise<string | null> {
 
 	if (/^\d+$/.test(movieIdOrTmdb)) {
 		const tmdbId = parseInt(movieIdOrTmdb, 10);
-		const existing = await db.query.movies.findFirst({
-			where: eq(movies.tmdbId, tmdbId)
-		}).catch(() => null);
+		const existing = await db.query.movies
+			.findFirst({
+				where: eq(movies.tmdbId, tmdbId)
+			})
+			.catch(() => null);
 
 		if (existing) {
 			return existing.id;

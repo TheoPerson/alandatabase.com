@@ -4,7 +4,7 @@ export async function ingestAdultVideo(video: any): Promise<string | null> {
 	try {
 		// Generate a negative TMDB ID for custom videos to bypass TMDB proxy lookups
 		const negativeId = -Math.floor(Math.random() * 1000000) - 100000;
-		
+
 		const [movie] = await db
 			.insert(schema.movies)
 			.values({
@@ -25,7 +25,7 @@ export async function ingestAdultVideo(video: any): Promise<string | null> {
 			.returning();
 
 		if (!movie) return null;
-		
+
 		console.log(`✅ Successfully ingested adult video: "${video.title}"`);
 		return movie.id;
 	} catch (err) {

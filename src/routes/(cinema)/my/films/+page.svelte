@@ -24,7 +24,7 @@
 			const d = new Date(today);
 			d.setDate(d.getDate() - i);
 			const dateStr = d.toISOString().split('T')[0];
-			
+
 			const count = watched.filter((w: any) => {
 				if (!w.updatedAt) return false;
 				return new Date(w.updatedAt).toISOString().split('T')[0] === dateStr;
@@ -530,8 +530,17 @@
 		z-index: 2;
 	}
 
-	.lvl-0 { background: rgba(255, 255, 255, 0.05); }
-	.lvl-1 { background: rgba(16, 185, 129, 0.35); }
-	.lvl-2 { background: rgba(16, 185, 129, 0.65); }
-	.lvl-3 { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.6); }
+	.lvl-0 {
+		background: rgba(255, 255, 255, 0.05);
+	}
+	.lvl-1 {
+		background: rgba(16, 185, 129, 0.35);
+	}
+	.lvl-2 {
+		background: rgba(16, 185, 129, 0.65);
+	}
+	.lvl-3 {
+		background: #10b981;
+		box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+	}
 </style>

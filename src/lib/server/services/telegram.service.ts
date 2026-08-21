@@ -12,8 +12,12 @@ interface TelegramSendOptions {
 const sentDedupeCache = new Map<string, number>();
 const DEDUPE_TTL_MS = 15 * 60 * 1000; // 15 minutes TTL
 
-export async function sendTelegramCard(text: string, options: TelegramSendOptions = {}): Promise<boolean> {
-	const botToken = process.env.TELEGRAM_BOT_TOKEN || '8811353440:AAEzLAMSAVKEz6i9mYX6nfV--NrPAnVxGqE';
+export async function sendTelegramCard(
+	text: string,
+	options: TelegramSendOptions = {}
+): Promise<boolean> {
+	const botToken =
+		process.env.TELEGRAM_BOT_TOKEN || '8811353440:AAEzLAMSAVKEz6i9mYX6nfV--NrPAnVxGqE';
 	let chatId = process.env.TELEGRAM_CHAT_ID || '1147966448';
 	let topicId: number | undefined = undefined;
 
@@ -42,7 +46,8 @@ export async function sendTelegramCard(text: string, options: TelegramSendOption
 		if (process.env.TELEGRAM_TOPIC_MAJOR) topicId = parseInt(process.env.TELEGRAM_TOPIC_MAJOR, 10);
 	} else if (category === 'ingest') {
 		chatId = process.env.TELEGRAM_CHAT_INGEST || chatId;
-		if (process.env.TELEGRAM_TOPIC_INGEST) topicId = parseInt(process.env.TELEGRAM_TOPIC_INGEST, 10);
+		if (process.env.TELEGRAM_TOPIC_INGEST)
+			topicId = parseInt(process.env.TELEGRAM_TOPIC_INGEST, 10);
 	} else if (category === 'users') {
 		chatId = process.env.TELEGRAM_CHAT_USERS || chatId;
 		if (process.env.TELEGRAM_TOPIC_USERS) topicId = parseInt(process.env.TELEGRAM_TOPIC_USERS, 10);
@@ -86,7 +91,10 @@ export async function sendTelegramCard(text: string, options: TelegramSendOption
 		});
 
 		if (!res.ok) {
-			console.warn(`[Telegram ${category.toUpperCase()}] API Error ${res.status}:`, await res.text());
+			console.warn(
+				`[Telegram ${category.toUpperCase()}] API Error ${res.status}:`,
+				await res.text()
+			);
 			return false;
 		}
 
@@ -103,7 +111,7 @@ export async function sendTelegramCard(text: string, options: TelegramSendOption
 export async function notifyCriticalError(context: string, error: any) {
 	const errorMsg = error instanceof Error ? error.message : String(error);
 	const timestamp = new Date().toISOString();
-	
+
 	telemetryBus.emit({
 		level: 'ERROR',
 		source: 'SERVER_EXCEPTION',
@@ -126,7 +134,11 @@ export async function notifyCriticalError(context: string, error: any) {
 	});
 }
 
-export async function notifyMajorEvent(title: string, message: string, severity: 'CRITICAL' | 'WARNING' | 'NOTICE' = 'NOTICE') {
+export async function notifyMajorEvent(
+	title: string,
+	message: string,
+	severity: 'CRITICAL' | 'WARNING' | 'NOTICE' = 'NOTICE'
+) {
 	const icon = severity === 'CRITICAL' ? '🔴' : severity === 'WARNING' ? '🟠' : '🟢';
 	const timestamp = new Date().toISOString();
 
@@ -245,9 +257,18 @@ export async function notifyUserLogin(username: string, ip?: string) {
 // -------------------------------------------------------------
 // 4. 📡 LIVE RUNTIME ACTIVITY (DISCOVERY & STREAMING)
 // -------------------------------------------------------------
-export async function notifyMovieStreamed(movieTitle: string, serverName?: string, user?: string, posterPath?: string | null) {
+export async function notifyMovieStreamed(
+	movieTitle: string,
+	serverName?: string,
+	user?: string,
+	posterPath?: string | null
+) {
 	const timestamp = new Date().toISOString();
-	const fullPosterUrl = posterPath ? (posterPath.startsWith('http') ? posterPath : `https://image.tmdb.org/t/p/w500${posterPath}`) : null;
+	const fullPosterUrl = posterPath
+		? posterPath.startsWith('http')
+			? posterPath
+			: `https://image.tmdb.org/t/p/w500${posterPath}`
+		: null;
 
 	telemetryBus.emit({
 		level: 'STREAM',
@@ -292,6 +313,13 @@ export async function notifySearchPerformed(query: string, resultCount: number) 
 
 	return sendTelegramCard(text, {
 		category: 'logs',
-		inlineButtons: [[{ text: '🔍 View Search Vector', url: `https://alandatabase.com/search?q=${encodeURIComponent(query)}` }]]
+		inlineButtons: [
+			[
+				{
+					text: '🔍 View Search Vector',
+					url: `https://alandatabase.com/search?q=${encodeURIComponent(query)}`
+				}
+			]
+		]
 	});
 }

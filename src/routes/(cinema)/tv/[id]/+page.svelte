@@ -19,7 +19,7 @@
 
 	const trailer = $derived(
 		show.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube') ||
-		show.videos?.results?.[0]
+			show.videos?.results?.[0]
 	);
 
 	const servers = $derived([
@@ -49,7 +49,7 @@
 						badge: '4K',
 						url: `https://www.youtube-nocookie.com/embed/${trailer.key}?autoplay=1&rel=0`
 					}
-			  ]
+				]
 			: [])
 	]);
 
@@ -66,7 +66,10 @@
 </script>
 
 <svelte:head>
-	<title>{show.name} ({show.first_air_date ? new Date(show.first_air_date).getFullYear() : ''}) | CinemaDB TV</title>
+	<title
+		>{show.name} ({show.first_air_date ? new Date(show.first_air_date).getFullYear() : ''}) |
+		CinemaDB TV</title
+	>
 	<meta name="description" content={show.overview} />
 </svelte:head>
 
@@ -93,12 +96,8 @@
 					</div>
 
 					<div class="sidebar-actions">
-						<Button variant="outline" class="w-full" onclick={shareShow}>
-							🔗 Share Series
-						</Button>
-						<a href="/tv" class="back-link">
-							← Back to Top 50 Chart
-						</a>
+						<Button variant="outline" class="w-full" onclick={shareShow}>🔗 Share Series</Button>
+						<a href="/tv" class="back-link"> ← Back to Top 50 Chart </a>
 					</div>
 				</div>
 			</aside>
@@ -109,9 +108,13 @@
 				<header class="show-header">
 					<div class="tag-row">
 						<Badge variant="gold">IMDb {Number(show.vote_average || 8.9).toFixed(1)}</Badge>
-						<span class="meta-year">{show.first_air_date ? new Date(show.first_air_date).getFullYear() : ''}</span>
+						<span class="meta-year"
+							>{show.first_air_date ? new Date(show.first_air_date).getFullYear() : ''}</span
+						>
 						<span class="meta-dot">•</span>
-						<span class="meta-seasons">{show.number_of_seasons} Seasons ({show.number_of_episodes} Episodes)</span>
+						<span class="meta-seasons"
+							>{show.number_of_seasons} Seasons ({show.number_of_episodes} Episodes)</span
+						>
 					</div>
 					<h1 class="show-title">{show.name}</h1>
 					{#if show.tagline}
@@ -127,7 +130,9 @@
 							<label for="season-select" class="selector-label">Season</label>
 							<select id="season-select" bind:value={selectedSeason} class="custom-select">
 								{#each (show.seasons || []).filter((s: any) => s.season_number > 0) as s}
-									<option value={s.season_number}>Season {s.season_number} ({s.episode_count} eps)</option>
+									<option value={s.season_number}
+										>Season {s.season_number} ({s.episode_count} eps)</option
+									>
 								{/each}
 							</select>
 						</div>
@@ -175,7 +180,7 @@
 					<p class="synopsis-text">{show.overview}</p>
 
 					<div class="genres-row">
-						{#each (show.genres || []) as g}
+						{#each show.genres || [] as g}
 							<span class="genre-pill">{g.name}</span>
 						{/each}
 					</div>
@@ -304,7 +309,9 @@
 		border: 1px solid rgba(255, 255, 255, 0.08);
 		overflow: hidden;
 		margin-bottom: 2rem;
-		box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9), 0 0 20px rgba(16, 185, 129, 0.05);
+		box-shadow:
+			0 20px 50px rgba(0, 0, 0, 0.9),
+			0 0 20px rgba(16, 185, 129, 0.05);
 	}
 
 	.player-controls-bar {

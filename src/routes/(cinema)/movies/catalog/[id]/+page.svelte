@@ -506,6 +506,4 @@
 		font-size: 0.75rem;
 		color: var(--text-tertiary);
 	}
-
-
 </style>

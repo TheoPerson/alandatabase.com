@@ -11,10 +11,15 @@
 	const user = $derived(data.user);
 	const userInteraction = $derived(data.userInteraction);
 
-	const directors = $derived(movie?.crew ? movie.crew.filter((c: any) => c.job === 'Director') : []);
+	const directors = $derived(
+		movie?.crew ? movie.crew.filter((c: any) => c.job === 'Director') : []
+	);
 
 	const trailer = $derived(
-		movie?.videos ? movie.videos.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube') || movie.videos[0] : null
+		movie?.videos
+			? movie.videos.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube') ||
+					movie.videos[0]
+			: null
 	);
 
 	const releaseYear = $derived(
@@ -224,7 +229,10 @@
 						<h2 class="section-heading">Top Cast</h2>
 						<div class="cast-grid">
 							{#each movie.cast as actor}
-								<a href="/search?q={encodeURIComponent(actor.person?.name || '')}" class="cast-card clickable-cast">
+								<a
+									href="/search?q={encodeURIComponent(actor.person?.name || '')}"
+									class="cast-card clickable-cast"
+								>
 									{#if actor.person?.profilePath}
 										<img
 											src="https://image.tmdb.org/t/p/w185{actor.person.profilePath}"
@@ -449,7 +457,9 @@
 		border: 1px solid var(--border-subtle);
 		border-radius: var(--radius-md);
 		overflow: hidden;
-		transition: transform 0.2s ease, border-color 0.2s ease;
+		transition:
+			transform 0.2s ease,
+			border-color 0.2s ease;
 		text-decoration: none;
 		color: inherit;
 		display: block; /* Since it's an <a> now */
@@ -491,6 +501,4 @@
 		font-size: 0.75rem;
 		color: var(--text-tertiary);
 	}
-
-
 </style>

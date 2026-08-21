@@ -63,7 +63,6 @@ export const actions = {
 
 			// Redirect to the newly created movie page
 			throw redirect(303, `/movies/${movie.id}`);
-			
 		} catch (err: any) {
 			if (err?.status === 303) {
 				throw err; // Re-throw SvelteKit redirects

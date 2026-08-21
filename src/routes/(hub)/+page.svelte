@@ -38,11 +38,29 @@
 	// Dock items (macOS / iOS 27 Style)
 	const dockApps = [
 		{ id: 'github', name: 'GitHub', icon: '🐙', url: 'https://github.com', color: '#e4e4e7' },
-		{ id: 'chatgpt', name: 'ChatGPT', icon: '🤖', url: 'https://chat.openai.com', color: '#10b981' },
+		{
+			id: 'chatgpt',
+			name: 'ChatGPT',
+			icon: '🤖',
+			url: 'https://chat.openai.com',
+			color: '#10b981'
+		},
 		{ id: 'gmail', name: 'Gmail', icon: '✉️', url: 'https://mail.google.com', color: '#a1a1aa' },
 		{ id: 'drive', name: 'Drive', icon: '☁️', url: 'https://drive.google.com', color: '#e4e4e7' },
-		{ id: 'cloudflare', name: 'Cloudflare', icon: '⚡', url: 'https://dash.cloudflare.com', color: '#10b981' },
-		{ id: 'steam', name: 'Steam', icon: '🎮', url: 'https://store.steampowered.com', color: '#a1a1aa' },
+		{
+			id: 'cloudflare',
+			name: 'Cloudflare',
+			icon: '⚡',
+			url: 'https://dash.cloudflare.com',
+			color: '#10b981'
+		},
+		{
+			id: 'steam',
+			name: 'Steam',
+			icon: '🎮',
+			url: 'https://store.steampowered.com',
+			color: '#a1a1aa'
+		},
 		{ id: 'figma', name: 'Figma', icon: '🎨', url: 'https://figma.com', color: '#e4e4e7' },
 		{ id: 'vercel', name: 'Vercel', icon: '▲', url: 'https://vercel.com', color: '#e4e4e7' },
 		{ id: 'cinemadb', name: 'Cinema DB', icon: '🎬', url: '/movies', color: '#10b981' },
@@ -52,11 +70,46 @@
 
 	// Primary Dev & Vault Suites
 	const devSuites = [
-		{ id: 'json', name: 'JSON Studio', icon: '🧩', url: '/tools/json', color: '#10b981', desc: 'Format, Validate & CSV' },
-		{ id: 'diff', name: 'Diff & Regex', icon: '⚡', url: '/tools/diff', color: '#10b981', desc: 'Side-by-Side Text & Regex' },
-		{ id: 'image', name: 'Image Studio', icon: '🖼️', url: '/tools/image', color: '#e4e4e7', desc: 'Compress, WebP & Base64' },
-		{ id: 'file', name: 'File Utilities', icon: '📄', url: '/tools/file', color: '#a1a1aa', desc: 'SHA Hashes & Regex' },
-		{ id: 'generators', name: 'Generator Vault', icon: '🪄', url: '/tools/generators', color: '#e4e4e7', desc: 'UUIDs & Passwords' }
+		{
+			id: 'json',
+			name: 'JSON Studio',
+			icon: '🧩',
+			url: '/tools/json',
+			color: '#10b981',
+			desc: 'Format, Validate & CSV'
+		},
+		{
+			id: 'diff',
+			name: 'Diff & Regex',
+			icon: '⚡',
+			url: '/tools/diff',
+			color: '#10b981',
+			desc: 'Side-by-Side Text & Regex'
+		},
+		{
+			id: 'image',
+			name: 'Image Studio',
+			icon: '🖼️',
+			url: '/tools/image',
+			color: '#e4e4e7',
+			desc: 'Compress, WebP & Base64'
+		},
+		{
+			id: 'file',
+			name: 'File Utilities',
+			icon: '📄',
+			url: '/tools/file',
+			color: '#a1a1aa',
+			desc: 'SHA Hashes & Regex'
+		},
+		{
+			id: 'generators',
+			name: 'Generator Vault',
+			icon: '🪄',
+			url: '/tools/generators',
+			color: '#e4e4e7',
+			desc: 'UUIDs & Passwords'
+		}
 	];
 
 	const coreEngines = [
@@ -152,14 +205,31 @@
 		<div class="brand-line">
 			<div class="hub-logo-icon">
 				<svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" class="hub-svg">
-					<circle cx="18" cy="18" r="15" stroke="rgba(16, 185, 129, 0.3)" stroke-width="1.5" stroke-dasharray="3 2" class="hub-pulse" />
+					<circle
+						cx="18"
+						cy="18"
+						r="15"
+						stroke="rgba(16, 185, 129, 0.3)"
+						stroke-width="1.5"
+						stroke-dasharray="3 2"
+						class="hub-pulse"
+					/>
 					<circle cx="18" cy="18" r="11" fill="#090d14" stroke="#10b981" stroke-width="2" />
 					<circle cx="18" cy="18" r="3.5" fill="#10b981" />
 					<circle cx="18" cy="11.5" r="1.5" fill="#10b981" />
 					<circle cx="18" cy="24.5" r="1.5" fill="#10b981" />
 					<circle cx="11.5" cy="18" r="1.5" fill="#10b981" />
 					<circle cx="24.5" cy="18" r="1.5" fill="#10b981" />
-					<line x1="18" y1="18" x2="28" y2="8" stroke="#34d399" stroke-width="2" stroke-linecap="round" class="hub-scan" />
+					<line
+						x1="18"
+						y1="18"
+						x2="28"
+						y2="8"
+						stroke="#34d399"
+						stroke-width="2"
+						stroke-linecap="round"
+						class="hub-scan"
+					/>
 				</svg>
 			</div>
 			<span class="brand-name">ALAN <span class="emerald-accent">VAULT</span></span>
@@ -174,7 +244,9 @@
 				title="GitHub Repository (TheoPerson/the-alans-data-base)"
 			>
 				<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
-					<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+					<path
+						d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"
+					/>
 				</svg>
 				<span>GitHub</span>
 			</a>
@@ -186,7 +258,9 @@
 				title="GitLab Repository (TheoPerson/the-alans-data-base)"
 			>
 				<svg viewBox="0 0 24 24" width="13" height="13" fill="#fc6d26">
-					<path d="M23.955 13.587l-1.342-4.135-2.664-8.189c-.135-.423-.73-.423-.867 0L16.418 9.45H7.582L4.918 1.263c-.136-.423-.731-.423-.867 0L1.387 9.452.045 13.587c-.121.375.014.787.331 1.023L12 23.054l11.624-8.444c.317-.236.452-.648.331-1.023z"/>
+					<path
+						d="M23.955 13.587l-1.342-4.135-2.664-8.189c-.135-.423-.73-.423-.867 0L16.418 9.45H7.582L4.918 1.263c-.136-.423-.731-.423-.867 0L1.387 9.452.045 13.587c-.121.375.014.787.331 1.023L12 23.054l11.624-8.444c.317-.236.452-.648.331-1.023z"
+					/>
 				</svg>
 				<span>GitLab</span>
 			</a>
@@ -320,7 +394,14 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="drawer-backdrop" role="presentation" onclick={closeDrawer}>
-		<div class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="drawer-title" tabindex="-1" onclick={(e) => e.stopPropagation()}>
+		<div
+			class="drawer-panel"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="drawer-title"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+		>
 			<div class="drawer-header">
 				<div class="drawer-title-group">
 					<span class="drawer-icon">🔍</span>
@@ -478,7 +559,8 @@
 	}
 
 	@keyframes hubPulse {
-		0%, 100% {
+		0%,
+		100% {
 			opacity: 0.25;
 		}
 		50% {
@@ -491,13 +573,14 @@
 			box-shadow: 0 0 8px #10b981;
 		}
 		50% {
-			box-shadow: 0 0 16px #10b981, 0 0 24px rgba(16, 185, 129, 0.4);
+			box-shadow:
+				0 0 16px #10b981,
+				0 0 24px rgba(16, 185, 129, 0.4);
 		}
 		100% {
 			box-shadow: 0 0 8px #10b981;
 		}
 	}
-
 
 	.brand-name {
 		font-size: 1.15rem;
@@ -605,12 +688,17 @@
 		gap: 1.25rem;
 		backdrop-filter: blur(16px);
 		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-		transition: transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease;
+		transition:
+			transform 300ms ease,
+			box-shadow 300ms ease,
+			border-color 300ms ease;
 	}
 
 	.pane-card:hover {
 		transform: translateY(-2px);
-		box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(16, 185, 129, 0.05);
+		box-shadow:
+			0 15px 35px rgba(0, 0, 0, 0.8),
+			0 0 20px rgba(16, 185, 129, 0.05);
 		border-color: rgba(255, 255, 255, 0.15);
 	}
 

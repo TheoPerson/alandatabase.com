@@ -166,21 +166,34 @@ export class TMDBClient {
 	async searchPeople(
 		query: string,
 		page = 1
-	): Promise<{ results: Array<{ id: number; name: string; known_for?: TMDBMovieSummary[]; profile_path: string | null }>; total_pages: number }> {
+	): Promise<{
+		results: Array<{
+			id: number;
+			name: string;
+			known_for?: TMDBMovieSummary[];
+			profile_path: string | null;
+		}>;
+		total_pages: number;
+	}> {
 		return this.request('/search/person', {
 			query,
 			page: page.toString()
 		});
 	}
 
-	async getPersonMovieCredits(personId: number): Promise<{ cast: TMDBMovieSummary[]; crew: TMDBMovieSummary[] }> {
+	async getPersonMovieCredits(
+		personId: number
+	): Promise<{ cast: TMDBMovieSummary[]; crew: TMDBMovieSummary[] }> {
 		return this.request(`/person/${personId}/movie_credits`);
 	}
 
 	async discoverMovies(
 		params: Record<string, string>
 	): Promise<{ results: TMDBMovieSummary[]; total_pages: number }> {
-		return this.request<{ results: TMDBMovieSummary[]; total_pages: number }>('/discover/movie', params);
+		return this.request<{ results: TMDBMovieSummary[]; total_pages: number }>(
+			'/discover/movie',
+			params
+		);
 	}
 
 	async getTopRatedTV(page = 1): Promise<{ results: any[]; total_pages: number }> {
