@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
 	isCinemaPageRoute,
 	isCinemaRoute,
+	getCinemaAccessRequirement,
 	requiresCinemaSession,
+	shouldUsePrivateResponseHeaders,
 	validateReturnTo
 } from './cinema-access';
 
@@ -35,7 +37,7 @@ describe('cinema-access rules', () => {
 		expect(isCinemaRoute('/api/search')).toBe(true);
 		expect(requiresCinemaSession('/api')).toBe(false);
 		expect(requiresCinemaSession('/api/health')).toBe(false);
-		expect(requiresCinemaSession('/api/search')).toBe(true);
+		expect(requiresCinemaSession('/api/search')).toBe(false);
 		expect(requiresCinemaSession('/api/movies/catalog')).toBe(true);
 		expect(requiresCinemaSession('/live')).toBe(true);
 		expect(requiresCinemaSession('/my/films')).toBe(true);
@@ -43,6 +45,21 @@ describe('cinema-access rules', () => {
 		expect(requiresCinemaSession('/movies/catalog/123/edit')).toBe(true);
 		expect(requiresCinemaSession('/movies/catalog/123/merge')).toBe(true);
 		expect(requiresCinemaSession('/movies/catalog/123/review')).toBe(true);
+		expect(getCinemaAccessRequirement('/my/films')).toBe('authenticated');
+		expect(getCinemaAccessRequirement('/movies/catalog/123/review')).toBe('authenticated');
+		expect(getCinemaAccessRequirement('/movies/catalog/123/edit')).toBe('catalog');
+		expect(getCinemaAccessRequirement('/movies/catalog/123/merge')).toBe('catalog');
+		expect(getCinemaAccessRequirement('/disclaimer')).toBe('catalog');
+		expect(getCinemaAccessRequirement('/admin')).toBe('owner');
+		expect(getCinemaAccessRequirement('/setup')).toBe('owner');
+		expect(getCinemaAccessRequirement('/api/telemetry/events')).toBe('owner');
+	});
+
+	it('prevents caching whenever a response can contain account or invitation data', () => {
+		expect(shouldUsePrivateResponseHeaders('public', false, '/movies')).toBe(false);
+		expect(shouldUsePrivateResponseHeaders('public', true, '/movies')).toBe(true);
+		expect(shouldUsePrivateResponseHeaders('authenticated', false, '/my/films')).toBe(true);
+		expect(shouldUsePrivateResponseHeaders('public', false, '/auth/register')).toBe(true);
 	});
 
 	it('should exempt only explicitly authenticated service routes from browser sessions', () => {

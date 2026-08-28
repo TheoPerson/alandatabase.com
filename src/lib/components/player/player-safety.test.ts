@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -23,7 +23,25 @@ const blockedPatterns = [
 	/clipboard-write/i
 ];
 
+function sourceFiles(directory: string): string[] {
+	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+		const path = resolve(directory, entry.name);
+		if (entry.isDirectory()) return sourceFiles(path);
+		return /\.(?:svelte|ts|js)$/u.test(entry.name) ? [path] : [];
+	});
+}
+
 describe('playback source quarantine', () => {
+	it('contains no blocked mirror anywhere in application source', () => {
+		for (const file of sourceFiles(sourceRoot)) {
+			if (file.endsWith('player-safety.test.ts')) continue;
+			const source = readFileSync(file, 'utf8');
+			for (const pattern of blockedPatterns.slice(1, 5)) {
+				expect(source, file).not.toMatch(pattern);
+			}
+		}
+	});
+
 	for (const relativePath of playbackFiles) {
 		it(`${relativePath} contains no iframe or blocked mirror`, () => {
 			const source = readFileSync(resolve(sourceRoot, relativePath), 'utf8');

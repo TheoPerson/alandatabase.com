@@ -39,8 +39,6 @@ function editRequest() {
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	vi.stubEnv('OWNER_USER_IDS', 'owner');
-	vi.stubEnv('OWNER_EMAILS', '');
 	spies.getMovieById.mockResolvedValue({ id: MOVIE_ID, title: 'Private title' });
 	spies.findFirst.mockResolvedValue({
 		id: MOVIE_ID,
@@ -61,13 +59,11 @@ beforeEach(() => {
 
 describe('catalog edit override privacy', () => {
 	it('rejects authenticated non-owner users before reading catalog data', async () => {
-		vi.stubEnv('OWNER_USER_IDS', 'someone-else');
-
 		await expect(
 			actions.default({
 				request: editRequest(),
 				params: { id: MOVIE_ID },
-				locals: { user: { id: 'viewer' } }
+				locals: { user: { id: 'viewer', role: 'member' } }
 			} as never)
 		).rejects.toMatchObject({ status: 403 });
 
@@ -81,7 +77,7 @@ describe('catalog edit override privacy', () => {
 			actions.default({
 				request: editRequest(),
 				params: { id: MOVIE_ID },
-				locals: { user: { id: 'owner' } }
+				locals: { user: { id: 'admin', role: 'admin' } }
 			} as never)
 		).rejects.toMatchObject({ status: 302 });
 
@@ -103,7 +99,7 @@ describe('catalog edit override privacy', () => {
 		const result = await actions.default({
 			request: editRequest(),
 			params: { id: MOVIE_ID },
-			locals: { user: { id: 'owner' } }
+			locals: { user: { id: 'owner', role: 'owner' } }
 		} as never);
 
 		expect(result).toMatchObject({ status: 404 });

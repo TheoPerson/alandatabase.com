@@ -56,7 +56,8 @@ describe('standard movie visibility policy', () => {
 
 		expect(query.sql).toContain('"movies"."adult" = $1');
 		expect(query.sql).toContain('"movies"."tmdb_id" > $2');
-		expect(query.sql).toContain('not exists');
+		expect(query.sql).toContain('not exists (');
+		expect(query.sql).not.toContain('not exists select');
 		expect(query.sql).toContain('"movie_keywords"."keyword_id" in ($3, $4, $5)');
 		expect(query.params).toEqual([false, 0, ...KNOWN_EXPLICIT_KEYWORD_IDS]);
 	});

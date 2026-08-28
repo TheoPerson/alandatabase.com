@@ -1,7 +1,6 @@
 <script lang="ts">
 	import ArrowUpRightIcon from 'lucide-svelte/icons/arrow-up-right';
 	import ActivityIcon from 'lucide-svelte/icons/activity';
-	import BracesIcon from 'lucide-svelte/icons/braces';
 	import Code2Icon from 'lucide-svelte/icons/code-2';
 	import CommandIcon from 'lucide-svelte/icons/command';
 	import FilmIcon from 'lucide-svelte/icons/film';
@@ -10,27 +9,63 @@
 	import MonitorSmartphoneIcon from 'lucide-svelte/icons/monitor-smartphone';
 	import SearchCheckIcon from 'lucide-svelte/icons/search-check';
 	import ServerIcon from 'lucide-svelte/icons/server';
-	import Settings2Icon from 'lucide-svelte/icons/settings-2';
 
-	const disciplines = [
-		{ name: 'Product direction', detail: 'Scope, priorities, milestones', icon: SearchCheckIcon },
-		{ name: 'Frontend craft', detail: 'Svelte, component systems, motion', icon: Code2Icon },
-		{ name: 'Backend systems', detail: 'Data, services, integrations', icon: ServerIcon },
-		{ name: 'Responsive UX', detail: 'iPhone-first, desktop-ready', icon: MonitorSmartphoneIcon },
-		{ name: 'SEO & hosting', detail: 'Metadata, deploys, observability', icon: ActivityIcon },
-		{ name: 'Security', detail: 'Private by default, fail-closed', icon: LockKeyholeIcon },
-		{ name: 'Quality assurance', detail: 'Checks, tests, recovery states', icon: BracesIcon }
+	const experiences = [
+		{
+			name: 'Discover',
+			detail: 'Curated films and current catalogue rails',
+			icon: SearchCheckIcon
+		},
+		{ name: 'Movie detail', detail: 'Cast, crew, context, and related titles', icon: FilmIcon },
+		{
+			name: 'Television',
+			detail: 'A dedicated series discovery surface',
+			icon: MonitorSmartphoneIcon
+		},
+		{
+			name: 'Personal library',
+			detail: 'Watchlist, favorites, ratings, and lists',
+			icon: LockKeyholeIcon
+		},
+		{
+			name: 'Fast search',
+			detail: 'Bounded local results without tracking noise',
+			icon: Code2Icon
+		},
+		{
+			name: 'Reliable service',
+			detail: 'Public status, health, and release notes',
+			icon: ActivityIcon
+		},
+		{
+			name: 'Production quality',
+			detail: 'Responsive, accessible, and fail-closed',
+			icon: ServerIcon
+		}
 	];
 </script>
 
 <svelte:head>
-	<title>Alan's Database | Private cinema, carefully built</title>
+	<title>Alan Database | A personal cinema archive</title>
 	<meta
 		name="description"
-		content="A private cinema archive and focused software workspace, built with care."
+		content="Explore films and series in a focused public catalogue, then keep personal lists and history in a protected account."
 	/>
-	<meta property="og:title" content="Alan's Database" />
-	<meta property="og:description" content="Private cinema, carefully built." />
+	<link rel="canonical" href="https://alandatabase.com/" />
+	<meta property="og:title" content="Alan Database | A personal cinema archive" />
+	<meta
+		property="og:description"
+		content="A focused movie and TV catalogue with protected personal lists and history."
+	/>
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content="https://alandatabase.com/" />
+	<meta property="og:site_name" content="Alan Database" />
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content="Alan Database | A personal cinema archive" />
+	<meta
+		name="twitter:description"
+		content="A focused movie and TV catalogue with protected personal lists and history."
+	/>
 </svelte:head>
 
 <main class="site">
@@ -42,60 +77,62 @@
 				<span class="brand-mark"><CommandIcon size={16} /></span> ALAN'S DATABASE
 			</a>
 			<div class="nav-links">
-				<a href="#craft">How it is built</a>
+				<a href="#experience">Explore features</a>
 				<a href="https://github.com/TheoPerson/alandatabase.com" target="_blank" rel="noreferrer">
 					GitHub <ArrowUpRightIcon size={14} />
 				</a>
 			</div>
 		</nav>
 		<div class="hero-content page-width">
-			<p class="eyebrow"><span></span> Personal archive / V3 in progress</p>
-			<h1 id="hero-title">A quieter way<br />to keep what matters.</h1>
+			<p class="eyebrow"><span></span> Films / series / personal archive</p>
+			<h1 id="hero-title">A quieter way<br />to find the next story.</h1>
 			<p class="hero-copy">
-				A private cinema archive for films, ideas, and the tools behind them. Built deliberately,
-				one reliable release at a time.
+				Explore the catalogue without an account. Sign in only when you want watchlists, ratings,
+				history, and a library that stays personal.
 			</p>
 			<div class="actions">
 				<a class="button primary" href="/movies"
 					><FilmIcon size={17} /> Enter Cinema <ArrowUpRightIcon size={16} /></a
 				>
-				<a class="button secondary" href="#craft">See the craft</a>
+				<a class="button secondary" href="/search">Search the catalogue</a>
 			</div>
 		</div>
 		<div class="hero-meta page-width">
-			<span>Private by default</span><i></i><span>Designed for 2026</span><i></i><span
-				>Built for the long run</span
+			<span>Public catalogue</span><i></i><span>Protected personal data</span><i></i><span
+				>Every screen considered</span
 			>
 		</div>
 	</section>
 
-	<section id="craft" class="craft page-width" aria-labelledby="craft-title">
+	<section id="experience" class="craft page-width" aria-labelledby="craft-title">
 		<div class="intro">
-			<p class="eyebrow dark">The work behind the work</p>
-			<h2 id="craft-title">Every layer gets<br /><em>its own standard.</em></h2>
+			<p class="eyebrow dark">One coherent cinema product</p>
+			<h2 id="craft-title">From discovery<br /><em>to your library.</em></h2>
 			<p>
-				Product decisions, code, design, infrastructure, and verification stay visible so the
-				project can improve without losing its shape.
+				The public experience stays open and useful. Personal actions remain private, persistent,
+				and available only after sign-in.
 			</p>
 		</div>
 		<div class="craft-grid">
 			<a class="cinema-link" href="/movies">
-				<div class="label"><span>01</span><span>Private cinema</span></div>
+				<div class="label"><span>01</span><span>Public discovery</span></div>
 				<div class="cinema-icon"><FilmIcon size={21} /></div>
 				<div>
 					<h3>Cinema</h3>
-					<p>Browse the collection, keep a watchlist, and make the next choice feel easy.</p>
+					<p>
+						Browse films and series, inspect the details, and move from curiosity to a clear choice.
+					</p>
 				</div>
 				<span class="green-link">Open collection <ArrowUpRightIcon size={17} /></span>
 			</a>
 			<div class="discipline-panel">
-				<div class="label"><span>02</span><span>Project disciplines</span></div>
+				<div class="label"><span>02</span><span>Product experience</span></div>
 				<div class="discipline-list">
-					{#each disciplines as discipline}
-						{@const Icon = discipline.icon}
+					{#each experiences as experience}
+						{@const Icon = experience.icon}
 						<div class="discipline">
 							<span class="discipline-icon"><Icon size={16} /></span><span
-								><strong>{discipline.name}</strong><small>{discipline.detail}</small></span
+								><strong>{experience.name}</strong><small>{experience.detail}</small></span
 							>
 						</div>
 					{/each}
@@ -106,19 +143,19 @@
 
 	<section class="tools page-width" aria-labelledby="tools-title">
 		<div>
-			<p class="eyebrow dark">Useful, not decorative</p>
-			<h2 id="tools-title">The workspace stays close.</h2>
+			<p class="eyebrow dark">Useful next steps</p>
+			<h2 id="tools-title">Keep exploring.</h2>
 		</div>
 		<div class="tool-links">
 			<a href="/status"><ActivityIcon size={16} /> Status <ArrowUpRightIcon size={14} /></a>
-			<a href="/setup"><Settings2Icon size={16} /> Setup <ArrowUpRightIcon size={14} /></a>
-			<a href="/tools/json"><BracesIcon size={16} /> JSON Studio <ArrowUpRightIcon size={14} /></a>
+			<a href="/search"><SearchCheckIcon size={16} /> Search <ArrowUpRightIcon size={14} /></a>
+			<a href="/tv"><MonitorSmartphoneIcon size={16} /> TV series <ArrowUpRightIcon size={14} /></a>
 		</div>
 	</section>
 
 	<footer class="footer page-width">
 		<span class="brand dark-brand"><CommandIcon size={15} /> Alan's Database</span><span
-			>Private cinema, considered software.</span
+			>Public discovery. Personal data stays personal.</span
 		><a href="https://github.com/TheoPerson/alandatabase.com" target="_blank" rel="noreferrer"
 			><ExternalLinkIcon size={16} /> Source on GitHub</a
 		>
@@ -130,8 +167,8 @@
 		background: #08090a;
 	}
 	.site {
-		background: #f1f2ee;
-		color: #111416;
+		background: var(--surface-canvas);
+		color: var(--content-primary);
 		font-family: var(--font-sans);
 	}
 	.page-width {
@@ -235,7 +272,7 @@
 		box-shadow: 0 0 0 5px rgba(142, 232, 192, 0.14);
 	}
 	.eyebrow.dark {
-		color: #68706c;
+		color: var(--content-secondary);
 	}
 	h1,
 	h2,
@@ -314,7 +351,7 @@
 		gap: 32px;
 		align-items: end;
 		padding-bottom: 64px;
-		border-bottom: 1px solid #d2d3cf;
+		border-bottom: 1px solid var(--border-subtle);
 	}
 	.intro h2 {
 		font-size: clamp(2.2rem, 4.5vw, 4.2rem);
@@ -323,13 +360,13 @@
 		line-height: 0.98;
 	}
 	.intro h2 em {
-		color: #67736e;
+		color: var(--brand-primary);
 		font-style: normal;
 	}
 	.intro > p:last-child {
 		max-width: 260px;
 		justify-self: end;
-		color: #68706c;
+		color: var(--content-secondary);
 		font-size: 0.95rem;
 		line-height: 1.6;
 	}
@@ -338,14 +375,14 @@
 		grid-template-columns: 1fr 1fr;
 		gap: 1px;
 		margin-top: 1px;
-		background: #d2d3cf;
-		border-bottom: 1px solid #d2d3cf;
+		background: var(--border-subtle);
+		border-bottom: 1px solid var(--border-subtle);
 	}
 	.cinema-link,
 	.discipline-panel {
 		min-height: 445px;
 		padding: 31px;
-		background: #f1f2ee;
+		background: var(--surface-raised);
 	}
 	.cinema-link {
 		display: flex;
@@ -354,12 +391,12 @@
 		transition: background 0.18s ease;
 	}
 	.cinema-link:hover {
-		background: #e6e8e3;
+		background: var(--surface-overlay);
 	}
 	.label {
 		display: flex;
 		justify-content: space-between;
-		color: #7d8580;
+		color: var(--content-secondary);
 		font-size: 0.66rem;
 		font-weight: 800;
 		letter-spacing: 0.14em;
@@ -372,7 +409,7 @@
 		height: 48px;
 		border: 1px solid #c9cdc7;
 		border-radius: 50%;
-		color: #16885c;
+		color: var(--brand-primary);
 	}
 	.cinema-link h3 {
 		font-size: clamp(2.5rem, 5vw, 5rem);
@@ -383,19 +420,19 @@
 	.cinema-link p {
 		max-width: 360px;
 		margin-top: 18px;
-		color: #68706c;
+		color: var(--content-secondary);
 		font-size: 0.96rem;
 		line-height: 1.55;
 	}
 	.green-link {
 		align-self: flex-start;
 		gap: 8px;
-		color: #16885c;
+		color: var(--brand-primary);
 		font-size: 0.8rem;
 		font-weight: 800;
 	}
 	.discipline-panel {
-		background: #e8e9e5;
+		background: var(--surface-subtle);
 	}
 	.discipline-list {
 		margin-top: 42px;
@@ -406,19 +443,19 @@
 		gap: 14px;
 		align-items: center;
 		padding: 13px 0;
-		border-top: 1px solid #cfd2cc;
+		border-top: 1px solid var(--border-subtle);
 	}
 	.discipline:last-child {
-		border-bottom: 1px solid #cfd2cc;
+		border-bottom: 1px solid var(--border-subtle);
 	}
 	.discipline-icon {
 		display: grid;
 		place-items: center;
 		width: 32px;
 		height: 32px;
-		border: 1px solid #c5cac3;
+		border: 1px solid var(--border-strong);
 		border-radius: 50%;
-		color: #68706c;
+		color: var(--content-secondary);
 	}
 	.discipline span:last-child {
 		display: flex;
@@ -429,7 +466,7 @@
 		font-size: 0.9rem;
 	}
 	.discipline small {
-		color: #7c837e;
+		color: var(--content-secondary);
 		font-size: 0.75rem;
 	}
 	.tools {
@@ -438,7 +475,7 @@
 		justify-content: space-between;
 		gap: 30px;
 		padding: 45px 0 100px;
-		border-top: 1px solid #d2d3cf;
+		border-top: 1px solid var(--border-subtle);
 	}
 	.tools h2 {
 		font-size: clamp(1.8rem, 3.5vw, 3rem);
@@ -454,8 +491,8 @@
 	.tool-links a {
 		gap: 7px;
 		padding: 11px 13px;
-		border: 1px solid #cdd1cb;
-		color: #68706c;
+		border: 1px solid var(--border-strong);
+		color: var(--content-secondary);
 		font-size: 0.77rem;
 		font-weight: 750;
 		transition:
@@ -463,24 +500,24 @@
 			border-color 0.18s ease;
 	}
 	.tool-links a:hover {
-		border-color: #16885c;
-		color: #16885c;
+		border-color: var(--brand-primary);
+		color: var(--brand-primary);
 	}
 	.footer {
 		justify-content: space-between;
 		gap: 20px;
 		padding: 25px 0 30px;
-		border-top: 1px solid #d2d3cf;
-		color: #68706c;
+		border-top: 1px solid var(--border-subtle);
+		color: var(--content-secondary);
 		font-size: 0.75rem;
 	}
 	.dark-brand {
-		color: #111416;
+		color: var(--content-primary);
 		letter-spacing: 0;
 	}
 	.footer a {
 		gap: 7px;
-		color: #16885c;
+		color: var(--brand-primary);
 		font-weight: 750;
 	}
 	@media (max-width: 760px) {

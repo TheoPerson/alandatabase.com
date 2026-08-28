@@ -1,12 +1,11 @@
 <script lang="ts">
 	import MovieCard from '$lib/components/movie/MovieCard.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
-	import Badge from '$lib/components/ui/Badge.svelte';
 	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
 	import PlayerSheet from '$lib/components/movie/PlayerSheet.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import { enhance } from '$app/forms';
 	import { addToast } from '$lib/stores/toast';
-	import { onMount, onDestroy } from 'svelte';
 
 	let { data } = $props();
 
@@ -27,11 +26,20 @@
 </script>
 
 <svelte:head>
-	<title>CinemaDB — Private Movies & TV Archive</title>
+	<title>Movies | Alan Database</title>
 	<meta
 		name="description"
-		content="Browse and organize Alan's private movie and television archive."
+		content="Browse the Alan Database movie catalogue, discover top-rated films, and open detailed movie pages."
 	/>
+	<link rel="canonical" href="https://alandatabase.com/movies" />
+	<meta property="og:title" content="Movies | Alan Database" />
+	<meta
+		property="og:description"
+		content="Browse a focused catalogue of films and movie details."
+	/>
+	<meta property="og:type" content="website" />
+	<meta property="og:url" content="https://alandatabase.com/movies" />
+	<meta name="twitter:card" content="summary_large_image" />
 </svelte:head>
 
 <div class="cineby-home-root">
@@ -40,13 +48,16 @@
 		{#if currentHero}
 			<!-- Full-Bleed 4K Backdrop with Seamless Multi-Stop Vignette -->
 			<div class="hero-stage-bg">
-				<img
-					src={currentHero.backdropPath?.startsWith('http')
-						? currentHero.backdropPath
-						: `https://image.tmdb.org/t/p/original${currentHero.backdropPath?.startsWith('/') ? '' : '/'}${currentHero.backdropPath}`}
-					alt="{currentHero.title} 4K Backdrop"
-					class="hero-4k-image"
-				/>
+				{#if currentHero.backdropPath}
+					<img
+						src={currentHero.backdropPath.startsWith('http')
+							? currentHero.backdropPath
+							: `https://image.tmdb.org/t/p/w1280${currentHero.backdropPath.startsWith('/') ? '' : '/'}${currentHero.backdropPath}`}
+						alt="{currentHero.title} backdrop"
+						class="hero-4k-image"
+						fetchpriority="high"
+					/>
+				{/if}
 				<div class="vignette-left"></div>
 				<div class="vignette-bottom"></div>
 				<div class="vignette-top"></div>
@@ -96,21 +107,62 @@
 							<span>See More</span>
 						</a>
 
-						<form
-							action="?/toggleWatchlist"
-							method="POST"
-							use:enhance={() => {
-								addToast(`Updated watchlist for ${currentHero.title}`, 'success');
-							}}
-							class="inline-block"
-						>
-							<input type="hidden" name="movieId" value={currentHero.id} />
-							<button type="submit" class="cineby-watchlist-btn" title="Add to Watchlist">
-								<span>+</span>
-							</button>
-						</form>
+						{#if data.user}
+							<form
+								action="?/toggleWatchlist"
+								method="POST"
+								use:enhance={() => {
+									return async ({ result, update }) => {
+										await update({ reset: false });
+										addToast(
+											result.type === 'success'
+												? `Updated watchlist for ${currentHero.title}`
+												: 'Watchlist could not be updated.',
+											result.type === 'success' ? 'success' : 'error'
+										);
+									};
+								}}
+								class="inline-block"
+							>
+								<input type="hidden" name="movieId" value={currentHero.id} />
+								<button
+									type="submit"
+									class="cineby-watchlist-btn"
+									aria-label={`Add ${currentHero.title} to watchlist`}
+								>
+									<span aria-hidden="true">+</span>
+								</button>
+							</form>
+						{:else}
+							<a
+								href="/auth/login?returnTo=%2Fmovies"
+								class="cineby-watchlist-btn"
+								aria-label="Sign in to use the watchlist"
+							>
+								<span aria-hidden="true">+</span>
+							</a>
+						{/if}
 					</div>
 				</div>
+			</div>
+		{:else}
+			<div class="container hero-state">
+				{#if data.error}
+					<ErrorState
+						title="The movie catalogue is unavailable"
+						description="The database could not be reached. The public status page has the latest service information."
+					>
+						{#snippet action()}
+							<a class="state-link" href="/status">Open system status</a>
+						{/snippet}
+					</ErrorState>
+				{:else}
+					<EmptyState
+						title="No published movies yet"
+						description="The catalogue is ready for reviewed movie records. Check back after the next metadata sync."
+						compact
+					/>
+				{/if}
 			</div>
 		{/if}
 	</section>
@@ -121,7 +173,7 @@
 		<section class="catalog-section">
 			<div class="section-title-bar">
 				<span class="title-accent-bar"></span>
-				<h2 class="section-heading">TOP 10 Today</h2>
+				<h2 class="section-heading">Top 10 today</h2>
 			</div>
 
 			<div class="top10-horizontal-grid">
@@ -144,8 +196,8 @@
 		<section class="catalog-section">
 			<div class="section-title-bar">
 				<span class="title-accent-bar emerald"></span>
-				<h2 class="section-heading">Trending Movies</h2>
-				<a href="/movies/catalog" class="view-all-link">Browse All Catalog →</a>
+				<h2 class="section-heading">Trending movies</h2>
+				<a href="/movies/catalog" class="view-all-link">Browse all catalogue →</a>
 			</div>
 
 			<div class="movies-media-grid">
@@ -167,11 +219,10 @@
 		<!-- 3. TV SERIES DISCOVERY BANNER (Cross-Navigation) -->
 		<section class="tv-crossover-banner glass-card">
 			<div class="crossover-content">
-				<span class="crossover-badge">📺 TELEVISION ARCHIVE</span>
-				<h3 class="crossover-title">Explore the Top 50 IMDb-Ranked TV Series</h3>
+				<span class="crossover-badge">TELEVISION ARCHIVE</span>
+				<h3 class="crossover-title">Explore landmark television series</h3>
 				<p class="crossover-desc">
-					Browse Breaking Bad, Reacher, Planet Earth, Chernobyl, Arcane, and the greatest television
-					sagas in the archive.
+					Move from movies to a dedicated series catalogue with ranked discovery and detailed pages.
 				</p>
 			</div>
 			<a href="/tv" class="crossover-btn">
@@ -183,8 +234,8 @@
 		<section class="catalog-section">
 			<div class="section-title-bar">
 				<span class="title-accent-bar"></span>
-				<h2 class="section-heading">Top Rated Cinema Masterpieces</h2>
-				<a href="/movies/catalog?sort=rating" class="view-all-link">Explore Top Rated →</a>
+				<h2 class="section-heading">Top-rated cinema</h2>
+				<a href="/movies/catalog?sort=rating" class="view-all-link">Explore top rated →</a>
 			</div>
 
 			<div class="movies-media-grid">
@@ -213,15 +264,15 @@
 	.cineby-home-root {
 		background: transparent;
 		color: #f1f5f9;
-		min-height: 100vh;
+		min-height: 100dvh;
 	}
 
 	/* 4K IMMERSIVE HERO STAGE */
 	.cineby-hero {
 		position: relative;
 		width: 100%;
-		height: 80vh;
-		min-height: 560px;
+		height: clamp(36rem, 76svh, 52rem);
+		min-height: 36rem;
 		max-height: 860px;
 		display: flex;
 		align-items: center;
@@ -295,6 +346,23 @@
 		width: 100%;
 		display: flex;
 		align-items: center;
+	}
+
+	.hero-state {
+		position: relative;
+		z-index: 2;
+	}
+
+	.state-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: var(--touch-target);
+		padding: 0.65rem 1rem;
+		border: 1px solid var(--brand-border);
+		border-radius: var(--radius-md);
+		color: var(--brand-primary);
+		font-weight: 750;
 	}
 
 	.hero-text-block {
@@ -375,8 +443,17 @@
 	.hero-btn-row {
 		display: flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 0.85rem;
 		margin-top: 0.5rem;
+	}
+
+	@media (max-width: 420px) {
+		.cineby-play-btn,
+		.cineby-info-btn {
+			flex: 1 1 100%;
+			justify-content: center;
+		}
 	}
 
 	.cineby-play-btn {
@@ -387,6 +464,7 @@
 		color: #0a0e17;
 		font-size: 0.95rem;
 		font-weight: 800;
+		min-height: var(--touch-target);
 		padding: 0.75rem 1.6rem;
 		border-radius: 9999px;
 		text-decoration: none;
@@ -409,6 +487,7 @@
 		color: #ffffff;
 		font-size: 0.95rem;
 		font-weight: 700;
+		min-height: var(--touch-target);
 		padding: 0.75rem 1.4rem;
 		border-radius: 9999px;
 		text-decoration: none;
@@ -438,6 +517,7 @@
 		cursor: pointer;
 		backdrop-filter: blur(12px);
 		transition: all 0.2s ease;
+		text-decoration: none;
 	}
 
 	.cineby-watchlist-btn:hover {
@@ -471,7 +551,7 @@
 		width: 4px;
 		height: 22px;
 		border-radius: 2px;
-		background: #ef4444;
+		background: var(--brand-primary);
 	}
 
 	.title-accent-bar.emerald {

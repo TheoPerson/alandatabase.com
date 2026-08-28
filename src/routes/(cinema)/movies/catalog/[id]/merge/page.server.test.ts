@@ -19,20 +19,60 @@ vi.mock('$lib/server/services/interaction.service', () => ({
 	logActivity: vi.fn()
 }));
 
-import { actions } from './+page.server';
+import { _mergeInteractionValues, _mergeReviewValues, actions } from './+page.server';
 
 const MOVIE_ID = '00000000-0000-4000-8000-000000000001';
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	vi.stubEnv('OWNER_USER_IDS', 'owner');
-	vi.stubEnv('OWNER_EMAILS', '');
 	spies.getMovieById.mockResolvedValue({ id: MOVIE_ID, tmdbId: 27_205 });
 });
 
 describe('catalog merge identity safety', () => {
+	it('preserves spoiler state, watch dates, ratings and notes when records conflict', () => {
+		expect(
+			_mergeReviewValues(
+				{ content: 'Target review', containsSpoilers: false },
+				{ content: 'Source review', containsSpoilers: true }
+			)
+		).toEqual({
+			content: 'Target review\n\n---\n\nSource review',
+			containsSpoilers: true
+		});
+
+		const merged = _mergeInteractionValues(
+			{
+				watched: true,
+				watchlist: false,
+				favorite: false,
+				rating: null,
+				watchDate: '2025-02-10',
+				rewatchCount: 1,
+				personalNotes: 'Target note'
+			},
+			{
+				watched: false,
+				watchlist: true,
+				favorite: true,
+				rating: '4.5',
+				watchDate: '2024-01-05',
+				rewatchCount: 2,
+				personalNotes: 'Source note'
+			}
+		);
+
+		expect(merged).toMatchObject({
+			watched: true,
+			watchlist: true,
+			favorite: true,
+			rating: '4.5',
+			watchDate: '2024-01-05',
+			rewatchCount: 3,
+			personalNotes: 'Target note\nSource note'
+		});
+	});
+
 	it('rejects authenticated non-owner users before resolving movies', async () => {
-		vi.stubEnv('OWNER_USER_IDS', 'someone-else');
 		const form = new FormData();
 		form.set('targetTmdbId', '27205');
 		const request = new Request('http://localhost/movies/catalog/27205/merge', {
@@ -44,7 +84,7 @@ describe('catalog merge identity safety', () => {
 			actions.default({
 				request,
 				params: { id: '27205' },
-				locals: { user: { id: 'viewer' } }
+				locals: { user: { id: 'viewer', role: 'member' } }
 			} as never)
 		).rejects.toMatchObject({ status: 403 });
 
@@ -63,7 +103,7 @@ describe('catalog merge identity safety', () => {
 		const result = await actions.default({
 			request,
 			params: { id: '27205' },
-			locals: { user: { id: 'owner' } }
+			locals: { user: { id: 'admin', role: 'admin' } }
 		} as never);
 
 		expect(result).toMatchObject({ status: 400 });

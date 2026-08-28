@@ -1,25 +1,22 @@
 import { db } from '$lib/server/db';
 import { movies, movieGenres } from '$lib/server/db/schema';
-import { desc, and, sql, inArray } from 'drizzle-orm';
+import { and, desc, eq, exists, inArray, sql } from 'drizzle-orm';
 import { applyLocalOverrides } from '$lib/server/services/movie.service';
 import { standardMovieVisibilityWhere } from '$lib/server/policies/movie-visibility';
 
 // Helper to fetch movies by vibe (genre IDs)
 async function getVibeMovies(genreIds: number[], limit = 12) {
-	// First get movie IDs that match these genres
-	const genreMovieIds = await db
-		.select({ movieId: movieGenres.movieId })
-		.from(movieGenres)
-		.where(inArray(movieGenres.genreId, genreIds))
-		.limit(100); // Get a pool to sort
-
-	if (genreMovieIds.length === 0) return [];
-
-	const ids = genreMovieIds.map((item) => item.movieId);
-
 	const vibeMovies = await db.query.movies.findMany({
-		where: and(inArray(movies.id, ids), standardMovieVisibilityWhere()),
-		orderBy: [desc(movies.popularity)], // Sort by popularity for discovery
+		where: and(
+			standardMovieVisibilityWhere(),
+			exists(
+				db
+					.select({ movieId: movieGenres.movieId })
+					.from(movieGenres)
+					.where(and(eq(movieGenres.movieId, movies.id), inArray(movieGenres.genreId, genreIds)))
+			)
+		),
+		orderBy: [desc(movies.popularity), desc(movies.id)],
 		limit,
 		with: { keywords: true, genres: { with: { genre: true } } }
 	});
@@ -28,32 +25,45 @@ async function getVibeMovies(genreIds: number[], limit = 12) {
 }
 
 export async function load() {
+	// Keep each public rail independent: a temporarily unavailable query should
+	// produce an honest empty rail instead of taking the whole page down.
+	const [masterpiecesResult, mindBendingResult, lateNightChillResult, adrenalineRushResult] =
+		await Promise.allSettled([
+			db.query.movies.findMany({
+				where: and(sql`${movies.voteCount} > 1000`, standardMovieVisibilityWhere()),
+				orderBy: [desc(movies.voteAverage)],
+				limit: 10,
+				with: { keywords: true, genres: { with: { genre: true } } }
+			}),
+			getVibeMovies([878, 53, 9648]),
+			getVibeMovies([35, 10749, 10402]),
+			getVibeMovies([28, 80, 10752])
+		]);
+
 	// Stable for the whole UTC day so "daily" does not change on refresh.
-	const masterpieces = await db.query.movies.findMany({
-		where: and(sql`${movies.voteCount} > 1000`, standardMovieVisibilityWhere()),
-		orderBy: [desc(movies.voteAverage)],
-		limit: 10,
-		with: { keywords: true, genres: { with: { genre: true } } }
-	});
+	const masterpieces = masterpiecesResult.status === 'fulfilled' ? masterpiecesResult.value : [];
 	const utcDay = Math.floor(Date.now() / 86_400_000);
 	const dailyMasterpiece =
 		masterpieces.length > 0
 			? applyLocalOverrides(masterpieces[utcDay % masterpieces.length])
 			: null;
 
-	// 2. Vibes Clusters
-	// Sci-Fi (878), Thriller (53), Mystery (964)
-	const mindBending = await getVibeMovies([878, 53, 964]);
-
-	// Comedy (35), Romance (10749), Music (10402)
-	const lateNightChill = await getVibeMovies([35, 10749, 10402]);
-
-	// Action (28), Crime (80), War (10752)
-	const adrenalineRush = await getVibeMovies([28, 80, 10752]);
+	const mindBending = mindBendingResult.status === 'fulfilled' ? mindBendingResult.value : [];
+	const lateNightChill =
+		lateNightChillResult.status === 'fulfilled' ? lateNightChillResult.value : [];
+	const adrenalineRush =
+		adrenalineRushResult.status === 'fulfilled' ? adrenalineRushResult.value : [];
 	const customCinema: Awaited<ReturnType<typeof getVibeMovies>> = [];
+	const degraded = [
+		masterpiecesResult,
+		mindBendingResult,
+		lateNightChillResult,
+		adrenalineRushResult
+	].some((result) => result.status === 'rejected');
 
 	return {
 		dailyMasterpiece,
+		degraded,
 		vibes: [
 			{ title: '🧠 Mind-Bending & Psychological', movies: mindBending },
 			{ title: '🍷 Late Night Chill', movies: lateNightChill },

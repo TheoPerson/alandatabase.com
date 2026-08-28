@@ -8,6 +8,10 @@ This file is the authoritative operating guide for agents. `PROJECT.md` defines 
 - Current repository code, configuration, tests, schema, and verified Git/worktree state are factual authority. Verify them before relying on a UI label, branch name in a prompt, session summary, or document.
 - `.geminirules` may add tool-specific rules only where it does not conflict with this file. `.agents/SESSION_STATE.md` is historical and non-authoritative until explicitly reconciled. `Artifacts.MD/*` and similar discovery material never override current repository evidence.
 - Update `PROJECT.md`, `ARCHITECTURE.md`, or `ROADMAP.md` when an approved change alters their facts or status. Do not update status without evidence.
+- Record every notable product, security, fix, and technical change under
+  `CHANGELOG.md` before handoff. Keep the Unreleased entry grouped as Major
+  Updates, Minor Updates, Fixed, Security, Technical Improvements, and Known
+  Issues; the public Status page renders this file as its release feed.
 
 ## Canonical states
 

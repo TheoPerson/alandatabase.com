@@ -23,10 +23,13 @@
 			: `${show.name} · Season ${selectedSeason}`
 	);
 
-	function shareShow() {
-		if (typeof navigator !== 'undefined') {
-			navigator.clipboard.writeText(window.location.href);
-			addToast('🔗 Series link copied to clipboard!', 'success');
+	async function shareShow() {
+		if (typeof navigator === 'undefined') return;
+		try {
+			await navigator.clipboard.writeText(window.location.href);
+			addToast('Series link copied to clipboard.', 'success');
+		} catch {
+			addToast('Unable to copy the series link.', 'error');
 		}
 	}
 </script>

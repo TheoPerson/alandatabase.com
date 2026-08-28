@@ -7,6 +7,13 @@ node_modules
 .wrangler
 /.svelte-kit
 /build
+/worker/dist/
+# Accidental TypeScript output emitted beside source files
+/src/**/*.js
+
+# Local databases (never commit PostgreSQL clusters or runtime data)
+/.data/
+/worker/.data/
 
 # OS
 .DS_Store

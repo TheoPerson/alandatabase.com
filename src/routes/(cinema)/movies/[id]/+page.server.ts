@@ -15,7 +15,12 @@ export const load: PageServerLoad = async ({ params }) => {
 
 		return {
 			movie,
-			credits: [] as any[]
+			credits: (movie.cast ?? []).map((credit: any) => ({
+				id: credit.person.id,
+				name: credit.person.name,
+				profilePath: credit.person.profilePath,
+				character: credit.character
+			}))
 		};
 	} catch (e: unknown) {
 		if (isHttpError(e)) throw e;

@@ -1,21 +1,23 @@
 # Alan's Data Base
 
-Verified against `agent/v3-foundation-core` on 2026-08-21.
+Updated against the `v3-stabilization` task worktree on 2026-08-28. Hosted and
+deployment state is called out separately and is not implied by source state.
 
 ## Product
 
 Alan's Data Base is a personal web application with two current surfaces:
 
 - a public project-and-tools landing page and public Movies/TV catalogue; and
-- an owner-only portal for personal data, playback, catalogue administration,
-  and setup.
+- an owner-only portal for personal data, playback, and setup, plus restricted
+  catalogue administration for invited administrators.
 
 The root URL is the public project landing page; Cinema is the primary entry point and the focused developer tools remain available below it.
 
 Movies/TV V3 is intended to become a calm, premium public catalogue with an
 owner-controlled personal cinema behind authentication. Visitors can browse the
 safe catalogue without an account. Only Alan can access personal organization,
-playback, administration, and setup. The intended owner journey is mobile
+playback, system administration, and setup; invited administrators can perform
+catalogue mutations only. The intended owner journey is mobile
 browse → detail → playback → resume/organization.
 
 This is not intended to be a public streaming directory, social network, generic movie database, or clone of a commercial service. The Product/Project Lead owns product scope and release decisions.
@@ -24,14 +26,18 @@ This is not intended to be a public streaming directory, social network, generic
 
 The repository currently provides:
 
-- session-based login and environment-gated registration;
-- server-side owner protection for personal/admin pages and data APIs, an
-  environment-configured owner boundary for global catalog operations, and a
-  separately authenticated Telegram webhook;
+- digest-backed session login, one-time owner setup, and invitation-gated
+  registration with persistent `owner`, `admin`, and `member` roles;
+- server-side owner protection for personal/system pages and data APIs,
+  catalogue-only mutation permission for administrators, no private permission
+  for members, and a separately authenticated Telegram webhook;
 - movie home, catalog, local search, discover, detail, review/edit/merge routes, and personal list/statistics surfaces;
 - watchlist, favorite, watched, rating, review, and custom-list data models;
 - a committed local Top-50 TV snapshot with browse/detail aliases;
-- optional Gemini, Telegram, Sentry, TMDB-worker, and Meilisearch integrations;
+- optional Telegram, Sentry, TMDB-worker, and Meilisearch integrations; Gemini
+  chat returns unavailable until its privacy and abuse controls are complete;
+- a public operational Status surface with live probes, optional UptimeRobot
+  history, and release notes rendered from the repository changelog;
 - a dark cinema UI using project CSS tokens, Tailwind utilities, and reusable Svelte components.
 
 The current V3 branch deliberately contains safeguards against unsafe behavior:
@@ -40,14 +46,16 @@ The current V3 branch deliberately contains safeguards against unsafe behavior:
 - adult-flagged, negative/custom, and known explicit-keyword rows are quarantined from standard surfaces;
 - unapproved iframe mirrors, arbitrary live URLs, and playback telemetry are removed or return an unavailable state;
 - telemetry event streaming returns unavailable until an owner-only redacted stream is designed;
-- owner-only responses are private/no-store and deny frame sources.
+- every authenticated response is private/no-store and cinema responses deny
+  frame sources.
 
 These are containment foundations, not a finished player. There is no approved media-source model, TV/season/episode persistence, playback progress, resume position, or genuine playback history. Current “watched” data is a manual interaction.
 
 ## Required product principles
 
-- Public browse is read-only; personal data, playback, setup, and administration
-  are owner-only and enforced on the server.
+- Public browse is read-only; personal data, playback, setup, role/invitation
+  operations, and system administration are owner-only. Invited administrators
+  may mutate the global catalogue only. Members receive public browse only.
 - Playback reliability and resume continuity matter more than catalog breadth.
 - Design iPhone-first, then desktop, with calm Swiss-OLED clarity rather than dashboard noise.
 - Show honest unavailable, loading, error, and empty states.
@@ -61,11 +69,14 @@ These are containment foundations, not a finished player. There is no approved m
 - V3 remains on its integration branch rather than protected `main`; production
   deployment evidence is tracked separately in `ROADMAP.md` and release
   reports.
-- Global catalog mutations are env owner-gated, but there is no normalized owner-role or invite lifecycle; reusable owner setup is not a safe invite flow.
+- Persistent authorization and one-time invitation primitives are implemented
+  in source, including a single-owner database invariant. Their additive
+  migration has not been applied to a hosted database.
 - Adult handling is a conservative quarantine, not a completed adult-content product.
 - Playback, TV episodes, progress, resume, and truthful playback history remain incomplete.
-- Database migration drift blocks schema changes until the deployed database is
-  backed up and reconciled. Optional AI remains disabled unless explicitly and
-  safely configured.
+- Migrations `0002` and `0003` remain undeployed until the target database is
+  backed up and reconciled through the reviewed runbook. AI remains disabled
+  until consent, timeout, quota, concurrency, retention, and deletion controls
+  are implemented and approved.
 
 Implementation facts live in `ARCHITECTURE.md`; approved direction and status live in `ROADMAP.md`.

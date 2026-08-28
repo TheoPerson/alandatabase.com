@@ -13,9 +13,10 @@ import {
 	jsonb,
 	primaryKey,
 	index,
-	uniqueIndex
+	uniqueIndex,
+	check
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 
 // -----------------------------------------------------------------------------
 // 1. MOVIES & COLLECTIONS
@@ -233,13 +234,21 @@ export const users = pgTable(
 		passwordHash: varchar('password_hash', { length: 255 }).notNull(),
 		displayName: varchar('display_name', { length: 100 }),
 		avatarPath: varchar('avatar_path', { length: 255 }),
+		role: varchar('role', { length: 20 }).default('member').notNull(),
+		disabledAt: timestamp('disabled_at'),
 		settings: jsonb('settings').default('{}'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').defaultNow().notNull()
 	},
 	(table) => [
 		index('idx_users_email').on(table.email),
-		index('idx_users_username').on(table.username)
+		uniqueIndex('idx_users_email_normalized').on(sql`lower(${table.email})`),
+		index('idx_users_username').on(table.username),
+		index('idx_users_role').on(table.role),
+		uniqueIndex('idx_users_single_owner')
+			.on(table.role)
+			.where(sql`${table.role} = 'owner'`),
+		check('users_role_check', sql`${table.role} in ('owner', 'admin', 'member')`)
 	]
 );
 
@@ -251,9 +260,72 @@ export const sessions = pgTable(
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
 		expiresAt: timestamp('expires_at').notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		lastSeenAt: timestamp('last_seen_at').defaultNow().notNull(),
+		revokedAt: timestamp('revoked_at')
+	},
+	(table) => [
+		index('idx_sessions_user').on(table.userId),
+		index('idx_sessions_active').on(table.userId, table.revokedAt, table.expiresAt)
+	]
+);
+
+export const authInvites = pgTable(
+	'auth_invites',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		email: varchar('email', { length: 255 }).notNull(),
+		tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
+		role: varchar('role', { length: 20 }).default('member').notNull(),
+		invitedBy: uuid('invited_by')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		acceptedBy: uuid('accepted_by').references(() => users.id, { onDelete: 'set null' }),
+		expiresAt: timestamp('expires_at').notNull(),
+		acceptedAt: timestamp('accepted_at'),
+		revokedAt: timestamp('revoked_at'),
 		createdAt: timestamp('created_at').defaultNow().notNull()
 	},
-	(table) => [index('idx_sessions_user').on(table.userId)]
+	(table) => [
+		index('idx_auth_invites_email').on(table.email),
+		index('idx_auth_invites_pending').on(table.email, table.expiresAt),
+		check('auth_invites_role_check', sql`${table.role} in ('admin', 'member')`)
+	]
+);
+
+export const authAuditEvents = pgTable(
+	'auth_audit_events',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		actorUserId: uuid('actor_user_id').references(() => users.id, { onDelete: 'set null' }),
+		targetUserId: uuid('target_user_id').references(() => users.id, { onDelete: 'set null' }),
+		inviteId: uuid('invite_id').references(() => authInvites.id, { onDelete: 'set null' }),
+		action: varchar('action', { length: 80 }).notNull(),
+		metadata: jsonb('metadata'),
+		createdAt: timestamp('created_at').defaultNow().notNull()
+	},
+	(table) => [
+		index('idx_auth_audit_actor').on(table.actorUserId),
+		index('idx_auth_audit_target').on(table.targetUserId),
+		index('idx_auth_audit_created').on(table.createdAt)
+	]
+);
+
+export const rateLimits = pgTable(
+	'rate_limits',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		// The deployed table historically called this column `ip`. Runtime code
+		// stores only a keyed digest of the request subject in it.
+		subjectHash: varchar('ip', { length: 255 }).notNull(),
+		endpoint: varchar('endpoint', { length: 255 }).notNull(),
+		hits: integer('hits').default(1).notNull(),
+		expiresAt: timestamp('expires_at').notNull()
+	},
+	(table) => [
+		uniqueIndex('idx_rate_limits_subject_endpoint').on(table.subjectHash, table.endpoint),
+		index('idx_rate_limits_expires').on(table.expiresAt)
+	]
 );
 
 export const userMovieInteractions = pgTable(
@@ -362,7 +434,7 @@ export const aiChatSessions = pgTable(
 		userId: uuid('user_id')
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
-		sessionKey: varchar('session_key', { length: 100 }).notNull().unique(), // cookie value
+		sessionKey: varchar('session_key', { length: 100 }).notNull(), // cookie value
 		messages: jsonb('messages').notNull().default('[]'), // Gemini-format message array
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').defaultNow().notNull()
@@ -430,6 +502,7 @@ export const userReviewsRelations = relations(userReviews, ({ one }) => ({
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
+	sessions: many(sessions),
 	interactions: many(userMovieInteractions),
 	reviews: many(userReviews),
 	lists: many(userLists),

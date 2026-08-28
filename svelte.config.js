@@ -9,6 +9,11 @@ const config = {
 	},
 	kit: {
 		adapter: adapter(),
+		// SvelteKit validates form-action origins by default. Keep the trusted
+		// origin list empty so mutations fail closed on every deployment host.
+		csrf: {
+			trustedOrigins: []
+		},
 
 		experimental: {
 			tracing: {

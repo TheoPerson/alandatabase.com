@@ -4,6 +4,8 @@ export const DEV_BYPASS_USER: NonNullable<App.Locals['user']> = {
 	username: 'dev-bypass',
 	displayName: 'Local development',
 	avatarPath: null,
+	role: 'owner',
+	disabledAt: null,
 	settings: { hasAcceptedAdultGate: true }
 };
 

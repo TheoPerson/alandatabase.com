@@ -4,32 +4,36 @@
 	);
 	let activeTab: 'format' | 'minify' | 'tree' | 'yaml' | 'csv' = $state('format');
 	let indentSpaces = $state(2);
-	let errorMessage = $state<string | null>(null);
 	let copied = $state(false);
 
-	let formattedOutput = $derived.by(() => {
+	let conversion = $derived.by((): { output: string; errorMessage: string | null } => {
 		if (!rawInput.trim()) {
-			errorMessage = null;
-			return '';
+			return { output: '', errorMessage: null };
 		}
 		try {
 			const parsed = JSON.parse(rawInput);
-			errorMessage = null;
+			let output: string;
 
 			if (activeTab === 'minify') {
-				return JSON.stringify(parsed);
+				output = JSON.stringify(parsed);
 			} else if (activeTab === 'yaml') {
-				return jsonToYaml(parsed);
+				output = jsonToYaml(parsed);
 			} else if (activeTab === 'csv') {
-				return jsonToCsv(parsed);
+				output = jsonToCsv(parsed);
 			} else {
-				return JSON.stringify(parsed, null, indentSpaces);
+				output = JSON.stringify(parsed, null, indentSpaces);
 			}
-		} catch (err: any) {
-			errorMessage = err.message || 'Invalid JSON syntax';
-			return '';
+
+			return { output, errorMessage: null };
+		} catch (error) {
+			return {
+				output: '',
+				errorMessage: error instanceof Error ? error.message : 'Invalid JSON syntax'
+			};
 		}
 	});
+	let formattedOutput = $derived(conversion.output);
+	let errorMessage = $derived(conversion.errorMessage);
 
 	function jsonToYaml(obj: any, indent = 0): string {
 		const spacing = ' '.repeat(indent);

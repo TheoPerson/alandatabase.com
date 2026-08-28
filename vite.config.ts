@@ -25,12 +25,10 @@ export default defineConfig({
 		tailwindcss(),
 		sveltekit()
 	],
-	ssr: {
-		external: ['@electric-sql/pglite']
-	},
 	test: {
 		expect: { requireAssertions: true },
 		environment: 'node',
+		setupFiles: ['./tests/setup-unit.ts'],
 		include: ['src/**/*.{test,spec}.{js,ts}']
 	}
 });

@@ -1,3 +1,11 @@
-# allow crawling everything by default
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /admin
+Disallow: /api
+Disallow: /auth
+Disallow: /disclaimer
+Disallow: /my
+Disallow: /setup
+Disallow: /tools
+
+Sitemap: https://alandatabase.com/sitemap.xml

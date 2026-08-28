@@ -2,34 +2,56 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { enhance } from '$app/forms';
 
-	let { data, form } = $props();
+	const { data, form } = $props();
 	let isSubmitting = $state(false);
+	const actionUrl = $derived(
+		data.returnTo ? `?/register&returnTo=${encodeURIComponent(data.returnTo)}` : '?/register'
+	);
 </script>
+
+<svelte:head>
+	<title>{data.mode === 'invite' ? 'Accept Invitation' : 'Owner Setup'} | Alan Database</title>
+	<meta
+		name="description"
+		content={data.mode === 'invite'
+			? 'Accept a private Alan Database invitation.'
+			: 'One-time Alan Database owner setup.'}
+	/>
+	<meta name="robots" content="noindex, nofollow" />
+</svelte:head>
 
 <div class="auth-container">
 	<div class="auth-card glass-card">
-		<h1 class="title">Join CinemaDB</h1>
-		<p class="subtitle">Create your personal cinema archive.</p>
+		<h1 class="title">{data.mode === 'invite' ? 'Accept invitation' : 'Owner setup'}</h1>
+		<p class="subtitle">
+			{data.mode === 'invite'
+				? `Create your private ${data.invitation?.role ?? 'member'} account.`
+				: 'Create the first and only owner account.'}
+		</p>
 
 		{#if form?.error}
-			<div class="error-banner">
+			<div class="error-banner" role="alert">
 				{form.error}
 			</div>
 		{/if}
 
-		{#if data.allowSetup}
+		{#if data.mode === 'owner' || data.mode === 'invite'}
 			<form
 				method="POST"
-				action="?/register&returnTo={data.returnTo || ''}"
+				action={actionUrl}
 				class="auth-form"
 				use:enhance={() => {
 					isSubmitting = true;
 					return async ({ update }) => {
-						isSubmitting = false;
 						await update();
+						isSubmitting = false;
 					};
 				}}
 			>
+				{#if data.mode === 'invite' && data.invitationToken}
+					<input type="hidden" name="invitationToken" value={data.invitationToken} />
+				{/if}
+
 				<div class="input-group">
 					<label for="username">Username</label>
 					<input
@@ -38,6 +60,8 @@
 						name="username"
 						required
 						minlength="3"
+						maxlength="32"
+						pattern="[A-Za-z0-9_-]+"
 						placeholder="cinephile99"
 						autocomplete="username"
 					/>
@@ -52,8 +76,28 @@
 						required
 						placeholder="you@example.com"
 						autocomplete="email"
+						value={data.invitation?.email ?? ''}
+						readonly={data.mode === 'invite'}
 					/>
 				</div>
+
+				{#if data.mode === 'owner'}
+					<div class="input-group">
+						<label for="setupKey">Owner setup key</label>
+						<input
+							type="password"
+							id="setupKey"
+							name="setupKey"
+							required
+							minlength="32"
+							autocomplete="off"
+							aria-describedby="setup-key-help"
+						/>
+						<p id="setup-key-help" class="field-help">
+							Use the one-time server key. It is never stored with the account.
+						</p>
+					</div>
+				{/if}
 
 				<div class="input-group">
 					<label for="password">Password</label>
@@ -62,22 +106,25 @@
 						id="password"
 						name="password"
 						required
-						minlength="6"
-						placeholder="••••••••"
+						minlength="12"
+						placeholder="••••••••••••"
 						autocomplete="new-password"
 					/>
 				</div>
 
 				<Button type="submit" disabled={isSubmitting} class="w-full">
-					{isSubmitting ? 'Creating account...' : 'Create Account'}
+					{isSubmitting
+						? 'Creating account...'
+						: data.mode === 'invite'
+							? 'Accept invitation'
+							: 'Create owner account'}
 				</Button>
 			</form>
 		{:else}
 			<div class="empty-state">
-				<p>Registration is currently disabled for security reasons.</p>
+				<p>Registration is closed or the invitation is no longer valid.</p>
 				<p class="text-sm mt-4 text-muted-foreground">
-					If you are the owner, set ALLOW_OWNER_SETUP=true in your environment variables to
-					bootstrap your account.
+					Use the secure sign-in portal to access administration.
 				</p>
 			</div>
 		{/if}
@@ -97,7 +144,7 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		min-height: calc(100vh - var(--header-height, 64px));
+		min-height: calc(100dvh - var(--header-height, 64px));
 		padding: 2rem 1rem;
 		background: radial-gradient(circle at 50% 0%, rgba(20, 20, 25, 1) 0%, rgba(10, 10, 12, 1) 100%);
 	}
@@ -173,6 +220,18 @@
 		border-color: rgba(255, 255, 255, 0.3);
 		background: rgba(0, 0, 0, 0.4);
 		box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05);
+	}
+
+	.input-group input:read-only {
+		color: var(--text-secondary);
+		cursor: not-allowed;
+	}
+
+	.field-help {
+		margin: 0;
+		color: #71717a;
+		font-size: 0.78rem;
+		line-height: 1.45;
 	}
 
 	.auth-footer {

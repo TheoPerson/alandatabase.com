@@ -1,7 +1,7 @@
 # Architecture
 
-Verified against `agent/v3-foundation-core` on 2026-08-21. Provisional or
-incomplete areas are explicit below.
+Updated against the `v3-stabilization` task worktree on 2026-08-28. Provisional,
+undeployed, or incomplete areas are explicit below.
 
 ## System shape
 
@@ -14,7 +14,7 @@ There are no microservices, message broker, separate API application, or native 
 
 ```text
 Browser
-  -> SvelteKit hooks (Sentry, device experiment, session, route policy, adult warning)
+  -> SvelteKit hooks (Sentry, session, route policy, adult warning)
   -> route load/action or API handler
   -> server query/service/policy
   -> Drizzle ORM -> PostgreSQL
@@ -44,8 +44,10 @@ creating parallel applications:
   hosts. Authentication remains the repository's session-based SvelteKit flow;
   no separate auth service is invented.
 - The public cinema catalogue remains browseable without an account.
-  Personal data, playback, owner operations, and data APIs require an
-  authenticated owner configured through `OWNER_USER_IDS` or `OWNER_EMAILS`.
+  Personal data and playback require the persistent `owner`; catalog mutations
+  require `admin` or `owner`; system, role, and invitation operations require
+  the single persistent `owner`. Members receive public browse only. Unknown
+  roles fail closed.
 
 The server hook applies HTTPS canonicalization, security headers, narrow API
 CORS, and production cookie policy before route handling. `vercel.json` mirrors
@@ -55,13 +57,14 @@ paths are left untouched.
 
 ## Stack
 
-- SvelteKit 2.70, Svelte 5.56 runes, TypeScript 5.8 in strict mode, and Vite 8.
+- SvelteKit 2.70, Svelte 5.56 runes, TypeScript 5.9 in strict mode, and Vite 8.
 - Tailwind CSS 4 through the Vite plugin, project CSS variables in `src/app.css`, and Bits UI/shadcn-style primitives.
 - Drizzle ORM 0.45 with `postgres-js` and PostgreSQL.
 - Vitest for colocated server/component tests; Playwright for browser tests in `tests/`.
 - Sentry client/server instrumentation through `@sentry/sveltekit`.
 - Vercel adapter selected in `svelte.config.js`.
-- Node-based worker using `tsx`; pnpm is the repository package manager.
+- Node 24 is the runtime baseline; the worker uses `tsx`, and pnpm 11.15.1 is
+  pinned as the repository package manager.
 
 ## Repository map
 
@@ -83,29 +86,37 @@ paths are left untouched.
 
 ## Request, authentication, and privacy flow
 
-`src/hooks.server.ts` sequences Sentry with the application handler. It creates a long-lived anonymous device ID for A/B assignment, validates the `session` cookie, populates `event.locals`, and applies route policy.
+`src/hooks.server.ts` sequences Sentry with the application handler. It validates
+the `session` cookie, populates `event.locals`, and applies route policy without
+creating an unrelated anonymous identifier on public reads.
 
 `src/lib/server/auth/cinema-access.ts` keeps catalogue, detail, TV, discovery,
-and search pages public for browsing. Personal data, playback, catalogue
-mutation routes, and non-public APIs are owner-gated. Anonymous protected pages
+and search pages public for browsing. Personal data and playback are owner-only;
+catalogue mutation routes accept owners and admins; other non-public APIs are
+owner-gated. Anonymous protected pages
 redirect to `auth.alandatabase.com`; anonymous protected APIs return JSON 401.
 Authenticated non-owners receive 403. `/auth/login`, `/auth/register`, and the
 public API metadata/liveness routes are explicit public exceptions.
 `/api/telegram/webhook` is session-exempt because it requires Telegram
 configuration, a webhook secret, and an allowed chat ID.
 
-Owner-only cinema pages also pass through a stored `hasAcceptedAdultGate`
+Protected catalogue and owner cinema pages also pass through a stored `hasAcceptedAdultGate`
 warning. This is a cinema-wide acknowledgement, not a complete separate
-adult-content authorization model. Owner-only responses receive private/no-store
-headers and a CSP with `frame-src 'none'`.
+adult-content authorization model. Every authenticated response receives
+private/no-store headers, and cinema uses a CSP with `frame-src 'none'`.
 
-Passwords use salted scrypt. Session tokens are 32 random bytes stored in
-PostgreSQL with a 30-day expiry. Production cookies are Secure, HttpOnly,
-SameSite=Lax, and scoped to `.alandatabase.com` so the auth portal can establish
-a session for sibling hosts. Preview cookies remain host-only because a preview
-hostname cannot set the production apex domain. Authorization remains
-incomplete: there is no normalized role/invite schema, and env owner
-configuration is an interim boundary rather than a reusable invite model.
+Passwords use salted scrypt. Session tokens are 32 random bytes; only SHA-256
+digests are stored in PostgreSQL with a 30-day expiry. Production cookies are
+Secure, HttpOnly, SameSite=Lax, and scoped to `.alandatabase.com` so the auth
+portal can establish a session for sibling hosts. Preview cookies remain
+host-only because a preview hostname cannot set the production apex domain.
+Login attempts are durably limited by keyed address and account digests. Owner
+setup is environment-enabled, limited to an empty user table, serialized by a
+PostgreSQL advisory transaction lock, and audited in the creation transaction.
+Persistent roles, account disabling, revocable sessions, digest-only one-time
+invitations, and audit events are implemented. Invitation creation and
+acceptance serialize by normalized email. The hosted migration and operational
+rollout remain incomplete.
 
 ## Application surfaces
 
@@ -115,12 +126,14 @@ configuration is an interim boundary rather than a reusable invite model.
 - `/tv`, `/tvshow`, and `/tvshows` share a committed in-code TV snapshot; TV has no database persistence or real episode catalog.
 - `/live` is a protected compatibility surface that accepts no URL and embeds nothing.
 - `/api/search` and `/api/movies/catalog` are bounded local reads.
-- `/api/ai/chat` sends filtered personal taste/review context to Gemini and stores bounded conversation history.
+- `/api/ai/chat` returns HTTP 410 and sends no personal data externally until
+  approved consent, abuse, timeout, retention, and deletion controls exist.
 - `/api/telemetry/stream-play` and `/api/telemetry/events` return HTTP 410 until an approved source pipeline and owner-only redacted telemetry stream exist.
 - `/admin` is an owner-only surface map for the production project hosts; it
   never displays secret values.
-- `/status` performs a live PostgreSQL liveness probe and reports only safe
-  availability/latency information.
+- `/status` performs live application/PostgreSQL probes, optionally reads
+  30-day monitor history from UptimeRobot v3 with a server-only key, and renders
+  `CHANGELOG.md` as the public release feed.
 - The public hub is a separate surface with legacy tools/demo pages.
 
 ## Data model and data flows
@@ -136,7 +149,17 @@ Current boundaries:
 - TV data is an in-code snapshot, not part of the Drizzle schema.
 - No media source/provenance, season/episode, playback event, or progress/resume table exists.
 
-Committed migrations create the original movie/user model and later movie override/lock fields. The runtime schema additionally declares `users.settings`, `activities`, and `ai_chat_sessions` without matching committed SQL. Reconcile this against a backup and the real deployed schema before production changes.
+Committed migrations create the original movie/user model and later movie
+override/lock fields. Additive migration `0002_wet_masque.sql` reconciles
+`users.settings`, `activities`, `ai_chat_sessions`, and durable `rate_limits`
+without deleting data; it fails if duplicate throttling rows require operator
+review. It has been validated twice against an ephemeral PostgreSQL-compatible
+database but has not been applied to a hosted database. Back up and inspect the
+target before any production migration. Additive migration
+`0003_complete_skrulls.sql` adds persistent roles, revocable sessions,
+invitations, and auth audit events; it rejects multiple owners and
+case-insensitive duplicate emails and enforces a single-owner index. It is also
+prepared but not applied to a hosted database.
 
 ## Playback and external integrations
 
@@ -146,7 +169,8 @@ The application retains shared TMDB types/code and loads artwork from the TMDB i
 
 Other optional integrations:
 
-- Gemini: authenticated chat/recommendations; personal ratings, favorites, and review text can leave the system.
+- Gemini: runtime chat is disabled with HTTP 410; no personal ratings, favorites,
+  or review text are sent externally.
 - Telegram: notifications plus a fail-closed, allowlisted, local-search-only webhook.
 - Sentry: browser/server error and trace instrumentation with request payload,
   cookies, headers, query strings, DB values, and AI inputs/outputs disabled or
@@ -154,16 +178,28 @@ Other optional integrations:
 - Meilisearch: optional worker setup; application reads currently use PostgreSQL.
 
 Server configuration is environment-driven. `.env.example` documents the
-non-sensitive shape of database, owner identification, TMDB, Meilisearch,
-Gemini, Sentry, and Telegram configuration, including `POSTGRES_URL`,
-`PREVIEW_DATABASE_URL`, and `ALLOW_OWNER_SETUP`. Vercel supplies `VERCEL`,
-`VERCEL_ENV`, and `NODE_ENV`; no secret uses a client-visible `PUBLIC_` prefix.
+non-sensitive shape of database access, one-time owner setup, rate-limit hashing,
+UptimeRobot, TMDB, Meilisearch, Gemini, Sentry, and Telegram configuration,
+including `POSTGRES_URL`, `PREVIEW_DATABASE_URL`, `OWNER_SETUP_KEY`, and
+`RATE_LIMIT_HASH_KEY`. Vercel supplies `VERCEL`, `VERCEL_ENV`, and `NODE_ENV`;
+no secret uses a client-visible `PUBLIC_` prefix.
+
+Persistent authorization lives in PostgreSQL: `users.role` defines
+`owner|admin|member`, `users.disabled_at` disables an account, sessions are
+soft-revoked and touched, invitation tokens are stored only as SHA-256 digests,
+and sensitive mutations append to `auth_audit_events`. The public registration
+surface is closed unless a valid one-time invitation is supplied or an empty
+database is being initialized with a high-entropy `OWNER_SETUP_KEY`.
 
 ## UI conventions
 
 Svelte components use runes and route data is loaded server-side where practical. The cinema layout supplies the header/footer, skip link, command palette, toast container, and navigation progress indicator. Styling mixes Tailwind utilities, CSS variables, component-local CSS, and legacy hub styles.
 
-The intended direction is high-contrast Swiss-OLED, but the implementation still mixes emerald/gold accents, glass effects, emoji, and marketing language. Global focus-visible and reduced-motion rules exist. Responsive and accessibility coverage remains incomplete, particularly at 320px, in the header/player dialog, tabs, charts, search controls, and loading/error states.
+The intended direction is high-contrast Swiss-OLED, but the implementation still
+mixes emerald/gold accents, glass effects, emoji, and marketing language. Global
+focus-visible, visible skip-link, dialog focus, reduced-motion, responsive action,
+and selected-filter semantics exist. Broader authenticated browser, chart, and
+screen-reader coverage remains incomplete.
 
 ## Testing, build, and deployment
 
@@ -184,6 +220,13 @@ than this architectural reference. The repository-wide Prettier baseline and
 current public/owner Playwright assumptions are maintained by the quality
 commands above. A Vite/Rolldown parser defect still affects builds from the
 legacy Windows directory whose name contains an apostrophe; build validation is
-therefore also run from a neutral-path clean checkout and by Vercel.
+therefore also run from a neutral-path clean checkout and by Vercel. On Windows
+hosts without Developer Mode, the Vercel adapter's final function aliases also
+require a junction-compatible validation harness; the unchanged Linux CI/Vercel
+build remains the authoritative packaging gate.
 
-GitHub Actions runs lint, check, unit/E2E, and build for `main` pushes and PRs to `main`, using Node 20 and pnpm 9. It does not target the V3 branch or provision PostgreSQL/Meilisearch test services. `netlify.toml` remains committed with Node 22 and a `build` publish directory, but Netlify is not the active SvelteKit adapter. Deployment configuration is evolving and must not be inferred from that file alone.
+GitHub Actions runs lint, check, app/worker tests, Chromium E2E, and app/worker
+builds for `main` and `agent/v3-foundation-core`, using Node 24 and pnpm 11.15.1. Authenticated
+database integration still needs an isolated CI database fixture;
+Meilisearch remains optional. Vercel is the sole configured deployment adapter;
+stale Netlify tooling and configuration have been removed.

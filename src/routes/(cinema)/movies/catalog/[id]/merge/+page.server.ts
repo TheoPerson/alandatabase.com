@@ -1,16 +1,72 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { getMovieById } from '$lib/server/services/movie.service';
 import { db } from '$lib/server/db';
-import { movies, userMovieInteractions, userListItems, userReviews } from '$lib/server/db/schema';
+import {
+	activities,
+	authAuditEvents,
+	movies,
+	userMovieInteractions,
+	userListItems,
+	userReviews
+} from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
-import { requireOwnerUser } from '$lib/server/auth/owner';
+import { requireCatalogManager } from '$lib/server/auth/owner';
 import { logServerError } from '$lib/server/security/logging';
+
+export function _mergeReviewValues(
+	existing: { content: string; containsSpoilers: boolean },
+	source: { content: string; containsSpoilers: boolean }
+) {
+	return {
+		content: `${existing.content}\n\n---\n\n${source.content}`,
+		containsSpoilers: existing.containsSpoilers || source.containsSpoilers
+	};
+}
+
+export function _mergeInteractionValues(
+	existing: {
+		watched: boolean;
+		watchlist: boolean;
+		favorite: boolean;
+		rating: string | null;
+		watchDate: string | null;
+		rewatchCount: number;
+		personalNotes: string | null;
+	},
+	source: {
+		watched: boolean;
+		watchlist: boolean;
+		favorite: boolean;
+		rating: string | null;
+		watchDate: string | null;
+		rewatchCount: number;
+		personalNotes: string | null;
+	}
+) {
+	const watchDates = [existing.watchDate, source.watchDate].filter((value): value is string =>
+		Boolean(value)
+	);
+	const notes = [existing.personalNotes, source.personalNotes].filter((value): value is string =>
+		Boolean(value)
+	);
+
+	return {
+		watched: existing.watched || source.watched,
+		watchlist: existing.watchlist || source.watchlist,
+		favorite: existing.favorite || source.favorite,
+		rating: existing.rating ?? source.rating,
+		watchDate: watchDates.length > 0 ? watchDates.sort()[0] : null,
+		rewatchCount: existing.rewatchCount + source.rewatchCount,
+		personalNotes: notes.length > 0 ? notes.join('\n') : null,
+		updatedAt: new Date()
+	};
+}
 
 export async function load({ params, locals }) {
 	if (!locals.user) {
 		throw redirect(302, '/auth/login');
 	}
-	requireOwnerUser(locals.user);
+	requireCatalogManager(locals.user);
 
 	const sourceMovie = await getMovieById(params.id);
 	if (!sourceMovie) {
@@ -27,7 +83,8 @@ export const actions = {
 		if (!locals.user) {
 			return fail(401, { error: 'Unauthorized' });
 		}
-		requireOwnerUser(locals.user);
+		requireCatalogManager(locals.user);
+		const actorUserId = locals.user.id;
 
 		const formData = await request.formData();
 		const targetTmdbId = formData.get('targetTmdbId')?.toString();
@@ -77,7 +134,7 @@ export const actions = {
 						// Append review content
 						await tx
 							.update(userReviews)
-							.set({ content: existing.content + '\n\n---\n\n' + rev.content })
+							.set(_mergeReviewValues(existing, rev))
 							.where(eq(userReviews.id, existing.id));
 						// Delete old
 						await tx.delete(userReviews).where(eq(userReviews.id, rev.id));
@@ -138,17 +195,7 @@ export const actions = {
 						// Merge interactions
 						await tx
 							.update(userMovieInteractions)
-							.set({
-								watched: existing.watched || interaction.watched,
-								watchlist: existing.watchlist || interaction.watchlist,
-								favorite: existing.favorite || interaction.favorite,
-								rating: existing.rating || interaction.rating,
-								rewatchCount: existing.rewatchCount + interaction.rewatchCount,
-								personalNotes: existing.personalNotes
-									? existing.personalNotes + '\n' + (interaction.personalNotes || '')
-									: interaction.personalNotes,
-								updatedAt: new Date()
-							})
+							.set(_mergeInteractionValues(existing, interaction))
 							.where(eq(userMovieInteractions.id, existing.id));
 
 						await tx
@@ -157,8 +204,20 @@ export const actions = {
 					}
 				}
 
-				// 4. Delete Source Movie (cascade will drop cast/crew links)
+				// 4. Preserve activity history before deleting the duplicate record.
+				await tx
+					.update(activities)
+					.set({ movieId: targetMovieId })
+					.where(eq(activities.movieId, sourceMovieId));
+
+				// 5. Delete Source Movie (cascade will drop cast/crew links)
 				await tx.delete(movies).where(eq(movies.id, sourceMovieId));
+
+				await tx.insert(authAuditEvents).values({
+					actorUserId,
+					action: 'catalog.movie_merged',
+					metadata: { sourceMovieId, targetMovieId }
+				});
 			});
 
 			return { success: true, newId: targetMovieId };

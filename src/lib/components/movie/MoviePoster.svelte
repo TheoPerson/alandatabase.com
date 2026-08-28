@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { tick } from 'svelte';
+
 	interface Props {
 		path: string | null;
 		title: string;
@@ -17,6 +19,7 @@
 
 	let loaded = $state(false);
 	let error = $state(false);
+	let imageElement = $state<HTMLImageElement>();
 
 	const imageUrl = $derived(
 		path
@@ -25,11 +28,26 @@
 				: `https://image.tmdb.org/t/p/${size}${path.startsWith('/') ? '' : '/'}${path}`
 			: null
 	);
+
+	$effect(() => {
+		const currentUrl = imageUrl;
+		loaded = false;
+		error = false;
+		if (!currentUrl) return;
+
+		tick().then(() => {
+			if (imageElement?.complete) {
+				loaded = imageElement.naturalWidth > 0;
+				error = imageElement.naturalWidth === 0;
+			}
+		});
+	});
 </script>
 
 <div class="poster-container {customClass}" style="aspect-ratio: {aspectRatio}">
 	{#if imageUrl && !error}
 		<img
+			bind:this={imageElement}
 			src={imageUrl}
 			alt="{title} Poster"
 			loading="lazy"

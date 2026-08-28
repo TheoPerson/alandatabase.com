@@ -18,12 +18,15 @@
 			<p class="eyebrow">Owner console / V3</p>
 			<h1>Project surfaces, kept deliberate.</h1>
 			<p class="lede">
-				You are signed in as <strong>{data.user.displayName || data.user.email}</strong>. Public
-				movie browsing stays open; operational and personal surfaces remain owner-gated.
+				You are signed in as <strong>{data.user.displayName || data.user.email}</strong> with the
+				<strong>{data.user.role}</strong> role. Public movie browsing stays open; operational control
+				remains owner-gated.
 			</p>
 		</div>
 		<div class="header-actions">
-			<a class="button secondary" href="https://auth.alandatabase.com/auth/logout">Sign out</a>
+			<form method="POST" action="/auth/logout">
+				<button class="button secondary" type="submit">Sign out</button>
+			</form>
 			<a class="button primary" href="https://alandatabase.com/movies">Open cinema</a>
 		</div>
 	</header>
@@ -58,6 +61,7 @@
 		margin: 0 auto;
 		padding: clamp(2rem, 6vw, 5rem) 0 3rem;
 		color: #f4f4f5;
+		min-height: 100dvh;
 	}
 
 	.admin-header {
@@ -127,6 +131,9 @@
 		font-weight: 800;
 		text-decoration: none;
 		white-space: nowrap;
+		font-family: inherit;
+		cursor: pointer;
+		min-height: 44px;
 	}
 
 	.button.primary {
@@ -162,6 +169,13 @@
 	.surface-card:hover {
 		transform: translateY(-3px);
 		border-color: rgba(52, 211, 153, 0.55);
+	}
+
+	.surface-card:focus-visible,
+	.button:focus-visible,
+	.back-link:focus-visible {
+		outline: 2px solid #34d399;
+		outline-offset: 3px;
 	}
 
 	.surface-topline {
@@ -242,6 +256,22 @@
 
 		.admin-footer {
 			flex-direction: column;
+		}
+
+		.header-actions,
+		.header-actions form,
+		.header-actions .button {
+			width: 100%;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.surface-card {
+			transition: none;
+		}
+
+		.surface-card:hover {
+			transform: none;
 		}
 	}
 </style>

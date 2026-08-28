@@ -85,33 +85,81 @@ Vercel.
   production host/CORS/header smoke verification.
 - Established a repository-wide Prettier baseline and removed lint errors.
 
+### P0.7 — operational status and pre-release hardening
+
+- Rebuilt `/status` as a responsive public availability and release-notes
+  surface backed by live application/database probes, optional UptimeRobot v3
+  history, and the canonical `CHANGELOG.md` feed.
+- Added an original transform-driven fluid status animation with a verified
+  reduced-motion fallback and no horizontal overflow at 320 px.
+- Fixed the malformed movie visibility predicate, independent discovery
+  fallback, duplicate TV route identity, JSON tool hydration crash, and static
+  metadata override.
+- Removed two raw PostgreSQL clusters from Git tracking, ignored generated
+  runtime/build files, and replaced stored raw session tokens with digests.
+- Added keyed durable login throttling, one-time concurrency-safe owner setup,
+  stricter setup validation, and Auth `noindex` metadata.
+- Restored the worker TypeScript build, removed implicit seed-on-start, and
+  separated its database lifecycle from SvelteKit.
+- Prepared additive migration `0002_wet_masque.sql`; it passes two consecutive
+  ephemeral migration runs and rejects duplicate throttling state, but has not
+  been run against a hosted database.
+- Expanded V3 CI triggers with PostgreSQL-backed E2E, app/worker tests, and
+  app/worker builds.
+
+Evidence: `pnpm check` passes with 0 diagnostics; app unit tests pass 127/127;
+worker tests pass 11/11; lint passes; the worker build passes and the complete
+SvelteKit/Vercel build passes from a neutral Windows validation path using
+junction-compatible aliases for the adapter's Linux symlinks. Unmodified Vite
+client/server compilation also passes; local Windows packaging without
+Developer Mode stops only on adapter symlink creation. Playwright passes 12/12
+against the local production preview. Host-header checks pass for apex, www
+redirect, Status, API, API health, and Auth. This is local verification, not
+deployment evidence; unchanged Linux CI/Vercel packaging remains required.
+
 ## `in_review` — agentic operating context
 
 - Root `AGENTS.md`, `PROJECT.md`, `ARCHITECTURE.md`, and `ROADMAP.md` establish worktree isolation, authority, canonical states, approval gates, current facts, and V3 priorities.
 - The public entry experience changed in P0.5; protected cinema behavior remains unchanged.
 
+## `in_review` — P0 stabilization
+
+- Persistent owner/admin/member authorization, invitation lifecycle, audit
+  events, and single-owner enforcement are implemented in the task worktree.
+  Owner retains personal/system access, admin is catalogue-only, and member has
+  public browse only.
+- Public-read containment, authenticated cache privacy, bounded catalogue/search
+  reads, merge integrity, dependency security, Node 24/pnpm 11 alignment, and
+  objective responsive/accessibility defects have been addressed.
+- Full repository gates and independent review remain required before this work
+  can become `verified` or be integrated. Migrations remain undeployed.
+
 ## `approved` — remaining P0 foundations
 
 Implementation may proceed autonomously only within the approved item and acceptance criteria. Architecture, production, destructive, or scope-expanding decisions return to the Product Lead.
 
-1. **Owner and invite authorization**
-   - Replace the interim env owner boundary with a normalized server-side owner/invite model for global edit/merge/ingestion operations.
-   - Replace reusable owner setup with a one-time, concurrency-safe setup and later invite lifecycle.
-   - Keep user-scoped reviews, interactions, and private lists separate from global administration.
+1. **Authorization rollout**
+   - Back up and reconcile the hosted database before applying migrations `0002`
+     and `0003` through the reviewed runbook.
+   - Verify owner bootstrap, invitation, revocation, role change, and rollback on
+     the isolated target before enabling hosted registration.
+   - Keep user-scoped reviews, interactions, and private lists owner-only and
+     separate from catalogue administration.
 
 2. **Operational abuse and privacy controls**
    - Verify rotation of previously exposed credentials and invalidate affected sessions where required.
    - Disable or owner-gate/redact the global telemetry event stream.
-   - Put Gemini behind explicit enablement with timeout, quota/rate/concurrency, consent, retention, and deletion controls.
-   - Complete cookie, CSRF, login-rate, and session-revocation review across supported hosts.
+   - Keep Gemini unavailable until explicit enablement, timeout,
+     quota/rate/concurrency, consent, retention, and deletion controls exist.
+   - Complete production cookie/CSRF verification and session-revocation operations across supported hosts.
 
 3. **Worker and migration safety**
-   - Validate worker commands before database/network action; remove implicit seed-on-start behavior and obsolete keyword probes.
-   - Introspect the deployed database read-only, back it up, and reconcile runtime schema with additive migrations.
-   - Add roles/invites and content classification/provenance only through reviewed, rollback-safe schema changes.
+   - Back up the deployed database, re-check duplicate throttling and identity
+     rows, and apply the prepared additive migrations through the reviewed runbook.
+   - Add content classification/provenance only through reviewed, rollback-safe
+     schema changes.
 
 4. **Trustworthy quality baseline**
-   - Add V3 CI triggers and required service provisioning.
    - Add authenticated-owner Playwright fixtures without committing credentials.
    - Expand mobile, keyboard, accessibility, and clean-checkout release coverage.
 

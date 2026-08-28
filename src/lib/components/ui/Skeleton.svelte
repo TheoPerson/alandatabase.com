@@ -4,20 +4,24 @@
 		height?: string;
 		borderRadius?: string;
 		class?: string;
+		label?: string;
 	}
 
 	let {
 		width = '100%',
 		height = '1rem',
 		borderRadius = 'var(--radius-md)',
-		class: className = ''
+		class: className = '',
+		label
 	}: Props = $props();
 </script>
 
 <div
 	class="skeleton {className}"
 	style="width: {width}; height: {height}; border-radius: {borderRadius};"
-	aria-hidden="true"
+	aria-hidden={label ? undefined : 'true'}
+	role={label ? 'status' : undefined}
+	aria-label={label}
 ></div>
 
 <style>

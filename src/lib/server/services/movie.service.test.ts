@@ -36,6 +36,7 @@ import {
 	applyLocalOverrides,
 	countMovies,
 	getMovieById,
+	getPersonById,
 	getTopRatedMovies,
 	getTrendingMovies,
 	searchMovies
@@ -213,5 +214,17 @@ describe('Movie Service - Standard local reads', () => {
 		expect(results).toEqual([]);
 		expect(dbSpies.movieFindMany).not.toHaveBeenCalled();
 		expect(dbSpies.peopleFindMany).not.toHaveBeenCalled();
+	});
+
+	it('does not expose people known only through quarantined movies', async () => {
+		dbSpies.peopleFindFirst.mockResolvedValue({
+			id: '00000000-0000-4000-8000-000000000099',
+			name: 'Private Person',
+			biography: 'Must not be serialized',
+			castRoles: [{ movie: movieFixture({ adult: true }) }],
+			crewRoles: [{ movie: movieFixture({ tmdbId: -10 }) }]
+		});
+
+		await expect(getPersonById('00000000-0000-4000-8000-000000000099')).resolves.toBeNull();
 	});
 });

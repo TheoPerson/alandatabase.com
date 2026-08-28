@@ -2,9 +2,13 @@ import { sequence } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
 import { dev } from '$app/environment';
 import { SESSION_COOKIE_DELETE_OPTIONS, validateSessionToken } from '$lib/server/auth';
-import { isCinemaPageRoute, requiresCinemaSession } from '$lib/server/auth/cinema-access';
-import { isOwnerUser } from '$lib/server/auth/owner';
-import { assignAllExperiments } from '$lib/server/ab-testing';
+import {
+	getCinemaAccessRequirement,
+	isCinemaPageRoute,
+	shouldUsePrivateResponseHeaders,
+	type CinemaAccessRequirement
+} from '$lib/server/auth/cinema-access';
+import { hasPermission } from '$lib/server/auth/permissions';
 import { denyFrameSources } from '$lib/server/security/response-policy';
 import { safeDiagnostic } from '$lib/server/security/logging';
 import { DEV_BYPASS_USER, isDevAuthBypassEnabled } from '$lib/server/auth/dev-access';
@@ -77,6 +81,16 @@ function authPortalLocation(event: Parameters<Handle>[0]['event'], returnTo: str
 		: `/auth/login?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
+function canAccessCinemaRequirement(
+	user: App.Locals['user'],
+	requirement: CinemaAccessRequirement
+): boolean {
+	if (requirement === 'public') return true;
+	if (requirement === 'authenticated') return hasPermission(user, 'account:access');
+	if (requirement === 'catalog') return hasPermission(user, 'catalog:manage');
+	return hasPermission(user, 'system:manage');
+}
+
 export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
 	const canonicalRedirect = getCanonicalRedirect(
 		event.url,
@@ -110,19 +124,7 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 		return applySecurityHeaders(new Response(null, { status: 204 }), event);
 	}
 
-	// A/B Testing Assignment
-	let deviceId = event.cookies.get('device_id');
-	if (!deviceId) {
-		deviceId = crypto.randomUUID();
-		event.cookies.set('device_id', deviceId, {
-			path: '/',
-			maxAge: 60 * 60 * 24 * 365 * 2,
-			httpOnly: true,
-			sameSite: 'lax',
-			secure: process.env.NODE_ENV === 'production'
-		});
-	}
-	event.locals.abTests = assignAllExperiments(deviceId);
+	event.locals.abTests = {};
 
 	const token = event.cookies.get('session');
 	event.locals.session = null;
@@ -138,6 +140,8 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 				username: user.username,
 				displayName: user.displayName,
 				avatarPath: user.avatarPath,
+				role: user.role,
+				disabledAt: user.disabledAt,
 				settings: (user.settings as Record<string, any>) || {}
 			};
 		} else {
@@ -151,8 +155,9 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 	// decisions so API subdomain requests receive API responses, not HTML login
 	// redirects.
 	const pathname = getHostnameRoute(event.url) ?? event.url.pathname;
+	const accessRequirement = getCinemaAccessRequirement(pathname);
 
-	if (requiresCinemaSession(pathname) && !event.locals.user) {
+	if (accessRequirement !== 'public' && !event.locals.user) {
 		if (pathname.startsWith('/api/')) {
 			return applySecurityHeaders(
 				new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -175,13 +180,17 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 		);
 	}
 
-	if (requiresCinemaSession(pathname) && event.locals.user && !isOwnerUser(event.locals.user)) {
+	if (
+		accessRequirement !== 'public' &&
+		event.locals.user &&
+		!canAccessCinemaRequirement(event.locals.user, accessRequirement)
+	) {
 		const isApiRequest = pathname === '/api' || pathname.startsWith('/api/');
 		return applySecurityHeaders(
 			new Response(
 				isApiRequest
-					? JSON.stringify({ error: 'Owner access required' })
-					: 'Owner access required.',
+					? JSON.stringify({ error: 'Insufficient permissions' })
+					: 'Insufficient permissions.',
 				{
 					status: 403,
 					headers: {
@@ -196,7 +205,7 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 
 	// Adult Content Gate Check
 	if (
-		requiresCinemaSession(pathname) &&
+		accessRequirement !== 'public' &&
 		isCinemaPageRoute(pathname) &&
 		event.locals.user &&
 		!pathname.startsWith('/disclaimer')
@@ -215,8 +224,8 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 
 	const response = await resolve(event);
 
-	// Ensure private cinema routes are never cached publicly
-	if (requiresCinemaSession(pathname)) {
+	// Authenticated public pages can serialize account-owned data too.
+	if (shouldUsePrivateResponseHeaders(accessRequirement, Boolean(event.locals.user), pathname)) {
 		for (const [name, value] of Object.entries(PRIVATE_RESPONSE_HEADERS)) {
 			response.headers.set(name, value);
 		}
@@ -225,6 +234,10 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 			'content-security-policy',
 			denyFrameSources(response.headers.get('content-security-policy'))
 		);
+	}
+
+	if (pathname === '/auth/register') {
+		response.headers.set('referrer-policy', 'no-referrer');
 	}
 
 	return applySecurityHeaders(response, event);

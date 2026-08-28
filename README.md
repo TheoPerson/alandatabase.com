@@ -14,10 +14,11 @@ V3 is being developed on `agent/v3-foundation-core` in the canonical public
 repository, [TheoPerson/alandatabase.com](https://github.com/TheoPerson/alandatabase.com).
 `main` remains protected until V3 is explicitly reviewed and integrated.
 
-The production host integration, access boundaries, and release checks are in
-place. The product remains an evolving V3: normalized owner/invite roles,
-database migration reconciliation, approved playback sources, TV persistence,
-and resume/progress tracking still require product work.
+The production host integration and access boundaries are in place. The product
+remains an evolving V3: the additive database reconciliation migration is
+prepared but not applied, while normalized owner/invite roles, approved
+playback sources, TV persistence, and resume/progress tracking still require
+product work.
 
 The latest recorded audit is available in [V3 Foundation Report](docs/V3_FOUNDATION_REPORT.md). It contains the verified architecture, route/data maps, security findings, validation evidence, operational constraints, and prioritised roadmap. Do not infer that the application is production-ready from a successful preview deployment alone.
 
@@ -56,26 +57,29 @@ The configured deployment uses one SvelteKit application with hostname routing:
   SvelteKit session flow.
 
 Vercel Development, Preview, and Production variables are separate. Copy only
-the non-sensitive names from `.env.example`; never commit hosted values. Owner
-access fails closed until `OWNER_USER_IDS` or `OWNER_EMAILS` identifies the
-existing owner account.
+the non-sensitive names from `.env.example`; never commit hosted values.
+Authorization is persistent (`owner`, `admin`, `member`) and fails closed for
+unknown roles. First-owner creation is a one-time bootstrap documented in
+`docs/AUTHORIZATION_MIGRATION_RUNBOOK.md`; environment variables are never a
+runtime permission fallback.
 
 ## Stack
 
-| Category      | Technology                                                               |
-| ------------- | ------------------------------------------------------------------------ |
-| Framework     | SvelteKit 2, Svelte 5 runes, TypeScript, Vite 8                          |
-| UI            | Tailwind CSS 4, project CSS tokens, Bits UI/shadcn-style primitives      |
-| Database      | PostgreSQL with Neon-compatible deployments                              |
-| ORM           | Drizzle ORM with `postgres`                                              |
-| Testing       | Vitest and Playwright                                                    |
-| Observability | Sentry; optional Telegram operational notifications                      |
-| Integrations  | Optional TMDB, Meilisearch, Gemini, and PGlite/local development support |
-| Deployment    | Vercel adapter; pnpm package manager                                     |
+| Category      | Technology                                                           |
+| ------------- | -------------------------------------------------------------------- |
+| Framework     | SvelteKit 2, Svelte 5 runes, TypeScript, Vite 8                      |
+| UI            | Tailwind CSS 4, project CSS tokens, Bits UI/shadcn-style primitives  |
+| Database      | PostgreSQL with Neon-compatible deployments                          |
+| ORM           | Drizzle ORM with `postgres`                                          |
+| Testing       | Vitest and Playwright                                                |
+| Observability | Sentry; optional Telegram operational notifications                  |
+| Integrations  | Optional TMDB, Meilisearch, Telegram, and PGlite development support |
+| Deployment    | Vercel adapter; Node 24 and pnpm 11.15.1                             |
 
 ## Local setup
 
-Requirements: Node.js 20+, pnpm, and PostgreSQL. Docker Compose can provide local PostgreSQL and Meilisearch with development-only credentials.
+Requirements: Node.js 24+, pnpm 11.15.1, and PostgreSQL. Docker Compose can
+provide local PostgreSQL and Meilisearch with development-only credentials.
 
 ```powershell
 git clone https://github.com/TheoPerson/alandatabase.com.git
@@ -86,7 +90,10 @@ docker compose up -d
 pnpm dev
 ```
 
-The server reads `TMDB_API_KEY`; do not expose service credentials through `VITE_` variables. Never run migration or seed commands against production data. The committed SQL migrations and runtime schema still require reconciliation before changing an existing database.
+The worker reads `TMDB_API_KEY`; standard application reads do not call TMDB.
+Do not expose service credentials through `VITE_` variables. Never run migration
+or seed commands against production data. Migrations `0002` and `0003` require a
+backup and the reviewed authorization runbook before hosted use.
 
 ## Quality commands
 
@@ -98,14 +105,19 @@ pnpm test:e2e
 pnpm build
 ```
 
-Current branch evidence (2026-08-21):
+Historical foundation baseline (2026-08-21; not current release evidence):
 
-- Unit suite: 25 files and 109 tests pass.
-- Worker safety suite: 11 tests pass.
+- Application unit suite: 28 files and 127 tests pass.
+- Worker safety suite: 11 tests pass and the worker TypeScript build succeeds.
 - `pnpm check`: 0 errors and 0 warnings.
-- `pnpm lint`: passes with no errors; advisory warnings remain tracked.
-- Production build, Playwright, and live hostname evidence are required for each
-  release and reported with the deployment rather than inferred from a preview.
+- `pnpm lint`: passes.
+- Vite client/server compilation and the Vercel adapter complete from a neutral
+  Windows path using junction-compatible aliases. Without Windows Developer
+  Mode, the unmodified adapter stops only when creating Linux-style function
+  symlinks; unchanged Linux CI/Vercel packaging remains the release gate.
+- 12 Playwright tests pass against the production preview, including Status at
+  320 px and reduced motion. Live hostname evidence remains required for an
+  actual deployment.
 
 ## Development rules
 

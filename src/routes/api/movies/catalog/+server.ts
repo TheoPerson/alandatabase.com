@@ -1,10 +1,11 @@
 import { json } from '@sveltejs/kit';
 import { db } from '$lib/server/db/index.js';
 import { movies, movieGenres } from '$lib/server/db/schema.js';
-import { eq, desc, and, inArray, sql } from 'drizzle-orm';
+import { desc, and, sql } from 'drizzle-orm';
 import { prepareStandardMovies } from '$lib/server/queries/local-movie-search';
 import { standardMovieVisibilityWhere } from '$lib/server/policies/movie-visibility';
 import { parseCatalogParameters } from '$lib/server/security/request-bounds';
+import { logServerError } from '$lib/server/security/logging';
 
 export async function GET({ url }) {
 	const parsedParameters = parseCatalogParameters(url);
@@ -18,18 +19,10 @@ export async function GET({ url }) {
 
 	let whereClause = standardMovieVisibilityWhere();
 	if (genreId) {
-		const genreMovieIds = await db
-			.select({ movieId: movieGenres.movieId })
-			.from(movieGenres)
-			.where(eq(movieGenres.genreId, genreId))
-			.catch(() => []);
-
-		const ids = genreMovieIds.map((g) => g.movieId);
-		if (ids.length > 0) {
-			whereClause = and(whereClause, inArray(movies.id, ids)) as any;
-		} else {
-			whereClause = and(whereClause, eq(movies.id, '00000000-0000-0000-0000-000000000000')) as any;
-		}
+		whereClause = and(
+			whereClause,
+			sql`exists (select 1 from ${movieGenres} where ${movieGenres.movieId} = ${movies.id} and ${movieGenres.genreId} = ${genreId})`
+		) as any;
 	}
 
 	if (decade) {
@@ -49,22 +42,26 @@ export async function GET({ url }) {
 		orderByClause = desc(movies.releaseDate);
 	}
 
-	const [localMovies, totalCountResult] = await Promise.all([
-		db.query.movies
-			.findMany({
+	let localMovies;
+	let totalCountResult;
+	try {
+		[localMovies, totalCountResult] = await Promise.all([
+			db.query.movies.findMany({
 				where: whereClause,
-				orderBy: [orderByClause],
+				orderBy: [orderByClause, desc(movies.id)],
 				limit,
 				offset,
 				with: { keywords: true, genres: { with: { genre: true } } }
-			})
-			.catch(() => []),
-		db
-			.select({ count: sql<number>`count(*)` })
-			.from(movies)
-			.where(whereClause)
-			.catch(() => [{ count: 0 }])
-	]);
+			}),
+			db
+				.select({ count: sql<number>`count(*)` })
+				.from(movies)
+				.where(whereClause)
+		]);
+	} catch (err) {
+		logServerError('Catalog API read failed', err);
+		return json({ error: 'The catalogue is temporarily unavailable.' }, { status: 503 });
+	}
 
 	const formattedMovies = prepareStandardMovies(localMovies);
 	const totalCount = Number(totalCountResult[0]?.count || 0);

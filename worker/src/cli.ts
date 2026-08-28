@@ -8,7 +8,7 @@ import { syncGenres } from './tmdb/ingest-genres.js';
 import { ingestMovie } from './tmdb/ingest-movies.js';
 import { TMDBClient } from './tmdb/client.js';
 import { setupMeilisearchIndexes } from './search/indexer.js';
-import { ensureTablesExist } from '../../src/lib/server/db/migrate.js';
+import { closeWorkerDatabase } from './db.js';
 
 const command = process.argv[2];
 const validCommands = new Set(['sync-genres', 'setup-search', 'sync-popular', 'ingest-id']);
@@ -40,7 +40,6 @@ async function main() {
 		}
 	}
 
-	await ensureTablesExist();
 	if (command === 'sync-genres') {
 		await syncGenres();
 	} else if (command === 'setup-search') {
@@ -65,10 +64,12 @@ async function main() {
 		await setupMeilisearchIndexes();
 		await ingestMovie(Number.parseInt(process.argv[3], 10));
 	}
-	process.exit(0);
+	await closeWorkerDatabase();
 }
 
 main().catch((err) => {
-	console.error('Fatal CLI error:', err);
-	process.exit(1);
+	console.error('Fatal CLI error:', err instanceof Error ? err.message : 'Unknown worker error');
+	closeWorkerDatabase().finally(() => {
+		process.exitCode = 1;
+	});
 });

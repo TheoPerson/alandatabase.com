@@ -4,64 +4,25 @@
 	import { Button } from '$lib/components/ui/button';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { onMount, onDestroy } from 'svelte';
 
 	let { data } = $props();
 
 	let selectedGenreId = $state<number | null>(null);
 	let sortBy = $state<'popularity' | 'rating' | 'release'>('popularity');
 
-	// Infinite Scroll Reactive State
 	let moviesList = $state<any[]>([]);
-	let currentPage = $state(1);
-	let hasMore = $state(true);
-	let isLoading = $state(false);
-	let sentinelEl = $state<HTMLDivElement | null>(null);
-	let observer = $state<IntersectionObserver | null>(null);
 
 	// Reset list when server-loaded data changes (e.g. genre/sort query change)
 	$effect(() => {
 		selectedGenreId = data.filters.genreId;
 		sortBy = data.filters.sortBy as 'popularity' | 'rating' | 'release';
 		moviesList = [...data.movies];
-		currentPage = data.pagination.page;
-		hasMore = data.pagination.page < data.pagination.totalPages;
 	});
 
-	async function loadMore() {
-		if (isLoading || !hasMore) return;
-		isLoading = true;
-
-		const nextPage = currentPage + 1;
-		const genreParam = selectedGenreId ? `&genre=${selectedGenreId}` : '';
-		const decadeParam = $page.url.searchParams.get('decade')
-			? `&decade=${$page.url.searchParams.get('decade')}`
-			: '';
-		const sortParam = sortBy ? `&sort=${sortBy}` : '';
-
-		try {
-			const res = await fetch(
-				`/api/movies/catalog?page=${nextPage}${genreParam}${decadeParam}${sortParam}`
-			);
-			if (!res.ok) throw new Error('Failed to load next page');
-
-			const resData = await res.json();
-			if (resData.movies && resData.movies.length > 0) {
-				const existingIds = new Set(moviesList.map((m) => m.id || m.tmdbId));
-				const newMovies = resData.movies.filter((m: any) => !existingIds.has(m.id || m.tmdbId));
-
-				moviesList = [...moviesList, ...newMovies];
-				currentPage = nextPage;
-				hasMore = resData.hasMore;
-			} else {
-				hasMore = false;
-			}
-		} catch (err) {
-			console.error('Error loading more movies:', err);
-			hasMore = false;
-		} finally {
-			isLoading = false;
-		}
+	function pageUrl(pageNumber: number) {
+		const url = new URL($page.url);
+		url.searchParams.set('page', pageNumber.toString());
+		return `${url.pathname}${url.search}`;
 	}
 
 	function updateUrl(params: Record<string, string | null>) {
@@ -86,50 +47,30 @@
 	function handleSortChange() {
 		updateUrl({ sort: sortBy });
 	}
-
-	onMount(() => {
-		observer = new IntersectionObserver(
-			(entries) => {
-				if (entries[0].isIntersecting) {
-					loadMore();
-				}
-			},
-			{ rootMargin: '700px 0px' }
-		);
-
-		if (sentinelEl) {
-			observer.observe(sentinelEl);
-		}
-	});
-
-	onDestroy(() => {
-		if (observer) {
-			observer.disconnect();
-		}
-	});
 </script>
 
 <svelte:head>
-	<title>Cinema Catalog — Endless Movies | CinemaDB</title>
+	<title>Cinema Catalog | CinemaDB</title>
 	<meta
 		name="description"
-		content="Explore thousands of curated films, top-rated masterpieces, and blockbusters with smooth infinite scroll."
+		content="Explore curated films, top-rated masterpieces, and blockbusters by genre, decade, and popularity."
 	/>
 </svelte:head>
 
 <div class="container movies-page">
 	<header class="page-header">
 		<h1 class="page-title">Cinema Catalog</h1>
-		<p class="subtitle">Endless movie exploration with real-time genre filtering and sorting.</p>
+		<p class="subtitle">Browse the local movie archive by genre, decade, and sort order.</p>
 
 		<!-- Filters Container -->
 		<div class="filters-container">
 			<!-- Genre Filters -->
 			{#if data.genreList.length > 0}
-				<div class="chip-row">
+				<div class="chip-row" role="group" aria-label="Filter by genre">
 					<button
 						type="button"
 						class="filter-chip {selectedGenreId === null ? 'active' : ''}"
+						aria-pressed={selectedGenreId === null}
 						onclick={() => setGenre(null)}
 					>
 						All Genres
@@ -139,6 +80,7 @@
 						<button
 							type="button"
 							class="filter-chip {selectedGenreId === g.id ? 'active' : ''}"
+							aria-pressed={selectedGenreId === g.id}
 							onclick={() => setGenre(g.id)}
 						>
 							{g.name}
@@ -148,10 +90,11 @@
 			{/if}
 
 			<!-- Decade Filters -->
-			<div class="chip-row mt-3">
+			<div class="chip-row mt-3" role="group" aria-label="Filter by decade">
 				<button
 					type="button"
 					class="filter-chip {!$page.url.searchParams.get('decade') ? 'active' : ''}"
+					aria-pressed={!$page.url.searchParams.get('decade')}
 					onclick={() => updateUrl({ decade: null })}
 				>
 					All Time
@@ -162,6 +105,7 @@
 						class="filter-chip {$page.url.searchParams.get('decade') === decade.toString()
 							? 'active'
 							: ''}"
+						aria-pressed={$page.url.searchParams.get('decade') === decade.toString()}
 						onclick={() => updateUrl({ decade: decade.toString() })}
 					>
 						{decade}s
@@ -172,13 +116,23 @@
 
 		<!-- Sorting Controls -->
 		<div class="toolbar">
-			<span class="count-badge"
-				>Showing {moviesList.length} of {data.pagination.totalCount.toLocaleString()} films</span
-			>
+			<span class="count-badge" aria-live="polite">
+				Films {data.pagination.totalCount === 0
+					? 0
+					: (data.pagination.page - 1) * data.pagination.limit + 1}-{Math.min(
+					data.pagination.page * data.pagination.limit,
+					data.pagination.totalCount
+				)} of {data.pagination.totalCount.toLocaleString()}
+			</span>
 
 			<div class="sort-group">
-				<span class="sort-label">Sort by:</span>
-				<select bind:value={sortBy} onchange={handleSortChange} class="sort-select">
+				<label class="sort-label" for="catalog-sort">Sort by:</label>
+				<select
+					id="catalog-sort"
+					bind:value={sortBy}
+					onchange={handleSortChange}
+					class="sort-select"
+				>
 					<option value="popularity">🔥 Popularity</option>
 					<option value="rating">⭐ Highest Rated</option>
 					<option value="release">📅 Release Date</option>
@@ -204,20 +158,15 @@
 			{/each}
 		</div>
 
-		<!-- Infinite Scroll Sentinel Trigger -->
-		<div bind:this={sentinelEl} class="sentinel-trigger">
-			{#if isLoading}
-				<div class="infinite-loading-box">
-					<span class="spinner-ring"></span>
-					<span class="loading-label">Loading more masterpieces...</span>
-				</div>
-			{:else if !hasMore}
-				<div class="end-of-catalog-box">
-					<span class="end-dot">✨</span>
-					<span>You've reached the end of the archive</span>
-				</div>
+		<nav class="catalog-pagination" aria-label="Catalogue pages">
+			{#if data.pagination.page > 1}
+				<a class="pagination-link" href={pageUrl(data.pagination.page - 1)}>Previous</a>
 			{/if}
-		</div>
+			<span>Page {data.pagination.page} of {Math.max(data.pagination.totalPages, 1)}</span>
+			{#if data.pagination.page < data.pagination.totalPages}
+				<a class="pagination-link" href={pageUrl(data.pagination.page + 1)}>Next</a>
+			{/if}
+		</nav>
 	{:else}
 		<div class="empty-catalog">
 			<p>🎬 No movies match the selected filter.</p>
@@ -357,45 +306,28 @@
 		}
 	}
 
-	.sentinel-trigger {
-		width: 100%;
-		padding: 3.5rem 0 2rem 0;
+	.catalog-pagination {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-	}
-
-	.infinite-loading-box {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
+		gap: 1rem;
+		padding: 3rem 0 1rem;
 		color: #94a3b8;
 		font-size: 0.9rem;
-		font-weight: 600;
 	}
 
-	.spinner-ring {
-		width: 24px;
-		height: 24px;
-		border: 3px solid rgba(16, 185, 129, 0.2);
-		border-top-color: #10b981;
-		border-radius: 50%;
-		animation: spin 0.7s linear infinite;
+	.pagination-link {
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-md);
+		padding: 0.65rem 1rem;
+		color: #e2e8f0;
+		text-decoration: none;
 	}
 
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-
-	.end-of-catalog-box {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		color: #64748b;
-		font-size: 0.85rem;
-		font-weight: 600;
+	.pagination-link:hover,
+	.pagination-link:focus-visible {
+		border-color: var(--border-accent);
+		color: var(--brand-primary);
 	}
 
 	.empty-catalog {

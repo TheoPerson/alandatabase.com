@@ -61,9 +61,9 @@
 							<span class="star">★</span>
 							<span>{hero.voteAverage}</span>
 						</span>
-						<span class="meta-item">2022</span>
+						<span class="meta-item">{hero.year}</span>
 						<span class="meta-dot">•</span>
-						<span class="meta-genres">Action & Adventure • Crime • Drama</span>
+						<span class="meta-genres">{hero.genres?.join(' • ')}</span>
 					</div>
 
 					<p class="hero-synopsis">{hero.overview}</p>
@@ -104,6 +104,7 @@
 					<span class="search-icon">🔍</span>
 					<input
 						type="search"
+						aria-label="Search Top 50 TV shows"
 						bind:value={searchQuery}
 						placeholder="Search Top 50 shows (e.g. Breaking Bad, Chernobyl, Arcane)..."
 						class="tv-search-input"
@@ -116,6 +117,7 @@
 							type="button"
 							class="genre-chip"
 							class:active={selectedGenre === genre}
+							aria-pressed={selectedGenre === genre}
 							onclick={() => (selectedGenre = genre)}
 						>
 							{genre}
@@ -360,8 +362,17 @@
 	.hero-btn-row {
 		display: flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 0.85rem;
 		margin-top: 0.5rem;
+	}
+
+	@media (max-width: 420px) {
+		.cineby-play-btn,
+		.cineby-info-btn {
+			flex: 1 1 100%;
+			justify-content: center;
+		}
 	}
 
 	.cineby-play-btn {

@@ -1,31 +1,27 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { isOwnerUser, requireOwnerUser } from './owner';
-
-afterEach(() => {
-	vi.unstubAllEnvs();
-});
+import { describe, expect, it } from 'vitest';
+import { isOwnerUser, requireCatalogManager, requireOwnerUser } from './owner';
 
 describe('owner authorization', () => {
-	it('fails closed without configured owner identifiers', () => {
-		expect(isOwnerUser({ id: 'owner', email: 'alan@example.com' })).toBe(false);
+	it('fails closed without a persistent role', () => {
+		expect(isOwnerUser({})).toBe(false);
+		expect(isOwnerUser({ role: 'unknown' })).toBe(false);
 	});
 
-	it('allows configured owner ids', () => {
-		vi.stubEnv('OWNER_USER_IDS', 'owner, other-owner');
-
-		expect(isOwnerUser({ id: 'owner' })).toBe(true);
-		expect(isOwnerUser({ id: 'viewer' })).toBe(false);
+	it('allows only the stored owner role to manage the system', () => {
+		expect(isOwnerUser({ role: 'owner' })).toBe(true);
+		expect(isOwnerUser({ role: 'admin' })).toBe(false);
+		expect(isOwnerUser({ role: 'member' })).toBe(false);
 	});
 
-	it('allows configured owner emails case-insensitively', () => {
-		vi.stubEnv('OWNER_EMAILS', 'Alan@Example.com');
-
-		expect(isOwnerUser({ email: 'alan@example.com' })).toBe(true);
-		expect(isOwnerUser({ email: 'viewer@example.com' })).toBe(false);
+	it('allows admins to manage the catalog without owner permissions', () => {
+		expect(() => requireCatalogManager({ role: 'admin' })).not.toThrow();
+		expect(() => requireOwnerUser({ role: 'admin' })).toThrow(
+			expect.objectContaining({ status: 403 })
+		);
 	});
 
 	it('throws 403 for missing owner access', () => {
-		expect(() => requireOwnerUser({ id: 'viewer' })).toThrow(
+		expect(() => requireOwnerUser({ role: 'member' })).toThrow(
 			expect.objectContaining({ status: 403 })
 		);
 	});

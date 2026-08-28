@@ -1,4 +1,4 @@
-import { and, eq, gt, notExists, sql } from 'drizzle-orm';
+import { and, eq, gt, sql } from 'drizzle-orm';
 import { movieKeywords, movies } from '../db/schema.js';
 
 export const KNOWN_EXPLICIT_KEYWORD_IDS = [256466, 267122, 738] as const;
@@ -62,11 +62,14 @@ export function standardMovieVisibilityWhere() {
 	return and(
 		eq(movies.adult, false),
 		gt(movies.tmdbId, 0),
-		notExists(sql`
+		// Keep the parentheses in this SQL fragment. Passing a raw SELECT to
+		// Drizzle's notExists() currently serializes as `not exists select ...`,
+		// which PostgreSQL rejects and makes every standard catalogue read fail.
+		sql`not exists (
 			select 1
 			from ${movieKeywords}
 			where ${movieKeywords.movieId} = ${movies.id}
 				and ${movieKeywords.keywordId} in (${explicitKeywordSql})
-		`)
+		)`
 	);
 }

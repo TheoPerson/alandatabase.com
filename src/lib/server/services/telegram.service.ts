@@ -36,8 +36,6 @@ export async function sendTelegramCard(
 	if (sentDedupeCache.has(dedupeKey)) {
 		return true; // Already dispatched recently, skip Telegram notification
 	}
-	sentDedupeCache.set(dedupeKey, now);
-
 	// Topic / Sub-channel routing
 	const category = options.category || 'logs';
 	if (category === 'major') {
@@ -86,7 +84,8 @@ export async function sendTelegramCard(
 		const res = await fetch(url, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(payload)
+			body: JSON.stringify(payload),
+			signal: AbortSignal.timeout(8_000)
 		});
 
 		if (!res.ok) {
@@ -97,6 +96,7 @@ export async function sendTelegramCard(
 			return false;
 		}
 
+		sentDedupeCache.set(dedupeKey, now);
 		return true;
 	} catch (err) {
 		console.warn(`[Telegram Exception] (${category}):`, err);

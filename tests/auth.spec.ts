@@ -16,7 +16,7 @@ test.describe('Authentication Middleware (hooks.server.ts)', () => {
 	test('API requests to protected routes without auth return 401 Unauthorized', async ({
 		request
 	}) => {
-		const response = await request.get('/api/search?q=test');
+		const response = await request.get('/api/movies/catalog');
 		expect(response.status()).toBe(401);
 
 		const json = await response.json();
@@ -28,5 +28,13 @@ test.describe('Authentication Middleware (hooks.server.ts)', () => {
 			const response = await request.get(route);
 			expect(response.status(), route).toBe(200);
 		}
+	});
+
+	test('keeps the owner portal out of search indexes', async ({ request }) => {
+		const response = await request.get('/auth/login');
+		const html = await response.text();
+
+		expect(response.status()).toBe(200);
+		expect(html).toContain('name="robots" content="noindex, nofollow"');
 	});
 });

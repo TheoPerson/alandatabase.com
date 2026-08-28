@@ -14,9 +14,16 @@ export function load({ locals, url }) {
 	return {
 		user: {
 			displayName: locals.user.displayName,
-			email: locals.user.email
+			email: locals.user.email,
+			role: locals.user.role
 		},
 		surfaces: [
+			{
+				name: 'Access Control',
+				host: 'alandatabase.com/admin/access',
+				href: '/admin/access',
+				access: 'Owner only'
+			},
 			{
 				name: 'Public Status',
 				host: 'status.alandatabase.com',
@@ -33,7 +40,7 @@ export function load({ locals, url }) {
 				name: 'Authentication',
 				host: 'auth.alandatabase.com',
 				href: 'https://auth.alandatabase.com/auth/login',
-				access: 'Owner sign-in'
+				access: 'Private sign-in'
 			},
 			{
 				name: 'System Setup',
@@ -45,7 +52,7 @@ export function load({ locals, url }) {
 				name: 'Catalogue Operations',
 				host: 'alandatabase.com/movies/catalog',
 				href: '/movies/catalog',
-				access: 'Owner only for mutations'
+				access: 'Owner or admin mutations'
 			}
 		]
 	};

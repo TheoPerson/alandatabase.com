@@ -1,23 +1,23 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { fade, scale } from 'svelte/transition';
-	import { onMount } from 'svelte';
 
 	let open = $state(false);
 	let query = $state('');
 	let movies = $state<any[]>([]);
 	let isSearching = $state(false);
+	let searchError = $state('');
 	let debounceTimer: ReturnType<typeof setTimeout>;
+	let searchController: AbortController | null = null;
+	let paletteCard = $state<HTMLDivElement>();
 
 	const navigationLinks = [
 		{ label: '⚡ Hub', href: '/', category: 'Navigation' },
-		{ label: '🎬 Cinema Movies', href: '/cinema/movies', category: 'Navigation' },
-		{ label: '📺 Top 50 TV Shows', href: '/tvshows', category: 'Navigation' },
+		{ label: '🎬 Cinema Movies', href: '/movies', category: 'Navigation' },
+		{ label: '📺 Top 50 TV Shows', href: '/tv', category: 'Navigation' },
 		{ label: '🍿 All Movies Catalog', href: '/movies/catalog', category: 'Navigation' },
 		{ label: '🔍 Advanced Search', href: '/search', category: 'Navigation' },
 		{ label: '📽️ My Personal Archive', href: '/my/films', category: 'Personal OS' },
-		{ label: '📖 My Diary', href: '/my/diary', category: 'Personal OS' },
-		{ label: '✨ AI Curator', href: '/discover/ai', category: 'Personal OS' },
 		{ label: '📡 Live Telemetry & Radar', href: '/status', category: 'System Radar' },
 		{
 			label: '🐙 GitHub Repository',
@@ -44,12 +44,16 @@
 			e.preventDefault();
 			open = !open;
 		} else if (e.key === 'Escape' && open) {
-			open = false;
+			closePalette();
 		}
 	}
 
-	function navigate(href: string) {
+	function closePalette() {
 		open = false;
+	}
+
+	function navigate(href: string) {
+		closePalette();
 		query = '';
 		movies = [];
 		if (href.startsWith('http')) {
@@ -62,9 +66,29 @@
 	}
 
 	function handlePaletteKeydown(e: KeyboardEvent) {
+		if (!paletteCard) return;
+		if (e.key === 'Tab') {
+			const focusable = Array.from(
+				paletteCard.querySelectorAll<HTMLElement>(
+					'input, button, a[href], [tabindex]:not([tabindex="-1"])'
+				)
+			).filter((element) => !element.hasAttribute('disabled'));
+			if (focusable.length === 0) return;
+			const first = focusable[0];
+			const last = focusable[focusable.length - 1];
+			if (e.shiftKey && document.activeElement === first) {
+				e.preventDefault();
+				last.focus();
+			} else if (!e.shiftKey && document.activeElement === last) {
+				e.preventDefault();
+				first.focus();
+			}
+			return;
+		}
+
 		if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
 			e.preventDefault();
-			const items = Array.from(document.querySelectorAll('.palette-item')) as HTMLElement[];
+			const items = Array.from(paletteCard.querySelectorAll<HTMLElement>('.palette-item'));
 			if (!items.length) return;
 			const currentIndex = items.indexOf(document.activeElement as HTMLElement);
 			let nextIndex = e.key === 'ArrowDown' ? currentIndex + 1 : currentIndex - 1;
@@ -72,7 +96,7 @@
 			if (nextIndex >= items.length) nextIndex = 0;
 			items[nextIndex].focus();
 		} else if (e.key === 'Escape') {
-			open = false;
+			closePalette();
 		}
 	}
 
@@ -81,37 +105,62 @@
 			movies = [];
 			return;
 		}
+		const controller = new AbortController();
+		searchController?.abort();
+		searchController = controller;
 		isSearching = true;
+		searchError = '';
 		try {
-			const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=4`);
-			if (res.ok) {
-				const data = await res.json();
-				movies = data.results || [];
+			const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&limit=4`, {
+				signal: controller.signal
+			});
+			if (!res.ok) throw new Error(`Search returned ${res.status}`);
+			const data = await res.json();
+			movies = data.results || [];
+		} catch (error) {
+			if (!controller.signal.aborted) {
+				movies = [];
+				searchError = 'Movie search is temporarily unavailable.';
 			}
-		} catch {
-			movies = [];
 		} finally {
-			isSearching = false;
+			if (searchController === controller) isSearching = false;
 		}
 	}
 
 	$effect(() => {
-		if (query) {
+		if (query.trim()) {
 			clearTimeout(debounceTimer);
 			debounceTimer = setTimeout(() => {
-				searchApi(query);
+				searchApi(query.trim());
 			}, 300);
 		} else {
+			searchController?.abort();
 			movies = [];
+			isSearching = false;
+			searchError = '';
 		}
+		return () => clearTimeout(debounceTimer);
 	});
 
 	// When palette closes, reset state
 	$effect(() => {
 		if (!open) {
+			searchController?.abort();
 			query = '';
 			movies = [];
 		}
+	});
+
+	$effect(() => {
+		if (!open || typeof document === 'undefined') return;
+		const previouslyFocused = document.activeElement as HTMLElement | null;
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+
+		return () => {
+			document.body.style.overflow = previousOverflow;
+			previouslyFocused?.focus();
+		};
 	});
 </script>
 
@@ -122,7 +171,7 @@
 		class="palette-backdrop"
 		transition:fade={{ duration: 120 }}
 		role="presentation"
-		onclick={() => (open = false)}
+		onclick={closePalette}
 	>
 		<div
 			class="palette-card"
@@ -131,6 +180,7 @@
 			tabindex="-1"
 			aria-modal="true"
 			aria-label="Command Palette"
+			bind:this={paletteCard}
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={handlePaletteKeydown}
 		>
@@ -139,6 +189,7 @@
 				<!-- svelte-ignore a11y_autofocus -->
 				<input
 					type="text"
+					aria-label="Search movies and pages"
 					autofocus
 					placeholder="Search movies, commands, pages..."
 					bind:value={query}
@@ -149,9 +200,9 @@
 
 			<div class="palette-results">
 				<!-- Movies Section -->
-				{#if query.trim() && (movies.length > 0 || isSearching)}
+				{#if query.trim()}
 					<div class="result-section">
-						<div class="section-title">Movies {isSearching ? '...' : ''}</div>
+						<div class="section-title" aria-live="polite">Movies {isSearching ? '...' : ''}</div>
 						{#each movies as movie}
 							<button
 								type="button"
@@ -178,7 +229,9 @@
 								{/if}
 							</button>
 						{/each}
-						{#if !isSearching && movies.length === 0}
+						{#if searchError}
+							<div class="empty-state" role="alert">{searchError}</div>
+						{:else if !isSearching && movies.length === 0}
 							<div class="empty-state">No movies found.</div>
 						{/if}
 					</div>

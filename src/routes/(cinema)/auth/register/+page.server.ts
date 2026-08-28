@@ -1,7 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
-import { users } from '$lib/server/db/schema';
+import { authAuditEvents, users } from '$lib/server/db/schema';
 import {
 	hashPassword,
 	createSession,
@@ -9,9 +8,19 @@ import {
 	SESSION_COOKIE_OPTIONS
 } from '$lib/server/auth';
 import { validateReturnTo } from '$lib/server/auth/cinema-access';
-import { eq, or } from 'drizzle-orm';
-import { notifyUserRegistered } from '$lib/server/services/telegram.service';
+import { isInitialOwnerSetupAvailable, verifyOwnerSetupKey } from '$lib/server/auth/owner-setup';
+import {
+	acceptInvitation,
+	getInvitationPreview,
+	InvitationError,
+	normalizeInvitationEmail
+} from '$lib/server/auth/invitations';
 import { logServerError } from '$lib/server/security/logging';
+import { consumeRateLimit } from '$lib/server/security/rate-limit';
+import { REGISTER_IP_POLICY } from '$lib/server/security/rate-limit-policy';
+import { sql } from 'drizzle-orm';
+
+class OwnerSetupClosedError extends Error {}
 
 export async function load({ locals, url }) {
 	const returnTo = url.searchParams.get('returnTo');
@@ -19,62 +28,111 @@ export async function load({ locals, url }) {
 		throw redirect(302, validateReturnTo(returnTo));
 	}
 
-	const allowSetup = env.ALLOW_OWNER_SETUP === 'true';
+	const invitationToken = url.searchParams.get('invite');
+	const [allowSetup, invitation] = await Promise.all([
+		isInitialOwnerSetupAvailable(),
+		getInvitationPreview(invitationToken)
+	]);
 
-	return { returnTo, allowSetup };
+	return {
+		returnTo,
+		mode: invitation ? ('invite' as const) : allowSetup ? ('owner' as const) : ('closed' as const),
+		invitation,
+		invitationToken: invitation ? invitationToken : null
+	};
 }
 
 export const actions = {
-	register: async ({ request, cookies, url }) => {
-		const allowSetup = env.ALLOW_OWNER_SETUP === 'true';
-		if (!allowSetup) {
-			return fail(403, { error: 'Registration is currently disabled. Contact the administrator.' });
-		}
-
+	register: async ({ request, cookies, url, getClientAddress, setHeaders }) => {
 		const formData = await request.formData();
-		const email = formData.get('email')?.toString().trim().toLowerCase();
+		const email = normalizeInvitationEmail(formData.get('email'));
 		const username = formData.get('username')?.toString().trim();
 		const password = formData.get('password')?.toString();
+		const setupKey = formData.get('setupKey')?.toString();
+		const invitationToken = formData.get('invitationToken')?.toString();
 		const returnTo = url.searchParams.get('returnTo');
 
 		if (!email || !username || !password) {
 			return fail(400, { error: 'All fields are required.' });
 		}
 
-		if (password.length < 6) {
-			return fail(400, { error: 'Password must be at least 6 characters.' });
+		const normalizedUsername = username.toLowerCase();
+		if (!/^[a-z0-9_-]{3,32}$/.test(normalizedUsername)) {
+			return fail(400, {
+				error: 'Username must be 3-32 characters using letters, numbers, dashes, or underscores.'
+			});
+		}
+
+		if (password.length < 12 || password.length > 128) {
+			return fail(400, { error: 'Password must be between 12 and 128 characters.' });
 		}
 
 		try {
-			// Check if username or email exists
-			const existing = await db.query.users.findFirst({
-				where: or(eq(users.email, email), eq(users.username, username))
-			});
-
-			if (existing) {
-				return fail(400, { error: 'Username or Email is already registered.' });
+			const rateLimit = await consumeRateLimit(getClientAddress(), REGISTER_IP_POLICY);
+			if (!rateLimit.allowed) {
+				setHeaders({ 'retry-after': String(rateLimit.retryAfterSeconds) });
+				return fail(429, { error: 'Too many setup attempts. Please wait before trying again.' });
 			}
 
 			const passwordHash = await hashPassword(password);
+			let newUser: typeof users.$inferSelect;
 
-			const [newUser] = await db
-				.insert(users)
-				.values({
+			if (invitationToken) {
+				newUser = await acceptInvitation({
+					token: invitationToken,
 					email,
-					username,
+					username: normalizedUsername,
 					displayName: username,
 					passwordHash
-				})
-				.returning();
+				});
+			} else {
+				const allowSetup = await isInitialOwnerSetupAvailable();
+				if (!allowSetup || !verifyOwnerSetupKey(setupKey)) {
+					return fail(403, { error: 'Owner setup is not available.' });
+				}
+
+				newUser = await db.transaction(async (transaction) => {
+					// Serialize bootstrap attempts across serverless instances. The key
+					// creates only the first owner and is never an authorization fallback.
+					await transaction.execute(
+						sql`select pg_advisory_xact_lock(hashtext('alan-owner-setup'))`
+					);
+
+					const [existingUser] = await transaction.select({ id: users.id }).from(users).limit(1);
+					if (existingUser) throw new OwnerSetupClosedError();
+
+					const [createdUser] = await transaction
+						.insert(users)
+						.values({
+							email,
+							username: normalizedUsername,
+							displayName: username,
+							passwordHash,
+							role: 'owner'
+						})
+						.returning();
+
+					if (!createdUser) throw new Error('Owner account was not created.');
+					await transaction.insert(authAuditEvents).values({
+						actorUserId: createdUser.id,
+						targetUserId: createdUser.id,
+						action: 'owner.setup'
+					});
+					return createdUser;
+				});
+			}
 
 			const sessionToken = generateSessionToken();
 			await createSession(sessionToken, newUser.id);
 
 			cookies.set('session', sessionToken, SESSION_COOKIE_OPTIONS);
-
-			// Trigger Telegram notification
-			notifyUserRegistered(newUser.username, newUser.email).catch(() => {});
 		} catch (err) {
+			if (err instanceof OwnerSetupClosedError) {
+				return fail(403, { error: 'Owner setup is already complete.' });
+			}
+			if (err instanceof InvitationError) {
+				return fail(403, { error: 'This invitation is invalid, expired, or already used.' });
+			}
 			logServerError('Registration failed', err);
 			return fail(500, { error: 'Server error during registration.' });
 		}

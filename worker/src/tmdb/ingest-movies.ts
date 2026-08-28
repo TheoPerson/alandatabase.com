@@ -1,13 +1,9 @@
-import { db, schema } from '../db.js';
+import { getWorkerDatabase, schema } from '../db.js';
 import { TMDBClient, type TMDBMovieDetail } from './client.js';
 import { evaluateTMDBIngestionSafety } from './ingest-safety.js';
 import { eq } from 'drizzle-orm';
-import { notifyMovieIngested } from '../../../src/lib/server/services/telegram.service.js';
 
-export async function ingestMovie(
-	tmdbId: number,
-	options: { notifyTelegram?: boolean } = { notifyTelegram: false }
-): Promise<string | null> {
+export async function ingestMovie(tmdbId: number): Promise<string | null> {
 	const client = new TMDBClient();
 
 	try {
@@ -31,6 +27,8 @@ export async function ingestMovie(
 			console.log(`⏩ Skipping TMDB #${tmdbId} ("${detail.title}") - failed quality threshold.`);
 			return null;
 		}
+
+		const db = getWorkerDatabase();
 
 		// 1. Handle Collection
 		let collectionUuid: string | null = null;
@@ -234,14 +232,6 @@ export async function ingestMovie(
 		console.log(
 			`✅ Successfully ingested "${detail.title}" (${detail.release_date?.substring(0, 4) || 'N/A'})`
 		);
-		if (options.notifyTelegram) {
-			notifyMovieIngested(
-				detail.title,
-				detail.release_date?.substring(0, 4),
-				detail.id,
-				detail.poster_path
-			).catch(() => {});
-		}
 		return movieId;
 	} catch (err) {
 		console.error(`❌ Ingestion failed for TMDB #${tmdbId}:`, err);

@@ -16,9 +16,9 @@
 
 <div class="app-layout" data-sveltekit-preload-data="hover" data-sveltekit-preload-code="eager">
 	<NavigationProgressBar />
-	<a href="#main-content" class="sr-only">Skip to main content</a>
+	<a href="#main-content" class="sr-only skip-link">Skip to main content</a>
 	<Header />
-	<main id="main-content" class="main-content">
+	<main id="main-content" class="main-content" tabindex="-1">
 		{@render children?.()}
 	</main>
 	<Footer />

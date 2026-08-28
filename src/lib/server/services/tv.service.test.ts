@@ -17,6 +17,15 @@ describe('TV read service', () => {
 		fetchSpy.mockRestore();
 	});
 
+	it('keeps every route identity unique and maps Nathan for You to its TMDB record', async () => {
+		const shows = await getTop50IMDbTVShows();
+		const tmdbIds = shows.map((show) => show.tmdbId);
+
+		expect(new Set(tmdbIds).size).toBe(tmdbIds.length);
+		expect(shows.find((show) => show.title === 'Nathan for You')?.tmdbId).toBe(58957);
+		expect(shows.find((show) => show.title === 'True Detective')?.tmdbId).toBe(46648);
+	});
+
 	it('resolves details from the committed catalog without inventing episode counts', async () => {
 		const fetchSpy = vi.spyOn(globalThis, 'fetch');
 		const source = TOP_50_IMDB_TV[0];

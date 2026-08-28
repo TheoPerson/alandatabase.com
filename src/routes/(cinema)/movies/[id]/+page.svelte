@@ -40,6 +40,50 @@
 	);
 
 	const backdropPath = $derived(movie.backdropPath || movie.posterPath || null);
+	const canonicalUrl = $derived(`https://alandatabase.com/movies/${movie.id}`);
+	const metaDescription = $derived(
+		(movie.overview || `Explore ${movie.title} on Alan Database.`).slice(0, 155)
+	);
+	const socialImage = $derived(
+		backdropPath ? getImageUrl(backdropPath, movie.backdropPath ? 'w1280' : 'w780') : null
+	);
+	const structuredMovie = $derived.by(() => {
+		const value: Record<string, unknown> = {
+			'@context': 'https://schema.org',
+			'@type': 'Movie',
+			name: movie.title,
+			url: canonicalUrl,
+			description: movie.overview || undefined,
+			image: socialImage || undefined,
+			dateCreated: movie.releaseDate || undefined,
+			actor: (movie.cast ?? []).slice(0, 10).map((credit: any) => ({
+				'@type': 'Person',
+				name: credit.person.name,
+				url: `https://alandatabase.com/people/${credit.person.id}`
+			})),
+			director: (movie.crew ?? [])
+				.filter((credit: any) => credit.job === 'Director')
+				.map((credit: any) => ({
+					'@type': 'Person',
+					name: credit.person.name,
+					url: `https://alandatabase.com/people/${credit.person.id}`
+				}))
+		};
+		const runtime = Number(movie.runtime);
+		if (Number.isFinite(runtime) && runtime > 0) value.duration = `PT${Math.trunc(runtime)}M`;
+		const rating = Number(movie.voteAverage);
+		const ratingCount = Number(movie.voteCount);
+		if (Number.isFinite(rating) && rating > 0 && Number.isFinite(ratingCount) && ratingCount > 0) {
+			value.aggregateRating = {
+				'@type': 'AggregateRating',
+				ratingValue: rating,
+				bestRating: 10,
+				ratingCount
+			};
+		}
+		return value;
+	});
+	const structuredMovieJson = $derived(JSON.stringify(structuredMovie).replaceAll('<', '\\u003c'));
 
 	function getImageUrl(path: string | null, size = 'w1280') {
 		if (!path) return '';
@@ -49,7 +93,16 @@
 </script>
 
 <svelte:head>
-	<title>{movie.title} • CinemaDB</title>
+	<title>{movie.title} | Alan Database</title>
+	<meta name="description" content={metaDescription} />
+	<link rel="canonical" href={canonicalUrl} />
+	<meta property="og:title" content={`${movie.title} | Alan Database`} />
+	<meta property="og:description" content={metaDescription} />
+	<meta property="og:type" content="video.movie" />
+	<meta property="og:url" content={canonicalUrl} />
+	{#if socialImage}<meta property="og:image" content={socialImage} />{/if}
+	<meta name="twitter:card" content={socialImage ? 'summary_large_image' : 'summary'} />
+	<svelte:element this={"script"} type="application/ld+json">{structuredMovieJson}</svelte:element>
 </svelte:head>
 
 <div class="movie-detail-container" in:fade={{ duration: 200 }}>
@@ -109,15 +162,20 @@
 				<h2 class="section-title">Top Cast</h2>
 				<div class="cast-scroll">
 					{#each data.credits as actor}
-						<div class="cast-card">
-							<img
-								src={getImageUrl(actor.profile_path, 'w185')}
-								alt={actor.name}
-								class="actor-img"
-							/>
+						<a class="cast-card" href={`/people/${actor.id}`}>
+							{#if actor.profilePath}
+								<img
+									src={getImageUrl(actor.profilePath, 'w185')}
+									alt={actor.name}
+									loading="lazy"
+									class="actor-img"
+								/>
+							{:else}
+								<div class="actor-img actor-fallback" aria-hidden="true">?</div>
+							{/if}
 							<span class="actor-name">{actor.name}</span>
 							<span class="character-name">{actor.character}</span>
-						</div>
+						</a>
 					{/each}
 				</div>
 			</div>
@@ -132,7 +190,7 @@
 <style>
 	.movie-detail-container {
 		position: relative;
-		min-height: 100vh;
+		min-height: 100dvh;
 		background: #000;
 		color: #fff;
 		padding-bottom: 4rem;
@@ -175,7 +233,7 @@
 		top: 0;
 		left: 0;
 		right: 0;
-		height: 65vh;
+		height: 65svh;
 		z-index: 10;
 	}
 
@@ -305,6 +363,13 @@
 		object-fit: cover;
 		background: #1a1a1a;
 		margin-bottom: 0.5rem;
+	}
+
+	.actor-fallback {
+		display: grid;
+		place-items: center;
+		color: #a1a1aa;
+		font-size: 1.5rem;
 	}
 
 	.actor-name {

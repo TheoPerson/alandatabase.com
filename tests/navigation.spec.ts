@@ -15,7 +15,7 @@ test.describe('Navigation and Search Flow', () => {
 	test('search page allows searching', async ({ page }) => {
 		await page.goto('/search');
 
-		const searchInput = page.getByPlaceholder(/Type a movie title/);
+		const searchInput = page.getByRole('searchbox', { name: 'Movie title' });
 		await expect(searchInput).toBeVisible();
 
 		await searchInput.fill('inception');

@@ -76,6 +76,9 @@
 		inset: 0;
 		z-index: 50;
 		backdrop-filter: blur(20px);
+		overflow-y: auto;
+		padding-top: max(2rem, env(safe-area-inset-top));
+		padding-bottom: max(2rem, env(safe-area-inset-bottom));
 	}
 
 	.gate-card {
@@ -132,5 +135,15 @@
 		display: flex;
 		gap: 1rem;
 		width: 100%;
+	}
+
+	@media (max-width: 420px) {
+		.gate-card {
+			padding: 2rem 1.25rem;
+		}
+
+		.action-buttons {
+			flex-direction: column-reverse;
+		}
 	}
 </style>

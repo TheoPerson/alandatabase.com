@@ -1,4 +1,4 @@
-import { and, desc, ilike, or } from 'drizzle-orm';
+import { and, desc, ilike, or, sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { movies } from '$lib/server/db/schema';
 import {
@@ -65,9 +65,14 @@ export async function searchLocalMovies(query: string, limit: number) {
 	const results = await db.query.movies.findMany({
 		where: and(
 			standardMovieVisibilityWhere(),
-			or(ilike(movies.title, pattern), ilike(movies.originalTitle, pattern))
+			or(
+				ilike(movies.title, pattern),
+				ilike(movies.originalTitle, pattern),
+				ilike(sql`${movies.localOverrides}->>'title'`, pattern),
+				ilike(sql`${movies.localOverrides}->>'originalTitle'`, pattern)
+			)
 		),
-		orderBy: [desc(movies.popularity)],
+		orderBy: [desc(movies.popularity), desc(movies.id)],
 		limit: boundedLimit,
 		with: { keywords: true, genres: { with: { genre: true } } }
 	});

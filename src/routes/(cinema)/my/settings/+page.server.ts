@@ -1,44 +1,42 @@
-import { db } from '$lib/server/db/index.js';
-import { users } from '$lib/server/db/schema.js';
-import { eq } from 'drizzle-orm';
 import { redirect, fail } from '@sveltejs/kit';
 import { logServerError } from '$lib/server/security/logging';
+import { invalidateOtherSessions, listActiveSessions } from '$lib/server/auth';
 
 export async function load({ locals }) {
-	if (!locals.user) {
+	if (!locals.user || !locals.session) {
 		throw redirect(302, '/auth/login');
 	}
 
+	const activeSessions = await listActiveSessions(locals.user.id);
+
 	return {
-		user: locals.user
+		user: locals.user,
+		activeSessions: activeSessions.map((session) => ({
+			isCurrent: session.id === locals.session?.id,
+			createdAt: session.createdAt.toISOString(),
+			expiresAt: session.expiresAt.toISOString()
+		}))
 	};
 }
 
 export const actions = {
-	updateSettings: async ({ request, locals }) => {
-		if (!locals.user) {
+	revokeOtherSessions: async ({ locals }) => {
+		if (!locals.user || !locals.session) {
 			return fail(401, { error: 'Unauthorized' });
 		}
 
-		const data = await request.formData();
-		const adultEnabled = data.get('adultEnabled') === 'on';
-
 		try {
-			await db
-				.update(users)
-				.set({
-					settings: {
-						...locals.user.settings,
-						adultEnabled
-					},
-					updatedAt: new Date()
-				})
-				.where(eq(users.id, locals.user.id));
-
-			return { success: true };
+			const revokedCount = await invalidateOtherSessions(locals.user.id, locals.session.id);
+			return {
+				success: true,
+				message:
+					revokedCount === 0
+						? 'No other active sessions were found.'
+						: `${revokedCount} other session${revokedCount === 1 ? '' : 's'} revoked.`
+			};
 		} catch (err) {
-			logServerError('Settings update failed', err);
-			return fail(500, { error: 'Failed to save settings' });
+			logServerError('Session revocation failed', err);
+			return fail(500, { error: 'Failed to revoke other sessions' });
 		}
 	}
 };

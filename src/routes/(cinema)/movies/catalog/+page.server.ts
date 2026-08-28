@@ -1,10 +1,11 @@
 import { db } from '$lib/server/db/index.js';
 import { movies, movieGenres } from '$lib/server/db/schema.js';
-import { eq, desc, and, inArray, sql } from 'drizzle-orm';
+import { desc, and, sql } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
 import { prepareStandardMovies } from '$lib/server/queries/local-movie-search';
 import { standardMovieVisibilityWhere } from '$lib/server/policies/movie-visibility';
 import { parseCatalogParameters } from '$lib/server/security/request-bounds';
+import { logServerError } from '$lib/server/security/logging';
 
 const STANDARD_GENRES = [
 	{ id: 28, name: 'Action' },
@@ -41,19 +42,10 @@ export async function load({ url }) {
 	// Build the local SQL where clause
 	let whereClause = standardMovieVisibilityWhere();
 	if (genreId) {
-		const genreMovieIds = await db
-			.select({ movieId: movieGenres.movieId })
-			.from(movieGenres)
-			.where(eq(movieGenres.genreId, genreId))
-			.catch(() => []);
-
-		const ids = genreMovieIds.map((g) => g.movieId);
-		if (ids.length > 0) {
-			whereClause = and(whereClause, inArray(movies.id, ids)) as any;
-		} else {
-			// Keep the request local and return an empty page when the archive has no match.
-			whereClause = and(whereClause, eq(movies.id, '00000000-0000-0000-0000-000000000000')) as any;
-		}
+		whereClause = and(
+			whereClause,
+			sql`exists (select 1 from ${movieGenres} where ${movieGenres.movieId} = ${movies.id} and ${movieGenres.genreId} = ${genreId})`
+		) as any;
 	}
 
 	if (decade) {
@@ -75,23 +67,28 @@ export async function load({ url }) {
 	}
 
 	// 1. Fetch from local PostgreSQL
-	const [localMovies, totalCountResult, dbGenres] = await Promise.all([
-		db.query.movies
-			.findMany({
+	let localMovies;
+	let totalCountResult;
+	let dbGenres;
+	try {
+		[localMovies, totalCountResult, dbGenres] = await Promise.all([
+			db.query.movies.findMany({
 				where: whereClause,
-				orderBy: [orderByClause],
+				orderBy: [orderByClause, desc(movies.id)],
 				limit,
 				offset,
 				with: { keywords: true, genres: { with: { genre: true } } }
-			})
-			.catch(() => []),
-		db
-			.select({ count: sql<number>`count(*)` })
-			.from(movies)
-			.where(whereClause)
-			.catch(() => [{ count: 0 }]),
-		db.query.genres.findMany().catch(() => [])
-	]);
+			}),
+			db
+				.select({ count: sql<number>`count(*)` })
+				.from(movies)
+				.where(whereClause),
+			db.query.genres.findMany().catch(() => [])
+		]);
+	} catch (err) {
+		logServerError('Catalog read failed', err);
+		throw error(503, 'The catalogue is temporarily unavailable.');
+	}
 
 	const formattedMovies = prepareStandardMovies(localMovies);
 	const totalCount = Number(totalCountResult[0]?.count || 0);

@@ -11,9 +11,11 @@ async function logout({ locals, cookies }: { locals: App.Locals; cookies: Cookie
 	cookies.delete('session', SESSION_COOKIE_DELETE_OPTIONS);
 }
 
-export async function GET({ locals, cookies, url }) {
-	await logout({ locals, cookies });
-	throw redirect(303, getAuthPortalUrl(url, '/movies'));
+export function GET() {
+	return new Response('Sign out requires a POST request.', {
+		status: 405,
+		headers: { allow: 'POST', 'content-type': 'text/plain; charset=utf-8' }
+	});
 }
 
 export async function POST({ locals, cookies, url }) {

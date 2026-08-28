@@ -6,7 +6,10 @@
 
 <div class="hub-app" data-sveltekit-preload-data="hover" data-sveltekit-preload-code="eager">
 	<NavigationProgressBar />
-	{@render children()}
+	<a href="#main-content" class="sr-only skip-link">Skip to main content</a>
+	<div id="main-content" tabindex="-1">
+		{@render children()}
+	</div>
 </div>
 
 <style>

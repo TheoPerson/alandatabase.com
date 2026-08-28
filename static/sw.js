@@ -1,45 +1,34 @@
-const CACHE_NAME = 'alan-vault-v1';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/tools/json',
-  '/tools/diff',
-  '/tools/image',
-  '/tools/file',
-  '/tools/generators',
-  '/status',
-  '/setup',
-  '/projects'
-];
+const CACHE_NAME = 'alan-database-public-shell-v3';
+const PRECACHE = ['/offline.html', '/favicon.svg', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
-  self.skipWaiting();
+	event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE)));
+	self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      );
-    })
-  );
-  self.clients.claim();
+	event.waitUntil(
+		caches
+			.keys()
+			.then((keys) =>
+				Promise.all(
+					keys
+						.filter((key) => key === 'alan-vault-v1' || key.startsWith('alan-database-public-shell-'))
+						.filter((key) => key !== CACHE_NAME)
+						.map((key) => caches.delete(key))
+				)
+			)
+	);
+	self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET') return;
-  event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
-    })
-  );
+	if (event.request.method !== 'GET' || event.request.mode !== 'navigate') return;
+
+	event.respondWith(
+		fetch(event.request).catch(async () => {
+			const offline = await caches.match('/offline.html');
+			return offline || Response.error();
+		})
+	);
 });

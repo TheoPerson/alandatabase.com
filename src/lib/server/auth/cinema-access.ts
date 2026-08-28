@@ -20,16 +20,15 @@ export const SESSION_EXEMPT_ROUTES = ['/api/telegram/webhook'];
 
 // Public API metadata and liveness are intentionally narrow exceptions. All
 // data-changing and catalog endpoints remain session-protected.
-export const PUBLIC_API_ROUTES = ['/api', '/api/health'];
+export const PUBLIC_API_ROUTES = ['/api', '/api/health', '/api/search'];
 
-export const OWNER_ONLY_ROUTES = [
-	'/admin',
-	'/setup',
-	'/my',
-	'/live',
-	'/disclaimer',
-	'/movies/custom'
-];
+export const OWNER_ONLY_ROUTES = ['/admin', '/setup', '/api/telemetry/events'];
+
+export const CATALOG_MANAGER_ROUTES = ['/movies/custom', '/disclaimer', '/api/movies/catalog'];
+
+export const AUTHENTICATED_ROUTES = ['/my', '/live'];
+
+export type CinemaAccessRequirement = 'public' | 'authenticated' | 'catalog' | 'owner';
 
 const OWNER_PORTAL_RETURN_ROUTES = ['/admin', '/setup'];
 
@@ -49,19 +48,34 @@ export function isCinemaRoute(pathname: string): boolean {
 	return CINEMA_PREFIXES.some((prefix) => matchesRoute(pathname, prefix));
 }
 
-export function requiresCinemaSession(pathname: string): boolean {
-	if (OWNER_ONLY_ROUTES.some((route) => matchesRoute(pathname, route))) return true;
-	if (!isCinemaRoute(pathname)) return false;
-	if (SESSION_EXEMPT_ROUTES.includes(pathname)) return false;
-	if (PUBLIC_API_ROUTES.includes(pathname)) return false;
+export function getCinemaAccessRequirement(pathname: string): CinemaAccessRequirement {
+	if (OWNER_ONLY_ROUTES.some((route) => matchesRoute(pathname, route))) return 'owner';
+	if (CATALOG_MANAGER_ROUTES.some((route) => matchesRoute(pathname, route))) return 'catalog';
+	if (AUTHENTICATED_ROUTES.some((route) => matchesRoute(pathname, route))) return 'authenticated';
+	if (!isCinemaRoute(pathname)) return 'public';
+	if (SESSION_EXEMPT_ROUTES.includes(pathname)) return 'public';
+	if (PUBLIC_API_ROUTES.includes(pathname)) return 'public';
 
 	// Public catalogue, movie detail, TV, discovery and search pages remain
 	// browseable. Personal data, playback and catalogue mutation surfaces do
 	// not. The latter are owner-gated again in their server actions/loaders.
-	if (/^\/movies\/catalog\/[^/]+\/(edit|merge|review)(?:\/|$)/.test(pathname)) return true;
-	if (pathname === '/api' || pathname.startsWith('/api/')) return true;
+	if (/^\/movies\/catalog\/[^/]+\/(edit|merge)(?:\/|$)/u.test(pathname)) return 'catalog';
+	if (/^\/movies\/catalog\/[^/]+\/review(?:\/|$)/u.test(pathname)) return 'authenticated';
+	if (pathname === '/api' || pathname.startsWith('/api/')) return 'authenticated';
 
-	return false;
+	return 'public';
+}
+
+export function requiresCinemaSession(pathname: string): boolean {
+	return getCinemaAccessRequirement(pathname) !== 'public';
+}
+
+export function shouldUsePrivateResponseHeaders(
+	requirement: CinemaAccessRequirement,
+	hasUser: boolean,
+	pathname: string
+): boolean {
+	return requirement !== 'public' || hasUser || pathname === '/auth/register';
 }
 
 export function isCinemaPageRoute(pathname: string): boolean {

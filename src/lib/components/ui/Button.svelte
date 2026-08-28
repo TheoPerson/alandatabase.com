@@ -25,7 +25,13 @@
 </script>
 
 {#if href}
-	<a {href} class="btn {variant} {size} {customClass}" class:disabled>
+	<a
+		href={disabled ? undefined : href}
+		class="btn {variant} {size} {customClass}"
+		class:disabled
+		aria-disabled={disabled}
+		tabindex={disabled ? -1 : undefined}
+	>
 		{@render children?.()}
 	</a>
 {:else}
@@ -42,7 +48,14 @@
 		gap: 0.5rem;
 		font-weight: 600;
 		border-radius: var(--radius-md);
-		transition: all var(--transition-fast);
+		min-height: var(--touch-target);
+		border: 1px solid transparent;
+		transition:
+			background-color var(--transition-fast),
+			border-color var(--transition-fast),
+			color var(--transition-fast),
+			transform var(--transition-fast),
+			box-shadow var(--transition-fast);
 		cursor: pointer;
 		white-space: nowrap;
 	}
@@ -52,8 +65,14 @@
 		pointer-events: none;
 	}
 
+	.btn:active:not(.disabled),
+	button.btn:active:not(:disabled) {
+		transform: translateY(1px);
+	}
+
 	/* Sizes */
 	.sm {
+		min-height: 2.25rem;
 		padding: 0.4rem 0.85rem;
 		font-size: 0.85rem;
 	}
@@ -70,14 +89,14 @@
 
 	/* Variants */
 	.primary {
-		background: #10b981;
-		color: #050507;
+		background: var(--brand-primary);
+		color: var(--content-inverse);
 		font-weight: 800;
 		box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
 	}
 
 	.primary:hover {
-		background: #34d399;
+		background: var(--brand-hover);
 		transform: translateY(-1px);
 		box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
 	}
@@ -105,13 +124,13 @@
 
 	.outline {
 		background: transparent;
-		color: #10b981;
-		border: 1px solid rgba(16, 185, 129, 0.4);
+		color: var(--brand-primary);
+		border-color: var(--brand-border);
 	}
 
 	.outline:hover {
-		background: rgba(16, 185, 129, 0.12);
-		border-color: #10b981;
+		background: var(--brand-muted);
+		border-color: var(--brand-primary);
 	}
 
 	.success {
@@ -123,5 +142,13 @@
 	.success:hover {
 		background: rgba(34, 197, 94, 0.25);
 		border-color: rgba(34, 197, 94, 0.5);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.primary:hover,
+		.btn:active:not(.disabled),
+		button.btn:active:not(:disabled) {
+			transform: none;
+		}
 	}
 </style>

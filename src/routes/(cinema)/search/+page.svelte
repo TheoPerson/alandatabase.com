@@ -1,6 +1,8 @@
 <script lang="ts">
 	import MovieCard from '$lib/components/movie/MovieCard.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import { goto } from '$app/navigation';
 
 	let { data } = $props();
@@ -35,11 +37,13 @@
 </script>
 
 <svelte:head>
-	<title>{data.query ? `Search: ${data.query} | CinemaDB` : 'Discover Cinema | CinemaDB'}</title>
-	<meta name="description" content="Search by title, director, actor, or genre keywords" />
+	<title>{data.query ? `Search: ${data.query} | Alan Database` : 'Search | Alan Database'}</title>
+	<meta name="description" content="Search the Alan Database local movie catalogue by title." />
+	<meta name="robots" content="noindex,follow" />
+	<link rel="canonical" href="https://alandatabase.com/search" />
 	<meta
 		property="og:title"
-		content={data.query ? `Search: ${data.query} | CinemaDB` : 'Discover Cinema | CinemaDB'}
+		content={data.query ? `Search: ${data.query} | Alan Database` : 'Search | Alan Database'}
 	/>
 	<meta property="og:description" content="Search by title, director, actor, or genre keywords" />
 	<meta property="og:type" content="website" />
@@ -48,14 +52,18 @@
 <div class="container search-page">
 	<div class="search-hero">
 		<h1 class="page-title">Discover Cinema</h1>
-		<p class="subtitle">Search by title, director, actor, or genre keywords</p>
+		<p class="subtitle">Search the reviewed local catalogue by movie title.</p>
 
 		<form onsubmit={handleSubmit} class="main-search-form">
+			<label class="sr-only" for="catalog-search">Movie title</label>
 			<input
+				id="catalog-search"
+				name="q"
 				type="search"
-				placeholder="Type a movie title (e.g. Inception, Godfather, Parasite)..."
+				placeholder="Search by movie title"
 				bind:value={searchInput}
 				class="hero-search-input"
+				autocomplete="off"
 			/>
 			<Button type="submit" variant="primary" size="lg">Search</Button>
 		</form>
@@ -65,7 +73,9 @@
 		<div class="results-header">
 			<div class="results-title-group">
 				<h2>Results for <span class="query-text">"{data.query}"</span></h2>
-				<span class="count">{data.results.length} movies found</span>
+				<span class="count"
+					>{data.results.length} movie{data.results.length === 1 ? '' : 's'} found</span
+				>
 			</div>
 
 			{#if data.results.length > 0}
@@ -77,34 +87,45 @@
 							class="sort-pill"
 							class:active={sortBy === 'relevance'}
 							onclick={() => (sortBy = 'relevance')}
-							title="Tri par pertinence"
+							aria-pressed={sortBy === 'relevance'}
 						>
-							🔥 Relevance
+							Best match
 						</button>
 						<button
 							type="button"
 							class="sort-pill"
 							class:active={sortBy === 'rating'}
 							onclick={() => (sortBy = 'rating')}
-							title="Tri par note IMDb"
+							aria-pressed={sortBy === 'rating'}
 						>
-							⭐ IMDb Rating
+							Rating
 						</button>
 						<button
 							type="button"
 							class="sort-pill"
 							class:active={sortBy === 'recent'}
 							onclick={() => (sortBy = 'recent')}
-							title="Tri par date de sortie"
+							aria-pressed={sortBy === 'recent'}
 						>
-							📅 Release Date
+							Newest
 						</button>
 					</div>
 				</div>
 			{/if}
 		</div>
 
-		{#if sortedResults.length > 0}
+		{#if data.searchError}
+			<ErrorState
+				title="Search is temporarily unavailable"
+				description="The local catalogue could not be queried. Nothing was changed; try the request again."
+			>
+				{#snippet action()}
+					<Button href={`/search?q=${encodeURIComponent(data.query)}`} variant="outline"
+						>Try again</Button
+					>
+				{/snippet}
+			</ErrorState>
+		{:else if sortedResults.length > 0}
 			<div class="grid-movies">
 				{#each sortedResults as movie (movie.id || movie.tmdbId)}
 					<MovieCard
@@ -120,13 +141,14 @@
 				{/each}
 			</div>
 		{:else}
-			<div class="no-results">
-				<p class="emoji">🔍</p>
-				<h3>No movies found for "{data.query}"</h3>
-				<p class="hint">
-					Try searching for another movie title or populate more films via the worker CLI.
-				</p>
-			</div>
+			<EmptyState
+				title={`No movies found for "${data.query}"`}
+				description="Try another title or browse the complete reviewed catalogue."
+			>
+				{#snippet action()}
+					<Button href="/movies/catalog" variant="outline">Browse catalogue</Button>
+				{/snippet}
+			</EmptyState>
 		{/if}
 	{/if}
 </div>
@@ -135,6 +157,7 @@
 	.search-page {
 		padding-top: 3rem;
 		padding-bottom: 5rem;
+		min-height: 70dvh;
 	}
 
 	.search-hero {
@@ -170,13 +193,16 @@
 		border-radius: var(--radius-md);
 		color: var(--text-primary);
 		font-size: 1rem;
-		transition: all var(--transition-fast);
+		min-height: var(--touch-target);
+		transition:
+			border-color var(--transition-fast),
+			box-shadow var(--transition-fast);
 	}
 
-	.hero-search-input:focus {
+	.hero-search-input:focus-visible {
 		outline: none;
-		border-color: #10b981;
-		box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+		border-color: var(--brand-primary);
+		box-shadow: 0 0 0 3px var(--brand-muted);
 	}
 
 	.results-header {
@@ -238,6 +264,7 @@
 		border-radius: 9999px;
 		padding: 3px;
 		gap: 2px;
+		flex-wrap: wrap;
 	}
 
 	.sort-pill {
@@ -246,6 +273,7 @@
 		color: var(--text-secondary);
 		font-size: 0.78rem;
 		font-weight: 600;
+		min-height: var(--touch-target);
 		padding: 0.35rem 0.75rem;
 		border-radius: 9999px;
 		cursor: pointer;
@@ -274,26 +302,42 @@
 		gap: 1.5rem;
 	}
 
-	.no-results {
-		text-align: center;
-		padding: 4rem 2rem;
-		background: var(--bg-surface-1);
-		border-radius: var(--radius-lg);
-		border: 1px solid var(--border-subtle);
-	}
+	@media (max-width: 640px) {
+		.search-page {
+			padding-top: 1.5rem;
+			padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+		}
 
-	.emoji {
-		font-size: 3rem;
-		margin-bottom: 1rem;
-	}
+		.search-hero {
+			margin-bottom: 2.5rem;
+			text-align: left;
+		}
 
-	.no-results h3 {
-		font-size: 1.25rem;
-		margin-bottom: 0.5rem;
-	}
+		.page-title {
+			font-size: clamp(2rem, 12vw, 2.75rem);
+		}
 
-	.hint {
-		color: var(--text-tertiary);
-		font-size: 0.95rem;
+		.main-search-form {
+			flex-direction: column;
+		}
+
+		.main-search-form :global(.btn) {
+			width: 100%;
+		}
+
+		.results-title-group,
+		.sort-controls {
+			align-items: flex-start;
+			flex-direction: column;
+		}
+
+		.sort-pills {
+			width: 100%;
+			border-radius: var(--radius-md);
+		}
+
+		.sort-pill {
+			flex: 1;
+		}
 	}
 </style>

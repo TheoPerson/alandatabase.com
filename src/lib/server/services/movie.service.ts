@@ -160,11 +160,16 @@ export async function getPersonById(id: string) {
 	});
 
 	if (!person) return person;
+	const castRoles = prepareVisibleRoles(person.castRoles || []);
+	const crewRoles = prepareVisibleRoles(person.crewRoles || []);
+
+	// A person known only through quarantined titles must not become a public surface.
+	if (castRoles.length === 0 && crewRoles.length === 0) return null;
 
 	return {
 		...person,
-		castRoles: prepareVisibleRoles(person.castRoles || []),
-		crewRoles: prepareVisibleRoles(person.crewRoles || [])
+		castRoles,
+		crewRoles
 	};
 }
 
