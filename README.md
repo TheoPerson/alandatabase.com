@@ -37,6 +37,8 @@ The latest recorded audit is available in [V3 Foundation Report](docs/V3_FOUNDAT
 Canonical cinema surfaces include:
 
 - `/movies` and `/movies/[id]`
+- owner-only Alan Score editing on `/movies/[id]`, documented in
+  [Alan Score](docs/ALAN_SCORE.md)
 - `/tv` and `/tv/[id]`
 - public `/discover` and `/search`; owner-only `/my/*`
 - `/auth/login`, `/auth/register`, and `/disclaimer`

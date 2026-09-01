@@ -107,4 +107,101 @@ describe('Drizzle migration chain', () => {
 			`)
 		).rejects.toThrow();
 	}, 15_000);
+
+	it('applies the Alan Score migration twice and preserves owner-scoped integrity', async () => {
+		database = new PGlite();
+		for (const name of [
+			'0000_aromatic_puma.sql',
+			'0001_next_impossible_man.sql',
+			'0002_wet_masque.sql',
+			'0003_complete_skrulls.sql'
+		]) {
+			await database.exec(await migration(name));
+		}
+
+		await database.exec(`
+			insert into users (id, email, username, password_hash, role)
+			values
+				('00000000-0000-4000-8000-000000000001', 'owner@example.test', 'owner', 'hash', 'owner'),
+				('00000000-0000-4000-8000-000000000002', 'member@example.test', 'member', 'hash', 'member');
+			insert into movies (id, tmdb_id, title)
+			values ('00000000-0000-4000-8000-000000000010', 27205, 'Inception');
+			insert into user_movie_interactions (user_id, movie_id, rating)
+			values (
+				'00000000-0000-4000-8000-000000000001',
+				'00000000-0000-4000-8000-000000000010',
+				4.5
+			);
+		`);
+
+		const alanScore = await migration('0004_optimal_karma.sql');
+		await database.exec(alanScore);
+		await database.exec(alanScore);
+
+		await expect(
+			database.exec(`
+				insert into movie_personal_scores (
+					user_id, movie_id, realism, computed_score, coverage, status
+				) values (
+					'00000000-0000-4000-8000-000000000001',
+					'00000000-0000-4000-8000-000000000010',
+					4.2, 4.2, 20, 'partial'
+				)
+			`)
+		).rejects.toThrow();
+
+		const save = (realism: number) =>
+			database!.exec(`
+				insert into movie_personal_scores (
+					user_id, movie_id, realism, computed_score, coverage, status, tags
+				) values (
+					'00000000-0000-4000-8000-000000000001',
+					'00000000-0000-4000-8000-000000000010',
+					${realism}, ${realism}, 20, 'partial', array['theatrical']
+				)
+				on conflict (user_id, movie_id) do update set
+					realism = excluded.realism,
+					computed_score = excluded.computed_score,
+					updated_at = now()
+			`);
+
+		await Promise.all([save(7.5), save(8)]);
+		const rows = await database.query<{ count: number }>(`
+			select count(*)::int as count from movie_personal_scores
+			where user_id = '00000000-0000-4000-8000-000000000001'
+				and movie_id = '00000000-0000-4000-8000-000000000010'
+		`);
+		expect(rows.rows[0]?.count).toBe(1);
+
+		await database.exec(`
+			insert into movie_personal_scores (
+				user_id, movie_id, realism, computed_score, coverage, status
+			) values (
+				'00000000-0000-4000-8000-000000000002',
+				'00000000-0000-4000-8000-000000000010',
+				6, 6, 20, 'partial'
+			)
+		`);
+		const perOwner = await database.query<{ count: number }>(`
+			select count(*)::int as count from movie_personal_scores
+			where movie_id = '00000000-0000-4000-8000-000000000010'
+		`);
+		expect(perOwner.rows[0]?.count).toBe(2);
+
+		const legacy = await database.query<{ rating: string }>(`
+			select rating::text from user_movie_interactions
+			where user_id = '00000000-0000-4000-8000-000000000001'
+		`);
+		expect(legacy.rows[0]?.rating).toBe('4.5');
+
+		await database.exec(`
+			delete from movie_personal_scores
+			where user_id = '00000000-0000-4000-8000-000000000001'
+				and movie_id = '00000000-0000-4000-8000-000000000010'
+		`);
+		const remaining = await database.query<{ count: number }>(`
+			select count(*)::int as count from movie_personal_scores
+		`);
+		expect(remaining.rows[0]?.count).toBe(1);
+	}, 15_000);
 });

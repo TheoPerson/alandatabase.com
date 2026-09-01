@@ -4,6 +4,7 @@ import { db } from '$lib/server/db';
 import {
 	activities,
 	authAuditEvents,
+	moviePersonalScores,
 	movies,
 	userMovieInteractions,
 	userListItems,
@@ -12,6 +13,12 @@ import {
 import { eq, and } from 'drizzle-orm';
 import { requireCatalogManager } from '$lib/server/auth/owner';
 import { logServerError } from '$lib/server/security/logging';
+import {
+	ALAN_SCORE_DIMENSIONS,
+	calculateAlanScore,
+	normalizeAlanScoreTags,
+	type AlanScoreValues
+} from '$lib/alan-score';
 
 export function _mergeReviewValues(
 	existing: { content: string; containsSpoilers: boolean },
@@ -58,6 +65,42 @@ export function _mergeInteractionValues(
 		watchDate: watchDates.length > 0 ? watchDates.sort()[0] : null,
 		rewatchCount: existing.rewatchCount + source.rewatchCount,
 		personalNotes: notes.length > 0 ? notes.join('\n') : null,
+		updatedAt: new Date()
+	};
+}
+
+type StoredAlanScore = Pick<
+	typeof moviePersonalScores.$inferSelect,
+	| 'realism'
+	| 'cinematography'
+	| 'originalLanguageExperience'
+	| 'tension'
+	| 'cast'
+	| 'atmosphere'
+	| 'rewatchability'
+	| 'note'
+	| 'tags'
+>;
+
+export function _mergeAlanScoreValues(existing: StoredAlanScore, source: StoredAlanScore) {
+	const numericValues = Object.fromEntries(
+		ALAN_SCORE_DIMENSIONS.map(({ key }) => {
+			const storedValue = existing[key] ?? source[key];
+			return [key, storedValue === null ? null : Number(storedValue)];
+		})
+	) as AlanScoreValues;
+	const calculation = calculateAlanScore(numericValues);
+	const notes = [existing.note, source.note].filter((note): note is string => Boolean(note));
+
+	return {
+		...Object.fromEntries(
+			ALAN_SCORE_DIMENSIONS.map(({ key }) => [key, numericValues[key]?.toFixed(1) ?? null])
+		),
+		computedScore: calculation.score?.toFixed(1) ?? null,
+		coverage: calculation.coverage,
+		status: calculation.status,
+		note: notes.length > 0 ? notes.join('\n\n---\n\n') : null,
+		tags: normalizeAlanScoreTags([...existing.tags, ...source.tags]),
 		updatedAt: new Date()
 	};
 }
@@ -204,13 +247,38 @@ export const actions = {
 					}
 				}
 
-				// 4. Preserve activity history before deleting the duplicate record.
+				// 4. Move owner scores without losing target dimensions.
+				const sourceScores = await tx.query.moviePersonalScores.findMany({
+					where: eq(moviePersonalScores.movieId, sourceMovieId)
+				});
+				for (const score of sourceScores) {
+					const existing = await tx.query.moviePersonalScores.findFirst({
+						where: and(
+							eq(moviePersonalScores.userId, score.userId),
+							eq(moviePersonalScores.movieId, targetMovieId)
+						)
+					});
+					if (!existing) {
+						await tx
+							.update(moviePersonalScores)
+							.set({ movieId: targetMovieId })
+							.where(eq(moviePersonalScores.id, score.id));
+					} else {
+						await tx
+							.update(moviePersonalScores)
+							.set(_mergeAlanScoreValues(existing, score))
+							.where(eq(moviePersonalScores.id, existing.id));
+						await tx.delete(moviePersonalScores).where(eq(moviePersonalScores.id, score.id));
+					}
+				}
+
+				// 5. Preserve activity history before deleting the duplicate record.
 				await tx
 					.update(activities)
 					.set({ movieId: targetMovieId })
 					.where(eq(activities.movieId, sourceMovieId));
 
-				// 5. Delete Source Movie (cascade will drop cast/crew links)
+				// 6. Delete Source Movie (cascade will drop cast/crew links)
 				await tx.delete(movies).where(eq(movies.id, sourceMovieId));
 
 				await tx.insert(authAuditEvents).values({

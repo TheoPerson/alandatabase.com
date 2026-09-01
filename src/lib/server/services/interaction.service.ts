@@ -58,7 +58,7 @@ function prepareInteractionItems(items: any[]) {
 		.filter((item): item is NonNullable<typeof item> => item !== null);
 }
 
-async function resolveMovieUuid(movieId: string): Promise<string | null> {
+export async function resolveMovieUuid(movieId: string): Promise<string | null> {
 	if (!movieId) return null;
 	if (isUuidRegex.test(movieId)) {
 		const found = await db.query.movies.findFirst({

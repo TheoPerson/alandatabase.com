@@ -11,6 +11,8 @@ its launch gates are explicitly verified.
 
 ### Major Updates
 
+- Added Alan Score, an owner-only seven-dimension film score with transparent
+  partial coverage and server-calculated weighted results.
 - Rebuilt the public Status surface as the operational and release-information centre for Alan Database.
 - Restored the public movie discovery pipeline after a malformed SQL visibility predicate made catalogue reads fail.
 - Added persistent owner/admin/member authorization with one-time invitations,
@@ -18,6 +20,10 @@ its launch gates are explicitly verified.
 
 ### Minor Updates
 
+- Replaced new five-star rating entry with the Alan Score editor on canonical
+  movie details while preserving existing ratings as read-only legacy data.
+- Preserved Alan Score rows through catalog duplicate merges, including
+  deterministic conflict recalculation.
 - Added a server-side UptimeRobot v3 integration for monitor 803733856 with 30-day uptime, incident, downtime, and response-time metrics.
 - Added an original fluid status animation using GPU-friendly transforms, responsive composition, and a reduced-motion fallback.
 - Made discovery rails independent so a failed optional query no longer takes down the complete page.
@@ -33,6 +39,9 @@ its launch gates are explicitly verified.
 - Preserved deep-linked search queries in the interactive search field and
   enforced same-origin form mutations consistently in development and deployed
   runtimes.
+- Corrected the correlated standard-content predicate for Drizzle relational
+  movie queries so canonical detail pages no longer reference a nonexistent
+  `movies.movie_id` column.
 - Fixed `/discover` returning HTTP 500 while `/movies` silently displayed an empty catalogue.
 - Fixed `/tv` becoming blank because Nathan for You and True Detective shared the same keyed TMDB identifier.
 - Fixed `/tools/json` crashing during hydration because a derived value mutated component state.
@@ -48,6 +57,8 @@ its launch gates are explicitly verified.
 
 ### Security
 
+- Scoped Alan Score reads and writes to the authenticated persistent owner and
+  omitted personal score fields from anonymous movie-detail responses.
 - Removed two local PostgreSQL clusters from Git tracking while preserving the local files on disk.
 - Added ignore rules for local database clusters and worker build output.
 - Replaced raw database session tokens with SHA-256 digests while retaining random Secure, HttpOnly session cookies.
@@ -64,6 +75,8 @@ its launch gates are explicitly verified.
 
 ### Technical Improvements
 
+- Added idempotent migration `0004_optimal_karma.sql` with owner/movie uniqueness,
+  foreign keys, indexes, numeric checks, and preserved computed score metadata.
 - Migrated CI dependency policy to pnpm 11's strict `allowBuilds` map, with
   reviewed native builds allowed and the optional Sentry CLI script denied.
 - Separated the data worker connection lifecycle from the SvelteKit runtime.

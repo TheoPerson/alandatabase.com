@@ -77,7 +77,7 @@ paths are left untouched.
 | `src/lib/server/auth`     | Password/session helpers and centralized route classification.                                           |
 | `src/lib/server/policies` | Fail-closed content visibility policy.                                                                   |
 | `src/lib/server/queries`  | Bounded local read models such as search.                                                                |
-| `src/lib/server/services` | Movie, TV, interaction, AI/Telegram, and related application logic.                                      |
+| `src/lib/server/services` | Movie, TV, interaction, owner-scoped Alan Score, AI/Telegram, and related application logic.             |
 | `src/lib/server/db`       | Drizzle schema, connection, seed data, and the misleading legacy `ensureTablesExist` helper.             |
 | `drizzle`                 | Generated PostgreSQL migration SQL and metadata.                                                         |
 | `worker`                  | TMDB metadata ingestion, ingestion safety checks, and optional search-index setup.                       |
@@ -117,6 +117,28 @@ Persistent roles, account disabling, revocable sessions, digest-only one-time
 invitations, and audit events are implemented. Invitation creation and
 acceptance serialize by normalized email. The hosted migration and operational
 rollout remain incomplete.
+
+## Alan Score
+
+`src/lib/alan-score.ts` is the single typed definition of the seven dimensions,
+their `20/15/10/15/10/15/15` weights, accepted half-step values, calculation,
+coverage, status, and tag normalization. Only rated dimensions contribute to the
+weighted denominator. The computed result is rounded to one decimal.
+
+`movie_personal_scores` stores one row per user/movie with database range,
+half-step, result-state, foreign-key, and unique-ownership constraints. The
+additive `0004_optimal_karma.sql` migration is safe to re-run against a fresh
+preview baseline. `alan-score.service.ts` resolves only standard visible movies,
+recalculates every write server-side, and scopes reads, upserts, and deletes by
+the authenticated user ID.
+
+The canonical `/movies/[id]` load omits the personal payload entirely unless the
+persistent owner role is present. Its named save/reset actions enforce that same
+owner boundary before reading form data. Existing `user_movie_interactions.rating`
+values are not converted or deleted; the old entry control is removed and an
+existing value may be displayed only as `Legacy rating`. Catalog duplicate
+merges move the score with its movie and, on conflict, preserve target values,
+fill only missing dimensions, and recalculate the result.
 
 ## Application surfaces
 

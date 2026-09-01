@@ -1,5 +1,5 @@
 import { and, eq, gt, sql } from 'drizzle-orm';
-import { movieKeywords, movies } from '../db/schema.js';
+import { movies } from '../db/schema.js';
 
 export const KNOWN_EXPLICIT_KEYWORD_IDS = [256466, 267122, 738] as const;
 
@@ -67,9 +67,9 @@ export function standardMovieVisibilityWhere() {
 		// which PostgreSQL rejects and makes every standard catalogue read fail.
 		sql`not exists (
 			select 1
-			from ${movieKeywords}
-			where ${movieKeywords.movieId} = ${movies.id}
-				and ${movieKeywords.keywordId} in (${explicitKeywordSql})
+			from "movie_keywords"
+			where "movie_keywords"."movie_id" = "movies"."id"
+				and "movie_keywords"."keyword_id" in (${explicitKeywordSql})
 		)`
 	);
 }

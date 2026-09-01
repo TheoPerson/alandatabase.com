@@ -4,8 +4,9 @@
 	import PlayIcon from 'lucide-svelte/icons/play';
 	import ChevronLeftIcon from 'lucide-svelte/icons/chevron-left';
 	import PlayerSheet from '$lib/components/movie/PlayerSheet.svelte';
+	import AlanScorePanel from '$lib/components/movie/AlanScorePanel.svelte';
 
-	let { data } = $props();
+	let { data, form } = $props();
 	const movie = $derived(data.movie);
 
 	let isPlayerOpen = $state(false);
@@ -156,6 +157,15 @@
 		<div class="synopsis-section">
 			<p class="overview">{movie.overview}</p>
 		</div>
+
+		{#if data.personal}
+			<AlanScorePanel
+				movieId={movie.id}
+				score={data.personal.alanScore}
+				legacyRating={data.personal.legacyRating}
+				{form}
+			/>
+		{/if}
 
 		{#if data.credits && data.credits.length > 0}
 			<div class="cast-section">
