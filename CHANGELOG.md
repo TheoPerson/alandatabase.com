@@ -64,8 +64,8 @@ its launch gates are explicitly verified.
 
 ### Technical Improvements
 
-- Made CI dependency installation explicit: lifecycle scripts are enabled only
-  for the reviewed native packages in pnpm's build allowlist.
+- Made CI dependency installation explicit by acknowledging optional native
+  lifecycle scripts that the hardened runner intentionally suppresses.
 - Separated the data worker connection lifecycle from the SvelteKit runtime.
 - Removed implicit seed-on-worker-start behavior and made worker database initialization lazy.
 - Added an additive, fail-safe schema reconciliation migration for runtime tables and durable authentication throttling.
