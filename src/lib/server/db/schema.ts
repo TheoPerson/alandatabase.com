@@ -354,6 +354,77 @@ export const userMovieInteractions = pgTable(
 	]
 );
 
+export const moviePersonalScores = pgTable(
+	'movie_personal_scores',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		movieId: uuid('movie_id')
+			.notNull()
+			.references(() => movies.id, { onDelete: 'cascade' }),
+		realism: decimal('realism', { precision: 3, scale: 1 }),
+		cinematography: decimal('cinematography', { precision: 3, scale: 1 }),
+		originalLanguageExperience: decimal('original_language_experience', {
+			precision: 3,
+			scale: 1
+		}),
+		tension: decimal('tension', { precision: 3, scale: 1 }),
+		cast: decimal('cast', { precision: 3, scale: 1 }),
+		atmosphere: decimal('atmosphere', { precision: 3, scale: 1 }),
+		rewatchability: decimal('rewatchability', { precision: 3, scale: 1 }),
+		computedScore: decimal('computed_score', { precision: 3, scale: 1 }),
+		coverage: smallint('coverage').default(0).notNull(),
+		status: varchar('status', { length: 16 }).default('unrated').notNull(),
+		note: text('note'),
+		tags: text('tags')
+			.array()
+			.default(sql`ARRAY[]::text[]`)
+			.notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => {
+		const validDimension = (column: typeof table.realism) =>
+			sql`${column} is null or (${column} >= 0 and ${column} <= 10 and mod(${column} * 2, 1) = 0)`;
+
+		return [
+			uniqueIndex('idx_movie_personal_scores_user_movie').on(table.userId, table.movieId),
+			index('idx_movie_personal_scores_user').on(table.userId),
+			index('idx_movie_personal_scores_movie').on(table.movieId),
+			check('movie_personal_scores_realism_check', validDimension(table.realism)),
+			check('movie_personal_scores_cinematography_check', validDimension(table.cinematography)),
+			check(
+				'movie_personal_scores_original_language_check',
+				validDimension(table.originalLanguageExperience)
+			),
+			check('movie_personal_scores_tension_check', validDimension(table.tension)),
+			check('movie_personal_scores_cast_check', validDimension(table.cast)),
+			check('movie_personal_scores_atmosphere_check', validDimension(table.atmosphere)),
+			check('movie_personal_scores_rewatchability_check', validDimension(table.rewatchability)),
+			check(
+				'movie_personal_scores_computed_check',
+				sql`${table.computedScore} is null or (${table.computedScore} >= 0 and ${table.computedScore} <= 10)`
+			),
+			check(
+				'movie_personal_scores_coverage_check',
+				sql`${table.coverage} >= 0 and ${table.coverage} <= 100`
+			),
+			check(
+				'movie_personal_scores_status_check',
+				sql`${table.status} in ('unrated', 'partial', 'complete')`
+			),
+			check(
+				'movie_personal_scores_result_check',
+				sql`(${table.status} = 'unrated' and ${table.coverage} = 0 and ${table.computedScore} is null)
+					or (${table.status} = 'partial' and ${table.coverage} > 0 and ${table.coverage} < 100 and ${table.computedScore} is not null)
+					or (${table.status} = 'complete' and ${table.coverage} = 100 and ${table.computedScore} is not null)`
+			)
+		];
+	}
+);
+
 export const userLists = pgTable(
 	'user_lists',
 	{
@@ -461,6 +532,7 @@ export const moviesRelations = relations(movies, ({ one, many }) => ({
 	crew: many(movieCrew),
 	videos: many(movieVideos),
 	interactions: many(userMovieInteractions),
+	personalScores: many(moviePersonalScores),
 	reviews: many(userReviews)
 }));
 
@@ -496,6 +568,11 @@ export const userMovieInteractionsRelations = relations(userMovieInteractions, (
 	movie: one(movies, { fields: [userMovieInteractions.movieId], references: [movies.id] })
 }));
 
+export const moviePersonalScoresRelations = relations(moviePersonalScores, ({ one }) => ({
+	user: one(users, { fields: [moviePersonalScores.userId], references: [users.id] }),
+	movie: one(movies, { fields: [moviePersonalScores.movieId], references: [movies.id] })
+}));
+
 export const userReviewsRelations = relations(userReviews, ({ one }) => ({
 	user: one(users, { fields: [userReviews.userId], references: [users.id] }),
 	movie: one(movies, { fields: [userReviews.movieId], references: [movies.id] })
@@ -504,6 +581,7 @@ export const userReviewsRelations = relations(userReviews, ({ one }) => ({
 export const usersRelations = relations(users, ({ many }) => ({
 	sessions: many(sessions),
 	interactions: many(userMovieInteractions),
+	personalScores: many(moviePersonalScores),
 	reviews: many(userReviews),
 	lists: many(userLists),
 	activities: many(activities),

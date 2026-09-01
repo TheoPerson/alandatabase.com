@@ -24,12 +24,10 @@
 	// Optimistic UI state
 	let watched = $state(false);
 	let watchlist = $state(false);
-	let rating = $state<number | null>(null);
 
 	$effect(() => {
 		watched = data.userInteraction?.watched || false;
 		watchlist = data.userInteraction?.watchlist || false;
-		rating = data.userInteraction?.rating ? Number(data.userInteraction.rating) : null;
 	});
 </script>
 
@@ -116,37 +114,12 @@
 							🔗 Share Film
 						</Button>
 
-						<!-- Rate Button -->
-						<div class="rate-container glass-card">
-							<span class="rate-label">Your Rating</span>
-							<form
-								method="POST"
-								action="?/logInteraction"
-								use:enhance={({ formData }) => {
-									rating = Number(formData.get('value'));
-									return async ({ update }) => {
-										await update({ reset: false });
-									};
-								}}
-								class="stars-form"
-							>
-								<input type="hidden" name="movieId" value={movie.id} />
-								<input type="hidden" name="type" value="rating" />
-								<div class="star-rating">
-									{#each [1, 2, 3, 4, 5] as star}
-										<button
-											type="submit"
-											name="value"
-											value={star}
-											class="star-btn"
-											class:active={rating !== null && rating >= star}
-										>
-											★
-										</button>
-									{/each}
-								</div>
-							</form>
-						</div>
+						{#if userInteraction?.rating}
+							<div class="rate-container glass-card">
+								<span class="rate-label">Legacy rating</span>
+								<strong>{Number(userInteraction.rating).toFixed(1)}/5</strong>
+							</div>
+						{/if}
 
 						<div class="lists-container glass-card mt-4">
 							<span class="rate-label mb-2 block">Add to Lists</span>
@@ -359,24 +332,6 @@
 		font-size: 0.85rem;
 		font-weight: 600;
 		color: var(--text-secondary);
-	}
-
-	.star-rating {
-		display: flex;
-		gap: 0.25rem;
-	}
-
-	.star-btn {
-		font-size: 1.5rem;
-		color: var(--bg-surface-3);
-		transition: all var(--transition-fast);
-		cursor: pointer;
-	}
-
-	.star-btn.active,
-	.star-btn:hover {
-		color: var(--rating-star);
-		transform: scale(1.1);
 	}
 
 	/* Keep rest of styles unchanged */

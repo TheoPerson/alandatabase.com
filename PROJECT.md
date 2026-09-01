@@ -32,7 +32,9 @@ The repository currently provides:
   catalogue-only mutation permission for administrators, no private permission
   for members, and a separately authenticated Telegram webhook;
 - movie home, catalog, local search, discover, detail, review/edit/merge routes, and personal list/statistics surfaces;
-- watchlist, favorite, watched, rating, review, and custom-list data models;
+- watchlist, favorite, watched, review, custom-list, and owner-scoped Alan Score
+  data models; the legacy five-star rating remains preserved as read-only
+  historical data;
 - a committed local Top-50 TV snapshot with browse/detail aliases;
 - optional Telegram, Sentry, TMDB-worker, and Meilisearch integrations; Gemini
   chat returns unavailable until its privacy and abuse controls are complete;
@@ -59,6 +61,8 @@ These are containment foundations, not a finished player. There is no approved m
 - Playback reliability and resume continuity matter more than catalog breadth.
 - Design iPhone-first, then desktop, with calm Swiss-OLED clarity rather than dashboard noise.
 - Show honest unavailable, loading, error, and empty states.
+- Calculate Alan Score from only the dimensions the owner rates, and always
+  disclose partial coverage rather than implying an unrated dimension.
 - Adult content requires a separate explicit-intent boundary with no cross-surface leakage.
 - User data, sources, and global catalog mutations must have clear ownership and provenance.
 - Reads must be bounded and side-effect free; ingestion and costly integrations are explicit operations.

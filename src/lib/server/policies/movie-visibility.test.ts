@@ -61,4 +61,15 @@ describe('standard movie visibility policy', () => {
 		expect(query.sql).toContain('"movie_keywords"."keyword_id" in ($3, $4, $5)');
 		expect(query.params).toEqual([false, 0, ...KNOWN_EXPLICIT_KEYWORD_IDS]);
 	});
+
+	it('keeps correlated keyword columns intact in relational movie queries', () => {
+		const mockDb = drizzle.mock({ schema });
+		const query = mockDb.query.movies
+			.findFirst({ where: standardMovieVisibilityWhere(), with: { keywords: true } })
+			.toSQL();
+
+		expect(query.sql).toContain('"movie_keywords"."movie_id" = "movies"."id"');
+		expect(query.sql).not.toContain('"movies"."movie_id"');
+		expect(query.params).toContain(KNOWN_EXPLICIT_KEYWORD_IDS[0]);
+	});
 });

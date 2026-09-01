@@ -5,6 +5,17 @@ canonical vocabulary in `AGENTS.md`.
 
 Nothing below is `merged` to `main` or `deployed` unless explicitly labeled. The Product/Project Lead approves scope and phase transitions.
 
+## `in_review` - Alan Score
+
+- Added a seven-dimension owner score with rated-dimension weight normalization,
+  one-decimal results, explicit coverage, and unrated/partial/complete states.
+- Added an owner/movie unique persistence model, server-calculated upsert/reset
+  services, and an owner-only editor on canonical `/movies/[id]`.
+- Preserved the legacy five-star column and values while removing its new-entry
+  control; no conversion is inferred.
+- Source and local verification do not imply merge or deployment. Independent
+  review, an isolated hosted preview database, and preview evidence remain gates.
+
 ## `verified` — production hostname integration
 
 - The Vercel production deployment serves the configured aliases for

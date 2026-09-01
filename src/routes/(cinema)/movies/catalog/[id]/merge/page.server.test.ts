@@ -19,7 +19,12 @@ vi.mock('$lib/server/services/interaction.service', () => ({
 	logActivity: vi.fn()
 }));
 
-import { _mergeInteractionValues, _mergeReviewValues, actions } from './+page.server';
+import {
+	_mergeAlanScoreValues,
+	_mergeInteractionValues,
+	_mergeReviewValues,
+	actions
+} from './+page.server';
 
 const MOVIE_ID = '00000000-0000-4000-8000-000000000001';
 
@@ -69,6 +74,43 @@ describe('catalog merge identity safety', () => {
 			watchDate: '2024-01-05',
 			rewatchCount: 3,
 			personalNotes: 'Target note\nSource note'
+		});
+	});
+
+	it('preserves target dimensions, fills missing values, and recalculates merged scores', () => {
+		const merged = _mergeAlanScoreValues(
+			{
+				realism: '8.0',
+				cinematography: null,
+				originalLanguageExperience: null,
+				tension: null,
+				cast: null,
+				atmosphere: null,
+				rewatchability: null,
+				note: 'Target note',
+				tags: ['theatrical']
+			},
+			{
+				realism: '4.0',
+				cinematography: '6.0',
+				originalLanguageExperience: null,
+				tension: null,
+				cast: null,
+				atmosphere: null,
+				rewatchability: null,
+				note: 'Source note',
+				tags: ['Theatrical', 'slow burn']
+			}
+		);
+
+		expect(merged).toMatchObject({
+			realism: '8.0',
+			cinematography: '6.0',
+			computedScore: '7.1',
+			coverage: 35,
+			status: 'partial',
+			note: 'Target note\n\n---\n\nSource note',
+			tags: ['theatrical', 'slow burn']
 		});
 	});
 
