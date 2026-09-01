@@ -12,6 +12,7 @@ minimumReleaseAgeExclude:
   - svelte-check@4.7.6
 
 onlyBuiltDependencies:
+  - '@sentry/cli'
   - esbuild
   - protobufjs
   - '@google/genai'
