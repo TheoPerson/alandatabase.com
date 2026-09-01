@@ -6,12 +6,8 @@
 	import { goto } from '$app/navigation';
 
 	let { data } = $props();
-	let searchInput = $state('');
+	let searchInput = $derived(data.query || '');
 	let sortBy = $state<'relevance' | 'rating' | 'recent'>('relevance');
-
-	$effect(() => {
-		searchInput = data.query || '';
-	});
 
 	const sortedResults = $derived.by(() => {
 		const list = [...(data.results || [])];

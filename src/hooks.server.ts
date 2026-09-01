@@ -91,7 +91,29 @@ function canAccessCinemaRequirement(
 	return hasPermission(user, 'system:manage');
 }
 
+function isCrossOriginFormMutation(event: Parameters<Handle>[0]['event']): boolean {
+	if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(event.request.method)) return false;
+
+	const contentType = event.request.headers.get('content-type')?.split(';', 1)[0]?.trim();
+	if (
+		contentType !== 'application/x-www-form-urlencoded' &&
+		contentType !== 'multipart/form-data' &&
+		contentType !== 'text/plain'
+	) {
+		return false;
+	}
+
+	return event.request.headers.get('origin') !== event.url.origin;
+}
+
 export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
+	if (isCrossOriginFormMutation(event)) {
+		return applySecurityHeaders(
+			new Response('Cross-site form submissions are forbidden', { status: 403 }),
+			event
+		);
+	}
+
 	const canonicalRedirect = getCanonicalRedirect(
 		event.url,
 		event.request.headers.get('x-forwarded-proto')

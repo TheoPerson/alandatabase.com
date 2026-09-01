@@ -30,6 +30,9 @@ its launch gates are explicitly verified.
 
 ### Fixed
 
+- Preserved deep-linked search queries in the interactive search field and
+  enforced same-origin form mutations consistently in development and deployed
+  runtimes.
 - Fixed `/discover` returning HTTP 500 while `/movies` silently displayed an empty catalogue.
 - Fixed `/tv` becoming blank because Nathan for You and True Detective shared the same keyed TMDB identifier.
 - Fixed `/tools/json` crashing during hydration because a derived value mutated component state.
