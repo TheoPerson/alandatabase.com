@@ -64,8 +64,8 @@ its launch gates are explicitly verified.
 
 ### Technical Improvements
 
-- Made CI dependency installation explicit by acknowledging optional native
-  lifecycle scripts that the hardened runner intentionally suppresses.
+- Migrated CI dependency policy to pnpm 11's strict `allowBuilds` map, with
+  reviewed native builds allowed and the optional Sentry CLI script denied.
 - Separated the data worker connection lifecycle from the SvelteKit runtime.
 - Removed implicit seed-on-worker-start behavior and made worker database initialization lazy.
 - Added an additive, fail-safe schema reconciliation migration for runtime tables and durable authentication throttling.

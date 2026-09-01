@@ -11,10 +11,8 @@ minimumReleaseAgeExclude:
   - eslint-plugin-svelte@3.23.0
   - svelte-check@4.7.6
 
-onlyBuiltDependencies:
-  - protobufjs
-  - '@google/genai'
-
-ignoredBuiltDependencies:
-  - '@sentry/cli'
-  - esbuild
+allowBuilds:
+  '@google/genai': true
+  '@sentry/cli': false
+  esbuild: true
+  protobufjs: true
