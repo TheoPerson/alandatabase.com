@@ -2,14 +2,11 @@
 	<div class="container footer-content">
 		<div class="footer-left">
 			<a href="/" class="footer-brand">🎬 CINEMA<span class="accent">DB</span></a>
-			<p class="footer-tagline">Open-source cinema operating system. Built for movie lovers.</p>
+			<p class="footer-tagline">A focused film and television archive.</p>
 		</div>
 
 		<div class="footer-meta">
-			<p class="attribution">
-				Powered by <a href="https://themoviedb.org" target="_blank" rel="noopener">TMDB</a>. This
-				product uses the TMDB API but is not endorsed or certified by TMDB.
-			</p>
+			<p class="attribution"><a href="/about">Data sources and credits</a></p>
 			<p class="copyright">Open Source (MIT) • Free & Self-Hostable</p>
 		</div>
 	</div>

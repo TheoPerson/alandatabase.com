@@ -204,4 +204,91 @@ describe('Drizzle migration chain', () => {
 		`);
 		expect(remaining.rows[0]?.count).toBe(1);
 	}, 15_000);
+
+	it('applies the release calendar migration twice with idempotent regional and reminder keys', async () => {
+		database = new PGlite();
+		for (const name of [
+			'0000_aromatic_puma.sql',
+			'0001_next_impossible_man.sql',
+			'0002_wet_masque.sql',
+			'0003_complete_skrulls.sql',
+			'0004_optimal_karma.sql'
+		]) {
+			await database.exec(await migration(name));
+		}
+		const calendar = await migration('0005_fresh_roland_deschain.sql');
+		await database.exec(calendar);
+		await database.exec(calendar);
+		await database.exec(`
+			insert into users (id, email, username, password_hash, role)
+			values ('00000000-0000-4000-8000-000000000001', 'owner@example.test', 'owner', 'hash', 'owner');
+			insert into movies (id, tmdb_id, title)
+			values ('00000000-0000-4000-8000-000000000010', 27205, 'Inception');
+			insert into calendar_sync_runs (
+				id, requested_by, window_start, window_end, candidate_tmdb_ids
+			) values (
+				'00000000-0000-4000-8000-000000000020',
+				'00000000-0000-4000-8000-000000000001',
+				'2026-09-01', '2026-11-29', array[27205]
+			);
+			insert into movie_release_events (
+				id, movie_id, country_code, release_date, release_type, is_primary,
+				source_event_key, source_hash
+			) values (
+				'00000000-0000-4000-8000-000000000030',
+				'00000000-0000-4000-8000-000000000010',
+				'GLOBAL', '2026-09-08', 'unknown', true, 'tmdb:27205:global', repeat('a', 64)
+			);
+			insert into movie_provider_snapshots (
+				movie_id, country_code, providers, source_hash, stale_after
+			) values (
+				'00000000-0000-4000-8000-000000000010', 'FR', '[]', repeat('b', 64), now()
+			);
+			insert into movie_release_reminders (
+				user_id, event_id, offset_days, timezone, due_date
+			) values (
+				'00000000-0000-4000-8000-000000000001',
+				'00000000-0000-4000-8000-000000000030',
+				7, 'Europe/Paris', '2026-09-01'
+			);
+		`);
+
+		await expect(
+			database.exec(`
+				insert into movie_release_events (
+					movie_id, country_code, release_type, is_primary, source_event_key, source_hash
+				) values (
+					'00000000-0000-4000-8000-000000000010', 'GLOBAL', 'unknown', true,
+					'tmdb:27205:global:duplicate', repeat('c', 64)
+				)
+			`)
+		).rejects.toThrow();
+		await expect(
+			database.exec(`
+				insert into movie_release_reminders (
+					user_id, event_id, offset_days, timezone, due_date
+				) values (
+					'00000000-0000-4000-8000-000000000001',
+					'00000000-0000-4000-8000-000000000030', 7, 'UTC', '2026-09-01'
+				)
+			`)
+		).rejects.toThrow();
+		await expect(
+			database.exec(`
+				insert into movie_release_reminders (
+					user_id, event_id, offset_days, timezone, due_date
+				) values (
+					'00000000-0000-4000-8000-000000000001',
+					'00000000-0000-4000-8000-000000000030', 2, 'UTC', '2026-09-06'
+				)
+			`)
+		).rejects.toThrow();
+
+		const tables = await database.query<{ table_name: string }>(`
+			select table_name from information_schema.tables
+			where table_schema = 'public' and table_name like '%calendar%'
+			order by table_name
+		`);
+		expect(tables.rows.map(({ table_name }) => table_name)).toContain('calendar_sync_runs');
+	}, 20_000);
 });

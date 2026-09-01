@@ -1,6 +1,6 @@
 # Alan's Data Base
 
-Updated against the `v3-stabilization` task worktree on 2026-08-28. Hosted and
+Updated against the stacked release-calendar task worktree on 2026-09-01. Hosted and
 deployment state is called out separately and is not implied by source state.
 
 ## Product
@@ -35,6 +35,9 @@ The repository currently provides:
 - watchlist, favorite, watched, review, custom-list, and owner-scoped Alan Score
   data models; the legacy five-star rating remains preserved as read-only
   historical data;
+- a protected global calendar for popular upcoming films, regional release
+  metadata, current provider snapshots, owner-scoped reminders, and all-day
+  calendar export; synchronization is an explicit owner operation;
 - a committed local Top-50 TV snapshot with browse/detail aliases;
 - optional Telegram, Sentry, TMDB-worker, and Meilisearch integrations; Gemini
   chat returns unavailable until its privacy and abuse controls are complete;
@@ -63,6 +66,9 @@ These are containment foundations, not a finished player. There is no approved m
 - Show honest unavailable, loading, error, and empty states.
 - Calculate Alan Score from only the dimensions the owner rates, and always
   disclose partial coverage rather than implying an unrated dimension.
+- Describe release discovery honestly as popular upcoming films, distinguish
+  provider availability from dates/showtimes, and preserve unknown data rather
+  than inventing a date or release type.
 - Adult content requires a separate explicit-intent boundary with no cross-surface leakage.
 - User data, sources, and global catalog mutations must have clear ownership and provenance.
 - Reads must be bounded and side-effect free; ingestion and costly integrations are explicit operations.
@@ -82,5 +88,8 @@ These are containment foundations, not a finished player. There is no approved m
   backed up and reconciled through the reviewed runbook. AI remains disabled
   until consent, timeout, quota, concurrency, retention, and deletion controls
   are implemented and approved.
+- Release synchronization remains manual. Hosted preview/production migration,
+  a schedule, email/push/chat delivery, and live cinema showtimes require
+  separate approval; migration `0005` remains undeployed.
 
 Implementation facts live in `ARCHITECTURE.md`; approved direction and status live in `ROADMAP.md`.

@@ -45,6 +45,8 @@ describe('cinema-access rules', () => {
 		expect(requiresCinemaSession('/movies/catalog/123/edit')).toBe(true);
 		expect(requiresCinemaSession('/movies/catalog/123/merge')).toBe(true);
 		expect(requiresCinemaSession('/movies/catalog/123/review')).toBe(true);
+		expect(requiresCinemaSession('/movies/calendar')).toBe(true);
+		expect(requiresCinemaSession('/movies/calendar/reminders/example.ics')).toBe(true);
 		expect(getCinemaAccessRequirement('/my/films')).toBe('authenticated');
 		expect(getCinemaAccessRequirement('/movies/catalog/123/review')).toBe('authenticated');
 		expect(getCinemaAccessRequirement('/movies/catalog/123/edit')).toBe('catalog');
@@ -53,6 +55,8 @@ describe('cinema-access rules', () => {
 		expect(getCinemaAccessRequirement('/admin')).toBe('owner');
 		expect(getCinemaAccessRequirement('/setup')).toBe('owner');
 		expect(getCinemaAccessRequirement('/api/telemetry/events')).toBe('owner');
+		expect(getCinemaAccessRequirement('/api/admin/calendar/sync')).toBe('owner');
+		expect(getCinemaAccessRequirement('/movies/calendar')).toBe('authenticated');
 	});
 
 	it('prevents caching whenever a response can contain account or invitation data', () => {

@@ -11,6 +11,9 @@ its launch gates are explicitly verified.
 
 ### Major Updates
 
+- Added a protected global release calendar for popular upcoming films with
+  agenda/month views, regional release data, current provider snapshots,
+  owner-scoped reminders, and authenticated calendar export.
 - Added Alan Score, an owner-only seven-dimension film score with transparent
   partial coverage and server-calculated weighted results.
 - Rebuilt the public Status surface as the operational and release-information centre for Alan Database.
@@ -20,6 +23,11 @@ its launch gates are explicitly verified.
 
 ### Minor Updates
 
+- Added 7/30/90-day ranges, deep-linkable search and personal-state filters,
+  country-specific provider views, manual bounded synchronization progress,
+  and honest partial, stale, empty, unknown-date, and failure states.
+- Added a Data Sources and Credits surface with the required TMDB notice and
+  JustWatch provider attribution.
 - Replaced new five-star rating entry with the Alan Score editor on canonical
   movie details while preserving existing ratings as read-only legacy data.
 - Preserved Alan Score rows through catalog duplicate merges, including
@@ -57,6 +65,9 @@ its launch gates are explicitly verified.
 
 ### Security
 
+- Protected the release calendar and `.ics` exports with persistent sessions,
+  scoped reminders to their owning user, and restricted manual synchronization
+  to the persistent owner. TMDB credentials remain server-only.
 - Scoped Alan Score reads and writes to the authenticated persistent owner and
   omitted personal score fields from anonymous movie-detail responses.
 - Removed two local PostgreSQL clusters from Git tracking while preserving the local files on disk.
@@ -75,6 +86,12 @@ its launch gates are explicitly verified.
 
 ### Technical Improvements
 
+- Added idempotent migration `0005_fresh_roland_deschain.sql` for release
+  events, provider snapshots, sync runs, and reminders with transactional,
+  indexed, duplicate-safe keys and integrity checks.
+- Added typed TMDB discovery, release-date, and provider clients with bounded
+  timeouts, limited exponential retry, 429 handling, response validation, and
+  a two-connection application database pool.
 - Added idempotent migration `0004_optimal_karma.sql` with owner/movie uniqueness,
   foreign keys, indexes, numeric checks, and preserved computed score metadata.
 - Migrated CI dependency policy to pnpm 11's strict `allowBuilds` map, with
@@ -93,6 +110,9 @@ its launch gates are explicitly verified.
 
 ### Known Issues
 
+- Calendar synchronization is deliberately manual and requires a fresh
+  server-only `TMDB_READ_TOKEN`. No production schedule or notification
+  delivery channel is included, and migration `0005` remains undeployed.
 - UptimeRobot metrics require a server-only `UPTIMEROBOT_API_KEY`; the Status page falls back to live application and database probes when it is absent.
 - Migrations `0002_wet_masque.sql` and `0003_complete_skrulls.sql` are prepared
   but have not been applied to any hosted database; they require a verified

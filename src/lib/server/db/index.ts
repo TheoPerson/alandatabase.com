@@ -21,11 +21,11 @@ declare global {
 let dbInstance: ReturnType<typeof drizzle<typeof schema>>;
 
 if (process.env.NODE_ENV === 'production') {
-	const client = postgres(connectionString, { prepare: false });
+	const client = postgres(connectionString, { prepare: false, max: 2 });
 	dbInstance = drizzle(client, { schema });
 } else {
 	if (!globalThis.__db__) {
-		const client = postgres(connectionString, { prepare: false });
+		const client = postgres(connectionString, { prepare: false, max: 2 });
 		globalThis.__db__ = drizzle(client, { schema });
 	}
 	dbInstance = globalThis.__db__;

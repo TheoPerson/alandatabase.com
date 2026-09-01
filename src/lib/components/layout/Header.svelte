@@ -59,6 +59,7 @@
 		<nav class="main-nav">
 			<a href="/movies" class="nav-link">Movies</a>
 			<a href="/tv" class="nav-link">TV Shows</a>
+			<a href="/movies/calendar" class="nav-link">Calendar</a>
 			<a href="/movies/catalog" class="nav-link">Catalog</a>
 			<a href="/my/films" class="nav-link">My library</a>
 		</nav>
@@ -129,6 +130,9 @@
 			<nav class="mobile-nav">
 				<a href="/movies" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Movies</a>
 				<a href="/tv" class="mobile-nav-link" onclick={() => (menuOpen = false)}>TV Shows</a>
+				<a href="/movies/calendar" class="mobile-nav-link" onclick={() => (menuOpen = false)}
+					>Calendar</a
+				>
 				<a href="/movies/catalog" class="mobile-nav-link" onclick={() => (menuOpen = false)}
 					>Catalog</a
 				>

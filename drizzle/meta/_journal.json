@@ -36,6 +36,13 @@
       "when": 1788242620680,
       "tag": "0004_optimal_karma",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788245825378,
+      "tag": "0005_fresh_roland_deschain",
+      "breakpoints": true
     }
   ]
 }
