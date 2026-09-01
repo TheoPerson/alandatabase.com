@@ -1,6 +1,6 @@
 # Architecture
 
-Updated against the `v3-stabilization` task worktree on 2026-08-28. Provisional,
+Updated against the stacked release-calendar task worktree on 2026-09-01. Provisional,
 undeployed, or incomplete areas are explicit below.
 
 ## System shape
@@ -77,7 +77,7 @@ paths are left untouched.
 | `src/lib/server/auth`     | Password/session helpers and centralized route classification.                                           |
 | `src/lib/server/policies` | Fail-closed content visibility policy.                                                                   |
 | `src/lib/server/queries`  | Bounded local read models such as search.                                                                |
-| `src/lib/server/services` | Movie, TV, interaction, owner-scoped Alan Score, AI/Telegram, and related application logic.             |
+| `src/lib/server/services` | Movie, TV, interaction, Alan Score, release-calendar, AI/Telegram, and related application logic.        |
 | `src/lib/server/db`       | Drizzle schema, connection, seed data, and the misleading legacy `ensureTablesExist` helper.             |
 | `drizzle`                 | Generated PostgreSQL migration SQL and metadata.                                                         |
 | `worker`                  | TMDB metadata ingestion, ingestion safety checks, and optional search-index setup.                       |
@@ -144,6 +144,12 @@ fill only missing dimensions, and recalculate the result.
 
 - `/movies`, `/movies/catalog`, `/search`, and `/discover` read the approved local movie catalog.
 - `/movies/[id]` renders local metadata and an explicit playback-unavailable sheet.
+- `/movies/calendar` is authenticated and reads the bounded local release
+  calendar with agenda/month views, personal-state filters, reminders, and
+  selected-country provider snapshots.
+- `/api/admin/calendar/sync` is owner-only, processes at most 20 discovered
+  films per request, and advances an idempotent persisted sync run. It is never
+  called by browse, preload, hover, or search paths.
 - `/my/films`, `/my/lists`, and `/my/settings` manage user-owned interactions, lists, statistics, and settings.
 - `/tv`, `/tvshow`, and `/tvshows` share a committed in-code TV snapshot; TV has no database persistence or real episode catalog.
 - `/live` is a protected compatibility surface that accepts no URL and embeds nothing.
@@ -162,6 +168,29 @@ fill only missing dimensions, and recalculate the result.
 
 The global movie catalog contains collections, movies, people, genres, keywords, production companies, videos, cast, and crew. User-owned data contains sessions, movie interactions, lists/items, reviews, activities, and AI chat sessions. Foreign keys and useful uniqueness constraints cover most joins.
 
+### Release calendar flow
+
+The shared TMDB client uses a server-only bearer token, an eight-second default
+timeout, at most two retries for transient failures and HTTP 429, and typed
+response validation. A new sync discovers the first five English TMDB pages in
+the inclusive rolling 90-day window with adult results disabled, then stores a
+deterministically sorted, deduplicated list capped at 100 TMDB IDs. Subsequent
+requests process the persisted list in batches of at most 20.
+
+Each film is fully classified by the existing fail-closed adult/keyword policy
+before any write. Accepted movie, genre, global primary event, regional event,
+and provider snapshot changes are committed transactionally. Release and
+provider hashes plus unique source keys make retries idempotent. Provider rows
+are time-bounded regional snapshots; they are not treated as release dates or
+showtimes. `movie_release_reminders` is unique by user/event/offset, and `.ics`
+reads require the same user session.
+
+`calendar_sync_runs`, `movie_release_events`, `movie_provider_snapshots`, and
+`movie_release_reminders` are introduced by additive migration `0005`. The
+application database pool is capped at two connections to bound serverless
+pressure. Synchronization is manual in this change; there is no cron or delivery
+worker.
+
 Current boundaries:
 
 - Application browse, search, catalog, and detail reads are local-only; they do not call TMDB or ingest.
@@ -169,7 +198,8 @@ Current boundaries:
 - Raw `localOverrides` are not serialized to normal clients; only whitelisted text/date overrides are applied.
 - Adult/custom rows remain stored but quarantined; visibility policy deletes no data.
 - TV data is an in-code snapshot, not part of the Drizzle schema.
-- No media source/provenance, season/episode, playback event, or progress/resume table exists.
+- No media source/provenance, season/episode, playback event, progress/resume,
+  cinema-showtime, or reminder-delivery table exists.
 
 Committed migrations create the original movie/user model and later movie
 override/lock fields. Additive migration `0002_wet_masque.sql` reconciles

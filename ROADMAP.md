@@ -16,6 +16,21 @@ Nothing below is `merged` to `main` or `deployed` unless explicitly labeled. The
 - Source and local verification do not imply merge or deployment. Independent
   review, an isolated hosted preview database, and preview evidence remain gates.
 
+## `in_review` - Global Release Calendar
+
+- Added an authenticated agenda/month calendar for globally popular upcoming
+  films, with a deterministic rolling 90-day TMDB discovery set capped at 100.
+- Added owner-only manual synchronization in batches of at most 20, fail-closed
+  classification, transactional idempotent event/provider ingestion, and
+  partial/stale/failure visibility.
+- Added country-specific current provider snapshots with JustWatch attribution,
+  TMDB credits, personal-state filters, duplicate-safe owner reminders, due
+  state, and authenticated all-day `.ics` export.
+- Local source, migration, unit, worker, and rendered browser evidence is
+  complete. A fresh hosted preview database, a rotated preview-only TMDB token,
+  Linux CI/Vercel evidence, and independent review remain gates. Scheduling,
+  delivery channels, merge, and production deployment are excluded.
+
 ## `verified` — production hostname integration
 
 - The Vercel production deployment serves the configured aliases for

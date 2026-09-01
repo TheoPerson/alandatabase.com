@@ -39,6 +39,9 @@ Canonical cinema surfaces include:
 - `/movies` and `/movies/[id]`
 - owner-only Alan Score editing on `/movies/[id]`, documented in
   [Alan Score](docs/ALAN_SCORE.md)
+- authenticated `/movies/calendar` for popular upcoming releases, regional
+  provider snapshots, reminders, and `.ics` export, documented in
+  [Global Release Calendar](docs/RELEASE_CALENDAR.md)
 - `/tv` and `/tv/[id]`
 - public `/discover` and `/search`; owner-only `/my/*`
 - `/auth/login`, `/auth/register`, and `/disclaimer`
@@ -92,7 +95,9 @@ docker compose up -d
 pnpm dev
 ```
 
-The worker reads `TMDB_API_KEY`; standard application reads do not call TMDB.
+The worker accepts `TMDB_READ_TOKEN` (legacy API-key compatibility remains),
+and the owner-only manual calendar sync requires the bearer token. Standard
+application reads do not call TMDB.
 Do not expose service credentials through `VITE_` variables. Never run migration
 or seed commands against production data. Migrations `0002` and `0003` require a
 backup and the reviewed authorization runbook before hosted use.

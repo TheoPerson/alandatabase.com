@@ -425,6 +425,143 @@ export const moviePersonalScores = pgTable(
 	}
 );
 
+export const calendarSyncRuns = pgTable(
+	'calendar_sync_runs',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		requestedBy: uuid('requested_by')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		status: varchar('status', { length: 16 }).default('running').notNull(),
+		windowStart: date('window_start').notNull(),
+		windowEnd: date('window_end').notNull(),
+		candidateTmdbIds: integer('candidate_tmdb_ids').array().notNull(),
+		cursor: integer('cursor').default(0).notNull(),
+		processed: integer('processed').default(0).notNull(),
+		inserted: integer('inserted').default(0).notNull(),
+		updated: integer('updated').default(0).notNull(),
+		skipped: integer('skipped').default(0).notNull(),
+		failed: integer('failed').default(0).notNull(),
+		errors: jsonb('errors')
+			.$type<Array<{ tmdbId: number; message: string }>>()
+			.default([])
+			.notNull(),
+		startedAt: timestamp('started_at').defaultNow().notNull(),
+		completedAt: timestamp('completed_at'),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		index('idx_calendar_sync_runs_requested').on(table.requestedBy, table.startedAt),
+		index('idx_calendar_sync_runs_status').on(table.status),
+		check(
+			'calendar_sync_runs_status_check',
+			sql`${table.status} in ('running', 'partial', 'complete', 'failed')`
+		),
+		check('calendar_sync_runs_cursor_check', sql`${table.cursor} >= 0`),
+		check(
+			'calendar_sync_runs_counters_check',
+			sql`${table.processed} >= 0 and ${table.inserted} >= 0 and ${table.updated} >= 0 and ${table.skipped} >= 0 and ${table.failed} >= 0`
+		)
+	]
+);
+
+export const movieReleaseEvents = pgTable(
+	'movie_release_events',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		movieId: uuid('movie_id')
+			.notNull()
+			.references(() => movies.id, { onDelete: 'cascade' }),
+		countryCode: varchar('country_code', { length: 8 }).notNull(),
+		releaseDate: date('release_date'),
+		releaseType: varchar('release_type', { length: 24 }).default('unknown').notNull(),
+		isPrimary: boolean('is_primary').default(false).notNull(),
+		certification: varchar('certification', { length: 40 }),
+		note: text('note'),
+		source: varchar('source', { length: 20 }).default('tmdb').notNull(),
+		sourceEventKey: varchar('source_event_key', { length: 255 }).notNull(),
+		sourceHash: varchar('source_hash', { length: 64 }).notNull(),
+		syncedAt: timestamp('synced_at').defaultNow().notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		uniqueIndex('idx_movie_release_events_source_key').on(table.sourceEventKey),
+		uniqueIndex('idx_movie_release_events_primary')
+			.on(table.movieId)
+			.where(sql`${table.isPrimary} = true`),
+		index('idx_movie_release_events_date').on(table.releaseDate),
+		index('idx_movie_release_events_region_date').on(table.countryCode, table.releaseDate),
+		index('idx_movie_release_events_movie').on(table.movieId),
+		check(
+			'movie_release_events_type_check',
+			sql`${table.releaseType} in ('premiere', 'theatrical_limited', 'theatrical', 'digital', 'physical', 'tv', 'unknown')`
+		),
+		check('movie_release_events_source_check', sql`${table.source} = 'tmdb'`)
+	]
+);
+
+export const movieProviderSnapshots = pgTable(
+	'movie_provider_snapshots',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		movieId: uuid('movie_id')
+			.notNull()
+			.references(() => movies.id, { onDelete: 'cascade' }),
+		countryCode: varchar('country_code', { length: 2 }).notNull(),
+		link: text('link'),
+		providers: jsonb('providers')
+			.$type<
+				Array<{
+					id: number;
+					name: string;
+					logoPath: string | null;
+					monetizationTypes: string[];
+					displayPriority: number;
+				}>
+			>()
+			.default([])
+			.notNull(),
+		sourceHash: varchar('source_hash', { length: 64 }).notNull(),
+		capturedAt: timestamp('captured_at').defaultNow().notNull(),
+		staleAfter: timestamp('stale_after').notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		uniqueIndex('idx_movie_provider_snapshots_movie_region').on(table.movieId, table.countryCode),
+		index('idx_movie_provider_snapshots_stale').on(table.staleAfter),
+		index('idx_movie_provider_snapshots_region').on(table.countryCode)
+	]
+);
+
+export const movieReleaseReminders = pgTable(
+	'movie_release_reminders',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		eventId: uuid('event_id')
+			.notNull()
+			.references(() => movieReleaseEvents.id, { onDelete: 'cascade' }),
+		offsetDays: smallint('offset_days').notNull(),
+		timezone: varchar('timezone', { length: 64 }).notNull(),
+		dueDate: date('due_date').notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		uniqueIndex('idx_movie_release_reminders_unique').on(
+			table.userId,
+			table.eventId,
+			table.offsetDays
+		),
+		index('idx_movie_release_reminders_due').on(table.userId, table.dueDate),
+		check('movie_release_reminders_offset_check', sql`${table.offsetDays} in (0, 1, 7)`)
+	]
+);
+
 export const userLists = pgTable(
 	'user_lists',
 	{
@@ -533,6 +670,8 @@ export const moviesRelations = relations(movies, ({ one, many }) => ({
 	videos: many(movieVideos),
 	interactions: many(userMovieInteractions),
 	personalScores: many(moviePersonalScores),
+	releaseEvents: many(movieReleaseEvents),
+	providerSnapshots: many(movieProviderSnapshots),
 	reviews: many(userReviews)
 }));
 
@@ -573,6 +712,27 @@ export const moviePersonalScoresRelations = relations(moviePersonalScores, ({ on
 	movie: one(movies, { fields: [moviePersonalScores.movieId], references: [movies.id] })
 }));
 
+export const calendarSyncRunsRelations = relations(calendarSyncRuns, ({ one }) => ({
+	requestedByUser: one(users, { fields: [calendarSyncRuns.requestedBy], references: [users.id] })
+}));
+
+export const movieReleaseEventsRelations = relations(movieReleaseEvents, ({ one, many }) => ({
+	movie: one(movies, { fields: [movieReleaseEvents.movieId], references: [movies.id] }),
+	reminders: many(movieReleaseReminders)
+}));
+
+export const movieProviderSnapshotsRelations = relations(movieProviderSnapshots, ({ one }) => ({
+	movie: one(movies, { fields: [movieProviderSnapshots.movieId], references: [movies.id] })
+}));
+
+export const movieReleaseRemindersRelations = relations(movieReleaseReminders, ({ one }) => ({
+	user: one(users, { fields: [movieReleaseReminders.userId], references: [users.id] }),
+	event: one(movieReleaseEvents, {
+		fields: [movieReleaseReminders.eventId],
+		references: [movieReleaseEvents.id]
+	})
+}));
+
 export const userReviewsRelations = relations(userReviews, ({ one }) => ({
 	user: one(users, { fields: [userReviews.userId], references: [users.id] }),
 	movie: one(movies, { fields: [userReviews.movieId], references: [movies.id] })
@@ -582,6 +742,8 @@ export const usersRelations = relations(users, ({ many }) => ({
 	sessions: many(sessions),
 	interactions: many(userMovieInteractions),
 	personalScores: many(moviePersonalScores),
+	calendarSyncRuns: many(calendarSyncRuns),
+	releaseReminders: many(movieReleaseReminders),
 	reviews: many(userReviews),
 	lists: many(userLists),
 	activities: many(activities),

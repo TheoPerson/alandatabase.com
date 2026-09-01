@@ -14,6 +14,7 @@
 	const navigationLinks = [
 		{ label: '⚡ Hub', href: '/', category: 'Navigation' },
 		{ label: '🎬 Cinema Movies', href: '/movies', category: 'Navigation' },
+		{ label: 'Release Calendar', href: '/movies/calendar', category: 'Navigation' },
 		{ label: '📺 Top 50 TV Shows', href: '/tv', category: 'Navigation' },
 		{ label: '🍿 All Movies Catalog', href: '/movies/catalog', category: 'Navigation' },
 		{ label: '🔍 Advanced Search', href: '/search', category: 'Navigation' },
