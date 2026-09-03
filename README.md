@@ -11,7 +11,7 @@
   <br />
 
   <a href="https://github.com/TheoPerson/alandatabase.com">
-    <img src="https://github-readme-stats.vercel.app/api/pin/?username=TheoPerson&repo=alandatabase.com&theme=dark&bg_color=050507&title_color=10b981&icon_color=10b981&text_color=ffffff&border_color=10b981&show_icons=true" alt="CinemaDB Animated Repo Card" />
+    <img src="https://github-stats-extended.vercel.app/api/pin/?username=TheoPerson&repo=alandatabase.com&theme=dark&bg_color=050507&title_color=10b981&icon_color=10b981&text_color=ffffff&border_color=10b981&show_icons=true" alt="CinemaDB Animated Repo Card" />
   </a>
 
   <br />
