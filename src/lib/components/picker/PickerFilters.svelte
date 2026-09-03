@@ -54,7 +54,7 @@
 		onFilterChange({ ...activeFilters, genres: updated });
 	}
 
-	function setEra(era: typeof ERAS[number]['id']) {
+	function setEra(era: (typeof ERAS)[number]['id']) {
 		let minYear: number | undefined;
 		let maxYear: number | undefined;
 
@@ -136,10 +136,20 @@
 	<!-- Drawer for Granular Controls -->
 	{#if drawerOpen}
 		<div class="drawer-backdrop" onclick={() => (drawerOpen = false)} role="presentation">
-			<div class="drawer-panel" onclick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+			<div
+				class="drawer-panel"
+				onclick={(e) => e.stopPropagation()}
+				role="dialog"
+				aria-modal="true"
+			>
 				<div class="drawer-header">
 					<h3 class="drawer-title">Refine Recommendations</h3>
-					<button type="button" class="close-btn" onclick={() => (drawerOpen = false)} aria-label="Close filters">
+					<button
+						type="button"
+						class="close-btn"
+						onclick={() => (drawerOpen = false)}
+						aria-label="Close filters"
+					>
 						✕
 					</button>
 				</div>
@@ -184,7 +194,8 @@
 								<button
 									type="button"
 									class="option-pill"
-									class:selected={activeFilters.era === era.id || (!activeFilters.era && era.id === '1990+')}
+									class:selected={activeFilters.era === era.id ||
+										(!activeFilters.era && era.id === '1990+')}
 									onclick={() => setEra(era.id)}
 								>
 									{era.label}

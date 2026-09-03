@@ -59,6 +59,10 @@
 		<nav class="main-nav">
 			<a href="/cinema/movies" class="nav-link">Movies</a>
 			<a href="/tvshows" class="nav-link">TV Shows</a>
+			<a href="/cinema/picker" class="nav-link picker-nav-link">
+				<span>Picker</span>
+				<span class="picker-pill">✨ New</span>
+			</a>
 			<a href="/movies/catalog" class="nav-link">Catalog</a>
 			<a href="/my/films" class="nav-link">Personal OS</a>
 		</nav>
@@ -125,6 +129,9 @@
 					>Movies</a
 				>
 				<a href="/tvshows" class="mobile-nav-link" onclick={() => (menuOpen = false)}>TV Shows</a>
+				<a href="/cinema/picker" class="mobile-nav-link" onclick={() => (menuOpen = false)}
+					>🎬 Daily Movie Picker</a
+				>
 				<a href="/movies/catalog" class="mobile-nav-link" onclick={() => (menuOpen = false)}
 					>Catalog</a
 				>
@@ -243,6 +250,23 @@
 
 	.nav-link:hover {
 		color: #10b981;
+	}
+
+	.picker-nav-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+	}
+
+	.picker-pill {
+		font-size: 0.65rem;
+		font-weight: 800;
+		background: rgba(16, 185, 129, 0.15);
+		color: #10b981;
+		border: 1px solid rgba(16, 185, 129, 0.3);
+		padding: 1px 5px;
+		border-radius: 999px;
+		letter-spacing: 0.02em;
 	}
 
 	.header-right {
