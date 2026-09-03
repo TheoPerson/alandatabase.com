@@ -27,7 +27,9 @@
 			</div>
 			<h1 class="page-title">Daily Movie Picker</h1>
 			<p class="page-tagline">
-				Instant, high-confidence cinema recommendations answering one question: <em>What should I watch tonight?</em>
+				Instant, high-confidence cinema recommendations answering one question: <em
+					>What should I watch tonight?</em
+				>
 			</p>
 		</header>
 

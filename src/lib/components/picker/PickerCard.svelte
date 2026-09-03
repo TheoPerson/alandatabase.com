@@ -232,7 +232,9 @@
 		border-radius: var(--radius-xl);
 		overflow: hidden;
 		box-shadow: var(--shadow-lg);
-		transition: opacity var(--transition-fast), transform var(--transition-fast);
+		transition:
+			opacity var(--transition-fast),
+			transform var(--transition-fast);
 	}
 
 	.picker-card.loading {

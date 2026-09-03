@@ -62,7 +62,10 @@
 
 	function handleKeydown(e: KeyboardEvent) {
 		const target = e.target as HTMLElement;
-		if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+		if (
+			target &&
+			(target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+		) {
 			return;
 		}
 
@@ -268,7 +271,8 @@
 				</div>
 				<h1 class="hero-prompt">What should I watch tonight?</h1>
 				<p class="hero-subtext">
-					High-confidence cinema curation powered by authentic IMDb quality and your personal taste profile.
+					High-confidence cinema curation powered by authentic IMDb quality and your personal taste
+					profile.
 				</p>
 
 				<button type="button" class="btn-hero-launch" onclick={() => findMovie()}>
