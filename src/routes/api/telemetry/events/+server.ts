@@ -37,7 +37,9 @@ export const GET: RequestHandler = ({ request }) => {
 				unsubscribe();
 				try {
 					controller.close();
-				} catch {}
+				} catch {
+					/* connection already closed */
+				}
 			});
 		}
 	});

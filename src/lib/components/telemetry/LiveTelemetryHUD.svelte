@@ -48,7 +48,9 @@
 				const log = JSON.parse(e.data) as TelemetryLog;
 				logs = [...logs.slice(-100), log];
 				scrollToBottom();
-			} catch {}
+			} catch {
+				/* ignore malformed telemetry message */
+			}
 		};
 
 		eventSource.onerror = () => {

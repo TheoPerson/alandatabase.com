@@ -1,6 +1,8 @@
 <script lang="ts">
-	import Badge from '$lib/components/ui/Badge.svelte';
+	import { SvelteDate } from 'svelte/reactivity';
+	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import Badge from '$lib/components/ui/Badge.svelte';
 	import MovieCard from '$lib/components/movie/MovieCard.svelte';
 
 	let { data } = $props();
@@ -19,9 +21,9 @@
 
 	const heatmapDays = $derived.by(() => {
 		const days = [];
-		const today = new Date();
+		const today = new SvelteDate();
 		for (let i = 363; i >= 0; i--) {
-			const d = new Date(today);
+			const d = new SvelteDate(today);
 			d.setDate(d.getDate() - i);
 			const dateStr = d.toISOString().split('T')[0];
 

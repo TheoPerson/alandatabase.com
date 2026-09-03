@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SvelteSet } from 'svelte/reactivity';
 	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
@@ -11,7 +12,7 @@
 	let selectedGenre = $state('All');
 
 	const allGenres = $derived.by(() => {
-		const set = new Set<string>();
+		const set = new SvelteSet<string>();
 		data.shows.forEach((show: any) => {
 			show.genres?.forEach((g: string) => set.add(g));
 		});

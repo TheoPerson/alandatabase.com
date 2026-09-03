@@ -77,7 +77,9 @@ async function startMonitor() {
 						console.log(
 							`\x1b[90m[${time}]\x1b[0m ${color}[${event.level}]\x1b[0m \x1b[1m[${event.source}]\x1b[0m ${event.message}`
 						);
-					} catch (e) {}
+					} catch {
+						/* ignore malformed log payload */
+					}
 				}
 			}
 		}

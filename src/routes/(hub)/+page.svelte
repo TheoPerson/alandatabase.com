@@ -392,7 +392,6 @@
 <!-- LIVE SEARCH SIDE-PANEL DRAWER -->
 {#if isDrawerOpen}
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="drawer-backdrop" role="presentation" onclick={closeDrawer}>
 		<div
 			class="drawer-panel"
