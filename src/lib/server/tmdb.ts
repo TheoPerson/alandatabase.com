@@ -5,6 +5,9 @@ export {
 	type TMDBMovieDetail,
 	type TMDBMovieSummary,
 	type TMDBReleaseDatesResponse,
+	type TMDBTVDetail,
+	type TMDBTVEpisode,
+	type TMDBTVSeasonDetail,
 	type TMDBWatchProvider,
 	type TMDBWatchProvidersResponse
 } from '../../../worker/src/tmdb/client.js';

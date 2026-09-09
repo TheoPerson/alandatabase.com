@@ -11,6 +11,9 @@ its launch gates are explicitly verified.
 
 ### Major Updates
 
+- Added owner-only automatic TV series episode notifications with a durable
+  inbox, timezone-aware timing, and browser push delivery that deep-links to the
+  corresponding episode.
 - Added a protected global release calendar for popular upcoming films with
   agenda/month views, regional release data, current provider snapshots,
   owner-scoped reminders, and authenticated calendar export.
@@ -23,6 +26,9 @@ its launch gates are explicitly verified.
 
 ### Minor Updates
 
+- Added `/my/alerts`, series-level subscribe/pause controls, release-day or
+  pre-release preferences, per-device push settings, and honest sync/error
+  states without coupling alerts to the watchlist.
 - Added 7/30/90-day ranges, deep-linkable search and personal-state filters,
   country-specific provider views, manual bounded synchronization progress,
   and honest partial, stale, empty, unknown-date, and failure states.
@@ -65,6 +71,9 @@ its launch gates are explicitly verified.
 
 ### Security
 
+- Added owner/profile scoping, same-origin mutation checks, strict browser push
+  endpoint and encryption-key validation, bearer-protected TV sync, and
+  service-worker destination allowlisting. Secrets remain server-only.
 - Protected the release calendar and `.ics` exports with persistent sessions,
   scoped reminders to their owning user, and restricted manual synchronization
   to the persistent owner. TMDB credentials remain server-only.
@@ -86,6 +95,9 @@ its launch gates are explicitly verified.
 
 ### Technical Improvements
 
+- Added idempotent migration `0006_tv_episode_notifications.sql`, typed TV
+  detail/season TMDB parsing, bounded sync batches, per-device push outbox
+  claims, and retry/uncertain delivery accounting.
 - Added idempotent migration `0005_fresh_roland_deschain.sql` for release
   events, provider snapshots, sync runs, and reminders with transactional,
   indexed, duplicate-safe keys and integrity checks.
@@ -110,6 +122,11 @@ its launch gates are explicitly verified.
 
 ### Known Issues
 
+- TV episode synchronization is disabled by default and has not been applied to
+  a hosted database. It needs a fresh preview database, rotated preview-only
+  TMDB/VAPID/cron secrets, rendered browser evidence, and independent review.
+  The scheduled route is daily and Web Push only; email, Telegram, mobile
+  delivery, and production scheduling are excluded.
 - Calendar synchronization is deliberately manual and requires a fresh
   server-only `TMDB_READ_TOKEN`. No production schedule or notification
   delivery channel is included, and migration `0005` remains undeployed.

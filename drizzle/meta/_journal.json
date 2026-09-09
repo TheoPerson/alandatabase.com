@@ -43,6 +43,13 @@
       "when": 1788245825378,
       "tag": "0005_fresh_roland_deschain",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788655848319,
+      "tag": "0006_tv_episode_notifications",
+      "breakpoints": true
     }
   ]
 }

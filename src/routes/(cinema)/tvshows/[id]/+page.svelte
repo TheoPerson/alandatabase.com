@@ -3,4 +3,4 @@
 	let { data } = $props();
 </script>
 
-<TVDetail {data} />
+<TVDetail {data} form={null} />

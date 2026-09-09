@@ -15,10 +15,11 @@ repository, [TheoPerson/alandatabase.com](https://github.com/TheoPerson/alandata
 `main` remains protected until V3 is explicitly reviewed and integrated.
 
 The production host integration and access boundaries are in place. The product
-remains an evolving V3: the additive database reconciliation migration is
-prepared but not applied, while normalized owner/invite roles, approved
-playback sources, TV persistence, and resume/progress tracking still require
-product work.
+remains an evolving V3: additive database migrations are prepared but not
+applied, while approved playback sources and resume/progress tracking still
+require product work. Owner-only TV episode subscriptions and an inbox are
+implemented in this task but remain disabled until their isolated preview
+database and secret configuration are reviewed.
 
 The latest recorded audit is available in [V3 Foundation Report](docs/V3_FOUNDATION_REPORT.md). It contains the verified architecture, route/data maps, security findings, validation evidence, operational constraints, and prioritised roadmap. Do not infer that the application is production-ready from a successful preview deployment alone.
 
@@ -43,12 +44,14 @@ Canonical cinema surfaces include:
   provider snapshots, reminders, and `.ics` export, documented in
   [Global Release Calendar](docs/RELEASE_CALENDAR.md)
 - `/tv` and `/tv/[id]`
+- owner-only TV episode subscriptions and browser push inbox at `/my/alerts`,
+  documented in [TV Episode Notifications](docs/TV_EPISODE_NOTIFICATIONS.md)
 - public `/discover` and `/search`; owner-only `/my/*`
 - `/auth/login`, `/auth/register`, and `/disclaimer`
 - public `/api` metadata and `/api/health`; owner-only local data APIs such as
   `/api/search` and `/api/movies/catalog`
 
-Legacy aliases and redirects may remain for compatibility while the route tree is consolidated. The current implementation does not yet provide a complete TV episode/progress model or a dependable cross-device resume loop.
+Legacy aliases and redirects may remain for compatibility while the route tree is consolidated. The current implementation does not yet provide a playback/progress model or a dependable cross-device resume loop.
 
 ## Production hostnames
 
@@ -96,8 +99,9 @@ pnpm dev
 ```
 
 The worker accepts `TMDB_READ_TOKEN` (legacy API-key compatibility remains),
-and the owner-only manual calendar sync requires the bearer token. Standard
-application reads do not call TMDB.
+the owner-only manual calendar sync requires the bearer token, and the TV
+episode cron additionally requires VAPID values, `CRON_SECRET`, and an explicit
+`TV_EPISODE_SYNC_ENABLED=true`. Standard application reads do not call TMDB.
 Do not expose service credentials through `VITE_` variables. Never run migration
 or seed commands against production data. Migrations `0002` and `0003` require a
 backup and the reviewed authorization runbook before hosted use.

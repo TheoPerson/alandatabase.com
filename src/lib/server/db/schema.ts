@@ -562,6 +562,232 @@ export const movieReleaseReminders = pgTable(
 	]
 );
 
+export const tvEpisodeSubscriptions = pgTable(
+	'tv_episode_subscriptions',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		userType: varchar('user_type', { length: 20 }).default('account').notNull(),
+		profileId: varchar('profile_id', { length: 64 }).default('default').notNull(),
+		tmdbShowId: integer('tmdb_show_id').notNull(),
+		showTitle: varchar('show_title', { length: 255 }).notNull(),
+		posterPath: varchar('poster_path', { length: 255 }),
+		offsetDays: smallint('offset_days').default(0).notNull(),
+		timezone: varchar('timezone', { length: 64 }).notNull(),
+		enabled: boolean('enabled').default(true).notNull(),
+		lastSuccessfulCheckAt: timestamp('last_successful_check_at'),
+		nextCheckAt: timestamp('next_check_at').defaultNow().notNull(),
+		lastAttemptAt: timestamp('last_attempt_at'),
+		monitoringSince: timestamp('monitoring_since').defaultNow().notNull(),
+		lastCheckStatus: varchar('last_check_status', { length: 16 }).default('pending').notNull(),
+		lastError: text('last_error'),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		uniqueIndex('idx_tv_episode_subscriptions_owner_show').on(
+			table.userId,
+			table.userType,
+			table.profileId,
+			table.tmdbShowId
+		),
+		index('idx_tv_episode_subscriptions_due').on(table.enabled, table.nextCheckAt),
+		index('idx_tv_episode_subscriptions_user').on(table.userId, table.profileId),
+		check('tv_episode_subscriptions_tmdb_check', sql`${table.tmdbShowId} > 0`),
+		check('tv_episode_subscriptions_offset_check', sql`${table.offsetDays} in (0, 1, 7)`),
+		check('tv_episode_subscriptions_user_type_check', sql`${table.userType} = 'account'`),
+		check('tv_episode_subscriptions_profile_check', sql`length(${table.profileId}) > 0`),
+		check(
+			'tv_episode_subscriptions_status_check',
+			sql`${table.lastCheckStatus} in ('pending', 'ok', 'rejected', 'failed')`
+		)
+	]
+);
+
+export const tvEpisodeEvents = pgTable(
+	'tv_episode_events',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		tmdbShowId: integer('tmdb_show_id').notNull(),
+		showTitle: varchar('show_title', { length: 255 }).notNull(),
+		seasonNumber: integer('season_number').notNull(),
+		episodeNumber: integer('episode_number').notNull(),
+		episodeName: varchar('episode_name', { length: 255 }).notNull(),
+		airDate: date('air_date'),
+		sourceHash: varchar('source_hash', { length: 64 }).notNull(),
+		firstSeenAt: timestamp('first_seen_at').defaultNow().notNull(),
+		lastSeenAt: timestamp('last_seen_at').defaultNow().notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		uniqueIndex('idx_tv_episode_events_identity').on(
+			table.tmdbShowId,
+			table.seasonNumber,
+			table.episodeNumber
+		),
+		index('idx_tv_episode_events_air_date').on(table.airDate),
+		index('idx_tv_episode_events_show').on(table.tmdbShowId),
+		check('tv_episode_events_show_check', sql`${table.tmdbShowId} > 0`),
+		check('tv_episode_events_season_check', sql`${table.seasonNumber} >= 0`),
+		check('tv_episode_events_episode_check', sql`${table.episodeNumber} > 0`),
+		check('tv_episode_events_hash_check', sql`length(${table.sourceHash}) = 64`)
+	]
+);
+
+export const notificationEvents = pgTable(
+	'notification_events',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		userType: varchar('user_type', { length: 20 }).default('account').notNull(),
+		profileId: varchar('profile_id', { length: 64 }).default('default').notNull(),
+		subscriptionId: uuid('subscription_id')
+			.notNull()
+			.references(() => tvEpisodeSubscriptions.id, { onDelete: 'cascade' }),
+		episodeEventId: uuid('episode_event_id')
+			.notNull()
+			.references(() => tvEpisodeEvents.id, { onDelete: 'cascade' }),
+		notificationType: varchar('notification_type', { length: 32 })
+			.default('episode_release')
+			.notNull(),
+		offsetDays: smallint('offset_days').notNull(),
+		dueDate: date('due_date').notNull(),
+		title: varchar('title', { length: 255 }).notNull(),
+		body: text('body').notNull(),
+		targetPath: varchar('target_path', { length: 512 }).notNull(),
+		readAt: timestamp('read_at'),
+		pushStatus: varchar('push_status', { length: 20 }).default('pending').notNull(),
+		pushAttemptCount: integer('push_attempt_count').default(0).notNull(),
+		lastPushAttemptAt: timestamp('last_push_attempt_at'),
+		lastPushError: text('last_push_error'),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		uniqueIndex('idx_notification_events_episode_delivery').on(
+			table.userId,
+			table.userType,
+			table.profileId,
+			table.episodeEventId,
+			table.notificationType
+		),
+		index('idx_notification_events_inbox').on(table.userId, table.profileId, table.readAt),
+		index('idx_notification_events_due').on(table.dueDate, table.pushStatus),
+		check('notification_events_user_type_check', sql`${table.userType} = 'account'`),
+		check('notification_events_offset_check', sql`${table.offsetDays} in (0, 1, 7)`),
+		check('notification_events_type_check', sql`${table.notificationType} = 'episode_release'`),
+		check(
+			'notification_events_push_status_check',
+			sql`${table.pushStatus} in ('pending', 'sent', 'not_subscribed', 'failed')`
+		),
+		check('notification_events_attempt_check', sql`${table.pushAttemptCount} >= 0`),
+		check('notification_events_target_check', sql`${table.targetPath} like '/%'`)
+	]
+);
+
+export const pushSubscriptions = pgTable(
+	'push_subscriptions',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		userType: varchar('user_type', { length: 20 }).default('account').notNull(),
+		profileId: varchar('profile_id', { length: 64 }).default('default').notNull(),
+		endpoint: text('endpoint').notNull(),
+		endpointHash: varchar('endpoint_hash', { length: 64 }).notNull(),
+		p256dh: text('p256dh').notNull(),
+		auth: text('auth').notNull(),
+		userAgent: varchar('user_agent', { length: 512 }),
+		enabled: boolean('enabled').default(true).notNull(),
+		failureCount: integer('failure_count').default(0).notNull(),
+		lastSuccessAt: timestamp('last_success_at'),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		uniqueIndex('idx_push_subscriptions_endpoint').on(table.endpointHash),
+		index('idx_push_subscriptions_user').on(table.userId, table.profileId, table.enabled),
+		check('push_subscriptions_user_type_check', sql`${table.userType} = 'account'`),
+		check('push_subscriptions_hash_check', sql`length(${table.endpointHash}) = 64`),
+		check('push_subscriptions_failure_check', sql`${table.failureCount} >= 0`)
+	]
+);
+
+export const pushNotificationDeliveries = pgTable(
+	'push_notification_deliveries',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		notificationId: uuid('notification_id')
+			.notNull()
+			.references(() => notificationEvents.id, { onDelete: 'cascade' }),
+		pushSubscriptionId: uuid('push_subscription_id')
+			.notNull()
+			.references(() => pushSubscriptions.id, { onDelete: 'cascade' }),
+		status: varchar('status', { length: 16 }).default('queued').notNull(),
+		attemptCount: integer('attempt_count').default(0).notNull(),
+		nextAttemptAt: timestamp('next_attempt_at').defaultNow().notNull(),
+		claimedAt: timestamp('claimed_at'),
+		lastError: text('last_error'),
+		sentAt: timestamp('sent_at'),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		uniqueIndex('idx_push_delivery_device_event').on(
+			table.notificationId,
+			table.pushSubscriptionId
+		),
+		index('idx_push_delivery_due').on(table.status, table.nextAttemptAt),
+		check(
+			'push_delivery_status_check',
+			sql`${table.status} in ('queued', 'sending', 'retry', 'sent', 'failed', 'uncertain', 'cancelled')`
+		),
+		check('push_delivery_attempts_check', sql`${table.attemptCount} >= 0`)
+	]
+);
+
+export const tvEpisodeSyncRuns = pgTable(
+	'tv_episode_sync_runs',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		triggeredBy: varchar('triggered_by', { length: 16 }).default('cron').notNull(),
+		status: varchar('status', { length: 16 }).default('running').notNull(),
+		processed: integer('processed').default(0).notNull(),
+		inserted: integer('inserted').default(0).notNull(),
+		updated: integer('updated').default(0).notNull(),
+		skipped: integer('skipped').default(0).notNull(),
+		failed: integer('failed').default(0).notNull(),
+		notificationsCreated: integer('notifications_created').default(0).notNull(),
+		pushSent: integer('push_sent').default(0).notNull(),
+		errors: jsonb('errors')
+			.$type<Array<{ subscriptionId: string; message: string }>>()
+			.default([])
+			.notNull(),
+		startedAt: timestamp('started_at').defaultNow().notNull(),
+		completedAt: timestamp('completed_at'),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		index('idx_tv_episode_sync_runs_started').on(table.startedAt),
+		index('idx_tv_episode_sync_runs_status').on(table.status),
+		check('tv_episode_sync_runs_trigger_check', sql`${table.triggeredBy} in ('cron', 'manual')`),
+		check(
+			'tv_episode_sync_runs_status_check',
+			sql`${table.status} in ('running', 'partial', 'complete', 'failed')`
+		),
+		check(
+			'tv_episode_sync_runs_counters_check',
+			sql`${table.processed} >= 0 and ${table.inserted} >= 0 and ${table.updated} >= 0 and ${table.skipped} >= 0 and ${table.failed} >= 0 and ${table.notificationsCreated} >= 0 and ${table.pushSent} >= 0`
+		)
+	]
+);
+
 export const userLists = pgTable(
 	'user_lists',
 	{
@@ -733,6 +959,34 @@ export const movieReleaseRemindersRelations = relations(movieReleaseReminders, (
 	})
 }));
 
+export const tvEpisodeSubscriptionsRelations = relations(
+	tvEpisodeSubscriptions,
+	({ one, many }) => ({
+		user: one(users, { fields: [tvEpisodeSubscriptions.userId], references: [users.id] }),
+		notifications: many(notificationEvents)
+	})
+);
+
+export const tvEpisodeEventsRelations = relations(tvEpisodeEvents, ({ many }) => ({
+	notifications: many(notificationEvents)
+}));
+
+export const notificationEventsRelations = relations(notificationEvents, ({ one }) => ({
+	user: one(users, { fields: [notificationEvents.userId], references: [users.id] }),
+	subscription: one(tvEpisodeSubscriptions, {
+		fields: [notificationEvents.subscriptionId],
+		references: [tvEpisodeSubscriptions.id]
+	}),
+	episode: one(tvEpisodeEvents, {
+		fields: [notificationEvents.episodeEventId],
+		references: [tvEpisodeEvents.id]
+	})
+}));
+
+export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
+	user: one(users, { fields: [pushSubscriptions.userId], references: [users.id] })
+}));
+
 export const userReviewsRelations = relations(userReviews, ({ one }) => ({
 	user: one(users, { fields: [userReviews.userId], references: [users.id] }),
 	movie: one(movies, { fields: [userReviews.movieId], references: [movies.id] })
@@ -744,6 +998,9 @@ export const usersRelations = relations(users, ({ many }) => ({
 	personalScores: many(moviePersonalScores),
 	calendarSyncRuns: many(calendarSyncRuns),
 	releaseReminders: many(movieReleaseReminders),
+	tvEpisodeSubscriptions: many(tvEpisodeSubscriptions),
+	notifications: many(notificationEvents),
+	pushSubscriptions: many(pushSubscriptions),
 	reviews: many(userReviews),
 	lists: many(userLists),
 	activities: many(activities),

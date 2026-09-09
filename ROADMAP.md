@@ -5,6 +5,21 @@ canonical vocabulary in `AGENTS.md`.
 
 Nothing below is `merged` to `main` or `deployed` unless explicitly labeled. The Product/Project Lead approves scope and phase transitions.
 
+## `in_review` - Automatic TV episode release notifications
+
+- Added owner-only series subscriptions with release-day, one-day-before, and
+  seven-day-before timing, timezone-aware due dates, and an `/my/alerts` inbox.
+- Added additive migration `0006_tv_episode_notifications.sql` for normalized
+  episode events, duplicate-safe notification identities, per-device Web Push
+  outbox delivery, and sync-run counters. TMDB responses are typed, bounded,
+  retried only for transient failures, and pass through the existing fail-closed
+  classification policy.
+- Added the protected cron entry point and service-worker deep links. The
+  feature is disabled by default; fresh preview secrets/database, rendered
+  browser evidence, Linux CI/Vercel packaging, independent review, migration
+  rollout, and production scheduling remain gates. Email, Telegram, push
+  delivery beyond Web Push, merge, and production deployment are excluded.
+
 ## `in_review` - Alan Score
 
 - Added a seven-dimension owner score with rated-dimension weight normalization,

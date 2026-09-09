@@ -1,4 +1,5 @@
 {
+	"crons": [{ "path": "/api/cron/tv-episodes", "schedule": "0 7 * * *" }],
 	"headers": [
 		{
 			"source": "/(.*)",

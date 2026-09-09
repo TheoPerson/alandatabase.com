@@ -28,7 +28,8 @@
 		<p>This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
 		<p>
 			Film metadata, artwork, release-date details, and regional provider snapshots may originate
-			from TMDB. Local review and personal data remain separate.
+			from TMDB. TV episode metadata and release dates may also originate from TMDB. Local review
+			and personal data remain separate.
 		</p>
 	</section>
 

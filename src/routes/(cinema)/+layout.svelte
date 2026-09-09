@@ -9,15 +9,19 @@
 
 	interface Props {
 		children?: Snippet;
+		data: { user?: { id: string; role?: string; disabledAt?: Date | null } | null };
 	}
 
-	let { children }: Props = $props();
+	let { children, data }: Props = $props();
 </script>
 
 <div class="app-layout" data-sveltekit-preload-data="hover" data-sveltekit-preload-code="eager">
 	<NavigationProgressBar />
 	<a href="#main-content" class="sr-only skip-link">Skip to main content</a>
-	<Header />
+	<Header
+		userId={data.user?.id}
+		canManageNotifications={data.user?.role === 'owner' && !data.user.disabledAt}
+	/>
 	<main id="main-content" class="main-content" tabindex="-1">
 		{@render children?.()}
 	</main>

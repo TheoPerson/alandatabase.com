@@ -38,6 +38,8 @@ The repository currently provides:
 - a protected global calendar for popular upcoming films, regional release
   metadata, current provider snapshots, owner-scoped reminders, and all-day
   calendar export; synchronization is an explicit owner operation;
+- owner-only TV series episode subscriptions, durable episode events and inbox
+  notifications, and optional browser push delivery from `/my/alerts`;
 - a committed local Top-50 TV snapshot with browse/detail aliases;
 - optional Telegram, Sentry, TMDB-worker, and Meilisearch integrations; Gemini
   chat returns unavailable until its privacy and abuse controls are complete;
@@ -54,7 +56,11 @@ The current V3 branch deliberately contains safeguards against unsafe behavior:
 - every authenticated response is private/no-store and cinema responses deny
   frame sources.
 
-These are containment foundations, not a finished player. There is no approved media-source model, TV/season/episode persistence, playback progress, resume position, or genuine playback history. Current “watched” data is a manual interaction.
+These are containment foundations, not a finished player. There is no approved
+media-source model, playback progress, resume position, or genuine playback
+history. Current “watched” data is a manual interaction. TV episode metadata is
+persisted only for the owner notification workflow; it is not a playback or
+watch-history model.
 
 ## Required product principles
 
@@ -83,13 +89,16 @@ These are containment foundations, not a finished player. There is no approved m
   in source, including a single-owner database invariant. Their additive
   migration has not been applied to a hosted database.
 - Adult handling is a conservative quarantine, not a completed adult-content product.
-- Playback, TV episodes, progress, resume, and truthful playback history remain incomplete.
+- Playback, progress, resume, and truthful playback history remain incomplete.
 - Migrations `0002` and `0003` remain undeployed until the target database is
   backed up and reconciled through the reviewed runbook. AI remains disabled
   until consent, timeout, quota, concurrency, retention, and deletion controls
   are implemented and approved.
-- Release synchronization remains manual. Hosted preview/production migration,
-  a schedule, email/push/chat delivery, and live cinema showtimes require
-  separate approval; migration `0005` remains undeployed.
+- Film release synchronization remains manual. TV episode synchronization is
+  implemented behind the owner-only cron route but disabled until its secrets,
+  isolated database, and preview evidence are approved. Hosted
+  preview/production migration, notification delivery beyond Web Push, and
+  live cinema showtimes require separate approval; migrations `0005` and `0006`
+  remain undeployed.
 
 Implementation facts live in `ARCHITECTURE.md`; approved direction and status live in `ROADMAP.md`.

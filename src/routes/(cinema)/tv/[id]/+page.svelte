@@ -4,12 +4,33 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import PlaybackUnavailable from '$lib/components/player/PlaybackUnavailable.svelte';
 	import { addToast } from '$lib/stores/toast';
+	import { page } from '$app/state';
+	import SeriesAlerts from '$lib/components/notifications/SeriesAlerts.svelte';
 
-	let { data } = $props();
+	let { data, form = null } = $props();
 	const show = $derived(data.show);
 
 	let selectedSeason = $state(1);
 	let selectedEpisode = $state(1);
+	$effect(() => {
+		const season = Number(page.url.searchParams.get('season'));
+		const episode = Number(page.url.searchParams.get('episode'));
+		const matchingSeason = show.seasons?.find(
+			(item: { season_number: number }) => item.season_number === season
+		);
+		selectedSeason = matchingSeason
+			? season
+			: (show.seasons?.find((item: { season_number: number }) => item.season_number > 0)
+					?.season_number ?? 1);
+		selectedEpisode =
+			matchingSeason &&
+			Number.isInteger(episode) &&
+			episode > 0 &&
+			matchingSeason.episode_count !== null &&
+			episode <= matchingSeason.episode_count
+				? episode
+				: 1;
+	});
 
 	const currentSeasonObj = $derived(
 		show.seasons?.find((s: any) => s.season_number === selectedSeason) || show.seasons?.[0]
@@ -94,6 +115,12 @@
 						<p class="show-tagline">« {show.tagline} »</p>
 					{/if}
 				</header>
+				<SeriesAlerts
+					subscription={data.episodeSubscription}
+					signedIn={data.signedIn}
+					canManage={data.canManageNotifications}
+					message={form?.error ?? form?.message}
+				/>
 
 				<!-- Episode context retained while unapproved playback sources are quarantined. -->
 				<section class="tv-player-card glass-card">

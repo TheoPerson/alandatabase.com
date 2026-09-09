@@ -1,6 +1,6 @@
 # Architecture
 
-Updated against the stacked release-calendar task worktree on 2026-09-01. Provisional,
+Updated against the stacked TV notification task worktree on 2026-09-09. Provisional,
 undeployed, or incomplete areas are explicit below.
 
 ## System shape
@@ -68,21 +68,21 @@ paths are left untouched.
 
 ## Repository map
 
-| Path                      | Responsibility                                                                                           |
-| ------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `src/routes/(hub)`        | Public vault/status plus the owner-only admin and setup surfaces. Route groups do not appear in URLs.    |
-| `src/routes/(cinema)`     | Public catalogue/detail pages, owner-only personal/playback operations, and the session auth portal.     |
-| `src/routes/api`          | Public API metadata/health, owner-gated cinema APIs, plus the separately authenticated Telegram webhook. |
-| `src/lib/components`      | Layout, movie/player, and reusable UI components.                                                        |
-| `src/lib/server/auth`     | Password/session helpers and centralized route classification.                                           |
-| `src/lib/server/policies` | Fail-closed content visibility policy.                                                                   |
-| `src/lib/server/queries`  | Bounded local read models such as search.                                                                |
-| `src/lib/server/services` | Movie, TV, interaction, Alan Score, release-calendar, AI/Telegram, and related application logic.        |
-| `src/lib/server/db`       | Drizzle schema, connection, seed data, and the misleading legacy `ensureTablesExist` helper.             |
-| `drizzle`                 | Generated PostgreSQL migration SQL and metadata.                                                         |
-| `worker`                  | TMDB metadata ingestion, ingestion safety checks, and optional search-index setup.                       |
-| `tests`                   | Playwright E2E specifications.                                                                           |
-| `docs` / `Artifacts.MD`   | Audit and historical discovery; not all claims describe current code.                                    |
+| Path                      | Responsibility                                                                                                             |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `src/routes/(hub)`        | Public vault/status plus the owner-only admin and setup surfaces. Route groups do not appear in URLs.                      |
+| `src/routes/(cinema)`     | Public catalogue/detail pages, owner-only personal/playback operations, and the session auth portal.                       |
+| `src/routes/api`          | Public API metadata/health, owner-gated cinema APIs, plus the separately authenticated Telegram webhook.                   |
+| `src/lib/components`      | Layout, movie/player, and reusable UI components.                                                                          |
+| `src/lib/server/auth`     | Password/session helpers and centralized route classification.                                                             |
+| `src/lib/server/policies` | Fail-closed content visibility policy.                                                                                     |
+| `src/lib/server/queries`  | Bounded local read models such as search.                                                                                  |
+| `src/lib/server/services` | Movie, TV, interaction, Alan Score, release-calendar, TV episode notification, AI/Telegram, and related application logic. |
+| `src/lib/server/db`       | Drizzle schema, connection, seed data, and the misleading legacy `ensureTablesExist` helper.                               |
+| `drizzle`                 | Generated PostgreSQL migration SQL and metadata.                                                                           |
+| `worker`                  | TMDB metadata ingestion, ingestion safety checks, and optional search-index setup.                                         |
+| `tests`                   | Playwright E2E specifications.                                                                                             |
+| `docs` / `Artifacts.MD`   | Audit and historical discovery; not all claims describe current code.                                                      |
 
 ## Request, authentication, and privacy flow
 
@@ -151,7 +151,13 @@ fill only missing dimensions, and recalculate the result.
   films per request, and advances an idempotent persisted sync run. It is never
   called by browse, preload, hover, or search paths.
 - `/my/films`, `/my/lists`, and `/my/settings` manage user-owned interactions, lists, statistics, and settings.
-- `/tv`, `/tvshow`, and `/tvshows` share a committed in-code TV snapshot; TV has no database persistence or real episode catalog.
+- `/tv`, `/tvshow`, and `/tvshows` share a committed in-code TV snapshot. The
+  canonical TV detail page adds an owner-only series notification control;
+  `/my/alerts` manages subscriptions, the inbox, and browser push registration.
+- `/api/notifications` is an owner-only no-store inbox poll. The push endpoint
+  validates same-origin browser subscriptions and stores only allowlisted Web
+  Push providers. `/api/cron/tv-episodes` requires a bearer `CRON_SECRET`, is
+  disabled by default, and processes at most 20 due subscriptions per run.
 - `/live` is a protected compatibility surface that accepts no URL and embeds nothing.
 - `/api/search` and `/api/movies/catalog` are bounded local reads.
 - `/api/ai/chat` returns HTTP 410 and sends no personal data externally until
@@ -197,9 +203,26 @@ Current boundaries:
 - Standard surfaces require `adult=false`, a positive TMDB ID, loaded keyword classification, and no known explicit ingestion keyword. The policy fails closed.
 - Raw `localOverrides` are not serialized to normal clients; only whitelisted text/date overrides are applied.
 - Adult/custom rows remain stored but quarantined; visibility policy deletes no data.
-- TV data is an in-code snapshot, not part of the Drizzle schema.
-- No media source/provenance, season/episode, playback event, progress/resume,
-  cinema-showtime, or reminder-delivery table exists.
+- The public TV browse data remains an in-code snapshot. Owner notification
+  metadata is persisted in `tv_episode_subscriptions`, `tv_episode_events`,
+  `notification_events`, `push_subscriptions`,
+  `push_notification_deliveries`, and `tv_episode_sync_runs` from additive
+  migration `0006`. These tables are not playback history or showtime data.
+- No media source/provenance, playback event, progress/resume, cinema-showtime,
+  or non-Web-Push delivery table exists.
+
+### TV episode notification flow
+
+The detail action saves one owner/default-profile subscription and its local
+timezone. The bounded cron service fetches English TMDB TV details and only the
+relevant seasons, evaluates the existing fail-closed adult/keyword policy, and
+stores unknown dates without notifying them. A unique show/season/episode event
+identity plus a unique user/profile/event notification identity makes repeated
+and concurrent runs idempotent. Due notifications are shown in the owner
+inbox and create one outbox row per enabled browser device. Push attempts use
+atomic claims, a five-second provider timeout, bounded retry for explicit 429 or
+503 responses, and an `uncertain` terminal state for unknown network outcomes.
+The service worker accepts only same-origin `/tv/<id>` and `/my/alerts` paths.
 
 Committed migrations create the original movie/user model and later movie
 override/lock fields. Additive migration `0002_wet_masque.sql` reconciles
@@ -231,9 +254,10 @@ Other optional integrations:
 
 Server configuration is environment-driven. `.env.example` documents the
 non-sensitive shape of database access, one-time owner setup, rate-limit hashing,
-UptimeRobot, TMDB, Meilisearch, Gemini, Sentry, and Telegram configuration,
-including `POSTGRES_URL`, `PREVIEW_DATABASE_URL`, `OWNER_SETUP_KEY`, and
-`RATE_LIMIT_HASH_KEY`. Vercel supplies `VERCEL`, `VERCEL_ENV`, and `NODE_ENV`;
+UptimeRobot, TMDB, Meilisearch, Gemini, Sentry, Telegram, VAPID, and TV episode
+cron configuration, including `POSTGRES_URL`, `PREVIEW_DATABASE_URL`,
+`OWNER_SETUP_KEY`, `RATE_LIMIT_HASH_KEY`, and `TV_EPISODE_SYNC_ENABLED`. Vercel
+supplies `VERCEL`, `VERCEL_ENV`, and `NODE_ENV`;
 no secret uses a client-visible `PUBLIC_` prefix.
 
 Persistent authorization lives in PostgreSQL: `users.role` defines

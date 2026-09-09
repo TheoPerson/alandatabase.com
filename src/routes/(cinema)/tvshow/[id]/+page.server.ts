@@ -1,1 +1,1 @@
-export { load } from '../../tv/[id]/+page.server';
+export { load, actions } from '../../tv/[id]/+page.server';

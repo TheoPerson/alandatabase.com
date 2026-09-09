@@ -117,6 +117,50 @@ export type TMDBWatchProvidersResponse = {
 	>;
 };
 
+export type TMDBTVEpisode = {
+	id: number;
+	name: string;
+	overview: string;
+	air_date: string | null;
+	episode_number: number;
+	season_number: number;
+	runtime: number | null;
+	still_path: string | null;
+};
+
+export type TMDBTVSeason = {
+	id: number;
+	name: string;
+	season_number: number;
+	air_date: string | null;
+	episode_count: number;
+};
+
+export type TMDBTVDetail = {
+	id: number;
+	name: string;
+	original_name: string;
+	overview: string;
+	poster_path: string | null;
+	backdrop_path: string | null;
+	first_air_date: string;
+	status: string;
+	number_of_seasons: number;
+	adult: boolean;
+	genres: TMDBGenre[];
+	seasons: TMDBTVSeason[];
+	next_episode_to_air: TMDBTVEpisode | null;
+	last_episode_to_air: TMDBTVEpisode | null;
+	keywords: { keywords: Array<{ id: number; name: string }> };
+};
+
+export type TMDBTVSeasonDetail = {
+	id: number;
+	name: string;
+	season_number: number;
+	episodes: TMDBTVEpisode[];
+};
+
 export class TMDBRequestError extends Error {
 	constructor(
 		message: string,
@@ -306,6 +350,109 @@ function parseWatchProviders(value: unknown): TMDBWatchProvidersResponse {
 	};
 }
 
+function asInteger(value: unknown, context: string, minimum = 0): number {
+	const number = asNumber(value, context);
+	if (!Number.isSafeInteger(number) || number < minimum) {
+		throw new TypeError(`TMDB returned an invalid ${context}.`);
+	}
+	return number;
+}
+
+function asAirDate(value: unknown, context: string): string | null {
+	if (value === null || value === undefined || value === '') return null;
+	const date = asString(value, context);
+	const parsed = new Date(`${date}T00:00:00.000Z`);
+	if (
+		!/^\d{4}-\d{2}-\d{2}$/u.test(date) ||
+		Number.isNaN(parsed.getTime()) ||
+		parsed.toISOString().slice(0, 10) !== date
+	) {
+		throw new TypeError(`TMDB returned an invalid ${context}.`);
+	}
+	return date;
+}
+
+function parseTVEpisode(value: unknown): TMDBTVEpisode {
+	const episode = asRecord(value, 'TV episode');
+	return {
+		id: asInteger(episode.id, 'TV episode id', 1),
+		name: asString(episode.name, 'TV episode name'),
+		overview: asString(episode.overview, 'TV episode overview'),
+		air_date: asAirDate(episode.air_date, 'TV episode air date'),
+		episode_number: asInteger(episode.episode_number, 'TV episode number', 1),
+		season_number: asInteger(episode.season_number, 'TV season number'),
+		runtime: episode.runtime == null ? null : asInteger(episode.runtime, 'TV episode runtime'),
+		still_path: asNullableString(episode.still_path, 'TV episode still path')
+	};
+}
+
+function parseNullableTVEpisode(value: unknown, context: string): TMDBTVEpisode | null {
+	return value === null ? null : parseTVEpisode(asRecord(value, context));
+}
+
+function parseTVDetail(value: unknown): TMDBTVDetail {
+	const show = asRecord(value, 'TV detail');
+	const keywordEnvelope = asRecord(show.keywords, 'TV keywords');
+	const keywords = asArray(keywordEnvelope.results, 'TV keyword list').map((value) => {
+		const keyword = asRecord(value, 'TV keyword');
+		return {
+			id: asInteger(keyword.id, 'TV keyword id', 1),
+			name: asString(keyword.name, 'TV keyword name')
+		};
+	});
+	return {
+		id: asInteger(show.id, 'TV id', 1),
+		name: asString(show.name, 'TV name'),
+		original_name: asString(show.original_name, 'TV original name'),
+		overview: asString(show.overview, 'TV overview'),
+		poster_path: asNullableString(show.poster_path, 'TV poster path'),
+		backdrop_path: asNullableString(show.backdrop_path, 'TV backdrop path'),
+		first_air_date: asAirDate(show.first_air_date, 'TV first air date') ?? '',
+		status: asString(show.status, 'TV status'),
+		number_of_seasons: asInteger(show.number_of_seasons, 'TV season count'),
+		adult: asBoolean(show.adult, 'TV adult flag'),
+		genres: asArray(show.genres, 'TV genres').map(parseGenre),
+		seasons: asArray(show.seasons, 'TV seasons').map((value) => {
+			const season = asRecord(value, 'TV season');
+			return {
+				id: asInteger(season.id, 'TV season id', 1),
+				name: asString(season.name, 'TV season name'),
+				season_number: asInteger(season.season_number, 'TV season number'),
+				air_date: asAirDate(season.air_date, 'TV season air date'),
+				episode_count: asInteger(season.episode_count, 'TV episode count')
+			};
+		}),
+		next_episode_to_air: parseNullableTVEpisode(show.next_episode_to_air, 'next TV episode'),
+		last_episode_to_air: parseNullableTVEpisode(show.last_episode_to_air, 'last TV episode'),
+		keywords: { keywords }
+	};
+}
+
+function parseTVSeasonDetail(value: unknown): TMDBTVSeasonDetail {
+	const season = asRecord(value, 'TV season detail');
+	const seasonNumber = asInteger(season.season_number, 'TV season number');
+	const episodes = asArray(season.episodes, 'TV season episodes').map(parseTVEpisode);
+	const episodeNumbers = new Set<number>();
+	const episodeIds = new Set<number>();
+	for (const episode of episodes) {
+		if (
+			episode.season_number !== seasonNumber ||
+			episodeNumbers.has(episode.episode_number) ||
+			episodeIds.has(episode.id)
+		) {
+			throw new TypeError('TMDB returned an invalid TV episode identity.');
+		}
+		episodeNumbers.add(episode.episode_number);
+		episodeIds.add(episode.id);
+	}
+	return {
+		id: asInteger(season.id, 'TV season id', 1),
+		name: asString(season.name, 'TV season name'),
+		season_number: seasonNumber,
+		episodes
+	};
+}
+
 export class TMDBClient {
 	private readonly apiKey: string;
 	private readonly readToken: string;
@@ -460,11 +607,28 @@ export class TMDBClient {
 		return asRecord(await this.request('/tv/top_rated', { page: String(page) }), 'TV page');
 	}
 
-	async getTVDetails(tmdbId: number): Promise<JsonRecord> {
-		return asRecord(
-			await this.request(`/tv/${tmdbId}`, { append_to_response: 'credits,videos,external_ids' }),
-			'TV detail'
+	async getTVDetails(tmdbId: number): Promise<TMDBTVDetail> {
+		asInteger(tmdbId, 'TV request id', 1);
+		const show = parseTVDetail(
+			await this.request(`/tv/${tmdbId}`, {
+				append_to_response: 'keywords',
+				language: 'en-US'
+			})
 		);
+		if (show.id !== tmdbId) throw new TypeError('TMDB returned an invalid TV identity.');
+		return show;
+	}
+
+	async getTVSeasonDetails(tmdbId: number, seasonNumber: number): Promise<TMDBTVSeasonDetail> {
+		asInteger(tmdbId, 'TV request id', 1);
+		asInteger(seasonNumber, 'TV requested season number');
+		const season = parseTVSeasonDetail(
+			await this.request(`/tv/${tmdbId}/season/${seasonNumber}`, { language: 'en-US' })
+		);
+		if (season.season_number !== seasonNumber) {
+			throw new TypeError('TMDB returned an invalid TV season identity.');
+		}
+		return season;
 	}
 
 	async searchTV(query: string, page = 1): Promise<JsonRecord> {

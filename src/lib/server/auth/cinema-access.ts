@@ -16,7 +16,7 @@ export const CINEMA_PREFIXES = [
 export const PUBLIC_ROUTES = ['/auth/login', '/auth/register', '/404'];
 
 // Service callbacks authenticate themselves instead of using a browser session.
-export const SESSION_EXEMPT_ROUTES = ['/api/telegram/webhook'];
+export const SESSION_EXEMPT_ROUTES = ['/api/telegram/webhook', '/api/cron/tv-episodes'];
 
 // Public API metadata and liveness are intentionally narrow exceptions. All
 // data-changing and catalog endpoints remain session-protected.

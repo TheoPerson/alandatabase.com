@@ -1,6 +1,11 @@
 <script lang="ts">
 	import Button from '../ui/Button.svelte';
 	import { goto } from '$app/navigation';
+	import NotificationBell from '$lib/components/notifications/NotificationBell.svelte';
+	let {
+		userId = null,
+		canManageNotifications = false
+	}: { userId?: string | null; canManageNotifications?: boolean } = $props();
 
 	let searchQuery = $state('');
 	let menuOpen = $state(false);
@@ -66,6 +71,7 @@
 
 		<!-- Search Bar & User Actions -->
 		<div class="header-right">
+			{#if userId && canManageNotifications}<NotificationBell {userId} />{/if}
 			<form onsubmit={handleSearch} class="search-form">
 				<input
 					type="search"
@@ -128,6 +134,11 @@
 	{#if menuOpen}
 		<div class="mobile-menu">
 			<nav class="mobile-nav">
+				{#if userId && canManageNotifications}<a
+						href="/my/alerts"
+						class="mobile-nav-link"
+						onclick={() => (menuOpen = false)}>Episode alerts</a
+					>{/if}
 				<a href="/movies" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Movies</a>
 				<a href="/tv" class="mobile-nav-link" onclick={() => (menuOpen = false)}>TV Shows</a>
 				<a href="/movies/calendar" class="mobile-nav-link" onclick={() => (menuOpen = false)}

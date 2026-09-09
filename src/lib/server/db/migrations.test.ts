@@ -291,4 +291,74 @@ describe('Drizzle migration chain', () => {
 		`);
 		expect(tables.rows.map(({ table_name }) => table_name)).toContain('calendar_sync_runs');
 	}, 20_000);
+
+	it('applies the TV episode notification migration twice with durable ownership keys', async () => {
+		database = new PGlite();
+		for (const name of [
+			'0000_aromatic_puma.sql',
+			'0001_next_impossible_man.sql',
+			'0002_wet_masque.sql',
+			'0003_complete_skrulls.sql',
+			'0004_optimal_karma.sql',
+			'0005_fresh_roland_deschain.sql'
+		]) {
+			await database.exec(await migration(name));
+		}
+		const notifications = await migration('0006_tv_episode_notifications.sql');
+		await database.exec(notifications);
+		await database.exec(notifications);
+		await database.exec(`
+			insert into users (id, email, username, password_hash, role)
+			values ('00000000-0000-4000-8000-000000000001', 'owner@example.test', 'owner', 'hash', 'owner');
+			insert into tv_episode_subscriptions (
+				id, user_id, tmdb_show_id, show_title, timezone
+			) values (
+				'00000000-0000-4000-8000-000000000010',
+				'00000000-0000-4000-8000-000000000001', 1396, 'Example Show', 'Europe/Paris'
+			);
+			insert into tv_episode_events (
+				id, tmdb_show_id, show_title, season_number, episode_number, episode_name, source_hash
+			) values (
+				'00000000-0000-4000-8000-000000000020', 1396, 'Example Show', 1, 1, 'Pilot', repeat('a', 64)
+			);
+			insert into notification_events (
+				user_id, subscription_id, episode_event_id, offset_days, due_date,
+				title, body, target_path
+			) values (
+				'00000000-0000-4000-8000-000000000001',
+				'00000000-0000-4000-8000-000000000010',
+				'00000000-0000-4000-8000-000000000020', 0, '2026-09-09',
+				'New episode', 'Pilot is available.', '/tv/1396?season=1&episode=1'
+			);
+		`);
+		await expect(
+			database.exec(`
+				insert into notification_events (
+					user_id, subscription_id, episode_event_id, offset_days, due_date,
+					title, body, target_path
+				) values (
+					'00000000-0000-4000-8000-000000000001',
+					'00000000-0000-4000-8000-000000000010',
+					'00000000-0000-4000-8000-000000000020', 0, '2026-09-09',
+					'Duplicate', 'Duplicate', '/tv/1396'
+				)
+			`)
+		).rejects.toThrow();
+		const tables = await database.query<{ table_name: string }>(`
+			select table_name from information_schema.tables
+			where table_schema = 'public' and table_name in (
+				'notification_events', 'push_notification_deliveries', 'push_subscriptions',
+				'tv_episode_events', 'tv_episode_subscriptions', 'tv_episode_sync_runs'
+			)
+			order by table_name
+		`);
+		expect(tables.rows.map(({ table_name }) => table_name)).toEqual([
+			'notification_events',
+			'push_notification_deliveries',
+			'push_subscriptions',
+			'tv_episode_events',
+			'tv_episode_subscriptions',
+			'tv_episode_sync_runs'
+		]);
+	}, 25_000);
 });
