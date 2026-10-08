@@ -1,5 +1,5 @@
 const CACHE_NAME = 'alan-database-public-shell-v3';
-const PRECACHE = ['/offline.html', '/favicon.svg', '/manifest.json'];
+const PRECACHE = ['/offline.html', '/favicon.svg', '/favicon.png', '/manifest.json'];
 
 self.addEventListener('install', (event) => {
 	event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE)));
@@ -12,8 +12,10 @@ self.addEventListener('activate', (event) => {
 			.keys()
 			.then((keys) =>
 				Promise.all(
+					// Only our own public-shell caches are ever evicted. Personal
+					// vault caches are never touched by a shell upgrade.
 					keys
-						.filter((key) => key === 'alan-vault-v1' || key.startsWith('alan-database-public-shell-'))
+						.filter((key) => key.startsWith('alan-database-public-shell-'))
 						.filter((key) => key !== CACHE_NAME)
 						.map((key) => caches.delete(key))
 				)

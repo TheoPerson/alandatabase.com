@@ -364,6 +364,8 @@
 
 	.star-btn {
 		font-size: 1.5rem;
+		min-width: 44px;
+		min-height: 44px;
 		color: var(--bg-surface-3);
 		transition: all var(--transition-fast);
 		cursor: pointer;

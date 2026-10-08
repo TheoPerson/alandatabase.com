@@ -45,6 +45,7 @@ export async function load({ locals, url }) {
 	const [accounts, invitations] = await Promise.all([
 		db.query.users.findMany({
 			orderBy: [desc(users.createdAt)],
+			limit: 100,
 			columns: {
 				id: true,
 				email: true,

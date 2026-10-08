@@ -18,4 +18,18 @@ test.describe('Public cinema and API integration', () => {
 		await expect(page.getByRole('heading', { name: /Results for/i })).toContainText('Inception');
 		await expect(page.getByRole('searchbox', { name: 'Movie title' })).toHaveValue('Inception');
 	});
+
+	test('playback surfaces never mount third-party players', async ({ page }) => {
+		for (const route of ['/live', '/tv/1']) {
+			await page.goto(route, { waitUntil: 'domcontentloaded' });
+			await expect(page.locator('iframe'), `${route} must not embed a player`).toHaveCount(0);
+		}
+	});
+
+	test('disabled custom intake answers 503 without writing', async ({ request }) => {
+		const response = await request.post('/movies/custom', {
+			form: { title: 'E2E probe', tmdbId: '1' }
+		});
+		expect(response.status()).toBe(503);
+	});
 });

@@ -530,6 +530,7 @@
 		font-size: 0.78rem;
 		font-weight: 600;
 		padding: 0.35rem 0.75rem;
+		min-height: 44px;
 		border-radius: 9999px;
 		cursor: pointer;
 		white-space: nowrap;

@@ -80,14 +80,14 @@
 
 <div class="status-shell">
 	<header class="site-header">
-		<a class="brand" href="https://alandatabase.com/" aria-label="Alan Database home">
+		<a class="brand" href="/" aria-label="Alan Database home">
 			<span class="brand-mark" aria-hidden="true">A</span>
 			<span>ALAN DATABASE</span>
 		</a>
 		<nav aria-label="Status navigation">
 			<a href="#services">Services</a>
 			<a href="#release-notes">Release notes</a>
-			<a class="return-link" href="https://alandatabase.com/movies">Open Cinema</a>
+			<a class="return-link" href="/movies">Open Cinema</a>
 		</nav>
 	</header>
 
@@ -159,7 +159,7 @@
 					<p class="kicker">Current availability</p>
 					<h2 id="services-heading">Services</h2>
 				</div>
-				<p>Live database probe and current request-path measurements.</p>
+				<p>Live database probe plus this page's server timing.</p>
 			</div>
 
 			<div class="service-list">
@@ -194,7 +194,7 @@
 				</div>
 				<a
 					class="repository-link"
-					href="https://github.com/TheoPerson/alandatabase.com/blob/agent/v3-foundation-core/CHANGELOG.md"
+					href="https://github.com/TheoPerson/alandatabase.com/blob/main/CHANGELOG.md"
 					rel="noreferrer"
 				>
 					View source changelog

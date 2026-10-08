@@ -47,13 +47,13 @@ export const load: PageServerLoad = async ({ setHeaders }) => {
 				},
 				{
 					name: 'API',
-					description: 'api.alandatabase.com',
+					description: 'Catalogue API (database probe)',
 					state: databaseState,
 					latencyMs: dbLatencyMs
 				},
 				{
 					name: 'Authentication',
-					description: 'auth.alandatabase.com',
+					description: 'Sessions (database probe)',
 					state: databaseState,
 					latencyMs: dbLatencyMs
 				},

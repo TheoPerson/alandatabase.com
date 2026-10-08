@@ -49,6 +49,11 @@ export async function getOrCreateDefaultUser() {
 
 const isUuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Personal-library reads stay bounded: a single page must never scan a
+// lifetime of interactions. 500 keeps every realistic library intact while
+// capping the worst case.
+const MAX_INTERACTION_ITEMS = 500;
+
 function prepareInteractionItems(items: any[]) {
 	return items
 		.map((item) => {
@@ -217,6 +222,7 @@ export async function getUserWatchlist(userId: string): Promise<any[]> {
 	const items = await db.query.userMovieInteractions.findMany({
 		where: and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.watchlist, true)),
 		orderBy: [desc(userMovieInteractions.updatedAt)],
+		limit: MAX_INTERACTION_ITEMS,
 		with: {
 			movie: {
 				with: {
@@ -237,6 +243,7 @@ export async function getUserFavorites(userId: string): Promise<any[]> {
 	const items = await db.query.userMovieInteractions.findMany({
 		where: and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.favorite, true)),
 		orderBy: [desc(userMovieInteractions.updatedAt)],
+		limit: MAX_INTERACTION_ITEMS,
 		with: {
 			movie: {
 				with: {
@@ -257,6 +264,7 @@ export async function getUserWatchedHistory(userId: string): Promise<any[]> {
 	const items = await db.query.userMovieInteractions.findMany({
 		where: and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.watched, true)),
 		orderBy: [desc(userMovieInteractions.updatedAt)],
+		limit: MAX_INTERACTION_ITEMS,
 		with: {
 			movie: {
 				with: {
@@ -310,6 +318,7 @@ export async function getUserMovieReviews(movieId: string): Promise<any[]> {
 	const reviews = await db.query.userReviews.findMany({
 		where: eq(userReviews.movieId, resolvedUuid),
 		orderBy: [desc(userReviews.createdAt)],
+		limit: MAX_INTERACTION_ITEMS,
 		with: {
 			user: {
 				columns: {
@@ -326,6 +335,7 @@ export async function getUserMovieReviews(movieId: string): Promise<any[]> {
 export async function getUserStats(userId: string) {
 	const interactions = await db.query.userMovieInteractions.findMany({
 		where: eq(userMovieInteractions.userId, userId),
+		limit: MAX_INTERACTION_ITEMS,
 		with: {
 			movie: {
 				with: {

@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-const publicRoutes = ['/', '/movies', '/search', '/auth/login', '/status'];
+const publicRoutes = ['/', '/movies', '/tv', '/search', '/auth/login', '/status'];
 
 test.describe('WCAG 2.2 AA critical surfaces', () => {
 	for (const route of publicRoutes) {
