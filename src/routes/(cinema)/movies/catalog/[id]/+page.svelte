@@ -140,6 +140,7 @@
 											value={star}
 											class="star-btn"
 											class:active={rating !== null && rating >= star}
+											aria-label="Rate {star} out of 5"
 										>
 											★
 										</button>
@@ -271,12 +272,7 @@
 			<!-- Approved playback status -->
 			<section class="info-section">
 				<h2 class="section-heading">Playback</h2>
-				<StreamPlayerContainer
-					tmdbId={movie.tmdbId || movie.id}
-					imdbId={movie.imdbId}
-					title={movie.title}
-					trailerKey={trailer?.key}
-				/>
+				<StreamPlayerContainer title={movie.title} />
 			</section>
 		</main>
 	</div>

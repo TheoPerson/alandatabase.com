@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { json } from '@sveltejs/kit';
 import { searchMovies } from '$lib/server/services/movie.service';
 import type { RequestHandler } from './$types';
@@ -37,8 +38,13 @@ export const POST: RequestHandler = async ({ request }) => {
 		return json({ error: 'Telegram integration is not configured' }, { status: 503 });
 	}
 
-	const incomingSecret = request.headers.get('x-telegram-bot-api-secret-token');
-	if (incomingSecret !== secretToken) {
+	const incomingSecret = request.headers.get('x-telegram-bot-api-secret-token') ?? '';
+	const expectedDigest = createHash('sha256').update(secretToken, 'utf8').digest();
+	const incomingDigest = createHash('sha256').update(incomingSecret, 'utf8').digest();
+	if (
+		incomingDigest.length !== expectedDigest.length ||
+		!timingSafeEqual(incomingDigest, expectedDigest)
+	) {
 		return json({ error: 'Unauthorized webhook request' }, { status: 401 });
 	}
 

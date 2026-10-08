@@ -26,8 +26,8 @@
 		</div>
 		<h1 class="title">Content Advisory</h1>
 		<p class="subtitle">
-			CinemaDB contains unfiltered content including R-rated movies, explicit themes, and mature TV
-			shows. This library is completely uncensored.
+			CinemaDB may include mature themes, R-rated movies, and explicit TV shows. Adult and explicit
+			records stay quarantined outside standard catalogue, search, and recommendations.
 		</p>
 
 		<div class="warning-box">

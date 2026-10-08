@@ -29,10 +29,10 @@
 </script>
 
 <svelte:head>
-	<title>Top 50 IMDb TV Shows & Series | CinemaDB</title>
+	<title>Top 50 TV Shows & Series | CinemaDB</title>
 	<meta
 		name="description"
-		content="The 50 Greatest Television Series of All Time, ranked by IMDb user ratings. Browse and organise the highest-rated TV shows."
+		content="An editorial snapshot of 50 acclaimed television series. Browse and organise top-rated TV shows."
 	/>
 </svelte:head>
 
@@ -51,7 +51,7 @@
 			<div class="container hero-container">
 				<div class="hero-text-block">
 					<div class="hero-tag-wrap">
-						<span class="imdb-pill">IMDb</span>
+						<span class="imdb-pill">TMDB</span>
 						<span class="hero-tag">FEATURED SERIES</span>
 					</div>
 					<h1 class="hero-main-title">{hero.title}</h1>
@@ -89,12 +89,12 @@
 		<header class="chart-header-bar">
 			<div class="chart-title-box">
 				<div class="imdb-badge-wrap">
-					<span class="imdb-icon">IMDb</span>
+					<span class="imdb-icon">TMDB</span>
 					<span class="chart-tag">TOP 50 ALL-TIME TELEVISION CHART</span>
 				</div>
 				<h2 class="chart-main-title">Top 50 Ranked Television Masterpieces</h2>
 				<p class="chart-subtitle">
-					Ranked strictly by millions of verified IMDb reviews from #1 to #50.
+					An editorial snapshot of 50 acclaimed series, ordered from #1 to #50.
 				</p>
 			</div>
 
@@ -111,7 +111,12 @@
 					/>
 				</div>
 
-				<div class="genre-pills-scroll">
+				<div
+					class="genre-pills-scroll"
+					tabindex="0"
+					role="region"
+					aria-label="Filter by genre (scrollable)"
+				>
 					{#each allGenres as genre}
 						<button
 							type="button"

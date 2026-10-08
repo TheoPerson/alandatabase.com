@@ -30,6 +30,25 @@ its launch gates are explicitly verified.
 
 ### Fixed
 
+- Ran the overnight V3 audit (2026-10-08) on an isolated task worktree and fixed
+  the safe subset: Discover now strips classification keywords through the shared
+  post-filter, `searchMovies` escapes LIKE wildcards and clamps trending/top-rated
+  bounds, review reads project only public author columns, catalogue override
+  writes are length/format-bounded, trailing-slash API auxiliaries keep their
+  intended session posture, session-cookie deletion mirrors cookie attributes,
+  the Telegram webhook compares secrets in constant time, and API credentialed
+  CORS is sent only with an allowed origin.
+- Corrected rating attribution from IMDb to TMDB catalogue data (no fabricated
+  fallbacks), labelled the TV Top 50 an editorial snapshot, and aligned the
+  disclaimer with the enforced adult-quarantine policy.
+- Hardened playback quarantine: the global safety test now scans every blocked
+  pattern, and the player container no longer accepts trailer/custom-URL props.
+- Improved keyboard and screen-reader access (hub `<main>` landmark, scrollable
+  cast/genre regions, labelled rating buttons, single-announce poster fallback,
+  distinct dialog-dismiss control) and made landing actions wrap at 320px.
+- Guarded the dual-repo sync script against implicit `main` pushes and aligned
+  the worker test command/engines with the root Node 24 pin.
+
 - Preserved deep-linked search queries in the interactive search field and
   enforced same-origin form mutations consistently in development and deployed
   runtimes.

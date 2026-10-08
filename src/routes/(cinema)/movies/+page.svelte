@@ -73,7 +73,7 @@
 					<div class="hero-meta-row">
 						<span class="imdb-score-badge">
 							<span class="star">★</span>
-							<span>{Number(currentHero.voteAverage || 8.0).toFixed(1)}</span>
+							<span>{Number(currentHero.voteAverage || 0).toFixed(1)}</span>
 						</span>
 
 						{#if currentHero.releaseDate}

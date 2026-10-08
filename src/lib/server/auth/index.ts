@@ -26,7 +26,10 @@ export const SESSION_COOKIE_OPTIONS = {
 
 export const SESSION_COOKIE_DELETE_OPTIONS = {
 	path: SESSION_COOKIE_OPTIONS.path,
-	domain: SESSION_COOKIE_OPTIONS.domain
+	domain: SESSION_COOKIE_OPTIONS.domain,
+	httpOnly: SESSION_COOKIE_OPTIONS.httpOnly,
+	sameSite: SESSION_COOKIE_OPTIONS.sameSite,
+	secure: SESSION_COOKIE_OPTIONS.secure
 };
 
 // Password Hashing with Scrypt (Salt + Hash)

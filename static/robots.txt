@@ -5,6 +5,8 @@ Disallow: /api
 Disallow: /auth
 Disallow: /disclaimer
 Disallow: /my
+Disallow: /movies/catalog
+Disallow: /movies/custom
 Disallow: /setup
 Disallow: /tools
 

@@ -76,7 +76,7 @@
 				<!-- Title & Badges -->
 				<header class="show-header">
 					<div class="tag-row">
-						<Badge variant="gold">IMDb {Number(show.vote_average || 8.9).toFixed(1)}</Badge>
+						<Badge variant="gold">TMDB {Number(show.vote_average || 0).toFixed(1)}</Badge>
 						<span class="meta-year"
 							>{show.first_air_date ? new Date(show.first_air_date).getFullYear() : ''}</span
 						>

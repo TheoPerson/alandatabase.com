@@ -1,12 +1,11 @@
 <script lang="ts">
 	import PlaybackUnavailable from './PlaybackUnavailable.svelte';
 
+	// QUARANTINED: playback sources are intentionally not accepted here.
+	// This container only renders playback status — never an iframe/video URL.
+	// Keep it that way: do not add trailerKey/customVideoUrl/embed props.
 	const { title } = $props<{
-		tmdbId: number | string;
-		imdbId?: string | null;
 		title: string;
-		trailerKey?: string | null;
-		customVideoUrl?: string | null;
 	}>();
 </script>
 

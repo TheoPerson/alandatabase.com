@@ -61,8 +61,8 @@ function applySecurityHeaders(response: Response, event: Parameters<Handle>[0]['
 		const origin = event.request.headers.get('origin');
 		if (origin && API_ALLOWED_ORIGINS.has(origin)) {
 			response.headers.set('access-control-allow-origin', origin);
+			response.headers.set('access-control-allow-credentials', 'true');
 		}
-		response.headers.set('access-control-allow-credentials', 'true');
 		response.headers.set('access-control-allow-methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
 		response.headers.set(
 			'access-control-allow-headers',

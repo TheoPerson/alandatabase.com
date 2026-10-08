@@ -160,7 +160,7 @@
 		{#if data.credits && data.credits.length > 0}
 			<div class="cast-section">
 				<h2 class="section-title">Top Cast</h2>
-				<div class="cast-scroll">
+				<div class="cast-scroll" tabindex="0" role="region" aria-label="Top cast (scrollable)">
 					{#each data.credits as actor}
 						<a class="cast-card" href={`/people/${actor.id}`}>
 							{#if actor.profilePath}

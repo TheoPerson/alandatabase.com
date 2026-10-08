@@ -22,8 +22,8 @@
 		<MoviePoster path={posterPath} {title} />
 
 		{#if ratingFormatted && ratingFormatted !== '0.0'}
-			<div class="rating-badge" title="IMDb Rating">
-				<span class="imdb-tag">IMDb</span>
+			<div class="rating-badge" title="TMDB rating">
+				<span class="imdb-tag">TMDB</span>
 				<span class="score">{ratingFormatted}</span>
 			</div>
 		{/if}

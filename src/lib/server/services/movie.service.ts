@@ -44,11 +44,13 @@ function prepareVisibleMovies(movieRecords: any[]) {
 }
 
 export async function getTrendingMovies(limit = 12, offset = 0) {
+	const safeLimit = normalizeSearchLimit(limit);
+	const safeOffset = Number.isFinite(offset) ? Math.max(0, Math.trunc(offset)) : 0;
 	const results = await db.query.movies.findMany({
 		where: standardMovieVisibilityWhere(),
 		orderBy: [desc(movies.popularity)],
-		limit,
-		offset,
+		limit: safeLimit,
+		offset: safeOffset,
 		with: {
 			genres: {
 				with: {
@@ -62,11 +64,13 @@ export async function getTrendingMovies(limit = 12, offset = 0) {
 }
 
 export async function getTopRatedMovies(limit = 12, offset = 0) {
+	const safeLimit = normalizeSearchLimit(limit);
+	const safeOffset = Number.isFinite(offset) ? Math.max(0, Math.trunc(offset)) : 0;
 	const results = await db.query.movies.findMany({
 		where: standardMovieVisibilityWhere(),
 		orderBy: [desc(movies.voteAverage)],
-		limit,
-		offset,
+		limit: safeLimit,
+		offset: safeOffset,
 		with: {
 			genres: {
 				with: {
@@ -178,6 +182,10 @@ function normalizeSearchLimit(limit: number) {
 	return Math.min(100, Math.max(1, Math.trunc(limit)));
 }
 
+function escapeLikePattern(value: string): string {
+	return value.replace(/[\\%_]/gu, '\\$&');
+}
+
 export async function searchMovies(q: string, limit = 30) {
 	if (!q || !q.trim()) return [];
 	const queryStr = q.trim();
@@ -185,10 +193,11 @@ export async function searchMovies(q: string, limit = 30) {
 	const safeLimit = normalizeSearchLimit(limit);
 
 	try {
+		const titlePattern = `%${escapeLikePattern(queryStr)}%`;
 		const [localResults, localActors] = await Promise.all([
 			db.query.movies
 				.findMany({
-					where: and(standardMovieVisibilityWhere(), ilike(movies.title, `%${queryStr}%`)),
+					where: and(standardMovieVisibilityWhere(), ilike(movies.title, titlePattern)),
 					orderBy: [desc(movies.popularity)],
 					limit: Math.max(15, safeLimit),
 					with: {
@@ -199,7 +208,7 @@ export async function searchMovies(q: string, limit = 30) {
 				.catch(() => []),
 			db.query.people
 				.findMany({
-					where: ilike(people.name, `%${queryStr}%`),
+					where: ilike(people.name, titlePattern),
 					limit: 3,
 					with: {
 						castRoles: {

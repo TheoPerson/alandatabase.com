@@ -36,7 +36,7 @@ describe('playback source quarantine', () => {
 		for (const file of sourceFiles(sourceRoot)) {
 			if (file.endsWith('player-safety.test.ts')) continue;
 			const source = readFileSync(file, 'utf8');
-			for (const pattern of blockedPatterns.slice(1, 5)) {
+			for (const pattern of blockedPatterns) {
 				expect(source, file).not.toMatch(pattern);
 			}
 		}

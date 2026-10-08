@@ -1,5 +1,15 @@
 import { execSync } from 'child_process';
 
+// Protected-branch guard: `main` is never pushed implicitly. This operator
+// script only runs with explicit Product Lead authority per invocation.
+if (process.env.ALLOW_MAIN_PUSH !== '1') {
+	console.error(
+		'\x1b[31m%s\x1b[0m',
+		'Refusing to push: main is protected. Re-run with ALLOW_MAIN_PUSH=1 only under explicit Product Lead authority.'
+	);
+	process.exit(1);
+}
+
 console.log('\x1b[32m%s\x1b[0m', '════════════════════════════════════════════════════════════');
 console.log('\x1b[32m%s\x1b[0m', '  ALAN DATABASE • DUAL REPO SYNC (GITHUB + GITLAB)');
 console.log('\x1b[32m%s\x1b[0m', '════════════════════════════════════════════════════════════');

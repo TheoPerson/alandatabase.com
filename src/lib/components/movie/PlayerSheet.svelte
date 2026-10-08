@@ -56,7 +56,12 @@
 </script>
 
 <div class="sheet-overlay" transition:fade={{ duration: 160 }}>
-	<button class="sheet-backdrop" type="button" aria-label="Close playback dialog" onclick={onClose}
+	<button
+		class="sheet-backdrop"
+		type="button"
+		aria-label="Dismiss playback dialog"
+		tabindex="-1"
+		onclick={onClose}
 	></button>
 
 	<div

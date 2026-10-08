@@ -311,7 +311,13 @@ export async function getUserMovieReviews(movieId: string): Promise<any[]> {
 		where: eq(userReviews.movieId, resolvedUuid),
 		orderBy: [desc(userReviews.createdAt)],
 		with: {
-			user: true
+			user: {
+				columns: {
+					id: true,
+					username: true,
+					displayName: true
+				}
+			}
 		}
 	});
 	return reviews as any[];

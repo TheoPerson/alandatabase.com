@@ -77,10 +77,24 @@ export const actions = {
 			}
 
 			const submitted = { title, originalTitle, releaseDate, overview };
+			const fieldBounds: Record<string, number> = {
+				title: 200,
+				originalTitle: 200,
+				releaseDate: 10,
+				overview: 2000
+			};
 			for (const field of allowedFields) {
 				const value = submitted[field];
 				if (!value || value === movie[field]) delete localOverrides[field];
-				else localOverrides[field] = value;
+				else {
+					if (value.length > fieldBounds[field]) {
+						return fail(400, { error: `${field} exceeds ${fieldBounds[field]} characters` });
+					}
+					if (field === 'releaseDate' && !/^\d{4}-\d{2}-\d{2}$/u.test(value)) {
+						return fail(400, { error: 'releaseDate must use YYYY-MM-DD format' });
+					}
+					localOverrides[field] = value;
+				}
 			}
 
 			const storedOverrides = Object.keys(localOverrides).length === 0 ? null : localOverrides;

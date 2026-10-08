@@ -1,7 +1,7 @@
 import { db } from '$lib/server/db';
 import { movies, movieGenres } from '$lib/server/db/schema';
 import { and, desc, eq, exists, inArray, sql } from 'drizzle-orm';
-import { applyLocalOverrides } from '$lib/server/services/movie.service';
+import { prepareStandardMovies } from '$lib/server/queries/local-movie-search';
 import { standardMovieVisibilityWhere } from '$lib/server/policies/movie-visibility';
 
 // Helper to fetch movies by vibe (genre IDs)
@@ -21,7 +21,7 @@ async function getVibeMovies(genreIds: number[], limit = 12) {
 		with: { keywords: true, genres: { with: { genre: true } } }
 	});
 
-	return vibeMovies.map(applyLocalOverrides);
+	return prepareStandardMovies(vibeMovies);
 }
 
 export async function load() {
@@ -41,12 +41,14 @@ export async function load() {
 		]);
 
 	// Stable for the whole UTC day so "daily" does not change on refresh.
-	const masterpieces = masterpiecesResult.status === 'fulfilled' ? masterpiecesResult.value : [];
+	const visibleMasterpieces =
+		masterpiecesResult.status === 'fulfilled'
+			? prepareStandardMovies(masterpiecesResult.value)
+			: [];
+	const masterpieces = visibleMasterpieces;
 	const utcDay = Math.floor(Date.now() / 86_400_000);
 	const dailyMasterpiece =
-		masterpieces.length > 0
-			? applyLocalOverrides(masterpieces[utcDay % masterpieces.length])
-			: null;
+		masterpieces.length > 0 ? masterpieces[utcDay % masterpieces.length] : null;
 
 	const mindBending = mindBendingResult.status === 'fulfilled' ? mindBendingResult.value : [];
 	const lateNightChill =

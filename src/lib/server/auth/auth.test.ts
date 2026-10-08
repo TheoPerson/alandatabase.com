@@ -47,10 +47,13 @@ describe('Authentication Utilities', () => {
 		await expect(verifyPassword('password', 'salt:not-hex')).resolves.toBe(false);
 	});
 
-	it('uses the same path and domain when deleting the shared session cookie', () => {
+	it('uses the same path, domain, and cookie attributes when deleting the shared session cookie', () => {
 		expect(SESSION_COOKIE_DELETE_OPTIONS).toEqual({
 			path: SESSION_COOKIE_OPTIONS.path,
-			domain: SESSION_COOKIE_OPTIONS.domain
+			domain: SESSION_COOKIE_OPTIONS.domain,
+			httpOnly: SESSION_COOKIE_OPTIONS.httpOnly,
+			sameSite: SESSION_COOKIE_OPTIONS.sameSite,
+			secure: SESSION_COOKIE_OPTIONS.secure
 		});
 	});
 });

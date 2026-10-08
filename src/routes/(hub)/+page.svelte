@@ -295,6 +295,8 @@
 		line-height: 1.6;
 	}
 	.actions {
+		display: flex;
+		flex-wrap: wrap;
 		gap: 12px;
 		margin-top: 36px;
 	}

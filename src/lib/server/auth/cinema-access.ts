@@ -53,8 +53,16 @@ export function getCinemaAccessRequirement(pathname: string): CinemaAccessRequir
 	if (CATALOG_MANAGER_ROUTES.some((route) => matchesRoute(pathname, route))) return 'catalog';
 	if (AUTHENTICATED_ROUTES.some((route) => matchesRoute(pathname, route))) return 'authenticated';
 	if (!isCinemaRoute(pathname)) return 'public';
-	if (SESSION_EXEMPT_ROUTES.includes(pathname)) return 'public';
-	if (PUBLIC_API_ROUTES.includes(pathname)) return 'public';
+	function matchesRouteExactAllowingTrailingSlash(pathname: string, route: string): boolean {
+		return pathname === route || pathname === `${route}/`;
+	}
+
+	if (
+		SESSION_EXEMPT_ROUTES.some((route) => matchesRouteExactAllowingTrailingSlash(pathname, route))
+	)
+		return 'public';
+	if (PUBLIC_API_ROUTES.some((route) => matchesRouteExactAllowingTrailingSlash(pathname, route)))
+		return 'public';
 
 	// Public catalogue, movie detail, TV, discovery and search pages remain
 	// browseable. Personal data, playback and catalogue mutation surfaces do

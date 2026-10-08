@@ -62,8 +62,8 @@
 	{/if}
 
 	{#if !loaded || !imageUrl || error}
-		<div class="poster-fallback">
-			<span class="fallback-icon">🎬</span>
+		<div class="poster-fallback" aria-hidden={imageUrl && !error ? 'true' : undefined}>
+			<span class="fallback-icon" aria-hidden="true">🎬</span>
 			<span class="fallback-title">{title}</span>
 		</div>
 	{/if}
