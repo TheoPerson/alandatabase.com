@@ -9,6 +9,11 @@ are implemented locally; no hosted database is changed automatically.
   grants production authorization.
 - Only `owner` can manage invitations, roles, and account state.
 - `admin` can manage catalog records but cannot grant roles or create owners.
+  `admin` also holds `account:access` (personal `/my`, `/live`, personal APIs).
+- `member` holds `account:access`: invited accounts can use personal surfaces
+  but receive `403` for catalog mutations, `/disclaimer`-gated flows aside, and
+  all admin/owner routes. (Changed 2026-10-08; previously member had browse
+  only and invited accounts were unusable.)
 - Invitations can grant only `admin` or `member`, expire after seven days, and
   store only a SHA-256 token digest.
 - Disabled accounts and revoked sessions fail closed.
@@ -74,7 +79,9 @@ as a long-lived authorization mechanism.
 2. Verify `/admin/access` is available only to the owner.
 3. Create a short-lived test member invitation, use it once, and confirm reuse
    fails.
-4. Confirm a member receives `403` for catalog mutations and admin routes.
+4. Confirm a member receives `403` for catalog mutations and admin routes,
+   and confirm the same member CAN access `/my` and `/live` (invited accounts
+   must be usable, not locked out).
 5. Confirm an admin can manage catalog data but receives `403` for
    `/admin/access`.
 6. Revoke other sessions from `/my/settings` and verify the current session
