@@ -167,6 +167,11 @@ Implementation may proceed autonomously only within the approved item and accept
 
 - Model owner-approved movie and TV sources with provenance, validation, availability, and safe failure behavior.
 - Add normalized TV shows, seasons, and episodes without discarding the movie catalog.
+- Replace the static `TOP_50_IMDB_TV` snapshot (`tv.service.ts`) with DB-backed
+  TV reads under the same fail-closed standard-content visibility as movies
+  (adult/keyword quarantine, no synthesized dates or placeholder counts).
+  Product Lead direction approved 2026-10-08; additive migration, rollback-safe,
+  implementation pending.
 - Add per-user playback progress, completion, resume position, and truthful history.
 - Consolidate browse → detail → player into one accessible source/player architecture.
 - Add Continue Watching and persist progress across sessions/devices.
