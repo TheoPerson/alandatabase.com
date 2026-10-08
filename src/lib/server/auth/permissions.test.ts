@@ -8,13 +8,14 @@ describe('persistent role permissions', () => {
 		expect(hasPermission(null, 'system:manage')).toBe(false);
 	});
 
-	it('keeps owner-only and catalog permissions distinct', () => {
+	it('grants every signed-in account personal access, keeps management distinct', () => {
 		expect(hasPermission({ role: 'owner' }, 'system:manage')).toBe(true);
 		expect(hasPermission({ role: 'owner' }, 'catalog:manage')).toBe(true);
+		expect(hasPermission({ role: 'owner' }, 'account:access')).toBe(true);
+		expect(hasPermission({ role: 'admin' }, 'account:access')).toBe(true);
+		expect(hasPermission({ role: 'member' }, 'account:access')).toBe(true);
 		expect(hasPermission({ role: 'admin' }, 'catalog:manage')).toBe(true);
 		expect(hasPermission({ role: 'admin' }, 'roles:manage')).toBe(false);
-		expect(hasPermission({ role: 'admin' }, 'account:access')).toBe(false);
-		expect(hasPermission({ role: 'member' }, 'account:access')).toBe(false);
 		expect(hasPermission({ role: 'member' }, 'catalog:manage')).toBe(false);
 	});
 

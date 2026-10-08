@@ -14,8 +14,10 @@ export type AuthPermission = (typeof AUTH_PERMISSIONS)[number];
 
 const ROLE_PERMISSIONS: Record<UserRole, ReadonlySet<AuthPermission>> = {
 	owner: new Set(AUTH_PERMISSIONS),
-	admin: new Set<AuthPermission>(['catalog:manage']),
-	member: new Set<AuthPermission>()
+	// Every signed-in account can use personal surfaces (`account:access`).
+	// Catalogue management stays restricted; invites/roles/system stay owner-only.
+	admin: new Set<AuthPermission>(['account:access', 'catalog:manage']),
+	member: new Set<AuthPermission>(['account:access'])
 };
 
 export function parseUserRole(value: unknown): UserRole | null {

@@ -18,8 +18,24 @@ describe('movie landing personal access', () => {
 		getTopRatedMovies.mockResolvedValue([]);
 	});
 
-	it.each(['admin', 'member'])('hides and denies owner watchlist features for %s', async (role) => {
+	it.each(['admin', 'member'])('exposes personal watchlist features to %s', async (role) => {
 		const locals = { user: { id: 'user-id', role } };
+		const pageData = await load({ locals } as any);
+		// Passes the permission gate and reaches payload validation (400, not 403).
+		const formData = vi.fn().mockResolvedValue({ get: () => 'not-a-uuid' });
+		const actionResult = await actions.toggleWatchlist({
+			locals,
+			request: { formData }
+		} as any);
+
+		expect(pageData.user).toEqual(locals.user);
+		expect(actionResult).toMatchObject({ status: 400 });
+		expect(formData).toHaveBeenCalled();
+		expect(toggleWatchlist).not.toHaveBeenCalled();
+	});
+
+	it('denies watchlist features without account access', async () => {
+		const locals = { user: { id: 'user-id', role: 'superadmin' } };
 		const pageData = await load({ locals } as any);
 		const formData = vi.fn();
 		const actionResult = await actions.toggleWatchlist({

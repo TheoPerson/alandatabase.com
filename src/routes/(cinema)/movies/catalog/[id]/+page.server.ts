@@ -124,7 +124,7 @@ export const actions = {
 			return fail(401, { error: 'You must be logged in to log films.' });
 		}
 		if (!hasPermission(locals.user, 'account:access')) {
-			return fail(403, { error: 'Personal film activity is owner-only.' });
+			return fail(403, { error: 'Personal film activity needs a signed-in account.' });
 		}
 
 		const formData = await request.formData();
@@ -203,7 +203,7 @@ export const actions = {
 			return fail(401, { error: 'You must be logged in to modify lists.' });
 		}
 		if (!hasPermission(locals.user, 'account:access')) {
-			return fail(403, { error: 'Personal lists are owner-only.' });
+			return fail(403, { error: 'Personal lists need a signed-in account.' });
 		}
 
 		const formData = await request.formData();

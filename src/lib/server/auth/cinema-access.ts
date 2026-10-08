@@ -24,9 +24,9 @@ export const PUBLIC_API_ROUTES = ['/api', '/api/health', '/api/search'];
 
 export const OWNER_ONLY_ROUTES = ['/admin', '/setup', '/api/telemetry/events'];
 
-export const CATALOG_MANAGER_ROUTES = ['/movies/custom', '/disclaimer', '/api/movies/catalog'];
+export const CATALOG_MANAGER_ROUTES = ['/movies/custom', '/api/movies/catalog'];
 
-export const AUTHENTICATED_ROUTES = ['/my', '/live'];
+export const AUTHENTICATED_ROUTES = ['/my', '/live', '/disclaimer'];
 
 export type CinemaAccessRequirement = 'public' | 'authenticated' | 'catalog' | 'owner';
 

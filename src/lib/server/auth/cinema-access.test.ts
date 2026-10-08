@@ -49,7 +49,7 @@ describe('cinema-access rules', () => {
 		expect(getCinemaAccessRequirement('/movies/catalog/123/review')).toBe('authenticated');
 		expect(getCinemaAccessRequirement('/movies/catalog/123/edit')).toBe('catalog');
 		expect(getCinemaAccessRequirement('/movies/catalog/123/merge')).toBe('catalog');
-		expect(getCinemaAccessRequirement('/disclaimer')).toBe('catalog');
+		expect(getCinemaAccessRequirement('/disclaimer')).toBe('authenticated');
 		expect(getCinemaAccessRequirement('/admin')).toBe('owner');
 		expect(getCinemaAccessRequirement('/setup')).toBe('owner');
 		expect(getCinemaAccessRequirement('/api/telemetry/events')).toBe('owner');

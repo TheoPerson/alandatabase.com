@@ -44,7 +44,7 @@ export const actions = {
 			return fail(401, { error: 'Sign in to update your watchlist.' });
 		}
 		if (!hasPermission(locals.user, 'account:access')) {
-			return fail(403, { error: 'Personal watchlists are owner-only.' });
+			return fail(403, { error: 'Personal watchlists need a signed-in account.' });
 		}
 		const data = await request.formData();
 		const movieId = data.get('movieId')?.toString();

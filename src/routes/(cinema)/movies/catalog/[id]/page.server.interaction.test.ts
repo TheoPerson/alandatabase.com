@@ -27,9 +27,28 @@ describe('catalog interaction validation', () => {
 		expect(_parseInteractionUpdate(type, value)).toMatchObject({ ok: false });
 	});
 
-	it.each(['admin', 'member'])('denies %s personal interaction and list actions', async (role) => {
-		const formData = vi.fn();
+	it.each(['admin', 'member'])('lets %s reach personal interaction and list validation', async (role) => {
+		// Empty payload: passes the permission gate, fails payload validation (400, not 403).
+		const formData = vi.fn().mockResolvedValue({ get: () => undefined });
 		const locals = { user: { id: 'user-id', role } };
+
+		const interactionResult = await actions.logInteraction({
+			locals,
+			request: { formData }
+		} as any);
+		const listResult = await actions.toggleList({
+			locals,
+			request: { formData }
+		} as any);
+
+		expect(interactionResult).toMatchObject({ status: 400 });
+		expect(listResult).toMatchObject({ status: 400 });
+		expect(formData).toHaveBeenCalled();
+	});
+
+	it('still denies personal actions without account access', async () => {
+		const formData = vi.fn();
+		const locals = { user: { id: 'user-id', role: 'superadmin' } };
 
 		const interactionResult = await actions.logInteraction({
 			locals,
