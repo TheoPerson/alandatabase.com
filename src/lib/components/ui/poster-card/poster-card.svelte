@@ -32,7 +32,13 @@
 	let failed = $state(false);
 </script>
 
-<a {href} class="card {className}" class:ranked={rank !== null} data-sveltekit-preload-data="hover">
+<a
+	{href}
+	class="card {className}"
+	class:ranked={rank !== null}
+	class:wide={rank !== null && rank >= 10}
+	data-sveltekit-preload-data="hover"
+>
 	{#if rank !== null}<span class="rank" aria-hidden="true">{rank}</span>{/if}
 	<div
 		class="frame"
@@ -81,8 +87,18 @@
 		border-radius: var(--radius-md);
 		outline-offset: 4px;
 	}
+	/* The rank numeral lives in extra padding so the poster keeps its full width. */
 	.ranked {
-		padding-left: 2.6rem;
+		--rank-gutter: 2.6rem;
+		padding-left: var(--rank-gutter);
+		width: calc(var(--card-width) + var(--rank-gutter));
+	}
+	.wide {
+		--rank-gutter: 4.4rem;
+	}
+	.wide .rank {
+		font-size: clamp(3.4rem, 9vw, 4.6rem);
+		letter-spacing: -0.12em;
 	}
 	.rank {
 		position: absolute;

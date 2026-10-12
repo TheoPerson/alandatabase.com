@@ -196,17 +196,21 @@
 		padding-bottom: 4rem;
 	}
 
+	/* Sits below the sticky TopBar and never swallows its clicks. */
 	.top-nav {
 		position: fixed;
-		top: 0;
+		top: calc(var(--top-bar-height) + var(--safe-top));
 		left: 0;
 		right: 0;
 		height: 64px;
 		display: flex;
 		align-items: center;
 		padding: 0 1rem;
-		z-index: 40;
-		background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+		z-index: calc(var(--z-bar) - 10);
+		pointer-events: none;
+	}
+	.top-nav > * {
+		pointer-events: auto;
 	}
 
 	.back-btn {

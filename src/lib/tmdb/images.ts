@@ -7,7 +7,7 @@ export interface ResponsiveImage {
 }
 
 function isAbsolute(path: string): boolean {
-	return path.startsWith('http://') || path.startsWith('https://');
+	return path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:');
 }
 
 function normalizePath(path: string | null | undefined): string | null {

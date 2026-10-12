@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { addToast } from '$lib/stores/toast';
+	import { watchlistLabel, watchlistToast } from '$lib/catalogue/watchlist-copy';
 	import Button from '$lib/components/ui/button';
 	import Chip from '$lib/components/ui/chip';
 	import Section from '$lib/components/ui/section';
@@ -12,8 +13,12 @@
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import InfoIcon from 'lucide-svelte/icons/info';
 	import PlusIcon from 'lucide-svelte/icons/plus';
+	import CheckIcon from 'lucide-svelte/icons/check';
 
 	let { data } = $props();
+
+	const savedIds = $derived(new Set<string>(data.watchlistIds));
+	let pending = $state<string | null>(null);
 </script>
 
 <svelte:head>
@@ -32,6 +37,7 @@
 {#if data.featured.length > 0}
 	<HeroCarousel items={data.featured}>
 		{#snippet actions(item)}
+			{@const saved = savedIds.has(item.id)}
 			<Button href={item.href} size="lg">
 				<InfoIcon size={20} aria-hidden="true" />
 				Details
@@ -40,21 +46,32 @@
 				<form
 					method="POST"
 					action="?/toggleWatchlist"
-					use:enhance={() =>
-						async ({ result, update }) => {
+					use:enhance={() => {
+						pending = item.id;
+						return async ({ result, update }) => {
 							await update({ reset: false });
+							pending = null;
 							addToast(
-								result.type === 'success'
-									? `Updated your watchlist for ${item.title}`
-									: 'Watchlist could not be updated.',
+								watchlistToast(item.title, result),
 								result.type === 'success' ? 'success' : 'error'
 							);
-						}}
+						};
+					}}
 				>
 					<input type="hidden" name="movieId" value={item.id} />
-					<Button type="submit" variant="secondary" size="lg">
-						<PlusIcon size={20} aria-hidden="true" />
-						Watchlist
+					<Button
+						type="submit"
+						variant={saved ? 'outline' : 'secondary'}
+						size="lg"
+						loading={pending === item.id}
+						aria-pressed={saved}
+					>
+						{#if saved}
+							<CheckIcon size={20} aria-hidden="true" />
+						{:else}
+							<PlusIcon size={20} aria-hidden="true" />
+						{/if}
+						{watchlistLabel(saved)}
 					</Button>
 				</form>
 			{:else}

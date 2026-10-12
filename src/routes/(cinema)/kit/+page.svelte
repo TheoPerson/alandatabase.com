@@ -23,7 +23,9 @@
 			href: '/kit',
 			title: 'Sample title one',
 			posterPath: null,
-			backdropPath: null,
+			// Lightest possible artwork: the copy must stay readable over it.
+			backdropPath:
+				"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9'><rect width='16' height='9' fill='%23f3f4f6'/><circle cx='11' cy='3.5' r='3.2' fill='%23ffffff'/></svg>",
 			overview: 'A kit sample without images: every component must still look intentional.',
 			releaseDate: '2014-11-05',
 			runtime: 169,
@@ -35,7 +37,8 @@
 			href: '/kit',
 			title: 'Sample title two',
 			posterPath: null,
-			backdropPath: null,
+			backdropPath:
+				"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9'><rect width='16' height='9' fill='%2311151c'/><circle cx='11' cy='3.5' r='3.2' fill='%231f2937'/></svg>",
 			overview: 'Second slide to exercise rotation, dots and the swipe gesture.',
 			releaseDate: '1999-03-31',
 			runtime: 136,

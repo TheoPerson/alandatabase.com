@@ -10,6 +10,11 @@
 
 	let { data, children }: { data: { user: { username: string } | null }; children?: Snippet } =
 		$props();
+
+	// Lets browser tests wait for hydration before they click; harmless for users.
+	$effect(() => {
+		document.documentElement.dataset.hydrated = '';
+	});
 </script>
 
 <div class="app-layout" data-sveltekit-preload-data="hover" data-sveltekit-preload-code="eager">
@@ -30,14 +35,15 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 100dvh;
+		/* Clearance for the fixed tab bar, footer included. */
+		padding-bottom: calc(var(--bottom-bar-height) + var(--safe-bottom));
 	}
 	/* Hero sections pull themselves under the sticky bar; other pages keep normal flow. */
 	.main-content {
 		flex: 1;
-		padding-bottom: calc(var(--bottom-bar-height) + var(--safe-bottom));
 	}
 	@media (min-width: 1024px) {
-		.main-content {
+		.app-layout {
 			padding-bottom: 0;
 		}
 	}

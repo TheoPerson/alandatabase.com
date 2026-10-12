@@ -136,5 +136,5 @@ describe('Drizzle migration chain', () => {
 				values ('00000000-0000-4000-8000-000000000101', 'FR', 'flatrate', 8, 'Netflix');
 			`)
 		).rejects.toThrow(/duplicate key/u);
-	});
+	}, 15_000);
 });

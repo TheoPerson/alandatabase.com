@@ -2,8 +2,11 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import SearchIcon from 'lucide-svelte/icons/search';
+	import CompassIcon from 'lucide-svelte/icons/compass';
+	import SparklesIcon from 'lucide-svelte/icons/sparkles';
 	import { isActivePath, PRIMARY_LINKS } from '$lib/navigation/links';
 	import Button from '../button/button.svelte';
+	import Logo from '../logo/logo.svelte';
 
 	interface Props {
 		user: { username: string } | null;
@@ -30,9 +33,10 @@
 
 <header class="bar" class:scrolled>
 	<div class="inner">
-		<a href="/" class="brand" aria-label="Alan's Database home">
-			<span class="mark" aria-hidden="true"></span>
+		<a href="/" class="brand">
+			<Logo size={28} />
 			<span class="word">ALAN<span class="accent">DB</span></span>
+			<span class="sr-only">home</span>
 		</a>
 
 		<nav class="primary" aria-label="Primary">
@@ -59,7 +63,14 @@
 				/>
 				<kbd aria-hidden="true">⌘K</kbd>
 			</form>
-			<a href="/search" class="search-icon" aria-label="Search">
+			<!-- Phones have no primary nav: Discover and Picker stay one tap away here. -->
+			<a href="/discover" class="icon-link" aria-label="Discover">
+				<CompassIcon size={22} aria-hidden="true" />
+			</a>
+			<a href="/cinema/picker" class="icon-link" aria-label="Picker">
+				<SparklesIcon size={22} aria-hidden="true" />
+			</a>
+			<a href="/search" class="icon-link" aria-label="Search">
 				<SearchIcon size={22} aria-hidden="true" />
 			</a>
 			{#if user}
@@ -104,13 +115,6 @@
 		font-weight: 900;
 		letter-spacing: 0.04em;
 	}
-	.mark {
-		width: 0.75rem;
-		height: 0.75rem;
-		border-radius: 50%;
-		background: var(--brand-primary);
-		box-shadow: var(--shadow-glow-emerald);
-	}
 	.accent {
 		color: var(--brand-primary);
 	}
@@ -142,7 +146,7 @@
 	.right {
 		display: flex;
 		align-items: center;
-		gap: var(--space-2);
+		gap: var(--space-1);
 		margin-left: auto;
 	}
 	.search {
@@ -150,6 +154,7 @@
 		align-items: center;
 		gap: 0.5rem;
 		min-height: var(--touch-target);
+		margin-right: var(--space-2);
 		padding-inline: 0.9rem;
 		border-radius: var(--radius-full);
 		border: 1px solid var(--border-subtle);
@@ -178,7 +183,7 @@
 		font-family: var(--font-mono);
 		font-size: 0.65rem;
 	}
-	.search-icon {
+	.icon-link {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -195,7 +200,7 @@
 		.search {
 			display: flex;
 		}
-		.search-icon {
+		.icon-link {
 			display: none;
 		}
 		.right :global(.account) {

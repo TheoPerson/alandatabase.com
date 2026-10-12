@@ -13,6 +13,8 @@ import {
 import { getTop50IMDbTVShows } from '$lib/server/services/tv.service';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
+// Rails stay short; the library page shows everything.
+const WATCHLIST_RAIL_LIMIT = 20;
 
 function settled<T>(result: PromiseSettledResult<T>, fallback: T, context: string): T {
 	if (result.status === 'fulfilled') return result.value;
@@ -46,6 +48,10 @@ export async function load({ locals }) {
 			genre: show.genres[0] ?? null
 		}));
 
+	const watchlistMovies = settled(watchlist, [], 'Home watchlist failed')
+		.map((item: { movie?: { id: unknown } }) => item.movie)
+		.filter((movie): movie is { id: unknown } => Boolean(movie));
+
 	return {
 		user,
 		featured: settled(featured, [], 'Home featured failed').map(toHeroItem),
@@ -54,10 +60,8 @@ export async function load({ locals }) {
 		topRated: settled(topRated, [], 'Home top rated failed').map(toPosterItem),
 		genres: settled(genres, [], 'Home genres failed'),
 		tv: tvItems,
-		watchlist: settled(watchlist, [], 'Home watchlist failed')
-			.map((item: { movie?: unknown }) => item.movie)
-			.filter(Boolean)
-			.map(toPosterItem),
+		watchlist: watchlistMovies.slice(0, WATCHLIST_RAIL_LIMIT).map(toPosterItem),
+		watchlistIds: watchlistMovies.map((movie) => String(movie.id)),
 		catalogueEmpty:
 			featured.status === 'fulfilled' &&
 			featured.value.length === 0 &&

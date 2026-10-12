@@ -46,6 +46,12 @@ describe('responsive sets', () => {
 		expect(profileImageUrl('/f.jpg')).toBe('https://image.tmdb.org/t/p/w185/f.jpg');
 	});
 
+	it('passes data URLs through for local kit samples', () => {
+		const data = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg"/>';
+		expect(tmdbImageUrl(data, 'w342')).toBe(data);
+		expect(backdropSrcSet(data)).toEqual({ src: data, srcset: '', placeholder: data });
+	});
+
 	it('returns null sets for missing paths', () => {
 		expect(posterSrcSet(null)).toBeNull();
 		expect(backdropSrcSet(undefined)).toBeNull();

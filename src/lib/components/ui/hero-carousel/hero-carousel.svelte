@@ -1,6 +1,8 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import type { HeroItem } from '$lib/catalogue/items';
+	import PauseIcon from 'lucide-svelte/icons/pause';
+	import PlayIcon from 'lucide-svelte/icons/play';
 	import { backdropSrcSet, logoSrcSet } from '$lib/tmdb/images';
 	import { formatRating, formatRuntime, formatYear } from '$lib/format';
 	import BackdropImage from '../backdrop-image/backdrop-image.svelte';
@@ -17,11 +19,16 @@
 	let { items, intervalMs = 8000, actions }: Props = $props();
 
 	let index = $state(0);
-	let paused = $state(false);
+	let hovered = $state(false);
+	let userPaused = $state(false);
+	let reducedMotion = $state(false);
 	let pointerStartX: number | null = null;
+	// The previous backdrop stays underneath while the new one fades in over it.
+	let layers = $state<HeroItem[]>(items[0] ? [items[0]] : []);
 
-	const current = $derived(items[index] ?? null);
 	const count = $derived(items.length);
+	const current = $derived(items[index] ?? null);
+	const rotating = $derived(count > 1 && !hovered && !userPaused && !reducedMotion);
 	const logo = $derived(logoSrcSet(current?.logoPath));
 	const meta = $derived(
 		current
@@ -34,23 +41,42 @@
 			: []
 	);
 
-	function goTo(target: number) {
-		index = target;
-	}
+	$effect(() => {
+		reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	});
 
 	$effect(() => {
-		// Preload the next backdrop so the switch never shows a blank frame.
+		const item = current;
+		if (!item) return;
+		const existing = untrack(() => layers);
+		const previous = existing[existing.length - 1];
+		if (previous?.id === item.id) return;
+		layers = previous ? [previous, item] : [item];
+	});
+
+	$effect(() => {
+		// Preload the next slide with the same candidates the browser will pick.
 		const next = items[nextIndex(index, count)];
-		const set = backdropSrcSet(next?.backdropPath);
-		if (set && typeof Image !== 'undefined') {
-			const preload = new Image();
-			preload.src = set.src;
+		if (!next || typeof Image === 'undefined') return;
+		const backdrop = backdropSrcSet(next.backdropPath);
+		if (backdrop) {
+			const image = new Image();
+			image.sizes = '100vw';
+			image.srcset = backdrop.srcset;
+			image.src = backdrop.src;
+			new Image().src = backdrop.placeholder;
+		}
+		const nextLogo = logoSrcSet(next.logoPath);
+		if (nextLogo) {
+			const image = new Image();
+			image.sizes = '(min-width: 1024px) 420px, 70vw';
+			image.srcset = nextLogo.srcset;
+			image.src = nextLogo.src;
 		}
 	});
 
 	$effect(() => {
-		if (count <= 1 || paused) return;
-		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		if (!rotating) return;
 		const timer = window.setInterval(() => {
 			if (document.visibilityState === 'visible') index = nextIndex(index, count);
 		}, intervalMs);
@@ -73,60 +99,90 @@
 {#if current}
 	<section
 		class="hero"
+		class:paused={!rotating}
 		aria-roledescription="carousel"
 		aria-label="Featured titles"
-		onmouseenter={() => (paused = true)}
-		onmouseleave={() => (paused = false)}
-		onfocusin={() => (paused = true)}
-		onfocusout={() => (paused = false)}
+		onmouseenter={() => (hovered = true)}
+		onmouseleave={() => (hovered = false)}
+		onfocusin={() => (hovered = true)}
+		onfocusout={() => (hovered = false)}
 		onpointerdown={onPointerDown}
 		onpointerup={onPointerUp}
 		onpointercancel={() => (pointerStartX = null)}
 	>
-		<BackdropImage path={current.backdropPath} eager={index === 0} sizes="100vw" />
+		<div class="layers" aria-hidden="true">
+			{#each layers as layer (layer.id)}
+				<BackdropImage path={layer.backdropPath} eager={layer.id === items[0]?.id} sizes="100vw" />
+			{/each}
+		</div>
 		<div class="scrim" aria-hidden="true"></div>
 
-		<div class="content" aria-live="polite">
-			{#key current.id}
-				<div class="text">
-					{#if logo}
-						<img
-							class="logo"
-							src={logo.src}
-							srcset={logo.srcset || undefined}
-							sizes="(min-width: 1024px) 420px, 70vw"
-							alt=""
-							loading="eager"
-							decoding="async"
-						/>
-						<h1 class="sr-only">{current.title}</h1>
-					{:else}
-						<h1 class="title">{current.title}</h1>
-					{/if}
-					<MetaChips items={meta} class="meta" />
-					{#if current.overview}<p class="overview">{current.overview}</p>{/if}
-					{#if actions}<div class="actions">{@render actions(current)}</div>{/if}
-				</div>
-			{/key}
-		</div>
-
-		{#if count > 1}
-			<div class="dots" role="tablist" aria-label="Choose featured title">
-				{#each items as item, dotIndex (item.id)}
+		<div class="content">
+			{#if count > 1}
+				<!-- First in the tab order, as the ARIA carousel pattern asks; shown under the slide. -->
+				<div class="controls">
 					<button
 						type="button"
-						role="tab"
-						class="dot"
-						class:active={dotIndex === index}
-						aria-selected={dotIndex === index}
-						aria-label={item.title}
-						onclick={() => goTo(dotIndex)}
+						class="pause"
+						aria-label={userPaused ? 'Play featured titles' : 'Pause featured titles'}
+						aria-pressed={userPaused}
+						onclick={() => (userPaused = !userPaused)}
 					>
-						<span class="dot-fill" style:animation-duration={`${intervalMs}ms`}></span>
+						{#if userPaused}
+							<PlayIcon size={18} aria-hidden="true" />
+						{:else}
+							<PauseIcon size={18} aria-hidden="true" />
+						{/if}
 					</button>
-				{/each}
+					<div class="dots" role="tablist" aria-label="Choose featured title">
+						{#each items as item, dotIndex (item.id)}
+							<button
+								type="button"
+								role="tab"
+								class="dot"
+								class:active={dotIndex === index}
+								aria-selected={dotIndex === index}
+								aria-label={item.title}
+								onclick={() => (index = dotIndex)}
+							>
+								<span class="dot-fill" style:animation-duration={`${intervalMs}ms`}></span>
+							</button>
+						{/each}
+					</div>
+				</div>
+			{/if}
+
+			<div class="slides" aria-live={rotating ? 'off' : 'polite'}>
+				{#key current.id}
+					<div
+						class="text"
+						role="group"
+						aria-roledescription="slide"
+						aria-label={`${index + 1} of ${count}: ${current.title}`}
+					>
+						<div class="title-box">
+							{#if logo}
+								<img
+									class="logo"
+									src={logo.src}
+									srcset={logo.srcset || undefined}
+									sizes="(min-width: 1024px) 420px, 70vw"
+									alt=""
+									loading="eager"
+									decoding="async"
+								/>
+								<h1 class="sr-only">{current.title}</h1>
+							{:else}
+								<h1 class="title">{current.title}</h1>
+							{/if}
+						</div>
+						<MetaChips items={meta} class="meta" />
+						{#if current.overview}<p class="overview">{current.overview}</p>{/if}
+						{#if actions}<div class="actions">{@render actions(current)}</div>{/if}
+					</div>
+				{/key}
 			</div>
-		{/if}
+		</div>
 	</section>
 {/if}
 
@@ -145,8 +201,11 @@
 	@media (min-width: 1024px) {
 		.hero {
 			min-height: min(80dvh, 720px);
-			align-items: center;
 		}
+	}
+	.layers {
+		position: absolute;
+		inset: 0;
 	}
 	.scrim {
 		position: absolute;
@@ -157,14 +216,42 @@
 	}
 	.content {
 		position: relative;
+		display: flex;
+		flex-direction: column;
 		width: 100%;
 		max-width: var(--container-wide);
 		margin: 0 auto;
-		padding: var(--space-6) var(--page-gutter) var(--space-7);
+		padding: calc(var(--top-bar-height) + var(--safe-top) + var(--space-5)) var(--page-gutter)
+			var(--space-6);
+	}
+	.slides {
+		order: 1;
+	}
+	.controls {
+		order: 2;
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		margin-top: var(--space-4);
 	}
 	.text {
+		position: relative;
 		max-width: 44rem;
 		animation: rise var(--duration-slow) var(--ease-out) both;
+	}
+	/* A soft local vignette keeps the copy readable over bright artwork. */
+	.text::before {
+		content: '';
+		position: absolute;
+		inset: -1.5rem -3rem -1.5rem -3rem;
+		z-index: -1;
+		border-radius: var(--radius-xl);
+		background: radial-gradient(
+			ellipse at 25% 65%,
+			rgba(8, 9, 11, 0.8),
+			rgba(8, 9, 11, 0.5) 55%,
+			transparent 100%
+		);
 	}
 	@keyframes rise {
 		from {
@@ -176,13 +263,18 @@
 			transform: translateY(0);
 		}
 	}
+	.title-box {
+		display: flex;
+		align-items: flex-end;
+		min-height: clamp(4.5rem, 12vw, 10rem);
+	}
 	.logo {
 		display: block;
-		width: min(70vw, 420px);
-		max-height: 160px;
+		height: clamp(4.5rem, 12vw, 10rem);
+		width: auto;
+		max-width: min(70vw, 420px);
 		object-fit: contain;
 		object-position: left bottom;
-		margin-bottom: var(--space-4);
 		filter: drop-shadow(0 6px 24px rgba(0, 0, 0, 0.6));
 	}
 	.title {
@@ -203,7 +295,8 @@
 		overflow: hidden;
 		max-width: 36rem;
 		margin-top: var(--space-3);
-		color: var(--content-secondary);
+		color: var(--content-primary);
+		opacity: 0.92;
 		font-size: var(--text-md);
 		line-height: 1.55;
 	}
@@ -218,10 +311,22 @@
 		gap: var(--space-2);
 		margin-top: var(--space-5);
 	}
+	.pause {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: var(--touch-target);
+		height: var(--touch-target);
+		border-radius: 50%;
+		border: 1px solid var(--border-subtle);
+		background: rgba(8, 9, 11, 0.6);
+		color: var(--content-primary);
+		transition: background-color var(--duration-base) var(--ease-out);
+	}
+	.pause:hover {
+		background: rgba(255, 255, 255, 0.12);
+	}
 	.dots {
-		position: absolute;
-		right: var(--page-gutter);
-		bottom: var(--space-4);
 		display: flex;
 		gap: 0.4rem;
 	}
@@ -249,8 +354,7 @@
 		animation: progress linear forwards;
 		animation-duration: inherit;
 	}
-	.hero:hover .dot.active .dot-fill::after,
-	.hero:focus-within .dot.active .dot-fill::after {
+	.hero.paused .dot.active .dot-fill::after {
 		animation-play-state: paused;
 	}
 	@keyframes progress {
