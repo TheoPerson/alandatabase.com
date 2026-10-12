@@ -10,32 +10,14 @@ import {
 import { eq, and } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
 import { standardMovieVisibilityWhere } from '$lib/server/policies/movie-visibility';
-import { logActivity } from '$lib/server/services/interaction.service';
+import { applyInteraction, parseInteractionUpdate } from '$lib/server/services/interaction.service';
 import { logServerError } from '$lib/server/security/logging';
 import { hasPermission } from '$lib/server/auth/permissions';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const BOOLEAN_INTERACTION_TYPES = ['watched', 'watchlist', 'favorite'] as const;
 
-export function _parseInteractionUpdate(type: string | undefined, value: string | undefined) {
-	if (BOOLEAN_INTERACTION_TYPES.includes(type as (typeof BOOLEAN_INTERACTION_TYPES)[number])) {
-		if (value !== 'true' && value !== 'false') {
-			return { ok: false as const, error: 'Interaction value must be true or false.' };
-		}
-		return { ok: true as const, type, value: value === 'true' };
-	}
-
-	if (type === 'rating') {
-		if (value === '') return { ok: true as const, type, value: null };
-		const rating = Number(value);
-		if (!Number.isFinite(rating) || rating < 0.5 || rating > 5 || !Number.isInteger(rating * 2)) {
-			return { ok: false as const, error: 'Rating must be between 0.5 and 5 in half-star steps.' };
-		}
-		return { ok: true as const, type, value: rating };
-	}
-
-	return { ok: false as const, error: 'Unknown interaction type.' };
-}
+// Kept for the existing validation test; the validator now lives in the service.
+export const _parseInteractionUpdate = parseInteractionUpdate;
 
 async function resolveMovieUuid(movieIdOrTmdb: string): Promise<string | null> {
 	if (UUID_REGEX.test(movieIdOrTmdb)) {
@@ -135,63 +117,15 @@ export const actions = {
 		if (!rawMovieId || !type) {
 			return fail(400, { error: 'Invalid payload.' });
 		}
-		const parsedUpdate = _parseInteractionUpdate(type, value);
+		const parsedUpdate = parseInteractionUpdate(type, value);
 		if (!parsedUpdate.ok) return fail(400, { error: parsedUpdate.error });
 
-		const movieId = await resolveMovieUuid(rawMovieId);
-		if (!movieId) {
-			return fail(404, { error: 'Could not resolve movie record.' });
-		}
-
 		try {
-			// Find existing interaction
-			let interaction = await db.query.userMovieInteractions.findFirst({
-				where: and(
-					eq(userMovieInteractions.userId, locals.user.id),
-					eq(userMovieInteractions.movieId, movieId)
-				)
-			});
-
-			// Prepare update payload
-			const payload: any = {
-				updatedAt: new Date()
-			};
-
-			if (parsedUpdate.type === 'watched') payload.watched = parsedUpdate.value;
-			if (parsedUpdate.type === 'watchlist') payload.watchlist = parsedUpdate.value;
-			if (parsedUpdate.type === 'favorite') payload.favorite = parsedUpdate.value;
-			if (parsedUpdate.type === 'rating') payload.rating = parsedUpdate.value;
-			if (
-				parsedUpdate.type === 'watched' &&
-				parsedUpdate.value &&
-				(!interaction || !interaction.watchDate)
-			) {
-				payload.watchDate = new Date().toISOString().split('T')[0];
+			const interaction = await applyInteraction(locals.user.id, rawMovieId, parsedUpdate);
+			if (!interaction) {
+				return fail(404, { error: 'Could not resolve movie record.' });
 			}
-
-			if (interaction) {
-				await db
-					.update(userMovieInteractions)
-					.set(payload)
-					.where(eq(userMovieInteractions.id, interaction.id));
-			} else {
-				payload.userId = locals.user.id;
-				payload.movieId = movieId;
-				await db.insert(userMovieInteractions).values(payload);
-			}
-
-			// Log activity (non-blocking)
-			if (parsedUpdate.type === 'rating' && parsedUpdate.value !== null) {
-				logActivity(locals.user.id, 'rated', movieId, undefined, { rating: parsedUpdate.value });
-			} else if (parsedUpdate.type === 'watched' && parsedUpdate.value) {
-				logActivity(locals.user.id, 'watched', movieId);
-			} else if (parsedUpdate.type === 'favorite' && parsedUpdate.value) {
-				logActivity(locals.user.id, 'favorited', movieId);
-			} else if (parsedUpdate.type === 'watchlist' && parsedUpdate.value) {
-				logActivity(locals.user.id, 'watchlisted', movieId);
-			}
-
-			return { success: true };
+			return { success: true, interaction };
 		} catch (err) {
 			logServerError('Movie interaction update failed', err);
 			return fail(500, { error: 'Failed to update interaction.' });

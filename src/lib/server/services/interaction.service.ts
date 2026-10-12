@@ -85,6 +85,118 @@ async function resolveMovieUuid(movieId: string): Promise<string | null> {
 	return null;
 }
 
+// ── Single-field interaction updates (shared by the catalogue and detail routes) ──
+const BOOLEAN_INTERACTION_TYPES = ['watched', 'watchlist', 'favorite'] as const;
+type BooleanInteractionType = (typeof BOOLEAN_INTERACTION_TYPES)[number];
+
+export type ParsedInteractionUpdate =
+	| { ok: true; type: BooleanInteractionType; value: boolean }
+	| { ok: true; type: 'rating'; value: number | null }
+	| { ok: false; error: string };
+
+export interface InteractionState {
+	watched: boolean;
+	watchlist: boolean;
+	favorite: boolean;
+	rating: number | null;
+}
+
+function isBooleanInteractionType(type: string | undefined): type is BooleanInteractionType {
+	return BOOLEAN_INTERACTION_TYPES.includes(type as BooleanInteractionType);
+}
+
+/** Validates one `type`/`value` pair from a form: exact booleans, or a 0.5–5 half-star rating ('' clears it). */
+export function parseInteractionUpdate(
+	type: string | undefined,
+	value: string | undefined
+): ParsedInteractionUpdate {
+	if (isBooleanInteractionType(type)) {
+		if (value !== 'true' && value !== 'false') {
+			return { ok: false, error: 'Interaction value must be true or false.' };
+		}
+		return { ok: true, type, value: value === 'true' };
+	}
+
+	if (type === 'rating') {
+		if (value === '') return { ok: true, type, value: null };
+		const rating = Number(value);
+		if (!Number.isFinite(rating) || rating < 0.5 || rating > 5 || !Number.isInteger(rating * 2)) {
+			return { ok: false, error: 'Rating must be between 0.5 and 5 in half-star steps.' };
+		}
+		return { ok: true, type, value: rating };
+	}
+
+	return { ok: false, error: 'Unknown interaction type.' };
+}
+
+function toInteractionState(row: {
+	watched: boolean;
+	watchlist: boolean;
+	favorite: boolean;
+	rating: string | null;
+}): InteractionState {
+	return {
+		watched: row.watched,
+		watchlist: row.watchlist,
+		favorite: row.favorite,
+		rating: row.rating === null ? null : Number(row.rating)
+	};
+}
+
+/**
+ * Applies one validated update to the user's row for a standard movie and
+ * returns the resulting state, or null when the movie is unknown or
+ * quarantined (nothing is written in that case).
+ */
+export async function applyInteraction(
+	userId: string,
+	movieIdOrTmdb: string,
+	update: ParsedInteractionUpdate
+): Promise<InteractionState | null> {
+	if (!update.ok) return null;
+	const movieId = await resolveMovieUuid(movieIdOrTmdb);
+	if (!movieId) return null;
+
+	const existing = await db.query.userMovieInteractions.findFirst({
+		where: and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.movieId, movieId))
+	});
+
+	const payload: Partial<typeof userMovieInteractions.$inferInsert> = { updatedAt: new Date() };
+	if (update.type === 'rating') {
+		payload.rating = update.value === null ? null : update.value.toFixed(1);
+	} else {
+		payload[update.type] = update.value;
+	}
+	if (update.type === 'watched' && update.value && !existing?.watchDate) {
+		payload.watchDate = new Date().toISOString().split('T')[0];
+	}
+
+	const [row] = existing
+		? await db
+				.update(userMovieInteractions)
+				.set(payload)
+				.where(eq(userMovieInteractions.id, existing.id))
+				.returning()
+		: await db
+				.insert(userMovieInteractions)
+				.values({ userId, movieId, ...payload })
+				.returning();
+	if (!row) return null;
+
+	// Activity feed semantics unchanged from the catalogue action: only positive events are logged.
+	if (update.type === 'rating' && update.value !== null) {
+		logActivity(userId, 'rated', movieId, undefined, { rating: update.value });
+	} else if (update.type === 'watched' && update.value) {
+		logActivity(userId, 'watched', movieId);
+	} else if (update.type === 'favorite' && update.value) {
+		logActivity(userId, 'favorited', movieId);
+	} else if (update.type === 'watchlist' && update.value) {
+		logActivity(userId, 'watchlisted', movieId);
+	}
+
+	return toInteractionState(row);
+}
+
 export async function getUserInteraction(userId: string, movieId: string) {
 	const resolvedUuid = await resolveMovieUuid(movieId);
 	if (!resolvedUuid) return null;

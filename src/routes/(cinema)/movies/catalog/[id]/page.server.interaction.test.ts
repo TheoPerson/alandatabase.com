@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/server/db', () => ({ db: {} }));
 vi.mock('$lib/server/services/movie.service', () => ({ getMovieById: vi.fn() }));
-vi.mock('$lib/server/services/interaction.service', () => ({ logActivity: vi.fn() }));
+vi.mock('$lib/server/services/interaction.service', async (importOriginal) => ({
+	...(await importOriginal<Record<string, unknown>>()),
+	applyInteraction: vi.fn()
+}));
 
 import { _parseInteractionUpdate, actions } from './+page.server';
 
