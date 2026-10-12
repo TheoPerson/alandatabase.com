@@ -11,7 +11,13 @@ import { setupMeilisearchIndexes } from './search/indexer.js';
 import { closeWorkerDatabase } from './db.js';
 
 const command = process.argv[2];
-const validCommands = new Set(['sync-genres', 'setup-search', 'sync-popular', 'ingest-id']);
+const validCommands = new Set([
+	'sync-genres',
+	'setup-search',
+	'sync-popular',
+	'sync-top-rated',
+	'ingest-id'
+]);
 
 function printHelp() {
 	console.log(`
@@ -21,6 +27,7 @@ Commands:
   sync-genres     Sync movie genres from TMDB
   setup-search    Configure Meilisearch indexes
   sync-popular    Fetch top 5 pages of popular movies from TMDB
+  sync-top-rated  Fetch top 5 pages of top-rated movies from TMDB
   ingest-id <id>  Ingest a specific movie by TMDB ID
 `);
 }
@@ -60,6 +67,17 @@ async function main() {
 		}
 
 		console.log('\n🎉 Finished syncing popular movies!');
+	} else if (command === 'sync-top-rated') {
+		await syncGenres();
+		console.log('🏆 Fetching top-rated movies from TMDB...');
+		const client = new TMDBClient();
+		for (let page = 1; page <= 5; page++) {
+			console.log(`\n--- Fetching Page ${page} ---`);
+			const res = await client.getTopRatedMovies(page);
+			for (const m of res.results) {
+				await ingestMovie(m.id);
+			}
+		}
 	} else if (command === 'ingest-id') {
 		await setupMeilisearchIndexes();
 		await ingestMovie(Number.parseInt(process.argv[3], 10));

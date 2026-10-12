@@ -33,7 +33,7 @@ et vous perdez les anciens comptes et listes.
    `$env:DATABASE_URL="<adresse>"; pnpm db:migrate`
 2. Pour remplir le catalogue (clé TMDB nécessaire) :
    d'abord `$env:WORKER_DATABASE_URL="<adresse>"; $env:TMDB_API_KEY="<clé>"`, puis
-   `pnpm --dir worker ingest:genres` et `pnpm --dir worker ingest:popular`
+   `pnpm --dir worker ingest:genres`, `pnpm --dir worker ingest:popular` et `pnpm --dir worker ingest:top-rated` (les mieux notés)
    (Meilisearch est ignoré automatiquement s'il n'est pas configuré).
 3. Le premier compte se crée sur `/auth/register` avec `OWNER_SETUP_KEY` (étape 2). C'est le compte
    propriétaire. À la première connexion, un écran d'avertissement s'affiche : acceptez-le.

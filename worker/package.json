@@ -14,6 +14,7 @@
 		"test:ci": "tsx --test src/tmdb/ingest-safety.test.ts",
 		"ingest:genres": "tsx src/cli.ts sync-genres",
 		"ingest:popular": "tsx src/cli.ts sync-popular",
+		"ingest:top-rated": "tsx src/cli.ts sync-top-rated",
 		"monitor": "tsx ../scripts/monitor.ts"
 	},
 	"dependencies": {
