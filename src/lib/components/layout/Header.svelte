@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Button from '../ui/Button.svelte';
+	import Button from '../ui/button';
 	import { goto } from '$app/navigation';
 
 	let searchQuery = $state('');

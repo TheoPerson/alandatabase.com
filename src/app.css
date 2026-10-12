@@ -116,6 +116,40 @@
 		--transition-normal: 200ms var(--ease-standard);
 		--transition-slow: 360ms var(--ease-emphasized);
 
+		/* Type scale (fluid) */
+		--type-display: clamp(2.25rem, 1.2rem + 4.5vw, 4.5rem);
+		--type-headline: clamp(1.5rem, 1.1rem + 1.6vw, 2.25rem);
+		--type-title: clamp(1.125rem, 1rem + 0.5vw, 1.375rem);
+		--type-body: 1rem;
+		--type-label: 0.8125rem;
+		--tracking-tight: -0.02em;
+		--tracking-wide: 0.08em;
+
+		/* Elevation */
+		--elevation-1: 0 1px 2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+		--elevation-2: 0 10px 30px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+		--elevation-3: 0 30px 80px -20px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08);
+
+		/* Motion */
+		--duration-fast: 120ms;
+		--duration-base: 200ms;
+		--duration-slow: 360ms;
+		--ease-out: cubic-bezier(0.2, 0, 0, 1);
+		--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+		/* Layering */
+		--z-rail-controls: 2;
+		--z-bar: 40;
+		--z-sheet: 60;
+		--z-toast: 70;
+		--z-palette: 80;
+
+		/* Device safe areas and chrome */
+		--safe-top: env(safe-area-inset-top, 0px);
+		--safe-bottom: env(safe-area-inset-bottom, 0px);
+		--top-bar-height: 3.75rem;
+		--bottom-bar-height: 3.5rem;
+
 		/* Shadcn CSS Variables mapped to Velvet Midnight */
 		--background: 220 16% 4%;
 		--foreground: 210 40% 98%;

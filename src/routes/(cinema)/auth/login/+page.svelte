@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Button from '$lib/components/ui/Button.svelte';
+	import Button from '$lib/components/ui/button';
 	import { enhance } from '$app/forms';
 
 	const { data, form } = $props();

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
+	import Button from '$lib/components/ui/button';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import PlaybackUnavailable from '$lib/components/player/PlaybackUnavailable.svelte';
 	import { addToast } from '$lib/stores/toast';

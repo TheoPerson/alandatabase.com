@@ -1,7 +1,7 @@
 <script lang="ts">
 	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
 	import StreamPlayerContainer from '$lib/components/player/StreamPlayerContainer.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
+	import Button from '$lib/components/ui/button';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import { addToast } from '$lib/stores/toast';
 	import { enhance } from '$app/forms';
@@ -74,7 +74,7 @@
 							<input type="hidden" name="movieId" value={movie.id} />
 							<input type="hidden" name="type" value="watched" />
 							<input type="hidden" name="value" value={(!watched).toString()} />
-							<Button type="submit" variant={watched ? 'success' : 'outline'} class="w-full">
+							<Button type="submit" variant={watched ? 'primary' : 'outline'} class="w-full">
 								{watched ? '✔ Watched' : 'Mark as Watched'}
 							</Button>
 						</form>
@@ -97,7 +97,7 @@
 							<input type="hidden" name="movieId" value={movie.id} />
 							<input type="hidden" name="type" value="watchlist" />
 							<input type="hidden" name="value" value={(!watchlist).toString()} />
-							<Button type="submit" variant={watchlist ? 'success' : 'outline'} class="w-full">
+							<Button type="submit" variant={watchlist ? 'primary' : 'outline'} class="w-full">
 								{watchlist ? '✔ On Watchlist' : '+ Add to Watchlist'}
 							</Button>
 						</form>

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Badge from '$lib/components/ui/Badge.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
+	import Button from '$lib/components/ui/button';
 	import MovieCard from '$lib/components/movie/MovieCard.svelte';
 	import { SvelteDate } from 'svelte/reactivity';
 

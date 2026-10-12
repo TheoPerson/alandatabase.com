@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
-	import Button from '$lib/components/ui/Button.svelte';
+	import Button from '$lib/components/ui/button';
 	import PlayIcon from 'lucide-svelte/icons/play';
 	import ChevronLeftIcon from 'lucide-svelte/icons/chevron-left';
 	import PlayerSheet from '$lib/components/movie/PlayerSheet.svelte';
