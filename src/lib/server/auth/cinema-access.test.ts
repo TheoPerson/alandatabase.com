@@ -86,3 +86,16 @@ describe('cinema-access rules', () => {
 		expect(validateReturnTo('https://evil.com/movies')).toBe('/movies'); // No absolute URLs allowed
 	});
 });
+
+describe('movie picker access', () => {
+	it('requires a signed-in account for the picker page and its API', () => {
+		// The picker personalises from the caller's own history, so it is not a public browse surface.
+		expect(getCinemaAccessRequirement('/cinema/picker')).toBe('authenticated');
+		expect(getCinemaAccessRequirement('/api/picker/recommend')).toBe('authenticated');
+		expect(getCinemaAccessRequirement('/api/picker/events')).toBe('authenticated');
+	});
+
+	it('keeps the legacy /picker alias a plain redirect without a session', () => {
+		expect(requiresCinemaSession('/picker')).toBe(false);
+	});
+});

@@ -1,27 +1,23 @@
 import { json, error } from '@sveltejs/kit';
 import { recordPickerEvent } from '$lib/server/picker';
+import { parsePickerEvent } from '$lib/server/picker/request';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
+	let body: unknown;
 	try {
-		const body = await request.json().catch(() => null);
+		body = await request.json();
+	} catch {
+		return json({ error: 'Request body must be valid JSON.' }, { status: 400 });
+	}
 
-		if (!body || !body.sessionId || !body.movieId || !body.action) {
-			throw error(400, { message: 'Missing required event fields (sessionId, movieId, action).' });
-		}
+	const event = parsePickerEvent(body);
+	if (!event.ok) return json({ error: event.error }, { status: 400 });
 
-		await recordPickerEvent(locals.user?.id ?? null, {
-			sessionId: String(body.sessionId),
-			movieId: String(body.movieId),
-			action: body.action,
-			position: typeof body.position === 'number' ? body.position : undefined,
-			score: typeof body.score === 'number' ? body.score : undefined,
-			metadata: typeof body.metadata === 'object' ? body.metadata : undefined
-		});
-
+	try {
+		await recordPickerEvent(locals.user?.id ?? null, event.value);
 		return json({ ok: true });
-	} catch (err: any) {
-		if (err?.status) throw err;
+	} catch (err) {
 		console.error('Error in /api/picker/events:', err);
 		throw error(500, { message: 'Failed to record picker event.' });
 	}

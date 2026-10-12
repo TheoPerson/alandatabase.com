@@ -28,6 +28,9 @@ export default defineConfig({
 	test: {
 		expect: { requireAssertions: true },
 		environment: 'node',
+		// Database-backed tests boot an in-memory PostgreSQL (PGlite/WASM) per file; under
+		// parallel load that can exceed the 10s default hook timeout.
+		hookTimeout: 60_000,
 		setupFiles: ['./tests/setup-unit.ts'],
 		include: ['src/**/*.{test,spec}.{js,ts}']
 	}

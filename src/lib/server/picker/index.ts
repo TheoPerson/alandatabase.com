@@ -85,16 +85,8 @@ export async function getPickerRecommendation({
 		}
 	});
 
-	// Record initial recommendation event in activities
-	if (userId) {
-		logActivity(userId, 'picker_recommendation', selected.candidate.id, undefined, {
-			sessionId,
-			position,
-			mode: selected.mode,
-			score: selected.breakdown.finalScore
-		}).catch(() => {});
-	}
-
+	// Showing a pick is a read: it writes nothing. The client reports what the
+	// person did with it (impression, skip, favourite...) through recordPickerEvent.
 	return {
 		movie: {
 			id: selected.candidate.id,

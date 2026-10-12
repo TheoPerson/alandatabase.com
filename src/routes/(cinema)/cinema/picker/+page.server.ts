@@ -2,13 +2,7 @@ import { db } from '$lib/server/db';
 import { genres } from '$lib/server/db/schema';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ setHeaders, locals }) => {
-	if (!locals.user) {
-		setHeaders({
-			'cache-control': 'public, max-age=60, s-maxage=120, stale-while-revalidate=300'
-		});
-	}
-
+export const load: PageServerLoad = async () => {
 	// Fetch standard genre list from DB
 	const dbGenres = await db
 		.select()

@@ -26,7 +26,7 @@ export const OWNER_ONLY_ROUTES = ['/admin', '/setup', '/api/telemetry/events'];
 
 export const CATALOG_MANAGER_ROUTES = ['/movies/custom', '/api/movies/catalog'];
 
-export const AUTHENTICATED_ROUTES = ['/my', '/live', '/disclaimer'];
+export const AUTHENTICATED_ROUTES = ['/my', '/live', '/disclaimer', '/cinema/picker'];
 
 export type CinemaAccessRequirement = 'public' | 'authenticated' | 'catalog' | 'owner';
 
