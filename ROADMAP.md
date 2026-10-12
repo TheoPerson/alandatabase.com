@@ -125,20 +125,23 @@ Not merged to `main`, not deployed. The repository had two diverged lines from
 into `main`'s line (`f4a0931`) and brings the picker under the V3 rules.
 
 Evidence on this branch (local, Node v26 / Windows): `pnpm check` 0 errors;
-`pnpm test:unit -- --run` 41 files / 237 tests, three consecutive runs; worker
-tests 11/11; `prettier --check` clean; `eslint` 0 errors (warnings are the
-pre-existing baseline); `vite build` compiles and the Netlify-adapter build exits 0.
+`pnpm test:unit -- --run` 41 files / 260 tests; worker tests 11/11;
+`prettier --check` clean; `eslint` 0 errors (warnings are the pre-existing
+baseline); `pnpm build` (Netlify adapter) exits 0.
 
-Not verified: Playwright E2E, the Vercel adapter's final packaging (needs Node 24;
-this machine has v26), any hosted database, and migrations `0002`-`0004` outside
-PGlite. The `main` baseline before this work had a failing build, red lint and two
+Not verified: Playwright E2E, a build on Netlify itself (pnpm 11 support on
+Netlify's build image is unconfirmed), any hosted database, and migrations
+`0002`-`0004` outside PGlite. The `main` baseline before this work had a failing build, red lint and two
 unit-test files that could not import.
 
 Open items that need the Product Lead:
 
 1. **Rotate the Telegram bot token** that `main` hard-coded (public repository, so
    treat it as exposed) and decide on Git history cleanup.
-2. **Hosting target**: Vercel (V3) or Netlify (`main`, 2026-09-21). Both build today.
+2. **Hosting**: decided on Netlify (Product Lead, 2026-10-12) because the Vercel
+   project is disabled (HTTP 402 `DEPLOYMENT_DISABLED`). DNS still points to
+   Vercel and the Netlify site still serves an old pre-V3 build; the cutover
+   steps are in `docs/MISE_EN_LIGNE_NETLIFY.md`.
 3. **Picker audience**: signed-in only (current, fail-closed) or a guest mode.
 4. **Production database state of `main`**: confirm whether `0002_movie_picker.sql`
    was applied by hand before running any migration.

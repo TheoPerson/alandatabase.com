@@ -1,7 +1,7 @@
 import { sequence } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
 import { dev } from '$app/environment';
-import { SESSION_COOKIE_DELETE_OPTIONS, validateSessionToken } from '$lib/server/auth';
+import { sessionCookieDeleteOptions, validateSessionToken } from '$lib/server/auth';
 import {
 	getCinemaAccessRequirement,
 	isCinemaPageRoute,
@@ -167,7 +167,7 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 				settings: (user.settings as Record<string, any>) || {}
 			};
 		} else {
-			event.cookies.delete('session', SESSION_COOKIE_DELETE_OPTIONS);
+			event.cookies.delete('session', sessionCookieDeleteOptions(event.url));
 		}
 	}
 

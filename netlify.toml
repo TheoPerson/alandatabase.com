@@ -5,7 +5,7 @@
 [build.environment]
   NODE_VERSION = "24"
 
-# Same baseline security headers as vercel.json so static assets match dynamic responses.
+# Baseline security headers for static assets, matching those src/hooks.server.ts adds to dynamic responses.
 [[headers]]
   for = "/*"
   [headers.values]

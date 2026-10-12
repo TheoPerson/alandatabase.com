@@ -5,6 +5,11 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
+	define: {
+		// Netlify sets CONTEXT only during the build. Each deploy context is built separately,
+		// so baking it in is how the server learns whether it is a preview deployment.
+		__NETLIFY_DEPLOY_CONTEXT__: JSON.stringify(process.env.CONTEXT ?? '')
+	},
 	server: {
 		// Allow local verification with the same hostnames used by Vercel.
 		allowedHosts: [

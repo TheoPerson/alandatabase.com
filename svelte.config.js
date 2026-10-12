@@ -1,10 +1,5 @@
+import adapter from '@sveltejs/adapter-netlify';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-
-// The hosting target is chosen by the build platform: Netlify sets NETLIFY=true,
-// every other build (Vercel, local, CI) keeps the Vercel adapter verified in V3.
-const { default: adapter } = process.env.NETLIFY
-	? await import('@sveltejs/adapter-netlify')
-	: await import('@sveltejs/adapter-vercel');
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {

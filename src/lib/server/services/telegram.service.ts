@@ -124,7 +124,7 @@ export async function notifyCriticalError(context: string, error: any) {
 		`⚡ <b>Context Scope:</b> <code>${context}</code>\n` +
 		`💥 <b>Stack / Trace:</b>\n<code>${errorMsg.slice(0, 350)}</code>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🛠️ <b>Runtime Node:</b> <code>Vercel Serverless (Node.js / ESM)</code>\n` +
+		`🛠️ <b>Runtime Node:</b> <code>Serverless (Node.js / ESM)</code>\n` +
 		`⏱️ <b>UTC Timestamp:</b> <code>${timestamp}</code>`;
 
 	return sendTelegramCard(text, {

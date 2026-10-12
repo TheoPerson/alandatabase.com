@@ -1,4 +1,7 @@
 declare global {
+	// Replaced at build time (see vite.config.ts) with Netlify's CONTEXT; undefined elsewhere.
+	var __NETLIFY_DEPLOY_CONTEXT__: string | undefined;
+
 	namespace App {
 		interface Locals {
 			user: {

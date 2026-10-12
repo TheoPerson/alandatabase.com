@@ -11,7 +11,11 @@ import { resolveDatabaseUrl } from './database-url.js';
 // postgres-js connects lazily. SvelteKit still imports server modules while
 // building, so use an inert, unreachable URL solely to construct the client
 // when no runtime database is expected to be queried.
-const connectionString = resolveDatabaseUrl(process.env, building);
+const connectionString = resolveDatabaseUrl(
+	process.env,
+	building,
+	typeof __NETLIFY_DEPLOY_CONTEXT__ === 'string' ? __NETLIFY_DEPLOY_CONTEXT__ : ''
+);
 
 // Single instance pattern for serverless environments
 declare global {

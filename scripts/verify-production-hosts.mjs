@@ -39,9 +39,9 @@ const www = await request('www canonical', 'https://www.alandatabase.com/movies?
 assert.equal(www.response.status, 308);
 assert.equal(www.response.headers.get('location'), 'https://alandatabase.com/movies?probe=1');
 
-const vercelAlias = await request('vercel canonical', 'https://alans-database.vercel.app/');
-assert.equal(vercelAlias.response.status, 308);
-assert.equal(vercelAlias.response.headers.get('location'), 'https://alandatabase.com/');
+const netlifyAlias = await request('netlify canonical', 'https://the-alans-data-base.netlify.app/');
+assert.equal(netlifyAlias.response.status, 308);
+assert.equal(netlifyAlias.response.headers.get('location'), 'https://alandatabase.com/');
 
 const status = await request('public status', 'https://status.alandatabase.com/');
 assert.equal(status.response.status, 200);

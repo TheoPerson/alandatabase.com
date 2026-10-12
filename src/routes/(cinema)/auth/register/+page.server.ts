@@ -5,7 +5,7 @@ import {
 	hashPassword,
 	createSession,
 	generateSessionToken,
-	SESSION_COOKIE_OPTIONS
+	sessionCookieOptions
 } from '$lib/server/auth';
 import { validateReturnTo } from '$lib/server/auth/cinema-access';
 import { isInitialOwnerSetupAvailable, verifyOwnerSetupKey } from '$lib/server/auth/owner-setup';
@@ -125,7 +125,7 @@ export const actions = {
 			const sessionToken = generateSessionToken();
 			await createSession(sessionToken, newUser.id);
 
-			cookies.set('session', sessionToken, SESSION_COOKIE_OPTIONS);
+			cookies.set('session', sessionToken, sessionCookieOptions(url));
 		} catch (err) {
 			if (err instanceof OwnerSetupClosedError) {
 				return fail(403, { error: 'Owner setup is already complete.' });

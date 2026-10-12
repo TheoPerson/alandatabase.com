@@ -26,13 +26,15 @@ Operator worker
 
 ## Production hostnames
 
-The Vercel project serves one SvelteKit deployment through the configured
-production hostnames. Hostname routing is implemented in `src/hooks.ts` and
+The Netlify site serves one SvelteKit deployment through the configured
+production hostnames (hosting moved from Vercel to Netlify on 2026-10-12 after the
+Vercel project was disabled; DNS cutover is an owner operation). Hostname routing is implemented in `src/hooks.ts` and
 `src/lib/host-routing.ts`; it preserves the existing route tree instead of
 creating parallel applications:
 
 - `alandatabase.com` is the canonical public host.
-- `www.alandatabase.com` and `alans-database.vercel.app` redirect to the
+- `www.alandatabase.com`, `the-alans-data-base.netlify.app` and the retired
+  `alans-database.vercel.app` redirect to the
   canonical HTTPS host.
 - `status.alandatabase.com/` rewrites to the existing public `/status` page.
 - `api.alandatabase.com/` rewrites to `/api`; `/health` rewrites to
@@ -50,8 +52,8 @@ creating parallel applications:
   roles fail closed.
 
 The server hook applies HTTPS canonicalization, security headers, narrow API
-CORS, and production cookie policy before route handling. `vercel.json` mirrors
-the non-sensitive security headers at the Vercel edge so static assets receive
+CORS, and production cookie policy before route handling. `netlify.toml` mirrors
+the non-sensitive security headers at the Netlify edge so static assets receive
 the same baseline. Static assets, `_app` files, query strings, and existing API
 paths are left untouched.
 
@@ -62,7 +64,7 @@ paths are left untouched.
 - Drizzle ORM 0.45 with `postgres-js` and PostgreSQL.
 - Vitest for colocated server/component tests; Playwright for browser tests in `tests/`.
 - Sentry client/server instrumentation through `@sentry/sveltekit`.
-- Deployment adapter chosen in `svelte.config.js`: Netlify when `NETLIFY` is set, otherwise Vercel (the V3-verified target). Which host is canonical is an open owner decision.
+- `@sveltejs/adapter-netlify` in `svelte.config.js` (Netlify is the sole deployment adapter).
 - Node 24 is the runtime baseline; the worker uses `tsx`, and pnpm 11.15.1 is
   pinned as the repository package manager.
 
@@ -184,7 +186,9 @@ Server configuration is environment-driven. `.env.example` documents the
 non-sensitive shape of database access, one-time owner setup, rate-limit hashing,
 UptimeRobot, TMDB, Meilisearch, Gemini, Sentry, and Telegram configuration,
 including `POSTGRES_URL`, `PREVIEW_DATABASE_URL`, `OWNER_SETUP_KEY`, and
-`RATE_LIMIT_HASH_KEY`. Vercel supplies `VERCEL`, `VERCEL_ENV`, and `NODE_ENV`;
+`RATE_LIMIT_HASH_KEY`. Netlify exposes its deploy context (`CONTEXT`) only during the build, so
+`vite.config.ts` bakes it in for the preview-database guard, and session cookie
+options derive from the request URL rather than platform variables;
 no secret uses a client-visible `PUBLIC_` prefix.
 
 Persistent authorization lives in PostgreSQL: `users.role` defines
@@ -216,19 +220,18 @@ Root commands:
   `PLAYWRIGHT_BASE_URL` when verifying an external deployment.
 - `pnpm test:production` — production hostname, routing, CORS, and header smoke
   checks.
-- `pnpm build` — Vite/SvelteKit production build using the Vercel adapter.
+- `pnpm build` — Vite/SvelteKit production build using the Netlify adapter.
 
 Current verification evidence belongs in `ROADMAP.md` or a task handoff rather
 than this architectural reference. The repository-wide Prettier baseline and
 current public/owner Playwright assumptions are maintained by the quality
 commands above. A Vite/Rolldown parser defect still affects builds from the
 legacy Windows directory whose name contains an apostrophe; build validation is
-therefore also run from a neutral-path clean checkout and by Vercel. On Windows
-hosts without Developer Mode, the Vercel adapter's final function aliases also
-require a junction-compatible validation harness; the unchanged Linux CI/Vercel
-build remains the authoritative packaging gate.
+therefore also run from a neutral-path clean checkout and by CI. The Netlify
+adapter builds locally on Windows without Developer Mode; the Linux CI build
+remains the authoritative packaging gate.
 
 GitHub Actions runs lint, check, app/worker tests, Chromium E2E, and app/worker
 builds for `main` and `agent/v3-foundation-core`, using Node 24 and pnpm 11.15.1. Authenticated
 database integration still needs an isolated CI database fixture;
-Meilisearch remains optional. The Vercel adapter is the default and the Netlify adapter is used when `NETLIFY` is set (`netlify.toml` mirrors the baseline security headers); the host decision is open.
+Meilisearch remains optional. `netlify.toml` mirrors the baseline security headers for static assets.

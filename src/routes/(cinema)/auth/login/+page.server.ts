@@ -6,7 +6,7 @@ import {
 	hashPassword,
 	createSession,
 	generateSessionToken,
-	SESSION_COOKIE_OPTIONS
+	sessionCookieOptions
 } from '$lib/server/auth';
 import { validateReturnTo } from '$lib/server/auth/cinema-access';
 import { isInitialOwnerSetupAvailable } from '$lib/server/auth/owner-setup';
@@ -76,7 +76,7 @@ export const actions = {
 			const sessionToken = generateSessionToken();
 			await createSession(sessionToken, user.id);
 
-			cookies.set('session', sessionToken, SESSION_COOKIE_OPTIONS);
+			cookies.set('session', sessionToken, sessionCookieOptions(url));
 		} catch (err) {
 			logServerError('Authentication failed', err);
 			return fail(500, { error: 'An unexpected authentication error occurred.' });

@@ -4,33 +4,43 @@ import { db } from '../db/index.js';
 import { users, sessions } from '../db/schema.js';
 import { and, desc, eq, gt, isNull, ne } from 'drizzle-orm';
 import { parseUserRole } from './permissions';
+import { CANONICAL_HOST, isProductionHostname, normalizeHostname } from '$lib/host-routing';
 
 const scryptAsync = promisify(scrypt);
 
 const SESSION_EXPIRY_DAYS = 30;
-const IS_VERCEL_RUNTIME = process.env.VERCEL === '1';
-const IS_VERCEL_PRODUCTION = IS_VERCEL_RUNTIME && process.env.VERCEL_ENV === 'production';
+function isSharedCookieHost(hostname: string): boolean {
+	const host = normalizeHostname(hostname);
+	return host === CANONICAL_HOST || host.endsWith(`.${CANONICAL_HOST}`);
+}
 
-export const SESSION_COOKIE_OPTIONS = {
-	path: '/',
-	httpOnly: true,
-	sameSite: 'lax' as const,
-	secure: process.env.NODE_ENV === 'production' || IS_VERCEL_RUNTIME,
-	// The login portal is a first-class subdomain. Share only the hardened
-	// session cookie with sibling application/API hosts in Vercel Production.
-	// Preview deployments must retain a host-only cookie because their
-	// `*.vercel.app` hostname cannot set a cookie for alandatabase.com.
-	domain: IS_VERCEL_PRODUCTION ? '.alandatabase.com' : undefined,
-	maxAge: 60 * 60 * 24 * SESSION_EXPIRY_DAYS
-};
+// Derived from the request URL on purpose. Hosting platforms differ in what they
+// expose to server code at runtime (Netlify does not document NETLIFY, CONTEXT or
+// NODE_ENV for functions), so platform environment variables must not decide
+// whether the session cookie is Secure or shared.
+export function sessionCookieOptions(url: URL) {
+	return {
+		path: '/',
+		httpOnly: true,
+		sameSite: 'lax' as const,
+		// Fail toward Secure: only plain-http local development gets a non-Secure cookie.
+		secure:
+			url.protocol === 'https:' ||
+			isProductionHostname(url.hostname) ||
+			process.env.NODE_ENV === 'production',
+		// The login portal is a first-class subdomain, so the hardened session cookie is
+		// shared across the production hosts. Platform and preview hostnames (for example
+		// *.netlify.app) cannot set a cookie for alandatabase.com and stay host-only.
+		domain: isSharedCookieHost(url.hostname) ? `.${CANONICAL_HOST}` : undefined,
+		maxAge: 60 * 60 * 24 * SESSION_EXPIRY_DAYS
+	};
+}
 
-export const SESSION_COOKIE_DELETE_OPTIONS = {
-	path: SESSION_COOKIE_OPTIONS.path,
-	domain: SESSION_COOKIE_OPTIONS.domain,
-	httpOnly: SESSION_COOKIE_OPTIONS.httpOnly,
-	sameSite: SESSION_COOKIE_OPTIONS.sameSite,
-	secure: SESSION_COOKIE_OPTIONS.secure
-};
+// Deleting must repeat the attributes the cookie was set with, or browsers keep it.
+export function sessionCookieDeleteOptions(url: URL) {
+	const { path, domain, httpOnly, sameSite, secure } = sessionCookieOptions(url);
+	return { path, domain, httpOnly, sameSite, secure };
+}
 
 // Password Hashing with Scrypt (Salt + Hash)
 export async function hashPassword(password: string): Promise<string> {

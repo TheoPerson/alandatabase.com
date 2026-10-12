@@ -139,17 +139,23 @@ its launch gates are explicitly verified.
 - Picker migration `0002_movie_picker.sql` was never registered in the Drizzle
   journal on `main`; it is now `0004_movie_picker_imdb` with snapshot and journal
   entry, idempotent (`IF NOT EXISTS`) for databases where it was applied by hand.
-- `svelte.config.js` selects the Netlify adapter when `NETLIFY` is set and the
-  Vercel adapter otherwise; `netlify.toml` is restored with Node 24 and the same
-  baseline security headers as `vercel.json`.
+- Moved the deployment target to Netlify (the Vercel project is disabled): Netlify
+  is the sole adapter, `netlify.toml` carries Node 24 and the baseline security
+  headers, and `vercel.json` / `@sveltejs/adapter-vercel` are removed.
+- Session cookie options (`Secure`, shared `.alandatabase.com` domain) are derived
+  from the request URL instead of `VERCEL*` variables, which Netlify does not expose
+  to functions at runtime. The preview-database guard reads Netlify's deploy context
+  baked in at build time. The Netlify default host redirects to the canonical host.
 - Raised the Vitest hook timeout to 60 seconds for database-backed tests.
 
 ### Known Issues
 
 - Migration `0004_movie_picker_imdb.sql` (three nullable `movies.imdb_*` columns)
   is additive and undeployed. Treat it like `0002`/`0003`: back up and review first.
-- The hosting target is undecided: V3 chose Vercel and removed Netlify; `main`
-  switched back to Netlify on 2026-09-21. Both build; one must be confirmed.
+- DNS for every production hostname still points to Vercel, whose project is
+  disabled (HTTP 402); the Netlify site still serves an old pre-V3 build. Restoring
+  the site needs the database migration decision, Netlify environment variables, a
+  Netlify deploy, and the DNS move (see `docs/MISE_EN_LIGNE_NETLIFY.md`).
 - The picker's IMDb rating columns are empty until an explicit, operator-run
   enrichment job exists, so it ranks on TMDB ratings. The curated rating list that
   `imdb.ts` held remains in Git history.

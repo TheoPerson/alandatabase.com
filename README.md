@@ -52,13 +52,13 @@ Legacy aliases and redirects may remain for compatibility while the route tree i
 The configured deployment uses one SvelteKit application with hostname routing:
 
 - `alandatabase.com` — canonical public host.
-- `www.alandatabase.com` and `alans-database.vercel.app` — canonical redirects.
+- `www.alandatabase.com` and `the-alans-data-base.netlify.app` — canonical redirects.
 - `status.alandatabase.com` — public status surface.
 - `api.alandatabase.com` — API hostname mapped to the existing `/api` routes.
 - `auth.alandatabase.com` — first-class login/logout portal using the existing
   SvelteKit session flow.
 
-Vercel Development, Preview, and Production variables are separate. Copy only
+Netlify Production, Deploy Preview, and Branch deploy variables are separate. Copy only
 the non-sensitive names from `.env.example`; never commit hosted values.
 Authorization is persistent (`owner`, `admin`, `member`) and fails closed for
 unknown roles. First-owner creation is a one-time bootstrap documented in
@@ -76,7 +76,7 @@ runtime permission fallback.
 | Testing       | Vitest and Playwright                                                |
 | Observability | Sentry; optional Telegram operational notifications                  |
 | Integrations  | Optional TMDB, Meilisearch, Telegram, and PGlite development support |
-| Deployment    | Vercel adapter; Node 24 and pnpm 11.15.1                             |
+| Deployment    | Netlify adapter; Node 24 and pnpm 11.15.1                            |
 
 ## Local setup
 
@@ -113,10 +113,8 @@ Historical foundation baseline (2026-08-21; not current release evidence):
 - Worker safety suite: 11 tests pass and the worker TypeScript build succeeds.
 - `pnpm check`: 0 errors and 0 warnings.
 - `pnpm lint`: passes.
-- Vite client/server compilation and the Vercel adapter complete from a neutral
-  Windows path using junction-compatible aliases. Without Windows Developer
-  Mode, the unmodified adapter stops only when creating Linux-style function
-  symlinks; unchanged Linux CI/Vercel packaging remains the release gate.
+- `pnpm build` with the Netlify adapter exits 0 on Windows (2026-10-12); the
+  Linux CI build and a Netlify build remain the release gates.
 - 12 Playwright tests pass against the production preview, including Status at
   320 px and reduced motion. Live hostname evidence remains required for an
   actual deployment.

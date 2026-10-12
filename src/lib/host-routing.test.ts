@@ -3,6 +3,7 @@ import {
 	API_HOST,
 	AUTH_HOST,
 	CANONICAL_HOST,
+	NETLIFY_PRODUCTION_HOST,
 	STATUS_HOST,
 	VERCEL_PRODUCTION_HOST,
 	WWW_HOST,
@@ -58,6 +59,24 @@ describe('hostname routing', () => {
 			`https://${AUTH_HOST}/`
 		);
 		expect(getCanonicalRedirect(new URL(`https://${CANONICAL_HOST}/`), 'https')).toBeNull();
+	});
+
+	it('redirects the Netlify default host to the canonical host but leaves preview deploys alone', () => {
+		expect(
+			getCanonicalRedirect(
+				new URL(`https://${NETLIFY_PRODUCTION_HOST}/movies?x=1`),
+				'https'
+			)?.toString()
+		).toBe(`https://${CANONICAL_HOST}/movies?x=1`);
+		expect(
+			getCanonicalRedirect(
+				new URL('https://deploy-preview-4--the-alans-data-base.netlify.app/'),
+				'https'
+			)
+		).toBeNull();
+		expect(
+			getCanonicalRedirect(new URL('https://main--the-alans-data-base.netlify.app/'), 'https')
+		).toBeNull();
 	});
 
 	it('builds a first-class auth portal URL for production redirects', () => {

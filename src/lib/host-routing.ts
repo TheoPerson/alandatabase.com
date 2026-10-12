@@ -4,6 +4,9 @@ export const API_HOST = `api.${CANONICAL_HOST}`;
 export const AUTH_HOST = `auth.${CANONICAL_HOST}`;
 export const STATUS_HOST = `status.${CANONICAL_HOST}`;
 export const VERCEL_PRODUCTION_HOST = 'alans-database.vercel.app';
+// Default host of the Netlify site. Preview deploys use other hosts
+// (deploy-preview-N--site.netlify.app) and are deliberately not redirected.
+export const NETLIFY_PRODUCTION_HOST = 'the-alans-data-base.netlify.app';
 
 export const PRODUCTION_HOSTS = new Set([
 	CANONICAL_HOST,
@@ -11,7 +14,8 @@ export const PRODUCTION_HOSTS = new Set([
 	API_HOST,
 	AUTH_HOST,
 	STATUS_HOST,
-	VERCEL_PRODUCTION_HOST
+	VERCEL_PRODUCTION_HOST,
+	NETLIFY_PRODUCTION_HOST
 ]);
 
 export function normalizeHostname(hostname: string): string {
@@ -64,6 +68,7 @@ export function getCanonicalRedirect(url: URL, forwardedProto?: string | null): 
 	const shouldUseCanonicalHost =
 		host === WWW_HOST ||
 		host === VERCEL_PRODUCTION_HOST ||
+		host === NETLIFY_PRODUCTION_HOST ||
 		(host === AUTH_HOST && !isAuthPortalPath);
 	const shouldUseHttps = isProductionHostname(host) && effectiveProto === 'http';
 
