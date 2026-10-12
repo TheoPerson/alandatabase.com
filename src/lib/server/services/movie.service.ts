@@ -1,6 +1,6 @@
-import { and, asc, desc, eq, gte, ilike, isNotNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, getTableName, gte, ilike, isNotNull, ne, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { genres, movies, people } from '../db/schema.js';
+import { genres, movieGenres, movies, people } from '../db/schema.js';
 import { isStandardMovie, standardMovieVisibilityWhere } from '../policies/movie-visibility.js';
 import type { HeroItem, PosterItem } from '$lib/catalogue/items';
 
@@ -175,17 +175,83 @@ export async function getMovieById(id: string) {
 				}
 			},
 			crew: {
-				limit: 10,
+				limit: 30,
 				with: {
 					person: true
 				}
 			},
 			videos: true,
+			watchProviders: true,
 			keywords: true
 		}
 	});
 
 	return prepareStandardMovie(found);
+}
+
+const SIMILAR_LIMIT = 12;
+const SIMILAR_MAX = 24;
+
+// The relational builder re-aliases Drizzle columns inside a raw `where` to the
+// root table, so the genre subquery refers to movie_genres by identifier (same
+// reason as standardMovieVisibilityWhere).
+const genreTable = sql.identifier(getTableName(movieGenres));
+const genreMovieId = sql`${genreTable}.${sql.identifier(movieGenres.movieId.name)}`;
+const genreGenreId = sql`${genreTable}.${sql.identifier(movieGenres.genreId.name)}`;
+
+/** Standard movies sharing one genre, most popular first; never the film itself. */
+export async function similarMovies(
+	movieId: string,
+	genreId: number | null,
+	limit = SIMILAR_LIMIT
+) {
+	if (genreId === null || !Number.isInteger(genreId)) return [];
+	const results = await db.query.movies.findMany({
+		where: and(
+			standardMovieVisibilityWhere(),
+			ne(movies.id, movieId),
+			sql`exists (
+				select 1
+				from ${genreTable}
+				where ${genreMovieId} = ${movies.id}
+					and ${genreGenreId} = ${genreId}
+			)`
+		),
+		orderBy: [desc(movies.popularity), desc(movies.voteAverage)],
+		limit: Math.min(Math.max(1, Math.trunc(limit)), SIMILAR_MAX),
+		with: {
+			genres: {
+				with: {
+					genre: true
+				}
+			},
+			keywords: true
+		}
+	});
+	return prepareVisibleMovies(results);
+}
+
+/** The other standard films of a collection, in release order. */
+export async function collectionMovies(collectionId: string | null, excludeMovieId: string) {
+	if (!collectionId) return [];
+	const results = await db.query.movies.findMany({
+		where: and(
+			standardMovieVisibilityWhere(),
+			eq(movies.collectionId, collectionId),
+			ne(movies.id, excludeMovieId)
+		),
+		orderBy: [asc(movies.releaseDate)],
+		limit: SIMILAR_MAX,
+		with: {
+			genres: {
+				with: {
+					genre: true
+				}
+			},
+			keywords: true
+		}
+	});
+	return prepareVisibleMovies(results);
 }
 
 function prepareVisibleRoles(roles: any[]) {
