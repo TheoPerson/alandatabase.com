@@ -178,6 +178,37 @@ export const movieVideos = pgTable(
 	(table) => [uniqueIndex('idx_movie_videos_unique').on(table.movieId, table.key)]
 );
 
+export const WATCH_PROVIDER_KINDS = ['flatrate', 'free', 'ads', 'rent', 'buy'] as const;
+export type WatchProviderKind = (typeof WATCH_PROVIDER_KINDS)[number];
+
+// Where a title can be watched legally, per region, from TMDB's JustWatch feed.
+export const movieWatchProviders = pgTable(
+	'movie_watch_providers',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		movieId: uuid('movie_id')
+			.notNull()
+			.references(() => movies.id, { onDelete: 'cascade' }),
+		region: varchar('region', { length: 2 }).notNull(),
+		kind: varchar('kind', { length: 10 }).notNull(),
+		providerId: integer('provider_id').notNull(),
+		providerName: varchar('provider_name', { length: 200 }).notNull(),
+		logoPath: varchar('logo_path', { length: 255 }),
+		displayPriority: integer('display_priority').default(0).notNull(),
+		link: text('link'),
+		syncedAt: timestamp('synced_at').defaultNow().notNull()
+	},
+	(table) => [
+		index('idx_movie_watch_providers_movie').on(table.movieId),
+		uniqueIndex('idx_movie_watch_providers_unique').on(
+			table.movieId,
+			table.region,
+			table.kind,
+			table.providerId
+		)
+	]
+);
+
 // -----------------------------------------------------------------------------
 // 4. CAST & CREW JUNCTIONS
 // -----------------------------------------------------------------------------
@@ -463,6 +494,7 @@ export const moviesRelations = relations(movies, ({ one, many }) => ({
 	cast: many(movieCast),
 	crew: many(movieCrew),
 	videos: many(movieVideos),
+	watchProviders: many(movieWatchProviders),
 	interactions: many(userMovieInteractions),
 	reviews: many(userReviews)
 }));
@@ -492,6 +524,10 @@ export const collectionsRelations = relations(collections, ({ many }) => ({
 
 export const movieVideosRelations = relations(movieVideos, ({ one }) => ({
 	movie: one(movies, { fields: [movieVideos.movieId], references: [movies.id] })
+}));
+
+export const movieWatchProvidersRelations = relations(movieWatchProviders, ({ one }) => ({
+	movie: one(movies, { fields: [movieWatchProviders.movieId], references: [movies.id] })
 }));
 
 export const userMovieInteractionsRelations = relations(userMovieInteractions, ({ one }) => ({

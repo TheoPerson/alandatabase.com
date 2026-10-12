@@ -107,4 +107,34 @@ describe('Drizzle migration chain', () => {
 			`)
 		).rejects.toThrow();
 	}, 15_000);
+
+	it('adds watch providers additively and is safe to re-run', async () => {
+		database = new PGlite();
+		for (const name of [
+			'0000_aromatic_puma.sql',
+			'0001_next_impossible_man.sql',
+			'0002_wet_masque.sql',
+			'0003_complete_skrulls.sql',
+			'0004_movie_picker_imdb.sql'
+		]) {
+			await database.exec(await migration(name));
+		}
+		const providers = await migration('0005_movie_watch_providers.sql');
+
+		await database.exec(providers);
+		await database.exec(providers);
+
+		await database.exec(`
+			insert into movies (id, tmdb_id, title)
+			values ('00000000-0000-4000-8000-000000000101', 101, 'Standard Film');
+			insert into movie_watch_providers (movie_id, region, kind, provider_id, provider_name)
+			values ('00000000-0000-4000-8000-000000000101', 'FR', 'flatrate', 8, 'Netflix');
+		`);
+		await expect(
+			database.exec(`
+				insert into movie_watch_providers (movie_id, region, kind, provider_id, provider_name)
+				values ('00000000-0000-4000-8000-000000000101', 'FR', 'flatrate', 8, 'Netflix');
+			`)
+		).rejects.toThrow(/duplicate key/u);
+	});
 });
