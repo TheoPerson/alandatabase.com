@@ -43,8 +43,6 @@
 
 <style>
 	.section {
-		content-visibility: auto;
-		contain-intrinsic-size: auto 320px;
 		margin-block: var(--space-7);
 	}
 	.head {
