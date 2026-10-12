@@ -28,13 +28,18 @@
 	const year = $derived(formatYear(releaseDate));
 	const score = $derived(formatRating(rating));
 	let loaded = $state(false);
+	// A broken artwork URL shows the titled fallback instead of an empty frame.
+	let failed = $state(false);
 </script>
 
 <a {href} class="card {className}" class:ranked={rank !== null} data-sveltekit-preload-data="hover">
 	{#if rank !== null}<span class="rank" aria-hidden="true">{rank}</span>{/if}
-	<div class="frame" style:background-image={image ? `url(${image.placeholder})` : undefined}>
+	<div
+		class="frame"
+		style:background-image={image && !failed ? `url(${image.placeholder})` : undefined}
+	>
 		{#key image?.src}
-			{#if image}
+			{#if image && !failed}
 				<img
 					src={image.src}
 					srcset={image.srcset || undefined}
@@ -46,6 +51,7 @@
 					decoding="async"
 					class:loaded
 					onload={() => (loaded = true)}
+					onerror={() => (failed = true)}
 				/>
 			{:else}
 				<span class="fallback" aria-hidden="true">{title}</span>

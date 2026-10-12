@@ -1,7 +1,17 @@
 import { expect, test } from '@playwright/test';
 
 const widths = [320, 360, 390, 430, 768, 1024, 1280, 1440, 1920];
-const routes = ['/', '/search', '/movies', '/tv', '/live', '/auth/login', '/status'];
+const routes = [
+	'/',
+	'/about',
+	'/kit',
+	'/search',
+	'/movies',
+	'/tv',
+	'/live',
+	'/auth/login',
+	'/status'
+];
 
 test.describe('Responsive production surfaces', () => {
 	for (const width of widths) {

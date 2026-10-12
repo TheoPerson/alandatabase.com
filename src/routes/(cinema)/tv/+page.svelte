@@ -349,7 +349,7 @@
 	}
 
 	.meta-dot {
-		color: #64748b;
+		color: var(--content-secondary);
 	}
 
 	.hero-synopsis {
@@ -664,7 +664,7 @@
 
 	.tv-overview {
 		font-size: 0.82rem;
-		color: #64748b;
+		color: var(--content-secondary);
 		line-height: 1.5;
 		display: -webkit-box;
 		-webkit-line-clamp: 3;

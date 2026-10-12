@@ -6,6 +6,7 @@ import type { RequestHandler } from './$types';
 
 const STATIC_URLS = [
 	{ location: 'https://alandatabase.com/', priority: '1.0', frequency: 'weekly' },
+	{ location: 'https://alandatabase.com/about', priority: '0.5', frequency: 'monthly' },
 	{ location: 'https://alandatabase.com/movies', priority: '0.9', frequency: 'daily' },
 	{ location: 'https://alandatabase.com/movies/catalog', priority: '0.8', frequency: 'daily' },
 	{ location: 'https://alandatabase.com/tv', priority: '0.8', frequency: 'weekly' },

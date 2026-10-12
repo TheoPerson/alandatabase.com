@@ -1,10 +1,17 @@
 import { test, expect } from '@playwright/test';
 
 test.describe('Navigation and Search Flow', () => {
-	test('public landing page exposes the primary cinema journey', async ({ page }) => {
+	test('home is the cinema: featured carousel or an honest empty state', async ({ page }) => {
 		await page.goto('/');
+		const hero = page.getByRole('region', { name: 'Featured titles' });
+		const empty = page.getByText('No published movies yet');
+		await expect(hero.or(empty)).toBeVisible();
+		await expect(page.getByRole('navigation', { name: 'Primary' }).first()).toBeVisible();
+	});
+
+	test('the project landing page lives at /about', async ({ page }) => {
+		await page.goto('/about');
 		await expect(page.getByRole('heading', { level: 1 })).toContainText('A quieter way');
-		await expect(page.getByRole('link', { name: /Enter Cinema/i })).toBeVisible();
 	});
 
 	test('movie catalogue shell stays visible even when the database is empty', async ({ page }) => {

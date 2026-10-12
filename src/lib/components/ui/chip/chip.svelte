@@ -25,28 +25,19 @@
 	<a {href} class="chip {className}" class:selected aria-current={selected ? 'true' : undefined}>
 		{@render children?.()}
 	</a>
+{:else if onremove}
+	<!-- Two sibling controls, never nested: the label and the remove action. -->
+	<span class="chip removable {className}" class:selected>
+		<button type="button" class="label" aria-pressed={selected} {onclick}>
+			{@render children?.()}
+		</button>
+		<button type="button" class="remove" aria-label="Remove" onclick={onremove}>
+			<XIcon size={14} aria-hidden="true" />
+		</button>
+	</span>
 {:else}
 	<button type="button" class="chip {className}" class:selected aria-pressed={selected} {onclick}>
 		{@render children?.()}
-		{#if onremove}
-			<span
-				class="remove"
-				role="button"
-				tabindex="0"
-				aria-label="Remove"
-				onclick={(event) => {
-					event.stopPropagation();
-					onremove();
-				}}
-				onkeydown={(event) => {
-					if (event.key === 'Enter' || event.key === ' ') {
-						event.preventDefault();
-						event.stopPropagation();
-						onremove();
-					}
-				}}><XIcon size={14} /></span
-			>
-		{/if}
 	</button>
 {/if}
 
@@ -74,7 +65,7 @@
 		color: var(--content-primary);
 		border-color: var(--border-strong);
 	}
-	.chip:active {
+	button.chip:active {
 		transform: scale(0.97);
 	}
 	.selected {
@@ -82,11 +73,24 @@
 		border-color: var(--brand-border);
 		color: var(--brand-primary);
 	}
+	.removable {
+		padding-right: 0.25rem;
+	}
+	.label {
+		display: inline-flex;
+		align-items: center;
+		min-height: 2.5rem;
+		color: inherit;
+		font: inherit;
+	}
 	.remove {
 		display: inline-flex;
-		margin-right: -0.35rem;
-		padding: 0.25rem;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		height: 1.75rem;
 		border-radius: 50%;
+		color: inherit;
 	}
 	.remove:hover {
 		background: rgba(255, 255, 255, 0.12);

@@ -1,7 +1,8 @@
-import { and, desc, eq, ilike, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, ilike, isNotNull, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { movies, people } from '../db/schema.js';
+import { genres, movies, people } from '../db/schema.js';
 import { isStandardMovie, standardMovieVisibilityWhere } from '../policies/movie-visibility.js';
+import type { HeroItem, PosterItem } from '$lib/catalogue/items';
 
 export interface MovieFilters {
 	query?: string;
@@ -81,6 +82,62 @@ export async function getTopRatedMovies(limit = 12, offset = 0) {
 		}
 	});
 	return prepareVisibleMovies(results);
+}
+
+const FEATURED_MINIMUM_VOTES = 1000;
+
+export async function getFeaturedMovies(limit = 5) {
+	const results = await db.query.movies.findMany({
+		where: and(
+			standardMovieVisibilityWhere(),
+			isNotNull(movies.backdropPath),
+			gte(movies.voteCount, FEATURED_MINIMUM_VOTES)
+		),
+		orderBy: [desc(movies.voteAverage), desc(movies.popularity)],
+		limit: normalizeSearchLimit(limit),
+		with: {
+			genres: { with: { genre: true } },
+			keywords: true
+		}
+	});
+	return prepareVisibleMovies(results);
+}
+
+export async function getGenres() {
+	return db.select({ id: genres.id, name: genres.name }).from(genres).orderBy(asc(genres.name));
+}
+
+function genreNames(movie: any): string[] {
+	return (movie.genres ?? [])
+		.map((relation: any) => relation.genre?.name ?? relation.name)
+		.filter((name: unknown): name is string => typeof name === 'string' && name.length > 0);
+}
+
+export function toPosterItem(movie: any): PosterItem {
+	return {
+		id: String(movie.id),
+		href: `/movies/${movie.id}`,
+		title: movie.title,
+		posterPath: movie.posterPath ?? null,
+		releaseDate: movie.releaseDate ?? null,
+		rating: movie.voteAverage ?? null,
+		genre: genreNames(movie)[0] ?? null
+	};
+}
+
+export function toHeroItem(movie: any): HeroItem {
+	const metadata =
+		movie.metadata && typeof movie.metadata === 'object' && !Array.isArray(movie.metadata)
+			? (movie.metadata as Record<string, unknown>)
+			: {};
+	return {
+		...toPosterItem(movie),
+		backdropPath: movie.backdropPath ?? null,
+		logoPath: typeof metadata.logoPath === 'string' ? metadata.logoPath : null,
+		overview: movie.overview ?? null,
+		runtime: movie.runtime ?? null,
+		genres: genreNames(movie)
+	};
 }
 
 export async function countMovies() {

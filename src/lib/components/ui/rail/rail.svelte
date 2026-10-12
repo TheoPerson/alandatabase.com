@@ -47,7 +47,7 @@
 	<div
 		bind:this={scroller}
 		class="scroller"
-		role="region"
+		role="group"
 		aria-label={label}
 		tabindex="0"
 		onscroll={measure}

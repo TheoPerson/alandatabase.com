@@ -28,7 +28,11 @@ function assertSecurityHeaders(response, name) {
 
 const apex = await request('apex', 'https://alandatabase.com/');
 assert.equal(apex.response.status, 200);
-assert.match(apex.body, /A quieter way/u);
+assert.match(apex.body, /aria-label="Featured titles"|No published movies yet/u);
+
+const about = await request('about page', 'https://alandatabase.com/about');
+assert.equal(about.response.status, 200);
+assert.match(about.body, /A quieter way/u);
 assertSecurityHeaders(apex.response, 'apex');
 
 const movies = await request('public movies', 'https://alandatabase.com/movies');
