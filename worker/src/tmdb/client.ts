@@ -76,6 +76,12 @@ export interface TMDBMovieDetail extends TMDBMovieSummary {
 			published_at: string;
 		}>;
 	};
+	'watch/providers'?: {
+		results: Record<string, import('./enrichment.js').TMDBWatchProviderRegion>;
+	};
+	images?: {
+		logos: import('./enrichment.js').TMDBLogo[];
+	};
 }
 
 export class TMDBClient {
@@ -132,7 +138,8 @@ export class TMDBClient {
 
 	async getMovieDetails(tmdbId: number): Promise<TMDBMovieDetail> {
 		return this.request<TMDBMovieDetail>(`/movie/${tmdbId}`, {
-			append_to_response: 'credits,keywords,videos'
+			append_to_response: 'credits,keywords,videos,watch/providers,images',
+			include_image_language: 'en,null'
 		});
 	}
 

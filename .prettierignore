@@ -9,3 +9,6 @@ bun.lockb
 /static/
 /drizzle/
 /src/**/*.js
+
+# Agent plan workspaces (git-ignored scratch)
+/.superpowers/

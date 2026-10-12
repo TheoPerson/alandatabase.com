@@ -2,6 +2,7 @@ import { getWorkerDatabase, schema } from '../db.js';
 import { TMDBClient, type TMDBMovieDetail } from './client.js';
 import { evaluateTMDBIngestionSafety } from './ingest-safety.js';
 import { and, eq, inArray, sql } from 'drizzle-orm';
+import { selectLogoPath, selectWatchProviderRows } from './enrichment.js';
 
 export async function ingestMovie(tmdbId: number): Promise<string | null> {
 	const client = new TMDBClient();
@@ -244,6 +245,29 @@ export async function ingestMovie(tmdbId: number): Promise<string | null> {
 						}))
 					)
 					.onConflictDoNothing();
+			}
+
+			// 8. Watch providers: replace the movie's rows so removed offers disappear.
+			const providerRows = selectWatchProviderRows(detail['watch/providers']?.results);
+			await tx
+				.delete(schema.movieWatchProviders)
+				.where(eq(schema.movieWatchProviders.movieId, movieRowId));
+			if (providerRows.length > 0) {
+				await tx
+					.insert(schema.movieWatchProviders)
+					.values(providerRows.map((row) => ({ movieId: movieRowId, ...row })))
+					.onConflictDoNothing();
+			}
+
+			// 9. Title logo for the hero, stored in metadata (no schema change).
+			const logoPath = selectLogoPath(detail.images?.logos);
+			if (logoPath) {
+				await tx
+					.update(schema.movies)
+					.set({
+						metadata: sql`coalesce(${schema.movies.metadata}, '{}'::jsonb) || ${JSON.stringify({ logoPath })}::jsonb`
+					})
+					.where(eq(schema.movies.id, movieRowId));
 			}
 
 			return movieRowId;
