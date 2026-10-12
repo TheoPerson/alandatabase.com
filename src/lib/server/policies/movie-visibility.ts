@@ -1,4 +1,4 @@
-import { and, eq, gt, sql } from 'drizzle-orm';
+import { and, eq, getTableName, gt, sql } from 'drizzle-orm';
 import { movieKeywords, movies } from '../db/schema.js';
 
 export const KNOWN_EXPLICIT_KEYWORD_IDS = [256466, 267122, 738] as const;
@@ -23,6 +23,9 @@ export interface StandardMovieRecord extends MovieVisibilityRecord {
 }
 
 const knownExplicitKeywordIds = new Set<number>(KNOWN_EXPLICIT_KEYWORD_IDS);
+const keywordTable = sql.identifier(getTableName(movieKeywords));
+const keywordMovieId = sql`${keywordTable}.${sql.identifier(movieKeywords.movieId.name)}`;
+const keywordId = sql`${keywordTable}.${sql.identifier(movieKeywords.keywordId.name)}`;
 const explicitKeywordSql = sql.join(
 	KNOWN_EXPLICIT_KEYWORD_IDS.map((keywordId) => sql`${keywordId}`),
 	sql`, `
@@ -65,11 +68,16 @@ export function standardMovieVisibilityWhere() {
 		// Keep the parentheses in this SQL fragment. Passing a raw SELECT to
 		// Drizzle's notExists() currently serializes as `not exists select ...`,
 		// which PostgreSQL rejects and makes every standard catalogue read fail.
+		//
+		// The subquery refers to movie_keywords by identifier, not by Drizzle column
+		// objects: the relational builder (`db.query.movies.findMany`) re-aliases
+		// every column in a raw `where` to the root table, which turned
+		// `movie_keywords.movie_id` into the non-existent `movies.movie_id`.
 		sql`not exists (
 			select 1
-			from ${movieKeywords}
-			where ${movieKeywords.movieId} = ${movies.id}
-				and ${movieKeywords.keywordId} in (${explicitKeywordSql})
+			from ${keywordTable}
+			where ${keywordMovieId} = ${movies.id}
+				and ${keywordId} in (${explicitKeywordSql})
 		)`
 	);
 }
