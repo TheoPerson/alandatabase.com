@@ -70,23 +70,27 @@ paths are left untouched.
 
 ## Repository map
 
-| Path                      | Responsibility                                                                                           |
-| ------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `src/routes/(hub)`        | Public vault/status plus the owner-only admin and setup surfaces. Route groups do not appear in URLs.    |
-| `src/routes/(cinema)`     | Public catalogue/detail pages, owner-only personal/playback operations, and the session auth portal.     |
-| `src/routes/api`          | Public API metadata/health, owner-gated cinema APIs, plus the separately authenticated Telegram webhook. |
-| `src/lib/components`      | Layout, movie/player, and reusable UI components.                                                        |
-| `src/lib/server/auth`     | Password/session helpers and centralized route classification.                                           |
-| `src/lib/server/policies` | Fail-closed content visibility policy.                                                                   |
-| `src/lib/server/queries`  | Bounded local read models such as search.                                                                |
-| `src/lib/server/picker`   | Movie Picker: request validation, candidate query (standard-content policy), scoring, taste profile.     |
-| `src/lib/picker`          | Client-safe picker types and presets shared with the browser (never import `$lib/server` from the UI).   |
-| `src/lib/server/services` | Movie, TV, interaction, AI/Telegram, and related application logic.                                      |
-| `src/lib/server/db`       | Drizzle schema, connection, seed data, and the misleading legacy `ensureTablesExist` helper.             |
-| `drizzle`                 | Generated PostgreSQL migration SQL and metadata.                                                         |
-| `worker`                  | TMDB metadata ingestion, ingestion safety checks, and optional search-index setup.                       |
-| `tests`                   | Playwright E2E specifications.                                                                           |
-| `docs` / `Artifacts.MD`   | Audit and historical discovery; not all claims describe current code.                                    |
+| Path                      | Responsibility                                                                                                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/routes/(hub)`        | Public vault/status plus the owner-only admin and setup surfaces. Route groups do not appear in URLs.                                                                                      |
+| `src/routes/(cinema)`     | Public catalogue/detail pages, owner-only personal/playback operations, and the session auth portal.                                                                                       |
+| `src/routes/api`          | Public API metadata/health, owner-gated cinema APIs, plus the separately authenticated Telegram webhook.                                                                                   |
+| `src/lib/components/ui`   | The UI kit: one folder per component (`button`, `chip`, `rail`, `poster-card`, `hero-carousel`, `top-bar`, `bottom-tab-bar`, …) built on the tokens in `src/app.css`; showcased at `/kit`. |
+| `src/lib/components`      | Layout, movie/player, and legacy components not yet moved into the kit.                                                                                                                    |
+| `src/lib/catalogue`       | Plain data shapes (`PosterItem`, `HeroItem`) shared by loaders and the kit.                                                                                                                |
+| `src/lib/tmdb`            | Client-safe TMDB image URL/`srcset` helpers and YouTube key validation.                                                                                                                    |
+| `src/lib/navigation`      | Primary and tab link model with `isActivePath`.                                                                                                                                            |
+| `src/lib/server/auth`     | Password/session helpers and centralized route classification.                                                                                                                             |
+| `src/lib/server/policies` | Fail-closed content visibility policy.                                                                                                                                                     |
+| `src/lib/server/queries`  | Bounded local read models such as search.                                                                                                                                                  |
+| `src/lib/server/picker`   | Movie Picker: request validation, candidate query (standard-content policy), scoring, taste profile.                                                                                       |
+| `src/lib/picker`          | Client-safe picker types and presets shared with the browser (never import `$lib/server` from the UI).                                                                                     |
+| `src/lib/server/services` | Movie, TV, interaction, AI/Telegram, and related application logic.                                                                                                                        |
+| `src/lib/server/db`       | Drizzle schema, connection, seed data, and the misleading legacy `ensureTablesExist` helper.                                                                                               |
+| `drizzle`                 | Generated PostgreSQL migration SQL and metadata.                                                                                                                                           |
+| `worker`                  | TMDB metadata ingestion, ingestion safety checks, and optional search-index setup.                                                                                                         |
+| `tests`                   | Playwright E2E specifications.                                                                                                                                                             |
+| `docs` / `Artifacts.MD`   | Audit and historical discovery; not all claims describe current code.                                                                                                                      |
 
 ## Request, authentication, and privacy flow
 
@@ -124,6 +128,7 @@ rollout remain incomplete.
 
 ## Application surfaces
 
+- `/` is the cinema home: a featured carousel (standard titles with a backdrop and at least 1000 votes, best rated first) and independent rails; one failing rail never blanks the page. `/about` is the former project landing page. `/kit` is the public, `noindex` UI kit showcase.
 - `/movies`, `/movies/catalog`, `/search`, and `/discover` read the approved local movie catalog.
 - `/movies/[id]` renders local metadata and an explicit playback-unavailable sheet.
 - `/my/films`, `/my/lists`, and `/my/settings` manage user-owned interactions, lists, statistics, and settings.
@@ -151,6 +156,7 @@ Current boundaries:
 - Standard surfaces require `adult=false`, a positive TMDB ID, loaded keyword classification, and no known explicit ingestion keyword. The policy fails closed.
 - Raw `localOverrides` are not serialized to normal clients; only whitelisted text/date overrides are applied.
 - Adult/custom rows remain stored but quarantined; visibility policy deletes no data.
+- `movie_watch_providers` (migration `0005`, additive, re-runnable) stores TMDB/JustWatch availability per region and kind; the worker replaces a movie's rows on each ingest and stores the best English/neutral PNG title logo in `movies.metadata.logoPath`.
 - TV data is an in-code snapshot, not part of the Drizzle schema.
 - No media source/provenance, season/episode, playback event, or progress/resume table exists.
 

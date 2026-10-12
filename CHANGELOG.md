@@ -11,6 +11,9 @@ its launch gates are explicitly verified.
 
 ### Major Updates
 
+- New cinema home at `/`: full-bleed featured carousel (backdrop, TMDB title logo, meta, actions, auto-advance with pause and swipe), numbered Top 10, Trending, Top-rated, genre chips, TV and watchlist rails. The former landing page moved to `/about`.
+- New UI kit under `src/lib/components/ui` (Button, Chip, RatingBadge, MetaChips, Section, Rail, RankedRail, PosterCard, BackdropImage, HeroCarousel, TopBar, BottomTabBar) built on new tokens (type scale, elevation, motion, layering, safe areas), showcased at `/kit`.
+- Mobile navigation: a fixed bottom tab bar (Home, Movies, TV, Search, Library) with safe-area padding replaces the hamburger menu; the top bar turns solid on scroll.
 - Rebuilt the public Status surface as the operational and release-information centre for Alan Database.
 - Restored the public movie discovery pipeline after a malformed SQL visibility predicate made catalogue reads fail.
 - Added persistent owner/admin/member authorization with one-time invitations,
@@ -22,6 +25,8 @@ its launch gates are explicitly verified.
 
 ### Minor Updates
 
+- Poster cards reserve their aspect ratio, blur up from a tiny placeholder, use `srcset`, and fall back to a titled frame when artwork fails to load.
+- Worker: `sync-top-rated` command; ingestion now stores TMDB watch providers (FR, US) and title logos.
 - Added a Picker link to the cinema header and mobile menu, and made the picker API
   expand `preset` server-side (previously `?preset=` was accepted but ignored).
 
@@ -37,6 +42,7 @@ its launch gates are explicitly verified.
 
 ### Fixed
 
+- `/tv` overview text used a hard-coded colour with 3.87:1 contrast; it now uses the secondary text token (axe serious violation).
 - Ran the overnight V3 audit (2026-10-08) on an isolated task worktree and fixed
   the safe subset: Discover now strips classification keywords through the shared
   post-filter, `searchMovies` escapes LIKE wildcards and clamps trending/top-rated
@@ -127,6 +133,9 @@ its launch gates are explicitly verified.
 
 ### Technical Improvements
 
+- Migration `0005_movie_watch_providers` (additive, `IF NOT EXISTS`, covered by the PGlite migration test).
+- Pure helpers with unit tests: TMDB image sets, formatters, rail scroll math, carousel rotation, navigation link matching, worker provider/logo selection.
+- Playwright: `tests/home.e2e.ts` (bottom bar targets, desktop links, rail arrow); `/about` and `/kit` added to the responsive and axe suites; the E2E gate runs on the production preview.
 - Migrated CI dependency policy to pnpm 11's strict `allowBuilds` map, with
   reviewed native builds allowed and the optional Sentry CLI script denied.
 - Separated the data worker connection lifecycle from the SvelteKit runtime.
@@ -158,6 +167,8 @@ its launch gates are explicitly verified.
 
 ### Known Issues
 
+- The committed TV snapshot carries poster paths that no longer resolve on the TMDB CDN; those cards show the titled fallback until TV becomes database-backed.
+- Hero trailer playback, movie detail, browse, search palette, TV/Discover/Picker/Library restyles are the next slices (`ROADMAP.md`).
 - Migration `0004_movie_picker_imdb.sql` (three nullable `movies.imdb_*` columns)
   is additive and undeployed. Treat it like `0002`/`0003`: back up and review first.
 - DNS for every production hostname still points to Vercel, whose project is

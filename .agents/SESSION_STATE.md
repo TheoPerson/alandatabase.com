@@ -2,9 +2,8 @@
 
 ## Updated
 
-2026-10-12 — reconciled by the V5 convergence session. The earlier version of this
-file described a streaming-mirror player and a WatchParty plan; both contradict the
-approved V3 rules in `AGENTS.md` / `PROJECT.md` and were removed.
+2026-10-12 — premium experience slices 1–3 delivered on
+`TheoPerson/V5-Alan-s-Data-Base` (see `ROADMAP.md` for evidence).
 
 ## Authority
 
@@ -14,25 +13,29 @@ This file is only a short handoff pointer.
 
 ## Where things stand
 
-- Branch `TheoPerson/V5-Alan-s-Data-Base` = V3 hardened line + `main`'s Movie Picker.
-  State: `in_review` (not merged, not deployed). Evidence is in `ROADMAP.md`.
-- Nothing from this branch has been pushed, merged to `main`, or deployed.
-- Migrations `0002`-`0004` are prepared and undeployed.
+- Branch state: `in_review`. Nothing pushed, merged or deployed.
+- Done: V3 + picker convergence, Netlify move, auth/rate-limit fixes, real
+  local catalogue, UI kit + `/kit`, cinema Home at `/`, landing at `/about`.
+- Migrations `0002`–`0005` are prepared and undeployed.
+- Playwright E2E must run against the production preview (default
+  `playwright.config.ts`), not the Vite dev server.
 
 ## Next actions, in priority order
 
-1. Owner: rotate the Telegram bot token that `main` hard-coded; decide hosting
-   (Vercel vs Netlify); decide guest vs signed-in picker (see `ROADMAP.md`).
-2. Run Playwright E2E and the Vercel adapter build under Node 24 (this machine had v26).
-3. Review the unmerged `codex/*` feature branches (`alan-score`,
-   `global-release-calendar`, `tv-episode-notifications`) for integration.
-4. Explicit IMDb enrichment worker command; picker genre filtering in SQL.
-5. P1 from `ROADMAP.md`: DB-backed TV, approved sources, resume/progress.
+1. Next plan: movie detail (trailer facade with `youtube-nocookie` allowlisted
+   in the CSP and in `player-safety.test.ts`, cast/crew, where to watch from
+   `movie_watch_providers`, more like this), then Browse at `/movies`
+   (filters, `/movies/catalog` redirect) and the search palette.
+2. TV, Discover, Picker, Library and auth restyles on the kit.
+3. Performance (CLS/LCP script), accessibility and visual baselines; docs.
+4. Owner operations: Netlify cutover (`docs/MISE_EN_LIGNE_NETLIFY.md`), TMDB
+   key and Telegram token rotation (both were committed publicly in history).
 
 ## Useful commands
 
 `pnpm check`, `pnpm lint`, `pnpm test:unit -- --run`, `pnpm --dir worker test`,
-`pnpm build` (set `NETLIFY=true` to build the Netlify adapter).
-Local preview without a database: serve a PGlite database (see the
-`createMigratedTestDatabase()` helper), set `DATABASE_URL=...?max=1`,
-`NODE_ENV=development ALLOW_DEV_AUTH_BYPASS=true pnpm exec vite dev`.
+`pnpm build`, `pnpm exec playwright test` (builds and previews on 4173; needs
+`DATABASE_URL` and `RATE_LIMIT_HASH_KEY` in `.env`).
+Local catalogue: serve a PGlite database (`pglite-server --db=<dir> --port=5433
+--max-connections=10`), then `WORKER_DATABASE_URL=... pnpm --dir worker
+ingest:popular` and `ingest:top-rated` with `TMDB_API_KEY` in `.env`.

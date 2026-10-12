@@ -148,6 +148,28 @@ Open items that need the Product Lead:
 5. Which of the unmerged `codex/*` branches (`alan-score`, `global-release-calendar`,
    `tv-episode-notifications`; each parented on `agent/v3-foundation-core`) to take.
 
+## `verified` — premium experience, slices 1–3 (data, UI kit, Home)
+
+Spec: `docs/superpowers/specs/2026-10-12-premium-cinema-experience-design.md`;
+plan: `docs/superpowers/plans/2026-10-12-premium-foundation-kit-home.md`.
+Verified in this worktree on 2026-10-12, not merged, not deployed:
+
+- `pnpm check` 0 errors; `pnpm test:unit -- --run` 290/290; worker tests
+  16/16; ESLint 0 errors; Prettier clean; `pnpm build` (Netlify adapter)
+  passes; Playwright 25/25 (`home`, `navigation`, `responsive` 320–1920 px,
+  `accessibility` axe on `/`, `/about`, `/movies`, `/tv`, `/search`,
+  `/auth/login`, `/status`, `/kit`) against the production preview.
+- Local catalogue on the owner's machine (not in the repository): 178 movies
+  with backdrops, 164 title logos, 1938 FR provider rows, 167 trailers.
+- Screenshots of `/` and `/kit` at 390 px and 1440 px reviewed.
+
+## `in_progress` — premium experience, slices 4–8
+
+Movie detail (trailer facade, cast/crew, where to watch, more like this),
+Browse at `/movies` with filters, search palette, TV/Discover/Picker/Library
+and auth restyles, then the performance/accessibility/visual pass. Each slice
+gets its own plan under `docs/superpowers/plans/`.
+
 ## `proposed` — picker follow-ups
 
 - Explicit, operator-run IMDb/OMDb enrichment (worker command, HTTPS, bounded batch)

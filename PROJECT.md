@@ -11,7 +11,7 @@ Alan's Data Base is a personal web application with two current surfaces:
 - an owner-only portal for personal data, playback, and setup, plus restricted
   catalogue administration for invited administrators.
 
-The root URL is the public project landing page; Cinema is the primary entry point and the focused developer tools remain available below it.
+The root URL is the cinema itself (featured titles and rails); the project landing page lives at `/about`, and the focused developer tools remain available under `/tools`. Product Lead direction (2026-10-12): a premium, Movix-grade experience judged on fluidity, UI/UX, responsiveness and a coherent UI kit (`docs/superpowers/specs/2026-10-12-premium-cinema-experience-design.md`).
 
 Movies/TV V3 is intended to become a calm, premium public catalogue with an
 owner-controlled personal cinema behind authentication. Visitors can browse the
