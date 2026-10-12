@@ -1,9 +1,18 @@
 <footer class="footer">
 	<div class="container footer-content">
 		<div class="footer-left">
-			<a href="/" class="footer-brand">🎬 CINEMA<span class="accent">DB</span></a>
+			<a href="/" class="footer-brand">ALAN<span class="accent">DB</span></a>
 			<p class="footer-tagline">Open-source cinema operating system. Built for movie lovers.</p>
 		</div>
+
+		<nav class="footer-links" aria-label="Footer">
+			<a href="/about">About</a>
+			<a href="/status">Status</a>
+			<a href="/kit">UI kit</a>
+			<a href="https://github.com/TheoPerson/alandatabase.com" target="_blank" rel="noreferrer"
+				>GitHub</a
+			>
+		</nav>
 
 		<div class="footer-meta">
 			<p class="attribution">
@@ -44,7 +53,27 @@
 	}
 
 	.accent {
-		color: var(--accent-gold);
+		color: var(--brand-primary);
+	}
+
+	.footer-links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-4);
+	}
+
+	.footer-links a {
+		display: inline-flex;
+		align-items: center;
+		min-height: var(--touch-target);
+		color: var(--content-secondary);
+		font-weight: 600;
+		font-size: var(--text-sm);
+		transition: color var(--duration-base) var(--ease-out);
+	}
+
+	.footer-links a:hover {
+		color: var(--brand-primary);
 	}
 
 	.footer-tagline {

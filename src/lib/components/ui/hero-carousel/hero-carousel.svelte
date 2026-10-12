@@ -133,6 +133,8 @@
 <style>
 	.hero {
 		position: relative;
+		/* Sit under the transparent top bar. */
+		margin-top: calc(-1 * (var(--top-bar-height) + var(--safe-top)));
 		min-height: min(70dvh, 560px);
 		display: flex;
 		align-items: flex-end;
