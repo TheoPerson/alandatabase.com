@@ -16,6 +16,10 @@ This file is only a short handoff pointer.
 - Branch state: `in_review`. Nothing pushed, merged or deployed.
 - Done: V3 + picker convergence, Netlify move, auth/rate-limit fixes, real
   local catalogue, UI kit + `/kit`, cinema Home at `/`, landing at `/about`.
+- The foundation plan passed an independent review; its fix pass is commit
+  `06cd830`. Deferred minors are listed in `ROADMAP.md`.
+- The local PGlite catalogue is lost when its server dies uncleanly: re-run the
+  two worker ingest commands (about 3 minutes).
 - Migrations `0002`–`0005` are prepared and undeployed.
 - Playwright E2E must run against the production preview (default
   `playwright.config.ts`), not the Vite dev server.

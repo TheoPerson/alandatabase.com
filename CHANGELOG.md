@@ -43,6 +43,7 @@ its launch gates are explicitly verified.
 ### Fixed
 
 - `/tv` overview text used a hard-coded colour with 3.87:1 contrast; it now uses the secondary text token (axe serious violation).
+- Independent review of the foundation slices (0 critical, 10 important, all fixed test-first): the movie detail page no longer covers the top bar; the footer clears the mobile tab bar; Discover and Picker are reachable on phones; the radar logo is back in the top bar; the featured carousel has a pause control, stays silent for screen readers while rotating, crossfades backdrops, reserves the logo height and keeps its action row in place; the hero watchlist button shows the real saved state and words its toast from the server; the home watchlist rail is capped at 20; hero copy gets a local vignette for contrast; ranked posters keep the full poster width and two-digit ranks fit; browser tests wait for hydration.
 - Ran the overnight V3 audit (2026-10-08) on an isolated task worktree and fixed
   the safe subset: Discover now strips classification keywords through the shared
   post-filter, `searchMovies` escapes LIKE wildcards and clamps trending/top-rated
@@ -168,6 +169,7 @@ its launch gates are explicitly verified.
 ### Known Issues
 
 - The committed TV snapshot carries poster paths that no longer resolve on the TMDB CDN; those cards show the titled fallback until TV becomes database-backed.
+- Review minors deferred to slices 4–8 (recorded in `ROADMAP.md`): reduced-motion only shortens durations, rail keyboard focus movement, carousel dot keyboard support, pinch-zoom on the hero, landscape safe-area gutters, `/about` canonical URL, `returnTo=/` falling back to `/movies`, number formatting just below a unit, migration `0005` rollback note (`DROP TABLE movie_watch_providers`).
 - Hero trailer playback, movie detail, browse, search palette, TV/Discover/Picker/Library restyles are the next slices (`ROADMAP.md`).
 - Migration `0004_movie_picker_imdb.sql` (three nullable `movies.imdb_*` columns)
   is additive and undeployed. Treat it like `0002`/`0003`: back up and review first.

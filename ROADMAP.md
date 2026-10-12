@@ -162,6 +162,17 @@ Verified in this worktree on 2026-10-12, not merged, not deployed:
 - Local catalogue on the owner's machine (not in the repository): 178 movies
   with backdrops, 164 title logos, 1938 FR provider rows, 167 trailers.
 - Screenshots of `/` and `/kit` at 390 px and 1440 px reviewed.
+- Independent whole-branch review (fresh context, Opus): 0 critical, 10 important,
+  24 minor. Every important finding fixed test-first in one pass; after it:
+  `pnpm check` 0 errors, vitest 294/294, worker 16/16, Playwright 32/32 (adds
+  `tests/chrome.e2e.ts`). Deferred minors, each owned by a later slice: reduced
+  motion beyond durations, rail/dot keyboard support, pinch-zoom, landscape
+  safe areas, `/about` canonical, `returnTo=/`, number formatting edge, worker
+  robustness (non-array kinds, stale logo), `/kit` image states, `backdrop-filter`
+  on badges, unquoted CSS `url()`, TopBar search `action`, ⌘K label on Windows;
+  plan-level departures: no hero Trailer action yet, TV rail unranked, overview
+  clamps at 3 lines, mobile hero capped at 560 px, search does not expand,
+  sign-in hidden below 1024 px, no sign-out control.
 
 ## `in_progress` — premium experience, slices 4–8
 
