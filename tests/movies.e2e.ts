@@ -26,10 +26,21 @@ test.describe('Public cinema and API integration', () => {
 		}
 	});
 
-	test('disabled custom intake answers 503 without writing', async ({ request }) => {
-		const response = await request.post('/movies/custom', {
+	test('custom intake rejects cross-site posts and anonymous same-site posts without writing', async ({
+		request,
+		baseURL
+	}) => {
+		const crossSite = await request.post('/movies/custom?/createCustomMovie', {
 			form: { title: 'E2E probe', tmdbId: '1' }
 		});
-		expect(response.status()).toBe(503);
+		expect(crossSite.status()).toBe(403);
+
+		const anonymous = await request.post('/movies/custom?/createCustomMovie', {
+			form: { title: 'E2E probe', tmdbId: '1' },
+			headers: { origin: baseURL as string },
+			maxRedirects: 0
+		});
+		// Anonymous callers are sent to sign in (302) or refused (401): never 2xx, never a write.
+		expect([302, 303, 401]).toContain(anonymous.status());
 	});
 });
