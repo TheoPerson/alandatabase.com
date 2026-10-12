@@ -30,4 +30,28 @@ describe('server logging safety', () => {
 		expect(output).not.toContain('hidden');
 		expect(output.length).toBeLessThanOrEqual(373);
 	});
+
+	it('surfaces the underlying cause even when the outer message is a long query', () => {
+		const databaseError = Object.assign(new Error('column movies.movie_id does not exist'), {
+			code: '42703'
+		});
+		const diagnostic = safeDiagnostic(
+			new Error(`Failed query: select ${'col, '.repeat(200)} from movies`, { cause: databaseError })
+		);
+
+		expect(diagnostic).toContain('42703');
+		expect(diagnostic).toContain('column movies.movie_id does not exist');
+		expect(diagnostic.length).toBeLessThanOrEqual(350);
+	});
+
+	it('redacts secrets that appear in the cause too', () => {
+		const diagnostic = safeDiagnostic(
+			new Error('Failed query', {
+				cause: new Error('connect failed postgres://user:pass@db.example/app password=hunter2')
+			})
+		);
+
+		expect(diagnostic).not.toContain('user:pass');
+		expect(diagnostic).not.toContain('hunter2');
+	});
 });

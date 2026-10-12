@@ -117,6 +117,41 @@ against the local production preview. Host-header checks pass for apex, www
 redirect, Status, API, API health, and Auth. This is local verification, not
 deployment evidence; unchanged Linux CI/Vercel packaging remains required.
 
+## `in_review` — V5 convergence (working branch `TheoPerson/V5-Alan-s-Data-Base`)
+
+Not merged to `main`, not deployed. The repository had two diverged lines from
+`8867cfc` (2026-08-14): the V3 hardened line (53 commits, never merged) and `main`
+(Movie Picker, CI/format fixes, Netlify adapter). This branch merges the V3 tip
+into `main`'s line (`f4a0931`) and brings the picker under the V3 rules.
+
+Evidence on this branch (local, Node v26 / Windows): `pnpm check` 0 errors;
+`pnpm test:unit -- --run` 41 files / 237 tests, three consecutive runs; worker
+tests 11/11; `prettier --check` clean; `eslint` 0 errors (warnings are the
+pre-existing baseline); `vite build` compiles and the Netlify-adapter build exits 0.
+
+Not verified: Playwright E2E, the Vercel adapter's final packaging (needs Node 24;
+this machine has v26), any hosted database, and migrations `0002`-`0004` outside
+PGlite. The `main` baseline before this work had a failing build, red lint and two
+unit-test files that could not import.
+
+Open items that need the Product Lead:
+
+1. **Rotate the Telegram bot token** that `main` hard-coded (public repository, so
+   treat it as exposed) and decide on Git history cleanup.
+2. **Hosting target**: Vercel (V3) or Netlify (`main`, 2026-09-21). Both build today.
+3. **Picker audience**: signed-in only (current, fail-closed) or a guest mode.
+4. **Production database state of `main`**: confirm whether `0002_movie_picker.sql`
+   was applied by hand before running any migration.
+5. Which of the unmerged `codex/*` branches (`alan-score`, `global-release-calendar`,
+   `tv-episode-notifications`; each parented on `agent/v3-foundation-core`) to take.
+
+## `proposed` — picker follow-ups
+
+- Explicit, operator-run IMDb/OMDb enrichment (worker command, HTTPS, bounded batch)
+  to fill `movies.imdb_*`; reads must keep using stored values only.
+- Filter picker genres in SQL instead of after the top-240 fetch.
+- Surface taste-profile read failures instead of silently falling back to the guest profile.
+
 ## `in_review` — agentic operating context
 
 - Root `AGENTS.md`, `PROJECT.md`, `ARCHITECTURE.md`, and `ROADMAP.md` establish worktree isolation, authority, canonical states, approval gates, current facts, and V3 priorities.

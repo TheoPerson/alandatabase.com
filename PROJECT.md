@@ -32,6 +32,7 @@ The repository currently provides:
   catalogue-only mutation permission for administrators, no private permission
   for members, and a separately authenticated Telegram webhook;
 - movie home, catalog, local search, discover, detail, review/edit/merge routes, and personal list/statistics surfaces;
+- a signed-in Movie Picker (`/cinema/picker`) that recommends from the safe local catalogue using the person’s own history, with no side effects on reads;
 - watchlist, favorite, watched, rating, review, and custom-list data models;
 - a committed local Top-50 TV snapshot with browse/detail aliases;
 - optional Telegram, Sentry, TMDB-worker, and Meilisearch integrations; Gemini

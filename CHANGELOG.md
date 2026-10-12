@@ -15,8 +15,15 @@ its launch gates are explicitly verified.
 - Restored the public movie discovery pipeline after a malformed SQL visibility predicate made catalogue reads fail.
 - Added persistent owner/admin/member authorization with one-time invitations,
   revocable sessions, audit events, and database-enforced single-owner identity.
+- Combined the two diverged lines of the project on the V5 working branch:
+  the V3 hardened line (`agent/v3-foundation-core` plus the 2026-10-08 audit) and
+  `main`'s Movie Picker. The picker is available to signed-in accounts at
+  `/cinema/picker` and now follows the V3 content, access, and read-safety rules.
 
 ### Minor Updates
+
+- Added a Picker link to the cinema header and mobile menu, and made the picker API
+  expand `preset` server-side (previously `?preset=` was accepted but ignored).
 
 - Added a server-side UptimeRobot v3 integration for monitor 803733856 with 30-day uptime, incident, downtime, and response-time metrics.
 - Added an original fluid status animation using GPU-friendly transforms, responsive composition, and a reduced-motion fallback.
@@ -65,8 +72,37 @@ its launch gates are explicitly verified.
   poster hydration, empty image requests, false clipboard success, reduced
   motion, and small-text contrast.
 
+- Fixed the standard-content visibility predicate failing inside relational
+  queries (`db.query.movies.findMany/findFirst`). The relational builder re-aliased
+  its `movie_keywords` columns to `movies`, so PostgreSQL rejected the query with
+  `column movies.movie_id does not exist`. Nineteen call sites use it. Reproduced
+  and fixed with a PGlite-backed test on the repository's pinned Drizzle; not yet
+  observed against a hosted database.
+- Fixed the picker recommending quarantined movies: it filtered only on
+  `adult = false`, so custom (non-TMDB) rows and rows with known explicit keywords
+  could be recommended. It now uses the shared standard-content predicate.
+- Fixed the picker usually reporting no director: the crew relation took an
+  unordered first five rows and then looked for the director among them.
+- Fixed the production build, which failed on `main` since the picker landed
+  because a browser component imported a runtime value from `$lib/server`.
+  Presets and types now live in client-safe `$lib/picker/`.
+- Fixed the picker page being public while every call it makes required a session;
+  `/cinema/picker` is now an authenticated route.
+- Fixed server diagnostics hiding the real database error: `safeDiagnostic` cut the
+  long "Failed query: ..." message at 350 characters before the underlying PostgreSQL
+  `cause` appeared. The cause (with its SQLSTATE) now leads, still redacted and bounded.
+
 ### Security
 
+- Removed the hard-coded Telegram bot token and chat-ID fallback that `main` still
+  shipped in `telegram.service.ts`. The token remains in public Git history and must
+  be treated as compromised and rotated by the owner.
+- Picker API input is validated and bounded: whitelisted filter keys, numeric and
+  list limits, UUID movie ids, a fixed set of event actions, and small flat
+  metadata. Clients can no longer create arbitrary `picker_<anything>` activity types.
+- Picker reads are side-effect free: removed per-request IMDb/OMDb enrichment (up to
+  one outbound call per candidate, a plaintext-HTTP URL carrying the API key, and
+  database writes from a GET) and the activity row written on every recommendation.
 - Removed two local PostgreSQL clusters from Git tracking while preserving the local files on disk.
 - Added ignore rules for local database clusters and worker build output.
 - Replaced raw database session tokens with SHA-256 digests while retaining random Secure, HttpOnly session cookies.
@@ -97,8 +133,32 @@ its launch gates are explicitly verified.
   selection, required explicit worker mutation targets, and added expiry-indexed
   rate-limit cleanup.
 
+- Added database-backed tests that run committed migrations on an in-memory
+  PostgreSQL (PGlite) via `createMigratedTestDatabase()`, covering the visibility
+  predicate through both Drizzle query builders and the picker read path.
+- Picker migration `0002_movie_picker.sql` was never registered in the Drizzle
+  journal on `main`; it is now `0004_movie_picker_imdb` with snapshot and journal
+  entry, idempotent (`IF NOT EXISTS`) for databases where it was applied by hand.
+- `svelte.config.js` selects the Netlify adapter when `NETLIFY` is set and the
+  Vercel adapter otherwise; `netlify.toml` is restored with Node 24 and the same
+  baseline security headers as `vercel.json`.
+- Raised the Vitest hook timeout to 60 seconds for database-backed tests.
+
 ### Known Issues
 
+- Migration `0004_movie_picker_imdb.sql` (three nullable `movies.imdb_*` columns)
+  is additive and undeployed. Treat it like `0002`/`0003`: back up and review first.
+- The hosting target is undecided: V3 chose Vercel and removed Netlify; `main`
+  switched back to Netlify on 2026-09-21. Both build; one must be confirmed.
+- The picker's IMDb rating columns are empty until an explicit, operator-run
+  enrichment job exists, so it ranks on TMDB ratings. The curated rating list that
+  `imdb.ts` held remains in Git history.
+- The picker applies genre filters after fetching the top 240 rows by rating, so a
+  narrow genre can return a small or empty pool.
+- Signed-in accounts only: there is no guest picker. Opening it to anonymous
+  visitors is a product decision (`proposed`).
+- The leaked Telegram bot token and the old committed PGlite clusters remain in Git
+  history; rotation and history cleanup are owner operations.
 - UptimeRobot metrics require a server-only `UPTIMEROBOT_API_KEY`; the Status page falls back to live application and database probes when it is absent.
 - Migrations `0002_wet_masque.sql` and `0003_complete_skrulls.sql` are prepared
   but have not been applied to any hosted database; they require a verified

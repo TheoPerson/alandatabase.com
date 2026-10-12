@@ -62,7 +62,7 @@ paths are left untouched.
 - Drizzle ORM 0.45 with `postgres-js` and PostgreSQL.
 - Vitest for colocated server/component tests; Playwright for browser tests in `tests/`.
 - Sentry client/server instrumentation through `@sentry/sveltekit`.
-- Vercel adapter selected in `svelte.config.js`.
+- Deployment adapter chosen in `svelte.config.js`: Netlify when `NETLIFY` is set, otherwise Vercel (the V3-verified target). Which host is canonical is an open owner decision.
 - Node 24 is the runtime baseline; the worker uses `tsx`, and pnpm 11.15.1 is
   pinned as the repository package manager.
 
@@ -77,6 +77,8 @@ paths are left untouched.
 | `src/lib/server/auth`     | Password/session helpers and centralized route classification.                                           |
 | `src/lib/server/policies` | Fail-closed content visibility policy.                                                                   |
 | `src/lib/server/queries`  | Bounded local read models such as search.                                                                |
+| `src/lib/server/picker`   | Movie Picker: request validation, candidate query (standard-content policy), scoring, taste profile.     |
+| `src/lib/picker`          | Client-safe picker types and presets shared with the browser (never import `$lib/server` from the UI).   |
 | `src/lib/server/services` | Movie, TV, interaction, AI/Telegram, and related application logic.                                      |
 | `src/lib/server/db`       | Drizzle schema, connection, seed data, and the misleading legacy `ensureTablesExist` helper.             |
 | `drizzle`                 | Generated PostgreSQL migration SQL and metadata.                                                         |
@@ -126,6 +128,7 @@ rollout remain incomplete.
 - `/tv`, `/tvshow`, and `/tvshows` share a committed in-code TV snapshot; TV has no database persistence or real episode catalog.
 - `/live` is a protected compatibility surface that accepts no URL and embeds nothing.
 - `/api/search` and `/api/movies/catalog` are bounded local reads.
+- `/cinema/picker` and `/api/picker/*` require a signed-in account. A recommendation reads only stored data (standard-content policy, stored `imdb_*` columns) and writes nothing; `/api/picker/events` records explicit user actions. Request bodies are validated in `src/lib/server/picker/request.ts`.
 - `/api/ai/chat` returns HTTP 410 and sends no personal data externally until
   approved consent, abuse, timeout, retention, and deletion controls exist.
 - `/api/telemetry/stream-play` and `/api/telemetry/events` return HTTP 410 until an approved source pipeline and owner-only redacted telemetry stream exist.
@@ -206,7 +209,7 @@ screen-reader coverage remains incomplete.
 Root commands:
 
 - `pnpm check` — Svelte/TypeScript diagnostics.
-- `pnpm test:unit -- --run` — Vitest tests under `src`.
+- `pnpm test:unit -- --run` — Vitest tests under `src`. Database-backed tests use `createMigratedTestDatabase()` (`src/lib/server/testing/pglite.ts`): an in-memory PostgreSQL with every committed migration applied, so Drizzle relational queries run as real SQL.
 - `pnpm --dir worker test` — ingestion safety tests.
 - `pnpm lint` — repository-wide Prettier then ESLint.
 - `pnpm test:e2e` — Playwright against a local production preview, or against
@@ -228,5 +231,4 @@ build remains the authoritative packaging gate.
 GitHub Actions runs lint, check, app/worker tests, Chromium E2E, and app/worker
 builds for `main` and `agent/v3-foundation-core`, using Node 24 and pnpm 11.15.1. Authenticated
 database integration still needs an isolated CI database fixture;
-Meilisearch remains optional. Vercel is the sole configured deployment adapter;
-stale Netlify tooling and configuration have been removed.
+Meilisearch remains optional. The Vercel adapter is the default and the Netlify adapter is used when `NETLIFY` is set (`netlify.toml` mirrors the baseline security headers); the host decision is open.
