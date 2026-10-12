@@ -1,15 +1,8 @@
 import { db } from '../db/index.js';
-import {
-	userMovieInteractions,
-	userLists,
-	userListItems,
-	userReviews,
-	users,
-	movies,
-	activities
-} from '../db/schema.js';
-import { eq, and, desc, sql } from 'drizzle-orm';
-import { ensureTablesExist } from '../db/migrate.js';
+import { userMovieInteractions, userReviews, users, movies, activities } from '../db/schema.js';
+import { eq, and, desc } from 'drizzle-orm';
+import { isStandardMovie, standardMovieVisibilityWhere } from '../policies/movie-visibility.js';
+import { prepareStandardMovie } from './movie.service.js';
 
 // ── Activity Logging ────────────────────────────────────────────────────────
 export async function logActivity(
@@ -32,12 +25,7 @@ export async function logActivity(
 	}
 }
 
-async function checkDbReady() {
-	await ensureTablesExist();
-}
-
 export async function getOrCreateDefaultUser() {
-	await checkDbReady();
 	const existing = await db.query.users.findFirst({
 		where: eq(users.username, 'cinephile')
 	});
@@ -61,15 +49,36 @@ export async function getOrCreateDefaultUser() {
 
 const isUuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Personal-library reads stay bounded: a single page must never scan a
+// lifetime of interactions. 500 keeps every realistic library intact while
+// capping the worst case.
+const MAX_INTERACTION_ITEMS = 500;
+
+function prepareInteractionItems(items: any[]) {
+	return items
+		.map((item) => {
+			const movie = prepareStandardMovie(item.movie);
+			return movie ? { ...item, movie } : null;
+		})
+		.filter((item): item is NonNullable<typeof item> => item !== null);
+}
+
 async function resolveMovieUuid(movieId: string): Promise<string | null> {
 	if (!movieId) return null;
-	if (isUuidRegex.test(movieId)) return movieId;
+	if (isUuidRegex.test(movieId)) {
+		const found = await db.query.movies.findFirst({
+			where: and(eq(movies.id, movieId), standardMovieVisibilityWhere()),
+			columns: { id: true }
+		});
+		return found?.id ?? null;
+	}
 
 	const isNumeric = /^\d+$/.test(movieId);
 	if (isNumeric) {
 		const tmdbId = parseInt(movieId, 10);
 		const found = await db.query.movies.findFirst({
-			where: eq(movies.tmdbId, tmdbId)
+			where: and(eq(movies.tmdbId, tmdbId), standardMovieVisibilityWhere()),
+			columns: { id: true }
 		});
 		if (found) return found.id;
 	}
@@ -77,7 +86,6 @@ async function resolveMovieUuid(movieId: string): Promise<string | null> {
 }
 
 export async function getUserInteraction(userId: string, movieId: string) {
-	await checkDbReady();
 	const resolvedUuid = await resolveMovieUuid(movieId);
 	if (!resolvedUuid) return null;
 
@@ -90,7 +98,6 @@ export async function getUserInteraction(userId: string, movieId: string) {
 }
 
 export async function toggleWatchlist(userId: string, movieId: string) {
-	await checkDbReady();
 	const resolvedUuid = await resolveMovieUuid(movieId);
 	if (!resolvedUuid) return { watchlist: false };
 
@@ -120,7 +127,6 @@ export async function toggleWatchlist(userId: string, movieId: string) {
 }
 
 export async function toggleFavorite(userId: string, movieId: string) {
-	await checkDbReady();
 	const resolvedUuid = await resolveMovieUuid(movieId);
 	if (!resolvedUuid) return { favorite: false };
 
@@ -156,7 +162,6 @@ export async function setMovieWatched(
 	rating?: number,
 	personalNotes?: string
 ) {
-	await checkDbReady();
 	const resolvedUuid = await resolveMovieUuid(movieId);
 	if (!resolvedUuid) return null;
 
@@ -214,13 +219,14 @@ export async function setMovieWatched(
 }
 
 export async function getUserWatchlist(userId: string): Promise<any[]> {
-	await checkDbReady();
 	const items = await db.query.userMovieInteractions.findMany({
 		where: and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.watchlist, true)),
 		orderBy: [desc(userMovieInteractions.updatedAt)],
+		limit: MAX_INTERACTION_ITEMS,
 		with: {
 			movie: {
 				with: {
+					keywords: true,
 					genres: {
 						with: {
 							genre: true
@@ -230,17 +236,18 @@ export async function getUserWatchlist(userId: string): Promise<any[]> {
 			}
 		}
 	});
-	return items as any[];
+	return prepareInteractionItems(items);
 }
 
 export async function getUserFavorites(userId: string): Promise<any[]> {
-	await checkDbReady();
 	const items = await db.query.userMovieInteractions.findMany({
 		where: and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.favorite, true)),
 		orderBy: [desc(userMovieInteractions.updatedAt)],
+		limit: MAX_INTERACTION_ITEMS,
 		with: {
 			movie: {
 				with: {
+					keywords: true,
 					genres: {
 						with: {
 							genre: true
@@ -250,17 +257,18 @@ export async function getUserFavorites(userId: string): Promise<any[]> {
 			}
 		}
 	});
-	return items as any[];
+	return prepareInteractionItems(items);
 }
 
 export async function getUserWatchedHistory(userId: string): Promise<any[]> {
-	await checkDbReady();
 	const items = await db.query.userMovieInteractions.findMany({
 		where: and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.watched, true)),
 		orderBy: [desc(userMovieInteractions.updatedAt)],
+		limit: MAX_INTERACTION_ITEMS,
 		with: {
 			movie: {
 				with: {
+					keywords: true,
 					genres: {
 						with: {
 							genre: true
@@ -270,7 +278,7 @@ export async function getUserWatchedHistory(userId: string): Promise<any[]> {
 			}
 		}
 	});
-	return items as any[];
+	return prepareInteractionItems(items);
 }
 
 export async function addUserReview(
@@ -279,7 +287,6 @@ export async function addUserReview(
 	content: string,
 	containsSpoilers = false
 ) {
-	await checkDbReady();
 	const resolvedUuid = await resolveMovieUuid(movieId);
 	if (!resolvedUuid) return null;
 
@@ -305,48 +312,34 @@ export async function addUserReview(
 }
 
 export async function getUserMovieReviews(movieId: string): Promise<any[]> {
-	await checkDbReady();
 	const resolvedUuid = await resolveMovieUuid(movieId);
 	if (!resolvedUuid) return [];
 
 	const reviews = await db.query.userReviews.findMany({
 		where: eq(userReviews.movieId, resolvedUuid),
 		orderBy: [desc(userReviews.createdAt)],
+		limit: MAX_INTERACTION_ITEMS,
 		with: {
-			user: true
+			user: {
+				columns: {
+					id: true,
+					username: true,
+					displayName: true
+				}
+			}
 		}
 	});
 	return reviews as any[];
 }
 
 export async function getUserStats(userId: string) {
-	await checkDbReady();
-
-	const [watchedResult] = await db
-		.select({ count: sql<number>`count(*)` })
-		.from(userMovieInteractions)
-		.where(and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.watched, true)));
-	const [watchlistResult] = await db
-		.select({ count: sql<number>`count(*)` })
-		.from(userMovieInteractions)
-		.where(
-			and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.watchlist, true))
-		);
-	const [favoritesResult] = await db
-		.select({ count: sql<number>`count(*)` })
-		.from(userMovieInteractions)
-		.where(and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.favorite, true)));
-
-	const watchedCount = Number(watchedResult.count) || 0;
-	const watchlistCount = Number(watchlistResult.count) || 0;
-	const favoritesCount = Number(favoritesResult.count) || 0;
-
-	// Optimization: only load watched movies for genre distribution and total runtime
-	const watched = await db.query.userMovieInteractions.findMany({
-		where: and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.watched, true)),
+	const interactions = await db.query.userMovieInteractions.findMany({
+		where: eq(userMovieInteractions.userId, userId),
+		limit: MAX_INTERACTION_ITEMS,
 		with: {
 			movie: {
 				with: {
+					keywords: true,
 					genres: {
 						with: {
 							genre: true
@@ -356,6 +349,11 @@ export async function getUserStats(userId: string) {
 			}
 		}
 	});
+	const visibleInteractions = interactions.filter((item) => isStandardMovie(item.movie));
+	const watched = visibleInteractions.filter((item) => item.watched);
+	const watchedCount = watched.length;
+	const watchlistCount = visibleInteractions.filter((item) => item.watchlist).length;
+	const favoritesCount = visibleInteractions.filter((item) => item.favorite).length;
 
 	let totalRuntime = 0;
 	const genreCounts: Record<string, number> = {};

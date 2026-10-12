@@ -16,9 +16,8 @@ export async function sendTelegramCard(
 	text: string,
 	options: TelegramSendOptions = {}
 ): Promise<boolean> {
-	const botToken =
-		process.env.TELEGRAM_BOT_TOKEN || '8811353440:AAEzLAMSAVKEz6i9mYX6nfV--NrPAnVxGqE';
-	let chatId = process.env.TELEGRAM_CHAT_ID || '1147966448';
+	const botToken = process.env.TELEGRAM_BOT_TOKEN;
+	let chatId = process.env.TELEGRAM_CHAT_ID;
 	let topicId: number | undefined = undefined;
 
 	if (!botToken || !chatId || botToken === 'YOUR_TELEGRAM_BOT_TOKEN') {
@@ -37,8 +36,6 @@ export async function sendTelegramCard(
 	if (sentDedupeCache.has(dedupeKey)) {
 		return true; // Already dispatched recently, skip Telegram notification
 	}
-	sentDedupeCache.set(dedupeKey, now);
-
 	// Topic / Sub-channel routing
 	const category = options.category || 'logs';
 	if (category === 'major') {
@@ -87,7 +84,8 @@ export async function sendTelegramCard(
 		const res = await fetch(url, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(payload)
+			body: JSON.stringify(payload),
+			signal: AbortSignal.timeout(8_000)
 		});
 
 		if (!res.ok) {
@@ -98,6 +96,7 @@ export async function sendTelegramCard(
 			return false;
 		}
 
+		sentDedupeCache.set(dedupeKey, now);
 		return true;
 	} catch (err) {
 		console.warn(`[Telegram Exception] (${category}):`, err);
@@ -187,14 +186,14 @@ export async function notifyMovieIngested(
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
 		`🎬 <b>Entity:</b> <b>${title}</b> ${year ? `(${year})` : ''}\n` +
 		`🆔 <b>TMDB UID:</b> <code>#${tmdbId || 'N/A'}</code>\n` +
-		`📦 <b>Pipeline Sync:</b> <code>Cast, Crew, Trailers & HD Streams</code>\n` +
+		`📦 <b>Pipeline Sync:</b> <code>Catalog metadata</code>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
 		`⚡ <b>Status:</b> <code>200 OK • Ingested to Database</code>\n` +
 		`⏱️ <b>UTC Timestamp:</b> <code>${timestamp}</code>`;
 
 	const buttons: Array<Array<{ text: string; url: string }>> = [
 		[
-			{ text: '🎬 Watch on CinemaDB', url: `https://alandatabase.com/movies/${tmdbId}` },
+			{ text: '🎬 View on CinemaDB', url: `https://alandatabase.com/movies/${tmdbId}` },
 			{ text: '🔗 TMDB Reference', url: `https://www.themoviedb.org/movie/${tmdbId}` }
 		]
 	];
@@ -255,44 +254,8 @@ export async function notifyUserLogin(username: string, ip?: string) {
 }
 
 // -------------------------------------------------------------
-// 4. 📡 LIVE RUNTIME ACTIVITY (DISCOVERY & STREAMING)
+// 4. 🔎 SEARCH ACTIVITY
 // -------------------------------------------------------------
-export async function notifyMovieStreamed(
-	movieTitle: string,
-	serverName?: string,
-	user?: string,
-	posterPath?: string | null
-) {
-	const timestamp = new Date().toISOString();
-	const fullPosterUrl = posterPath
-		? posterPath.startsWith('http')
-			? posterPath
-			: `https://image.tmdb.org/t/p/w500${posterPath}`
-		: null;
-
-	telemetryBus.emit({
-		level: 'STREAM',
-		source: 'STREAM_PIPELINE',
-		message: `Stream Playback: "${movieTitle}" via ${serverName || 'Vidzy HD'} by @${user || 'Guest'}`
-	});
-
-	const text =
-		`🟢 <b>[STREAM PIPELINE] PLAYBACK SESSION INITIALIZED</b>\n` +
-		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🎬 <b>Entity:</b> <b>${movieTitle}</b>\n` +
-		`📡 <b>Mirror Gateway:</b> <code>${serverName || 'Vidzy HD (HLS / m3u8)'}</code>\n` +
-		`👤 <b>Viewer:</b> <code>${user || 'Anonymous / Guest'}</code>\n` +
-		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`⚡ <b>Protocol:</b> <code>Multi-Server Embed Sandbox (1080p Ultra HD)</code>\n` +
-		`⏱️ <b>UTC Timestamp:</b> <code>${timestamp}</code>`;
-
-	return sendTelegramCard(text, {
-		category: 'logs',
-		photoUrl: fullPosterUrl,
-		inlineButtons: [[{ text: '▶ Open Stream Player', url: 'https://alandatabase.com/movies' }]]
-	});
-}
-
 export async function notifySearchPerformed(query: string, resultCount: number) {
 	const timestamp = new Date().toISOString();
 

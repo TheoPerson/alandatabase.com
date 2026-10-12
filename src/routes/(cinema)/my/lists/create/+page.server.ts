@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { userLists } from '$lib/server/db/schema';
+import { logServerError } from '$lib/server/security/logging';
 
 export async function load({ locals }) {
 	if (!locals.user) {
@@ -37,7 +38,7 @@ export const actions = {
 
 			return { success: true, listId: newList.id };
 		} catch (err) {
-			console.error('Failed to create list:', err);
+			logServerError('List creation failed', err);
 			return fail(500, { error: 'Failed to create list' });
 		}
 	}

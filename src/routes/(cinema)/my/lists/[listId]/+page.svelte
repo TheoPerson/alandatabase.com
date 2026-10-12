@@ -138,6 +138,11 @@
 		opacity: 1;
 	}
 
+	.item-card:focus-within .remove-btn,
+	.remove-btn:focus-visible {
+		opacity: 1;
+	}
+
 	.poster-link {
 		display: block;
 		aspect-ratio: 2 / 3;

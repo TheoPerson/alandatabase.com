@@ -6,8 +6,8 @@
 		PickerFilters,
 		PickerPreset,
 		PickerRecommendationResponse
-	} from '$lib/server/picker/types';
-	import { QUICK_PRESETS } from '$lib/server/picker/config';
+	} from '$lib/picker/types';
+	import { QUICK_PRESETS } from '$lib/picker/presets';
 
 	interface Props {
 		initialGenres: string[];

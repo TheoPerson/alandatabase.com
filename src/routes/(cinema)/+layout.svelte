@@ -4,7 +4,6 @@
 	import Footer from '$lib/components/layout/Footer.svelte';
 	import ToastContainer from '$lib/components/ui/ToastContainer.svelte';
 	import CommandPalette from '$lib/components/ui/CommandPalette.svelte';
-	import LiveTelemetryHUD from '$lib/components/telemetry/LiveTelemetryHUD.svelte';
 	import NavigationProgressBar from '$lib/components/layout/NavigationProgressBar.svelte';
 	import type { Snippet } from 'svelte';
 
@@ -17,15 +16,14 @@
 
 <div class="app-layout" data-sveltekit-preload-data="hover" data-sveltekit-preload-code="eager">
 	<NavigationProgressBar />
-	<a href="#main-content" class="sr-only">Skip to main content</a>
+	<a href="#main-content" class="sr-only skip-link">Skip to main content</a>
 	<Header />
-	<main id="main-content" class="main-content">
+	<main id="main-content" class="main-content" tabindex="-1">
 		{@render children?.()}
 	</main>
 	<Footer />
 	<ToastContainer />
 	<CommandPalette />
-	<LiveTelemetryHUD />
 </div>
 
 <style>

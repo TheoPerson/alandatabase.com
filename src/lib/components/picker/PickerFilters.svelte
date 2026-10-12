@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PickerFilters, PickerPreset, RecommendationMode } from '$lib/server/picker/types';
+	import type { PickerFilters, PickerPreset, RecommendationMode } from '$lib/picker/types';
 
 	interface Props {
 		activeFilters: PickerFilters;

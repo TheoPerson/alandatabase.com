@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { Meilisearch } from 'meilisearch';
 
 export const MOVIES_INDEX = 'movies';
 
@@ -13,14 +14,7 @@ export async function setupMeilisearchIndexes() {
 
 	try {
 		console.log(`🔍 Connecting to Meilisearch at ${meiliHost}...`);
-		// Dynamic import to avoid crash if meilisearch package is not used
-		const { MeiliSearch } = await import('meilisearch').catch(() => ({ MeiliSearch: null }));
-		if (!MeiliSearch) {
-			console.log('ℹ️ Meilisearch package optional.');
-			return;
-		}
-
-		const meili = new MeiliSearch({
+		const meili = new Meilisearch({
 			host: meiliHost,
 			apiKey: meiliKey || ''
 		});
@@ -38,7 +32,8 @@ export async function setupMeilisearchIndexes() {
 	}
 }
 
-export async function indexMovie(movieData: any) {
+export async function indexMovie(movieData: unknown) {
 	// Optional background indexing
+	void movieData;
 	return true;
 }

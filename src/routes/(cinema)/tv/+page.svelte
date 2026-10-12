@@ -1,8 +1,6 @@
 <script lang="ts">
-	import { SvelteSet } from 'svelte/reactivity';
 	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import Badge from '$lib/components/ui/Badge.svelte';
 
 	let { data } = $props();
 
@@ -12,11 +10,8 @@
 	let selectedGenre = $state('All');
 
 	const allGenres = $derived.by(() => {
-		const set = new SvelteSet<string>();
-		data.shows.forEach((show: any) => {
-			show.genres?.forEach((g: string) => set.add(g));
-		});
-		return ['All', ...Array.from(set).sort()];
+		const genres = data.shows.flatMap((show: any) => show.genres ?? []) as string[];
+		return ['All', ...genres.filter((genre, index) => genres.indexOf(genre) === index).sort()];
 	});
 
 	const filteredShows = $derived(
@@ -34,10 +29,10 @@
 </script>
 
 <svelte:head>
-	<title>Top 50 IMDb TV Shows & Series | CinemaDB</title>
+	<title>Top 50 TV Shows & Series | CinemaDB</title>
 	<meta
 		name="description"
-		content="The 50 Greatest Television Series of All Time, ranked by IMDb user ratings. Stream and discover the highest-rated TV shows."
+		content="An editorial snapshot of 50 acclaimed television series. Browse and organise top-rated TV shows."
 	/>
 </svelte:head>
 
@@ -56,7 +51,7 @@
 			<div class="container hero-container">
 				<div class="hero-text-block">
 					<div class="hero-tag-wrap">
-						<span class="imdb-pill">IMDb</span>
+						<span class="imdb-pill">TMDB</span>
 						<span class="hero-tag">FEATURED SERIES</span>
 					</div>
 					<h1 class="hero-main-title">{hero.title}</h1>
@@ -66,22 +61,22 @@
 							<span class="star">★</span>
 							<span>{hero.voteAverage}</span>
 						</span>
-						<span class="meta-item">2022</span>
+						<span class="meta-item">{hero.year}</span>
 						<span class="meta-dot">•</span>
-						<span class="meta-genres">Action & Adventure • Crime • Drama</span>
+						<span class="meta-genres">{hero.genres?.join(' • ')}</span>
 					</div>
 
 					<p class="hero-synopsis">{hero.overview}</p>
 
 					<div class="hero-btn-row">
-						<a href="/cinema/tvshow/{hero.tmdbId}" class="cineby-play-btn">
-							<span class="play-icon">▶</span>
-							<span>Play Series</span>
+						<a href="/tv/{hero.tmdbId}" class="cineby-play-btn">
+							<span class="play-icon">ⓘ</span>
+							<span>View Series</span>
 						</a>
 
-						<a href="/cinema/tvshow/{hero.tmdbId}" class="cineby-info-btn">
+						<a href="/tv/{hero.tmdbId}" class="cineby-info-btn">
 							<span class="info-icon">ⓘ</span>
-							<span>See Episodes</span>
+							<span>Episodes & playback status</span>
 						</a>
 					</div>
 				</div>
@@ -94,12 +89,12 @@
 		<header class="chart-header-bar">
 			<div class="chart-title-box">
 				<div class="imdb-badge-wrap">
-					<span class="imdb-icon">IMDb</span>
+					<span class="imdb-icon">TMDB</span>
 					<span class="chart-tag">TOP 50 ALL-TIME TELEVISION CHART</span>
 				</div>
 				<h2 class="chart-main-title">Top 50 Ranked Television Masterpieces</h2>
 				<p class="chart-subtitle">
-					Ranked strictly by millions of verified IMDb reviews from #1 to #50.
+					An editorial snapshot of 50 acclaimed series, ordered from #1 to #50.
 				</p>
 			</div>
 
@@ -109,18 +104,25 @@
 					<span class="search-icon">🔍</span>
 					<input
 						type="search"
+						aria-label="Search Top 50 TV shows"
 						bind:value={searchQuery}
 						placeholder="Search Top 50 shows (e.g. Breaking Bad, Chernobyl, Arcane)..."
 						class="tv-search-input"
 					/>
 				</div>
 
-				<div class="genre-pills-scroll">
+				<div
+					class="genre-pills-scroll"
+					tabindex="0"
+					role="region"
+					aria-label="Filter by genre (scrollable)"
+				>
 					{#each allGenres as genre}
 						<button
 							type="button"
 							class="genre-chip"
 							class:active={selectedGenre === genre}
+							aria-pressed={selectedGenre === genre}
 							onclick={() => (selectedGenre = genre)}
 						>
 							{genre}
@@ -190,8 +192,8 @@
 									{/each}
 								</div>
 
-								<a href="/cinema/tvshow/{show.tmdbId}" class="watch-tv-btn">
-									<span>▶ Watch Series</span>
+								<a href="/tv/{show.tmdbId}" class="watch-tv-btn">
+									<span>View series</span>
 								</a>
 							</div>
 						</div>
@@ -365,8 +367,17 @@
 	.hero-btn-row {
 		display: flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 0.85rem;
 		margin-top: 0.5rem;
+	}
+
+	@media (max-width: 420px) {
+		.cineby-play-btn,
+		.cineby-info-btn {
+			flex: 1 1 100%;
+			justify-content: center;
+		}
 	}
 
 	.cineby-play-btn {
@@ -519,6 +530,7 @@
 		font-size: 0.78rem;
 		font-weight: 600;
 		padding: 0.35rem 0.75rem;
+		min-height: 44px;
 		border-radius: 9999px;
 		cursor: pointer;
 		white-space: nowrap;

@@ -1,7 +1,7 @@
 import { db } from '../db';
 import { userMovieInteractions, activities, movieCrew, people } from '../db/schema';
 import { eq, and, desc, sql, inArray } from 'drizzle-orm';
-import type { UserTasteProfile } from './types';
+import type { UserTasteProfile } from '$lib/picker/types';
 
 export async function getUserTasteProfile(userId?: string | null): Promise<UserTasteProfile> {
 	if (!userId) {

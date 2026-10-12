@@ -9,7 +9,11 @@
 	let { message, type }: Props = $props();
 </script>
 
-<div class="toast toast-{type}">
+<div
+	class="toast toast-{type}"
+	role={type === 'error' ? 'alert' : 'status'}
+	aria-live={type === 'error' ? 'assertive' : 'polite'}
+>
 	{message}
 </div>
 
@@ -37,7 +41,7 @@
 	}
 
 	.toast-info {
-		border-left: 4px solid var(--accent-blue);
+		border-left: 4px solid var(--color-info);
 	}
 
 	@keyframes slide-in {

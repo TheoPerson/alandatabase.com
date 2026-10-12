@@ -9,9 +9,9 @@ import type {
 	PickerFilters,
 	PickerRecommendationResponse,
 	RecommendationMode
-} from './types';
+} from '$lib/picker/types';
 
-export * from './types';
+export * from '$lib/picker/types';
 export * from './config';
 
 interface GetRecommendationParams {

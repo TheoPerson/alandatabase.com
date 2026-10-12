@@ -17,7 +17,7 @@
 <header class="glass-header sticky-header">
 	<div class="container header-content">
 		<!-- Brand Logo -->
-		<a href="/cinema/movies" class="brand-logo" onclick={() => (menuOpen = false)}>
+		<a href="/movies" class="brand-logo" onclick={() => (menuOpen = false)}>
 			<div class="logo-symbol-wrapper">
 				<svg
 					class="brand-logo-svg"
@@ -52,19 +52,16 @@
 					/>
 				</svg>
 			</div>
-			<span class="logo-text">CINEMA<span class="logo-accent">DB</span></span>
+			<span class="logo-text">ALAN<span class="logo-accent">DB</span></span>
 		</a>
 
 		<!-- Main Nav Navigation Links -->
 		<nav class="main-nav">
-			<a href="/cinema/movies" class="nav-link">Movies</a>
-			<a href="/tvshows" class="nav-link">TV Shows</a>
-			<a href="/cinema/picker" class="nav-link picker-nav-link">
-				<span>Picker</span>
-				<span class="picker-pill">✨ New</span>
-			</a>
+			<a href="/movies" class="nav-link">Movies</a>
+			<a href="/tv" class="nav-link">TV Shows</a>
+			<a href="/cinema/picker" class="nav-link">Picker</a>
 			<a href="/movies/catalog" class="nav-link">Catalog</a>
-			<a href="/my/films" class="nav-link">Personal OS</a>
+			<a href="/my/films" class="nav-link">My library</a>
 		</nav>
 
 		<!-- Search Bar & User Actions -->
@@ -72,16 +69,22 @@
 			<form onsubmit={handleSearch} class="search-form">
 				<input
 					type="search"
-					placeholder="Search movies, directors, actors..."
+					aria-label="Search the movie catalogue"
+					placeholder="Search movies"
 					bind:value={searchQuery}
 					class="search-input"
 				/>
-				<button type="submit" aria-label="Search" class="search-btn"> 🔍 </button>
+				<button type="submit" aria-label="Submit catalogue search" class="search-btn">
+					<svg viewBox="0 0 24 24" aria-hidden="true">
+						<circle cx="11" cy="11" r="6.5"></circle>
+						<path d="m16 16 4 4"></path>
+					</svg>
+				</button>
 			</form>
 
 			<div class="desktop-only flex items-center gap-2">
 				<a
-					href="https://github.com/TheoPerson/the-alans-data-base"
+					href="https://github.com/TheoPerson/alandatabase.com"
 					target="_blank"
 					rel="noreferrer"
 					class="header-repo-icon"
@@ -108,7 +111,7 @@
 						/>
 					</svg>
 				</a>
-				<Button href="/my/films" variant="outline" size="sm">Personal OS</Button>
+				<Button href="/my/films" variant="outline" size="sm">My library</Button>
 			</div>
 
 			<button
@@ -125,18 +128,15 @@
 	{#if menuOpen}
 		<div class="mobile-menu">
 			<nav class="mobile-nav">
-				<a href="/cinema/movies" class="mobile-nav-link" onclick={() => (menuOpen = false)}
-					>Movies</a
-				>
-				<a href="/tvshows" class="mobile-nav-link" onclick={() => (menuOpen = false)}>TV Shows</a>
+				<a href="/movies" class="mobile-nav-link" onclick={() => (menuOpen = false)}>Movies</a>
+				<a href="/tv" class="mobile-nav-link" onclick={() => (menuOpen = false)}>TV Shows</a>
 				<a href="/cinema/picker" class="mobile-nav-link" onclick={() => (menuOpen = false)}
-					>🎬 Daily Movie Picker</a
+					>Picker</a
 				>
 				<a href="/movies/catalog" class="mobile-nav-link" onclick={() => (menuOpen = false)}
 					>Catalog</a
 				>
-				<a href="/my/films" class="mobile-nav-link" onclick={() => (menuOpen = false)}
-					>Personal OS</a
+				<a href="/my/films" class="mobile-nav-link" onclick={() => (menuOpen = false)}>My library</a
 				>
 			</nav>
 		</div>
@@ -197,15 +197,16 @@
 	}
 
 	.radar-scan {
+		transform-box: view-box;
 		transform-origin: 18px 18px;
-		animation: radarSpin 5s linear infinite;
+		animation: radar-spin 4s linear infinite;
 	}
 
 	.pulse-ring {
-		animation: pulseOpacity 2.5s ease-in-out infinite;
+		animation: pulse-opacity 2.5s ease-in-out infinite;
 	}
 
-	@keyframes radarSpin {
+	@keyframes radar-spin {
 		from {
 			transform: rotate(0deg);
 		}
@@ -214,13 +215,20 @@
 		}
 	}
 
-	@keyframes pulseOpacity {
+	@keyframes pulse-opacity {
 		0%,
 		100% {
 			opacity: 0.25;
 		}
 		50% {
 			opacity: 0.7;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.radar-scan,
+		.pulse-ring {
+			animation: none;
 		}
 	}
 
@@ -235,7 +243,7 @@
 		gap: 1.75rem;
 	}
 
-	@media (min-width: 768px) {
+	@media (min-width: 1200px) {
 		.main-nav {
 			display: flex;
 		}
@@ -252,23 +260,6 @@
 		color: #10b981;
 	}
 
-	.picker-nav-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
-	}
-
-	.picker-pill {
-		font-size: 0.65rem;
-		font-weight: 800;
-		background: rgba(16, 185, 129, 0.15);
-		color: #10b981;
-		border: 1px solid rgba(16, 185, 129, 0.3);
-		padding: 1px 5px;
-		border-radius: 999px;
-		letter-spacing: 0.02em;
-	}
-
 	.header-right {
 		display: flex;
 		align-items: center;
@@ -277,40 +268,63 @@
 
 	.search-form {
 		position: relative;
-		display: flex;
+		display: none;
 		align-items: center;
+	}
+
+	@media (min-width: 1200px) {
+		.search-form {
+			display: flex;
+		}
 	}
 
 	.search-input {
 		width: 220px;
-		padding: 0.45rem 2.2rem 0.45rem 0.85rem;
+		height: var(--touch-target);
+		padding: 0.45rem 3rem 0.45rem 0.85rem;
 		background: var(--bg-surface-2);
 		border: 1px solid var(--border-subtle);
 		border-radius: var(--radius-full);
 		color: var(--text-primary);
 		font-size: 0.85rem;
-		transition: all var(--transition-fast);
+		transition:
+			width var(--transition-fast),
+			border-color var(--transition-fast),
+			box-shadow var(--transition-fast);
 	}
 
-	@media (min-width: 1024px) {
+	@media (min-width: 1280px) {
 		.search-input {
 			width: 280px;
 		}
 	}
 
-	.search-input:focus {
+	.search-input:focus-visible {
 		outline: none;
 		border-color: var(--border-accent);
-		box-shadow: 0 0 0 3px var(--accent-gold-subtle);
+		box-shadow: 0 0 0 3px var(--brand-muted);
 		width: 320px;
 	}
 
 	.search-btn {
 		position: absolute;
-		right: 0.6rem;
-		font-size: 0.85rem;
+		right: 0.25rem;
+		display: grid;
+		place-items: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: var(--radius-full);
 		opacity: 0.6;
 		transition: opacity var(--transition-fast);
+	}
+
+	.search-btn svg {
+		width: 1rem;
+		height: 1rem;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2;
+		stroke-linecap: round;
 	}
 
 	.search-btn:hover {
@@ -346,7 +360,7 @@
 		border-color: rgba(252, 109, 38, 0.4);
 	}
 
-	@media (min-width: 768px) {
+	@media (min-width: 1200px) {
 		.desktop-only {
 			display: flex;
 			align-items: center;
@@ -358,10 +372,12 @@
 		display: block;
 		font-size: 1.5rem;
 		color: var(--text-primary);
+		width: var(--touch-target);
+		height: var(--touch-target);
 		padding: 0.25rem;
 	}
 
-	@media (min-width: 768px) {
+	@media (min-width: 1200px) {
 		.mobile-menu-btn {
 			display: none;
 		}

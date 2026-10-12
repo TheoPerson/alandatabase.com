@@ -19,8 +19,7 @@
 			<span class="tool-badge">ENV CONTROL</span>
 		</div>
 		<p class="tool-subtitle">
-			Inspect environment configuration variables, database pooler settings, and system runtime
-			parameters.
+			Configuration values and deployment fingerprints are intentionally kept server-side.
 		</p>
 	</div>
 
@@ -56,7 +55,7 @@
 						<code>{ev.masked}</code>
 					</div>
 					<div class="col-status">
-						<span class="status-pill" class:ok={ev.status === 'CONFIGURED'}>{ev.status}</span>
+						<span class="status-pill">{ev.status}</span>
 					</div>
 				</div>
 			{/each}
@@ -236,10 +235,5 @@
 		border-radius: 9999px;
 		color: #a1a1aa;
 		background: rgba(255, 255, 255, 0.06);
-	}
-
-	.status-pill.ok {
-		color: #10b981;
-		background: rgba(16, 185, 129, 0.12);
 	}
 </style>

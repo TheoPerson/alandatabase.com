@@ -36,6 +36,12 @@
 	</header>
 
 	<div class="container sections-container">
+		{#if data.degraded}
+			<p class="degraded-notice" role="status">
+				Some discovery collections are temporarily unavailable. The available collections are shown
+				below.
+			</p>
+		{/if}
 		<!-- Vibe Clusters -->
 		{#each data.vibes as vibe}
 			{#if vibe.movies.length > 0}
@@ -191,6 +197,14 @@
 		display: flex;
 		flex-direction: column;
 		gap: 4rem;
+	}
+
+	.degraded-notice {
+		padding: 1rem 1.25rem;
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-md);
+		color: var(--text-secondary);
+		background: var(--bg-secondary);
 	}
 
 	.movie-section {

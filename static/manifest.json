@@ -1,16 +1,16 @@
 {
-  "name": "Alan Database OS",
-  "short_name": "Alan OS",
-  "description": "2026 Swiss OLED Personal Operating System & Cinema Database Vault",
+  "name": "Alan Database",
+  "short_name": "Alan DB",
+  "description": "A focused movie and television catalogue with a protected personal library.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#050507",
-  "theme_color": "#10b981",
+	"background_color": "#08090b",
+	"theme_color": "#08090b",
   "orientation": "any",
   "icons": [
     {
       "src": "/favicon.png",
-      "sizes": "192x192 512x512",
+		"sizes": "64x64",
       "type": "image/png"
     }
   ]

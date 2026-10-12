@@ -1,9 +1,8 @@
 <script lang="ts">
-	import { SvelteDate } from 'svelte/reactivity';
-	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import MovieCard from '$lib/components/movie/MovieCard.svelte';
+	import { SvelteDate } from 'svelte/reactivity';
 
 	let { data } = $props();
 	let activeTab = $state<'overview' | 'watched' | 'watchlist' | 'favorites'>('overview');
@@ -29,7 +28,7 @@
 
 			const count = watched.filter((w: any) => {
 				if (!w.updatedAt) return false;
-				return new Date(w.updatedAt).toISOString().split('T')[0] === dateStr;
+				return new SvelteDate(w.updatedAt).toISOString().split('T')[0] === dateStr;
 			}).length;
 
 			days.push({
@@ -82,10 +81,11 @@
 	</header>
 
 	<!-- Navigation Tabs -->
-	<nav class="tab-nav">
+	<div class="tab-nav" role="group" aria-label="Library views">
 		<button
 			class="tab-btn"
 			class:active={activeTab === 'overview'}
+			aria-pressed={activeTab === 'overview'}
 			onclick={() => (activeTab = 'overview')}
 		>
 			Analytics Overview
@@ -93,6 +93,7 @@
 		<button
 			class="tab-btn"
 			class:active={activeTab === 'watched'}
+			aria-pressed={activeTab === 'watched'}
 			onclick={() => (activeTab = 'watched')}
 		>
 			Watched ({stats.watchedCount})
@@ -100,6 +101,7 @@
 		<button
 			class="tab-btn"
 			class:active={activeTab === 'watchlist'}
+			aria-pressed={activeTab === 'watchlist'}
 			onclick={() => (activeTab = 'watchlist')}
 		>
 			Watchlist ({stats.watchlistCount})
@@ -107,11 +109,12 @@
 		<button
 			class="tab-btn"
 			class:active={activeTab === 'favorites'}
+			aria-pressed={activeTab === 'favorites'}
 			onclick={() => (activeTab = 'favorites')}
 		>
 			Favorites ({stats.favoritesCount})
 		</button>
-	</nav>
+	</div>
 
 	<!-- Overview / Analytics -->
 	{#if activeTab === 'overview'}
@@ -380,7 +383,7 @@
 	/* Dashboard Grid */
 	.dashboard-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
 		gap: 1.75rem;
 	}
 

@@ -1,1 +1,30 @@
-export { load, actions } from '../catalog/[id]/+page.server';
+import { error, isHttpError } from '@sveltejs/kit';
+import { getMovieById } from '$lib/server/services/movie.service';
+import type { PageServerLoad } from './$types';
+import { logServerError } from '$lib/server/security/logging';
+
+export const load: PageServerLoad = async ({ params }) => {
+	const movieId = params.id;
+
+	try {
+		const movie = await getMovieById(movieId);
+
+		if (!movie) {
+			throw error(404, 'Movie not found');
+		}
+
+		return {
+			movie,
+			credits: (movie.cast ?? []).map((credit: any) => ({
+				id: credit.person.id,
+				name: credit.person.name,
+				profilePath: credit.person.profilePath,
+				character: credit.character
+			}))
+		};
+	} catch (e: unknown) {
+		if (isHttpError(e)) throw e;
+		logServerError('Movie details load failed', e);
+		throw error(500, 'Failed to load movie details');
+	}
+};

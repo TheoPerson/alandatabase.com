@@ -140,6 +140,7 @@
 											value={star}
 											class="star-btn"
 											class:active={rating !== null && rating >= star}
+											aria-label="Rate {star} out of 5"
 										>
 											★
 										</button>
@@ -268,15 +269,10 @@
 				</section>
 			{/if}
 
-			<!-- Multi-Server HD Cinema Player -->
+			<!-- Approved playback status -->
 			<section class="info-section">
-				<h2 class="section-heading">🎬 Watch Cinema Stream & Official Trailer</h2>
-				<StreamPlayerContainer
-					tmdbId={movie.tmdbId || movie.id}
-					imdbId={movie.imdbId}
-					title={movie.title}
-					trailerKey={trailer?.key}
-				/>
+				<h2 class="section-heading">Playback</h2>
+				<StreamPlayerContainer title={movie.title} />
 			</section>
 		</main>
 	</div>
@@ -368,6 +364,8 @@
 
 	.star-btn {
 		font-size: 1.5rem;
+		min-width: 44px;
+		min-height: 44px;
 		color: var(--bg-surface-3);
 		transition: all var(--transition-fast);
 		cursor: pointer;

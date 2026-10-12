@@ -3,7 +3,7 @@ import { movies, movieGenres, genres, movieCrew, movieCast, people } from '../db
 import { eq, and, desc, sql, inArray, notInArray, gte, lte, or } from 'drizzle-orm';
 import { PICKER_DEFAULTS } from './config';
 import { getOrEnrichImdbRating } from './imdb';
-import type { PickerCandidate, PickerFilters, UserTasteProfile } from './types';
+import type { PickerCandidate, PickerFilters, UserTasteProfile } from '$lib/picker/types';
 
 interface QueryOptions {
 	filters: PickerFilters;

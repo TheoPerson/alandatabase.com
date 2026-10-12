@@ -1,5 +1,3 @@
-import { TMDBClient } from '$lib/server/tmdb';
-
 export interface TVShowSummary {
 	rank: number;
 	id: number;
@@ -20,6 +18,29 @@ export interface TVShowSummary {
 	overview: string;
 	genres: string[];
 	status?: string;
+}
+
+export interface TVShowDetails {
+	id: number;
+	name: string;
+	original_name: string;
+	first_air_date: string;
+	last_air_date: null;
+	vote_average: number;
+	vote_count: null;
+	number_of_seasons: number;
+	number_of_episodes: null;
+	poster_path: string | null;
+	backdrop_path: string | null;
+	overview: string;
+	tagline: null;
+	status: null;
+	genres: Array<{ name: string }>;
+	seasons: Array<{
+		season_number: number;
+		name: string;
+		episode_count: null;
+	}>;
 }
 
 // Exact Top 50 IMDb-Ranked Television Shows (IMDb Top 250 TV Chart)
@@ -557,7 +578,7 @@ export const TOP_50_IMDB_TV: Array<{
 	{
 		rank: 38,
 		title: 'Nathan for You',
-		tmdbId: 46648,
+		tmdbId: 58957,
 		imdbId: 'tt2297757',
 		imdbRating: 8.9,
 		year: '2013–2017',
@@ -739,81 +760,51 @@ export const TOP_50_IMDB_TV: Array<{
 ];
 
 export async function getTop50IMDbTVShows(): Promise<TVShowSummary[]> {
-	const tmdb = new TMDBClient();
-
-	// Enrich from TMDB live to guarantee official posters, backdrops, and active seasons
-	const enriched = await Promise.allSettled(
-		TOP_50_IMDB_TV.map(async (show) => {
-			try {
-				const live = await tmdb.getTVDetails(show.tmdbId);
-				return {
-					rank: show.rank,
-					id: show.tmdbId,
-					tmdbId: show.tmdbId,
-					imdbId: show.imdbId,
-					title: live.name || show.title,
-					originalName: live.original_name,
-					imdbRating: show.imdbRating,
-					voteAverage: live.vote_average || show.imdbRating,
-					voteCount: live.vote_count || '1M+',
-					firstAirDate: live.first_air_date || show.year.split('–')[0],
-					lastAirDate: live.last_air_date,
-					year: show.year,
-					seasonsCount: live.number_of_seasons || show.seasons,
-					episodesCount: live.number_of_episodes,
-					posterPath: live.poster_path || show.posterPath,
-					backdropPath: live.backdrop_path || show.backdropPath,
-					overview: live.overview || show.overview,
-					genres: live.genres?.map((g: any) => g.name) || show.genres,
-					status: live.status
-				} as TVShowSummary;
-			} catch {
-				return {
-					rank: show.rank,
-					id: show.tmdbId,
-					tmdbId: show.tmdbId,
-					imdbId: show.imdbId,
-					title: show.title,
-					imdbRating: show.imdbRating,
-					voteAverage: show.imdbRating,
-					voteCount: '1M+',
-					firstAirDate: show.year.split('–')[0],
-					year: show.year,
-					seasonsCount: show.seasons,
-					posterPath: show.posterPath,
-					backdropPath: show.backdropPath,
-					overview: show.overview,
-					genres: show.genres
-				} as TVShowSummary;
-			}
-		})
-	);
-
-	return enriched.map((res, i) =>
-		res.status === 'fulfilled'
-			? res.value
-			: ({
-					rank: TOP_50_IMDB_TV[i].rank,
-					id: TOP_50_IMDB_TV[i].tmdbId,
-					tmdbId: TOP_50_IMDB_TV[i].tmdbId,
-					imdbId: TOP_50_IMDB_TV[i].imdbId,
-					title: TOP_50_IMDB_TV[i].title,
-					imdbRating: TOP_50_IMDB_TV[i].imdbRating,
-					voteAverage: TOP_50_IMDB_TV[i].imdbRating,
-					voteCount: '1M+',
-					firstAirDate: TOP_50_IMDB_TV[i].year.split('–')[0],
-					year: TOP_50_IMDB_TV[i].year,
-					seasonsCount: TOP_50_IMDB_TV[i].seasons,
-					posterPath: TOP_50_IMDB_TV[i].posterPath,
-					backdropPath: TOP_50_IMDB_TV[i].backdropPath,
-					overview: TOP_50_IMDB_TV[i].overview,
-					genres: TOP_50_IMDB_TV[i].genres
-				} as TVShowSummary)
-	);
+	return TOP_50_IMDB_TV.map((show) => ({
+		rank: show.rank,
+		id: show.tmdbId,
+		tmdbId: show.tmdbId,
+		imdbId: show.imdbId,
+		title: show.title,
+		imdbRating: show.imdbRating,
+		voteAverage: show.imdbRating,
+		voteCount: 'IMDb chart',
+		firstAirDate: show.year.split('–')[0],
+		year: show.year,
+		seasonsCount: show.seasons,
+		posterPath: show.posterPath,
+		backdropPath: show.backdropPath,
+		overview: show.overview,
+		genres: show.genres
+	}));
 }
 
-export async function getTVShowDetails(tmdbId: number): Promise<any> {
-	const tmdb = new TMDBClient();
-	const details = await tmdb.getTVDetails(tmdbId);
-	return details;
+export async function getTVShowDetails(tmdbId: number): Promise<TVShowDetails | null> {
+	const show = TOP_50_IMDB_TV.find((candidate) => candidate.tmdbId === tmdbId);
+	if (!show) return null;
+
+	const firstYear = show.year.split('–')[0];
+
+	return {
+		id: show.tmdbId,
+		name: show.title,
+		original_name: show.title,
+		first_air_date: `${firstYear}-01-01`,
+		last_air_date: null,
+		vote_average: show.imdbRating,
+		vote_count: null,
+		number_of_seasons: show.seasons,
+		number_of_episodes: null,
+		poster_path: show.posterPath,
+		backdrop_path: show.backdropPath,
+		overview: show.overview,
+		tagline: null,
+		status: null,
+		genres: show.genres.map((name) => ({ name })),
+		seasons: Array.from({ length: show.seasons }, (_, index) => ({
+			season_number: index + 1,
+			name: `Season ${index + 1}`,
+			episode_count: null
+		}))
+	};
 }

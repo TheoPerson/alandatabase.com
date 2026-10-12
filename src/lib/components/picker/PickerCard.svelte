@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { PickerRecommendationResponse } from '$lib/server/picker/types';
+	import type { PickerRecommendationResponse } from '$lib/picker/types';
 
 	interface Props {
 		recommendation: PickerRecommendationResponse;

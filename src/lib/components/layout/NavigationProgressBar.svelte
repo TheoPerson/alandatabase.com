@@ -28,7 +28,14 @@
 </script>
 
 {#if progress > 0}
-	<div class="nav-progress-bar-wrap">
+	<div
+		class="nav-progress-bar-wrap"
+		role="progressbar"
+		aria-label="Page navigation"
+		aria-valuemin="0"
+		aria-valuemax="100"
+		aria-valuenow={Math.round(progress)}
+	>
 		<div
 			class="nav-progress-bar"
 			style="width: {progress}%; opacity: {progress === 100 ? 0 : 1};"

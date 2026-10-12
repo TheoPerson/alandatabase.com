@@ -1,55 +1,43 @@
 import type { PageServerLoad } from './$types';
+import { error, redirect } from '@sveltejs/kit';
+import { getAuthPortalUrl } from '$lib/host-routing';
+import { isOwnerUser } from '$lib/server/auth/owner';
 
-function maskSecret(val: string | undefined): string {
-	if (!val) return '❌ NOT CONFIGURED';
-	return '●●●●●●●● (PROTECTED)';
-}
+export const load: PageServerLoad = async ({ locals, url }) => {
+	if (!locals.user) {
+		throw redirect(302, getAuthPortalUrl(url, '/setup'));
+	}
 
-export const load: PageServerLoad = async () => {
-	const dbUrl = process.env.DATABASE_URL;
-	const pglite = process.env.USE_PGLITE;
-	const tmdbKey = process.env.TMDB_API_KEY;
-	const tmdbToken = process.env.TMDB_READ_TOKEN;
-	const geminiKey = process.env.GEMINI_API_KEY;
+	if (!isOwnerUser(locals.user)) {
+		throw error(403, 'Owner access required.');
+	}
 
 	return {
 		envVariables: [
 			{
 				key: 'DATABASE_URL',
-				status: dbUrl ? 'CONFIGURED' : 'MISSING',
-				masked: maskSecret(dbUrl),
-				category: 'Database'
-			},
-			{
-				key: 'USE_PGLITE',
-				status: pglite !== undefined ? 'CONFIGURED' : 'DEFAULT (false)',
-				masked: pglite || 'false',
+				status: 'PRIVATE',
+				masked: 'Server-only',
 				category: 'Database'
 			},
 			{
 				key: 'TMDB_API_KEY',
-				status: tmdbKey ? 'CONFIGURED' : 'MISSING',
-				masked: maskSecret(tmdbKey),
-				category: 'Cinema API'
-			},
-			{
-				key: 'TMDB_READ_TOKEN',
-				status: tmdbToken ? 'CONFIGURED' : 'MISSING',
-				masked: maskSecret(tmdbToken),
+				status: 'PRIVATE',
+				masked: 'Server-only',
 				category: 'Cinema API'
 			},
 			{
 				key: 'GEMINI_API_KEY',
-				status: geminiKey ? 'CONFIGURED' : 'OPTIONAL',
-				masked: maskSecret(geminiKey),
+				status: 'PRIVATE',
+				masked: 'Server-only',
 				category: 'AI Curator'
 			}
 		],
 		systemInfo: {
-			nodeVersion: process.version,
-			adapter: '@sveltejs/adapter-vercel (v5)',
-			architecture: 'Serverless Functions (ESM)',
-			framework: 'SvelteKit 2 + Svelte 5 (Runes)'
+			nodeVersion: 'Managed runtime',
+			adapter: 'Managed deployment',
+			architecture: 'Private server runtime',
+			framework: 'SvelteKit'
 		}
 	};
 };

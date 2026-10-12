@@ -2,34 +2,36 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { enhance } from '$app/forms';
 
-	let props = $props();
-	const form = $derived(props.form);
+	const { data, form } = $props();
+	const actionUrl = $derived(
+		data.returnTo ? `?/login&returnTo=${encodeURIComponent(data.returnTo)}` : '?/login'
+	);
 	let isSubmitting = $state(false);
 </script>
 
 <svelte:head>
-	<title>Sign In | CinemaDB</title>
-	<meta name="description" content="Log in to your personal cinema vault." />
+	<title>Private Sign In | Alan Database</title>
+	<meta name="description" content="Secure private access for Alan Database." />
+	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
 <div class="auth-container linear-grid-bg">
 	<div class="auth-card glass-card">
 		<div class="auth-header">
-			<span class="auth-badge">SECURE VAULT AUTHENTICATION</span>
-			<h1 class="title">Sign In</h1>
-			<p class="subtitle">Access your personal cinema database, ratings & watch history.</p>
+			<span class="auth-badge">SECURE PRIVATE PORTAL</span>
+			<h1 class="title">Sign in</h1>
+			<p class="subtitle">Access personal cinema data and permitted administration tools.</p>
 		</div>
 
 		{#if form?.error}
-			<div class="error-banner">
-				<span class="error-icon">⚠️</span>
+			<div class="error-banner" role="alert">
 				<span>{form.error}</span>
 			</div>
 		{/if}
 
 		<form
 			method="POST"
-			action="?/login"
+			action={actionUrl}
 			class="auth-form"
 			use:enhance={() => {
 				isSubmitting = true;
@@ -64,17 +66,17 @@
 			</div>
 
 			<Button type="submit" variant="primary" class="w-full" disabled={isSubmitting}>
-				{isSubmitting ? 'Authenticating...' : 'Sign In to Vault'}
+				{isSubmitting ? 'Authenticating...' : 'Sign in securely'}
 			</Button>
 		</form>
 
-		<div class="auth-footer">
-			<p>
-				Don't have a personal archive account? <a href="/auth/register" class="link"
-					>Create an account</a
-				>
-			</p>
-		</div>
+		{#if data.allowSetup}
+			<div class="auth-footer">
+				<p>
+					Initial owner setup is enabled. <a href="/auth/register" class="link">Create owner</a>
+				</p>
+			</div>
+		{/if}
 	</div>
 </div>
 
@@ -83,7 +85,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		min-height: calc(100vh - 70px - 150px);
+		min-height: calc(100dvh - 70px - 150px);
 		padding: 2.5rem 1rem;
 	}
 
