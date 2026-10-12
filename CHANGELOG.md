@@ -88,6 +88,14 @@ its launch gates are explicitly verified.
   Presets and types now live in client-safe `$lib/picker/`.
 - Fixed the picker page being public while every call it makes required a session;
   `/cinema/picker` is now an authenticated route.
+- Fixed sign-in, registration and admin access mutations failing on a real database:
+  the rate limiter embedded JavaScript `Date` objects in a raw SQL template, and
+  postgres-js (the application driver) cannot serialize them, so every call threw
+  `ERR_INVALID_ARG_TYPE` before reaching PostgreSQL. Timestamps now go through the
+  column encoder. Reproduced with a statement-parameter test, then confirmed end to end
+  (first owner, access control, second owner refused, sign-out/sign-in) against an empty
+  database through the real driver. The PGlite-based tests missed it because the PGlite
+  driver accepts `Date` values.
 - Fixed server diagnostics hiding the real database error: `safeDiagnostic` cut the
   long "Failed query: ..." message at 350 characters before the underlying PostgreSQL
   `cause` appeared. The cause (with its SQLSTATE) now leads, still redacted and bounded.

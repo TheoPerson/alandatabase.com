@@ -33,10 +33,12 @@ et vous perdez les anciens comptes et listes.
    `$env:DATABASE_URL="<adresse>"; pnpm db:migrate`
 2. Pour remplir le catalogue (clé TMDB nécessaire) :
    d'abord `$env:WORKER_DATABASE_URL="<adresse>"; $env:TMDB_API_KEY="<clé>"`, puis
-   `pnpm --dir worker ingest:genres` et `pnpm --dir worker ingest:popular`. Si `ingest:popular` se plaint de
-   Meilisearch, dites-le-moi.
+   `pnpm --dir worker ingest:genres` et `pnpm --dir worker ingest:popular`
+   (Meilisearch est ignoré automatiquement s'il n'est pas configuré).
 3. Le premier compte se crée sur `/auth/register` avec `OWNER_SETUP_KEY` (étape 2). C'est le compte
-   propriétaire.
+   propriétaire. À la première connexion, un écran d'avertissement s'affiche : acceptez-le.
+   (Ce parcours a été testé en local sur une base vide : création du propriétaire, connexion,
+   deuxième propriétaire refusé.)
 
 **Option B, garder vos données :** suivez à la lettre `docs/AUTHORIZATION_MIGRATION_RUNBOOK.md`.
 **Faites d'abord une sauvegarde de la base.** Cette migration déconnecte tout le monde (c'est normal).
