@@ -12,8 +12,23 @@
 	import Skeleton from '$lib/components/ui/Skeleton.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
+	import Tabs from '$lib/components/ui/tabs';
+	import Dialog from '$lib/components/ui/dialog';
+	import Sheet from '$lib/components/ui/sheet';
+	import Slider from '$lib/components/ui/slider';
+	import Tooltip from '$lib/components/ui/tooltip';
+	import SettingsIcon from 'lucide-svelte/icons/settings';
 
 	let selected = $state(['Drama']);
+	let tab = $state('one');
+	let sheetOpen = $state(false);
+	let dialogOpen = $state(false);
+	let level = $state(40);
+	const tabItems = [
+		{ value: 'one', label: 'Overview' },
+		{ value: 'two', label: 'Cast & crew' },
+		{ value: 'three', label: 'Details', disabled: true }
+	];
 
 	// Samples carry no images on purpose: every component must look intentional
 	// before any artwork arrives.
@@ -157,6 +172,31 @@
 		<RankedRail label="Sample ranking" items={posters} />
 	</Section>
 
+	<Section title="Tabs, sheet, dialog, slider" eyebrow="Primitives">
+		<div class="block">
+			<Tabs bind:value={tab} items={tabItems} label="Kit sample tabs">
+				{#snippet children(value)}
+					<p class="t-body">Panel for “{value}”. Arrow keys move between tabs and wrap.</p>
+				{/snippet}
+			</Tabs>
+		</div>
+		<div class="row">
+			<Button variant="secondary" onclick={() => (sheetOpen = true)}>Open sheet</Button>
+			<Button variant="secondary" onclick={() => (dialogOpen = true)}>Open dialog</Button>
+			<Tooltip label="Settings">
+				{#snippet children(props)}
+					<Button size="icon" variant="ghost" aria-label="Settings" {...props}>
+						<SettingsIcon size={20} aria-hidden="true" />
+					</Button>
+				{/snippet}
+			</Tooltip>
+		</div>
+		<div class="block slider-demo">
+			<Slider bind:value={level} min={0} max={100} label="Volume" buffered={70} />
+			<span class="t-label">Volume {level}</span>
+		</div>
+	</Section>
+
 	<Section title="States" eyebrow="Feedback">
 		<div class="row states">
 			<div class="skeleton-slot"><Skeleton height="270px" label="Loading poster" /></div>
@@ -166,9 +206,43 @@
 	</Section>
 </div>
 
+<Sheet bind:open={sheetOpen} label="Sample sheet">
+	<p class="t-body">A bottom sheet with a slider inside. Drag the grabber to grow it.</p>
+	<div class="slider-demo">
+		<Slider bind:value={level} min={0} max={100} label="Volume" />
+		<span class="t-label">Volume {level}</span>
+	</div>
+</Sheet>
+
+<Dialog bind:open={dialogOpen} label="Sample dialog">
+	<h3 class="t-title">Sample dialog</h3>
+	<p class="t-body">
+		Centered, scroll-locked, focus-trapped. Escape or the close button dismisses it.
+	</p>
+	<div class="row dialog-actions">
+		<Button onclick={() => (dialogOpen = false)}>Done</Button>
+	</div>
+</Dialog>
+
 <style>
 	.kit {
 		padding-bottom: var(--space-8);
+	}
+	.block {
+		padding-inline: var(--page-gutter);
+	}
+	.block + .row,
+	.row + .block {
+		margin-top: var(--space-4);
+	}
+	.slider-demo {
+		display: grid;
+		gap: var(--space-2);
+		max-width: 24rem;
+	}
+	.dialog-actions {
+		padding-inline: 0;
+		margin-top: var(--space-4);
 	}
 	.swatches,
 	.row {
