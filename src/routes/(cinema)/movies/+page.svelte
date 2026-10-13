@@ -1,15 +1,12 @@
 <script lang="ts">
 	import MovieCard from '$lib/components/movie/MovieCard.svelte';
 	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
-	import PlayerSheet from '$lib/components/movie/PlayerSheet.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import { enhance } from '$app/forms';
 	import { addToast } from '$lib/stores/toast';
 
 	let { data } = $props();
-
-	let isPlayerOpen = $state(false);
 
 	const currentHero = $derived(
 		(data.top10 || []).find((m: any) => m.backdropPath && m.backdropPath !== 'null') ||
@@ -97,11 +94,6 @@
 
 					<!-- Action Buttons -->
 					<div class="hero-btn-row">
-						<button class="cineby-play-btn" onclick={() => (isPlayerOpen = true)}>
-							<span class="play-icon">▶</span>
-							<span>Playback status</span>
-						</button>
-
 						<a href={heroHref} class="cineby-info-btn">
 							<span class="info-icon">ⓘ</span>
 							<span>See More</span>
@@ -255,10 +247,6 @@
 		</section>
 	</div>
 </div>
-
-{#if isPlayerOpen && currentHero}
-	<PlayerSheet movie={currentHero} onClose={() => (isPlayerOpen = false)} />
-{/if}
 
 <style>
 	.cineby-home-root {

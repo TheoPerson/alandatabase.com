@@ -7,7 +7,6 @@ const currentDirectory = dirname(fileURLToPath(import.meta.url));
 const sourceRoot = resolve(currentDirectory, '../../..');
 
 const playbackFiles = [
-	'lib/components/movie/PlayerSheet.svelte',
 	'lib/components/player/StreamPlayerContainer.svelte',
 	'routes/(cinema)/live/+page.svelte',
 	'routes/(cinema)/tv/[id]/+page.svelte'
@@ -86,11 +85,10 @@ describe('playback source quarantine', () => {
 			'utf8'
 		);
 
-		expect(detailSource).not.toContain('movie.vote_average');
-		expect(detailSource).not.toContain('movie.release_date');
-		expect(detailSource).not.toContain('movie.backdrop_path');
-		expect(detailSource).toContain('movie.voteAverage');
-		expect(detailSource).toContain('movie.releaseDate');
-		expect(detailSource).toContain('movie.backdropPath');
+		// The page reads the loader's camelCase shape, never raw TMDB snake_case fields.
+		expect(detailSource).not.toMatch(/\b(vote_average|release_date|backdrop_path|poster_path)\b/u);
+		expect(detailSource).toContain('data.hero.backdropPath');
+		expect(detailSource).toContain('data.details.releaseDate');
+		expect(detailSource).toContain('data.hero.rating');
 	});
 });
