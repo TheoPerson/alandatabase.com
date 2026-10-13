@@ -4,7 +4,10 @@
 	import { formatRating, formatYear } from '$lib/format';
 	import RatingBadge from '../rating-badge/rating-badge.svelte';
 
-	interface Props extends PosterItem {
+	// Without `href` the card is a plain frame (the detail header's poster).
+	interface Props extends Omit<PosterItem, 'href' | 'id'> {
+		id?: string;
+		href?: string;
 		rank?: number | null;
 		eager?: boolean;
 		sizes?: string;
@@ -12,7 +15,7 @@
 	}
 
 	let {
-		href,
+		href = undefined,
 		title,
 		posterPath,
 		releaseDate = null,
@@ -32,13 +35,7 @@
 	let failed = $state(false);
 </script>
 
-<a
-	{href}
-	class="card {className}"
-	class:ranked={rank !== null}
-	class:wide={rank !== null && rank >= 10}
-	data-sveltekit-preload-data="hover"
->
+{#snippet body()}
 	{#if rank !== null}<span class="rank" aria-hidden="true">{rank}</span>{/if}
 	<div
 		class="frame"
@@ -54,6 +51,7 @@
 					width="342"
 					height="513"
 					loading={eager ? 'eager' : 'lazy'}
+					fetchpriority={eager ? 'high' : undefined}
 					decoding="async"
 					class:loaded
 					onload={() => (loaded = true)}
@@ -64,17 +62,37 @@
 			{/if}
 		{/key}
 		{#if score}<RatingBadge value={score} class="badge" />{/if}
-		<div class="overlay" aria-hidden="true">
-			<span class="overlay-title">{title}</span>
-			{#if year || genre}<span class="overlay-meta"
-					>{[year, genre].filter(Boolean).join(' · ')}</span
-				>{/if}
-		</div>
+		{#if href}
+			<div class="overlay" aria-hidden="true">
+				<span class="overlay-title">{title}</span>
+				{#if year || genre}<span class="overlay-meta"
+						>{[year, genre].filter(Boolean).join(' · ')}</span
+					>{/if}
+			</div>
+		{/if}
 	</div>
-	<span class="title">{title}</span>
-	{#if year}<span class="meta">{year}</span>{/if}
+	{#if href}
+		<span class="title">{title}</span>
+		{#if year}<span class="meta">{year}</span>{/if}
+	{/if}
 	{#if rank !== null}<span class="sr-only">Rank {rank}</span>{/if}
-</a>
+{/snippet}
+
+{#if href}
+	<a
+		{href}
+		class="card {className}"
+		class:ranked={rank !== null}
+		class:wide={rank !== null && rank >= 10}
+		data-sveltekit-preload-data="hover"
+	>
+		{@render body()}
+	</a>
+{:else}
+	<div class="card frame-only {className}" role="img" aria-label={`Poster: ${title}`}>
+		{@render body()}
+	</div>
+{/if}
 
 <style>
 	.card {
@@ -185,19 +203,26 @@
 		font-size: var(--text-xs);
 		font-weight: 600;
 	}
+	/* A link-less frame fills whatever width its parent gives it and never lifts. */
+	.frame-only {
+		--card-width: 100%;
+	}
+	.frame-only .frame {
+		box-shadow: var(--elevation-3);
+	}
 	@media (hover: hover) {
-		.card:hover .frame,
-		.card:focus-visible .frame {
+		a.card:hover .frame,
+		a.card:focus-visible .frame {
 			transform: translateY(-6px) scale(1.03);
 			box-shadow: var(--elevation-3);
 		}
-		.card:hover .overlay,
-		.card:focus-visible .overlay {
+		a.card:hover .overlay,
+		a.card:focus-visible .overlay {
 			opacity: 1;
 			transform: translateY(0);
 		}
 	}
-	.card:active .frame {
+	a.card:active .frame {
 		transform: scale(0.98);
 	}
 </style>

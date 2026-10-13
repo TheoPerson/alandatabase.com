@@ -6,12 +6,25 @@
 		alt?: string;
 		eager?: boolean;
 		sizes?: string;
+		/** Blur-up fade and settle on load; off when something else must be the first paint. */
+		animate?: boolean;
+		/** `auto` follows `eager`; `low` yields the network to another LCP candidate. */
+		priority?: 'auto' | 'high' | 'low';
 		class?: string;
 	}
 
-	let { path, alt = '', eager = false, sizes = '100vw', class: className = '' }: Props = $props();
+	let {
+		path,
+		alt = '',
+		eager = false,
+		sizes = '100vw',
+		animate = true,
+		priority = 'auto',
+		class: className = ''
+	}: Props = $props();
 
 	const image = $derived(backdropSrcSet(path));
+	const fetchPriority = $derived(priority === 'auto' ? (eager ? 'high' : undefined) : priority);
 	let loaded = $state(false);
 </script>
 
@@ -24,9 +37,10 @@
 				{sizes}
 				{alt}
 				loading={eager ? 'eager' : 'lazy'}
-				fetchpriority={eager ? 'high' : undefined}
+				fetchpriority={fetchPriority}
 				decoding="async"
 				class:loaded
+				class:static={!animate}
 				onload={() => (loaded = true)}
 			/>
 		</div>
@@ -54,5 +68,10 @@
 	img.loaded {
 		opacity: 1;
 		transform: scale(1);
+	}
+	img.static {
+		opacity: 1;
+		transform: none;
+		transition: none;
 	}
 </style>

@@ -17,7 +17,14 @@
 	import Sheet from '$lib/components/ui/sheet';
 	import Slider from '$lib/components/ui/slider';
 	import Tooltip from '$lib/components/ui/tooltip';
+	import PersonCard from '$lib/components/ui/person-card';
+	import TrailerFacade from '$lib/components/ui/trailer-facade';
+	import ProviderLogo from '$lib/components/ui/provider-logo';
+	import StarRating from '$lib/components/ui/star-rating';
 	import SettingsIcon from 'lucide-svelte/icons/settings';
+
+	let stars = $state<number | null>(3.5);
+	let lastPlayed = $state<string | null>(null);
 
 	let selected = $state(['Drama']);
 	let tab = $state('one');
@@ -197,6 +204,38 @@
 		</div>
 	</Section>
 
+	<Section title="Detail pieces" eyebrow="Media">
+		<div class="row detail-row">
+			<div class="poster-frame"><PosterCard title="Frame without link" posterPath={null} /></div>
+			<PersonCard href="/kit" name="Sample Person" profilePath={null} subtitle="As themselves" />
+			<PersonCard href="/kit" name="Another Name" profilePath={null} subtitle="Director" />
+		</div>
+		<div class="row facades">
+			<TrailerFacade
+				videoKey="dQw4w9WgXcQ"
+				name="Official trailer"
+				kind="Trailer"
+				onplay={(key) => (lastPlayed = key)}
+			/>
+			<TrailerFacade
+				videoKey="dQw4w9WgXcQ"
+				name="Teaser with a saved position"
+				kind="Teaser"
+				resume={{ position: 72, duration: 212 }}
+				onplay={(key) => (lastPlayed = key)}
+			/>
+		</div>
+		<p class="block t-label">Last played: {lastPlayed ?? 'none'}</p>
+		<div class="row">
+			<ProviderLogo providerName="Netflix" logoPath={null} href="https://www.themoviedb.org/" />
+			<ProviderLogo providerName="Canal+" logoPath={null} href="https://www.themoviedb.org/" />
+			<ProviderLogo providerName="Apple TV" logoPath={null} href={null} />
+		</div>
+		<div class="row">
+			<StarRating bind:value={stars} name="Sample rating" />
+		</div>
+	</Section>
+
 	<Section title="States" eyebrow="Feedback">
 		<div class="row states">
 			<div class="skeleton-slot"><Skeleton height="270px" label="Loading poster" /></div>
@@ -243,6 +282,17 @@
 	.dialog-actions {
 		padding-inline: 0;
 		margin-top: var(--space-4);
+	}
+	.detail-row {
+		align-items: flex-start;
+	}
+	.poster-frame {
+		width: 140px;
+	}
+	.row.facades {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+		max-width: 56rem;
 	}
 	.swatches,
 	.row {
