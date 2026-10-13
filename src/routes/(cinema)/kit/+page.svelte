@@ -21,10 +21,12 @@
 	import TrailerFacade from '$lib/components/ui/trailer-facade';
 	import ProviderLogo from '$lib/components/ui/provider-logo';
 	import StarRating from '$lib/components/ui/star-rating';
+	import PlayerShell from '$lib/components/ui/player';
 	import SettingsIcon from 'lucide-svelte/icons/settings';
 
 	let stars = $state<number | null>(3.5);
 	let lastPlayed = $state<string | null>(null);
+	let playerOpen = $state(false);
 
 	let selected = $state(['Drama']);
 	let tab = $state('one');
@@ -236,6 +238,15 @@
 		</div>
 	</Section>
 
+	<Section title="Trailer player" eyebrow="Media">
+		<div class="row">
+			<Button variant="secondary" onclick={() => (playerOpen = true)}>Open trailer player</Button>
+			<p class="t-label">
+				Full-screen dialog, controls below the stage, settings sheet, shortcuts (?)
+			</p>
+		</div>
+	</Section>
+
 	<Section title="States" eyebrow="Feedback">
 		<div class="row states">
 			<div class="skeleton-slot"><Skeleton height="270px" label="Loading poster" /></div>
@@ -244,6 +255,8 @@
 		</div>
 	</Section>
 </div>
+
+<PlayerShell bind:open={playerOpen} title="Kit sample" videoKey="dQw4w9WgXcQ" />
 
 <Sheet bind:open={sheetOpen} label="Sample sheet">
 	<p class="t-body">A bottom sheet with a slider inside. Drag the grabber to grow it.</p>

@@ -28,6 +28,7 @@
 	import ProviderLogo from '$lib/components/ui/provider-logo';
 	import StarRating from '$lib/components/ui/star-rating';
 	import ResumeBar from '$lib/components/ui/resume-bar';
+	import PlayerShell from '$lib/components/ui/player';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import PlayIcon from 'lucide-svelte/icons/play';
 	import BookmarkIcon from 'lucide-svelte/icons/bookmark';
@@ -263,9 +264,22 @@
 		}
 	}
 
-	// The in-page player lands in the next task; until then the official video opens on YouTube.
+	let playerOpen = $state(false);
+	let playerKey = $state('');
+
 	function openTrailer(key: string) {
-		window.open(`https://www.youtube.com/watch?v=${key}`, '_blank', 'noopener');
+		playerKey = key;
+		playerOpen = true;
+	}
+
+	// Re-read the saved position once the player closes so the Play button stays truthful.
+	function onPlayerClose() {
+		const key = data.trailers[0]?.key;
+		try {
+			resume = key ? readResume(localStorage, key, Date.now()) : null;
+		} catch {
+			resume = null;
+		}
 	}
 </script>
 
@@ -637,6 +651,15 @@
 		</section>
 	</div>
 </article>
+
+{#if playerKey}
+	<PlayerShell
+		bind:open={playerOpen}
+		title={data.hero.title}
+		videoKey={playerKey}
+		onclose={onPlayerClose}
+	/>
+{/if}
 
 {#if data.user}
 	<Sheet bind:open={rateOpen} label="Your rating" side={wide ? 'right' : 'bottom'}>

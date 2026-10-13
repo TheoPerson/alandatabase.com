@@ -24,6 +24,12 @@ declare global {
 			} | null;
 			abTests: Record<string, string>;
 		}
+
+		// Shallow routing state: the trailer player is open while `player` is set,
+		// so Back closes it without leaving the page.
+		interface PageState {
+			player?: { key: string };
+		}
 	}
 }
 

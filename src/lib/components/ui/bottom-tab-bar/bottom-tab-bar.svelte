@@ -69,4 +69,8 @@
 			display: none;
 		}
 	}
+	/* The full-screen trailer player owns the viewport: the bar yields while it is open. */
+	:global(html[data-player-open]) .tabs {
+		display: none;
+	}
 </style>
