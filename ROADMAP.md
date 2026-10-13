@@ -194,7 +194,17 @@ merged, not deployed:
   the stage, no fill/zoom or picture-in-picture for YouTube, four settings
   tabs, auto-resume with a chip, reviews link to the existing review route,
   touch never auto-hides controls, `frame-src` allowlists exactly one origin.
-- Independent whole-branch review: recorded below once it has run.
+- Independent whole-branch review (fresh context, most capable model): 0 critical,
+  7 important, 13 minor. Every important finding fixed test-first in one pass
+  (seek thumb vs. poll, shortcuts on focused controls, caption size, settings
+  focus trap, embed readiness timeout, review dates, Back-closes-player E2E);
+  after it: `pnpm check` 0 errors, vitest 330/330, ESLint 0 errors, Playwright
+  52 passed / 2 skipped. Deferred minors: unguarded `localStorage` read in the
+  resume effect, `denyFrameSources` naming, skip-pill timer, live volume on the
+  apron, "Forget this one" session state, iframe title, mute double state,
+  fullscreen stage width on auto-hide, early unmuted beat, explicit-keyword
+  sibling test, unused `.reviews + .muted` selector, loader re-run per toggle,
+  history Forward not reopening the player.
 
 ## `in_progress` — premium experience, slices 5–8
 
