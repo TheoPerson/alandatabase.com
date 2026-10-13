@@ -208,7 +208,9 @@
 
 	<Section title="Detail pieces" eyebrow="Media">
 		<div class="row detail-row">
-			<div class="poster-frame"><PosterCard title="Frame without link" posterPath={null} /></div>
+			<div class="poster-frame">
+				<PosterCard id="frame" title="Frame without link" posterPath={null} />
+			</div>
 			<PersonCard href="/kit" name="Sample Person" profilePath={null} subtitle="As themselves" />
 			<PersonCard href="/kit" name="Another Name" profilePath={null} subtitle="Director" />
 		</div>

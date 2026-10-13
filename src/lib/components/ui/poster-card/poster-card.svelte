@@ -5,8 +5,7 @@
 	import RatingBadge from '../rating-badge/rating-badge.svelte';
 
 	// Without `href` the card is a plain frame (the detail header's poster).
-	interface Props extends Omit<PosterItem, 'href' | 'id'> {
-		id?: string;
+	interface Props extends Omit<PosterItem, 'href'> {
 		href?: string;
 		rank?: number | null;
 		eager?: boolean;

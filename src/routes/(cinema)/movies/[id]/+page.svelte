@@ -308,7 +308,13 @@
 		<div class="scrim" aria-hidden="true"></div>
 		<div class="header-content">
 			<div class="poster">
-				<PosterCard title={data.hero.title} posterPath={data.posterPath} eager sizes="280px" />
+				<PosterCard
+					id={data.hero.id}
+					title={data.hero.title}
+					posterPath={data.posterPath}
+					eager
+					sizes="280px"
+				/>
 			</div>
 			<div class="text">
 				<div class="title-box">
