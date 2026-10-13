@@ -33,11 +33,20 @@
 
 	let list = $state<HTMLElement | null>(null);
 
-	// Keeps the selected trigger in view when the list scrolls on phones.
+	// Keeps the selected trigger visible when the list scrolls on phones. Only the
+	// list scrolls: scrollIntoView would also move the page to the tab list on load.
 	$effect(() => {
 		const current = value;
-		const trigger = list?.querySelector<HTMLElement>(`[data-value="${CSS.escape(current)}"]`);
-		trigger?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+		const container = list;
+		if (!container) return;
+		const trigger = container.querySelector<HTMLElement>(`[data-value="${CSS.escape(current)}"]`);
+		if (!trigger) return;
+		const left = trigger.offsetLeft;
+		const right = left + trigger.offsetWidth;
+		if (left < container.scrollLeft) container.scrollLeft = left;
+		else if (right > container.scrollLeft + container.clientWidth) {
+			container.scrollLeft = right - container.clientWidth;
+		}
 	});
 </script>
 
