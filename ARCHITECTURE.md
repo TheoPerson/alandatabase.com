@@ -111,7 +111,10 @@ configuration, a webhook secret, and an allowed chat ID.
 Protected catalogue and owner cinema pages also pass through a stored `hasAcceptedAdultGate`
 warning. This is a cinema-wide acknowledgement, not a complete separate
 adult-content authorization model. Every authenticated response receives
-private/no-store headers, and cinema uses a CSP with `frame-src 'none'`.
+private/no-store headers, and cinema uses a CSP whose `frame-src` allows exactly
+`https://www.youtube-nocookie.com` (the trailer player, created through the official
+YouTube IFrame API in `src/lib/player/youtube-source.ts`, the only file that may name
+that host; `player-safety.test.ts` enforces it).
 
 Passwords use salted scrypt. Session tokens are 32 random bytes; only SHA-256
 digests are stored in PostgreSQL with a 30-day expiry. Production cookies are

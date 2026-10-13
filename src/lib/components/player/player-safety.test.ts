@@ -22,6 +22,10 @@ const blockedPatterns = [
 	/clipboard-write/i
 ];
 
+// The one file allowed to name the trailer embed host: the official IFrame API adapter.
+const youtubeAdapter = 'lib/player/youtube-source.ts';
+const youtubeHostPattern = /youtube-nocookie/i;
+
 function sourceFiles(directory: string): string[] {
 	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
 		const path = resolve(directory, entry.name);
@@ -39,6 +43,23 @@ describe('playback source quarantine', () => {
 				expect(source, file).not.toMatch(pattern);
 			}
 		}
+	});
+
+	it('names the trailer embed host only in the YouTube IFrame API adapter', () => {
+		const adapterPath = resolve(sourceRoot, youtubeAdapter);
+		expect(readFileSync(adapterPath, 'utf8')).toMatch(youtubeHostPattern);
+
+		for (const file of sourceFiles(sourceRoot)) {
+			if (file === adapterPath || /\.test\.ts$/u.test(file)) continue;
+			expect(readFileSync(file, 'utf8'), file).not.toMatch(youtubeHostPattern);
+		}
+	});
+
+	it('builds the embed through the official API, never a literal iframe', () => {
+		const adapter = readFileSync(resolve(sourceRoot, youtubeAdapter), 'utf8');
+		expect(adapter).not.toMatch(/<iframe/i);
+		expect(adapter).toMatch(/new YT\.Player\(/u);
+		expect(adapter).toMatch(/isYouTubeKey\(/u);
 	});
 
 	for (const relativePath of playbackFiles) {
