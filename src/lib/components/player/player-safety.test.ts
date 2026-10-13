@@ -22,8 +22,9 @@ const blockedPatterns = [
 	/clipboard-write/i
 ];
 
-// The one file allowed to name the trailer embed host: the official IFrame API adapter.
+// Only the official IFrame API adapter and the CSP allowlist may name the trailer embed host.
 const youtubeAdapter = 'lib/player/youtube-source.ts';
+const youtubeHostFiles = [youtubeAdapter, 'lib/server/security/response-policy.ts'];
 const youtubeHostPattern = /youtube-nocookie/i;
 
 function sourceFiles(directory: string): string[] {
@@ -46,11 +47,13 @@ describe('playback source quarantine', () => {
 	});
 
 	it('names the trailer embed host only in the YouTube IFrame API adapter', () => {
-		const adapterPath = resolve(sourceRoot, youtubeAdapter);
-		expect(readFileSync(adapterPath, 'utf8')).toMatch(youtubeHostPattern);
+		const allowed = new Set(youtubeHostFiles.map((path) => resolve(sourceRoot, path)));
+		for (const path of allowed) {
+			expect(readFileSync(path, 'utf8'), path).toMatch(youtubeHostPattern);
+		}
 
 		for (const file of sourceFiles(sourceRoot)) {
-			if (file === adapterPath || /\.test\.ts$/u.test(file)) continue;
+			if (allowed.has(file) || /\.test\.ts$/u.test(file)) continue;
 			expect(readFileSync(file, 'utf8'), file).not.toMatch(youtubeHostPattern);
 		}
 	});
