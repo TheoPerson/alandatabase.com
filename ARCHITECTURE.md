@@ -77,7 +77,8 @@ paths are left untouched.
 | `src/routes/api`          | Public API metadata/health, owner-gated cinema APIs, plus the separately authenticated Telegram webhook.                                                                                   |
 | `src/lib/components/ui`   | The UI kit: one folder per component (`button`, `chip`, `rail`, `poster-card`, `hero-carousel`, `top-bar`, `bottom-tab-bar`, …) built on the tokens in `src/app.css`; showcased at `/kit`. |
 | `src/lib/components`      | Layout, movie/player, and legacy components not yet moved into the kit.                                                                                                                    |
-| `src/lib/catalogue`       | Plain data shapes (`PosterItem`, `HeroItem`) shared by loaders and the kit.                                                                                                                |
+| `src/lib/player`          | Playback logic with no UI: the `PlayerSource` contract, the YouTube IFrame API adapter (the only file naming the embed host), controller, preferences, resume store, shortcuts, auto-hide. |
+| `src/lib/catalogue`       | Plain data shapes (`PosterItem`, `HeroItem`) and pure detail helpers (`pickTrailers`, `keyCrew`, `groupProviders`) shared by loaders and the kit.                                          |
 | `src/lib/tmdb`            | Client-safe TMDB image URL/`srcset` helpers and YouTube key validation.                                                                                                                    |
 | `src/lib/navigation`      | Primary and tab link model with `isActivePath`.                                                                                                                                            |
 | `src/lib/server/auth`     | Password/session helpers and centralized route classification.                                                                                                                             |
@@ -133,7 +134,7 @@ rollout remain incomplete.
 
 - `/` is the cinema home: a featured carousel (standard titles with a backdrop and at least 1000 votes, best rated first) and independent rails; one failing rail never blanks the page. `/about` is the former project landing page. `/kit` is the public, `noindex` UI kit showcase.
 - `/movies`, `/movies/catalog`, `/search`, and `/discover` read the approved local movie catalog.
-- `/movies/[id]` renders local metadata and an explicit playback-unavailable sheet.
+- `/movies/[id]` renders local metadata as a cinematic header, personal actions (watchlist, favourite, watched, rating through the shared `logInteraction` action), five tabs (overview with key crew and where to watch, cast & crew, videos, details, saga & similar, all bounded local reads under the standard-content predicate), reviews, and the full-screen trailer player.
 - `/my/films`, `/my/lists`, and `/my/settings` manage user-owned interactions, lists, statistics, and settings.
 - `/tv`, `/tvshow`, and `/tvshows` share a committed in-code TV snapshot; TV has no database persistence or real episode catalog.
 - `/live` is a protected compatibility surface that accepts no URL and embeds nothing.
@@ -177,7 +178,7 @@ prepared but not applied to a hosted database.
 
 ## Playback and external integrations
 
-Playback components render `PlaybackUnavailable`; runtime safety tests prohibit iframe tags and known mirror domains. The cinema CSP denies all frames. Approved source storage, health checks, player transport, progress capture, and fallback logic are future work.
+Official trailers play through the YouTube IFrame API on `youtube-nocookie.com` inside a full-screen dialog (`src/lib/components/ui/player`): the stage element is created by the API, never by a hand-written iframe, controls never overlay the embed, and only `src/lib/player/youtube-source.ts` and the CSP allowlist may name that host. Everything else renders `PlaybackUnavailable`; runtime safety tests prohibit iframe tags and known mirror domains across the whole source tree, and the cinema CSP `frame-src` allows exactly that one origin. Approved source storage, health checks, player transport, progress capture, and fallback logic are future work.
 
 The application retains shared TMDB types/code and loads artwork from the TMDB image CDN, but current application catalog reads are local-only. Reviewed metadata ingestion is an operator/worker responsibility: the worker calls TMDB and writes metadata only after a fail-closed adult/keyword safety decision. Its CLI validates supported commands and `ingest-id` arguments before database setup or network actions; the legacy seed helper still requires replacement with explicit reviewed migration/seed operations.
 

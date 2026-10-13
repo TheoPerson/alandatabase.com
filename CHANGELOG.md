@@ -11,6 +11,8 @@ its launch gates are explicitly verified.
 
 ### Major Updates
 
+- Movie detail page rebuilt on the kit: cinematic header (backdrop, poster, TMDB title logo, tagline, meta, genre chips), Play trailer / Watchlist / Favourite / Watched / Rate / Share with the real saved state and toasts worded from the server result, five tabs (Overview with key crew and Where to watch FR/US from JustWatch data, Cast & crew, Videos, Details with keyword chips, Saga & similar), a reviews list, and shareable `#tab` links.
+- Trailer player: a full-screen dialog playing official YouTube trailers through the IFrame API on `youtube-nocookie.com` (the stage is created by the API, never by a hand-written iframe). Controls sit in an apron below the stage: play, ±10 s, seek with the buffered range, volume, captions, speed, fullscreen, keyboard shortcuts (`?` lists them), resume on this device for 90 days, Back and Escape close it, focus returns to the Play button; a settings sheet (Video, Audio, Subtitles, Playback) says why a row is unavailable for YouTube.
 - New cinema home at `/`: full-bleed featured carousel (backdrop, TMDB title logo, meta, actions, auto-advance with pause and swipe), numbered Top 10, Trending, Top-rated, genre chips, TV and watchlist rails. The former landing page moved to `/about`.
 - New UI kit under `src/lib/components/ui` (Button, Chip, RatingBadge, MetaChips, Section, Rail, RankedRail, PosterCard, BackdropImage, HeroCarousel, TopBar, BottomTabBar) built on new tokens (type scale, elevation, motion, layering, safe areas), showcased at `/kit`.
 - Mobile navigation: a fixed bottom tab bar (Home, Movies, TV, Search, Library) with safe-area padding replaces the hamburger menu; the top bar turns solid on scroll.
@@ -25,6 +27,9 @@ its launch gates are explicitly verified.
 
 ### Minor Updates
 
+- UI kit additions: Tabs, Dialog, Sheet, Slider, Tooltip, PersonCard, TrailerFacade, ProviderLogo, StarRating (bits-ui RatingGroup, half stars), ResumeBar, PlayerShell / PlayerSettings / ShortcutHelp; BackdropImage gains `animate` and `priority`, PosterCard can render a link-less frame; all shown on `/kit`.
+- Detail reads: `getMovieById` loads watch providers, up to 30 crew rows and keyword names; new bounded `similarMovies` and `collectionMovies` reads under the standard-content predicate.
+- One server helper (`applyInteraction`) backs the `logInteraction` action on both `/movies/catalog/[id]` and `/movies/[id]` and returns the saved state.
 - Poster cards reserve their aspect ratio, blur up from a tiny placeholder, use `srcset`, and fall back to a titled frame when artwork fails to load.
 - Worker: `sync-top-rated` command; ingestion now stores TMDB watch providers (FR, US) and title logos.
 - Added a Picker link to the cinema header and mobile menu, and made the picker API
@@ -42,6 +47,8 @@ its launch gates are explicitly verified.
 
 ### Fixed
 
+- Removed the `PlayerSheet` placeholder and the Browse hero "Playback status" button; the detail page no longer reads raw TMDB field names.
+- Kit Tabs scroll only their own list on selection; `scrollIntoView` had also moved the page to the tab list on load.
 - `/tv` overview text used a hard-coded colour with 3.87:1 contrast; it now uses the secondary text token (axe serious violation).
 - Independent review of the foundation slices (0 critical, 10 important, all fixed test-first): the movie detail page no longer covers the top bar; the footer clears the mobile tab bar; Discover and Picker are reachable on phones; the radar logo is back in the top bar; the featured carousel has a pause control, stays silent for screen readers while rotating, crossfades backdrops, reserves the logo height and keeps its action row in place; the hero watchlist button shows the real saved state and words its toast from the server; the home watchlist rail is capped at 20; hero copy gets a local vignette for contrast; ranked posters keep the full poster width and two-digit ranks fit; browser tests wait for hydration.
 - Ran the overnight V3 audit (2026-10-08) on an isolated task worktree and fixed
@@ -109,6 +116,7 @@ its launch gates are explicitly verified.
 
 ### Security
 
+- The cinema CSP `frame-src` now allows exactly `https://www.youtube-nocookie.com` (previously `'none'`); any incoming `frame-src` is replaced, never merged. `player-safety.test.ts` still scans every source file for iframes and mirrors, allows the embed host string only in the IFrame API adapter and the CSP module, and requires the adapter to build the player through `new YT.Player`.
 - Removed the hard-coded Telegram bot token and chat-ID fallback that `main` still
   shipped in `telegram.service.ts`. The token remains in public Git history and must
   be treated as compromised and rotated by the owner.
@@ -134,6 +142,8 @@ its launch gates are explicitly verified.
 
 ### Technical Improvements
 
+- Pure, unit-tested player logic under `src/lib/player`: the `PlayerSource` contract, versioned preferences with default-merging, a resume store (90-day expiry, 50 entries), time formatting, the auto-hide reducer, the shortcut table and a controller exercised with a fake source; detail helpers (`pickTrailers`, `keyCrew`, `groupProviders`), PGlite tests for the new reads and a mocked loader test.
+- E2E: `tests/detail.e2e.ts` (single heading, tabs by keyboard and hash, Where to watch, player open/close with at most one `youtube-nocookie` frame, 320 px, signed-out login links) plus detail-page cases in the responsive and axe suites; `tests/helpers.ts` finds a real film from Home.
 - Migration `0005_movie_watch_providers` (additive, `IF NOT EXISTS`, covered by the PGlite migration test).
 - Pure helpers with unit tests: TMDB image sets, formatters, rail scroll math, carousel rotation, navigation link matching, worker provider/logo selection.
 - Playwright: `tests/home.e2e.ts` (bottom bar targets, desktop links, rail arrow); `/about` and `/kit` added to the responsive and axe suites; the E2E gate runs on the production preview.
@@ -168,6 +178,8 @@ its launch gates are explicitly verified.
 
 ### Known Issues
 
+- The browser Sentry DSN is rejected by the ingest endpoint (HTTP 403 on every page); owner configuration.
+- The top bar ⌘K hint sits below 4.5:1 contrast once the bar is in its scrolled state (pre-existing; deferred).
 - The committed TV snapshot carries poster paths that no longer resolve on the TMDB CDN; those cards show the titled fallback until TV becomes database-backed.
 - Review minors deferred to slices 4–8 (recorded in `ROADMAP.md`): reduced-motion only shortens durations, rail keyboard focus movement, carousel dot keyboard support, pinch-zoom on the hero, landscape safe-area gutters, `/about` canonical URL, `returnTo=/` falling back to `/movies`, number formatting just below a unit, migration `0005` rollback note (`DROP TABLE movie_watch_providers`).
 - Hero trailer playback, movie detail, browse, search palette, TV/Discover/Picker/Library restyles are the next slices (`ROADMAP.md`).

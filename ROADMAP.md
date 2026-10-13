@@ -174,9 +174,30 @@ Verified in this worktree on 2026-10-12, not merged, not deployed:
   clamps at 3 lines, mobile hero capped at 560 px, search does not expand,
   sign-in hidden below 1024 px, no sign-out control.
 
-## `in_progress` — premium experience, slices 4–8
+## `verified` — premium experience, slice 4 (movie detail and trailer player)
 
-Movie detail (trailer facade, cast/crew, where to watch, more like this),
+Spec: `docs/superpowers/specs/2026-10-12-movie-detail-and-player-design.md`
+(sections 1–8 plus the judged design brief); plan:
+`docs/superpowers/plans/2026-10-12-movie-detail-and-player.md` (12 tasks,
+executed inline, test-first). Verified in this worktree on 2026-10-14, not
+merged, not deployed:
+
+- `pnpm check` 0 errors (21 warnings, baseline); ESLint 0 errors (457 warnings,
+  mostly `prefer-const` on Svelte 5 `$props` destructuring); Prettier clean;
+  `pnpm test:unit -- --run` 327/327 in 56 files; `pnpm build` (Netlify adapter)
+  passes; Playwright 51 passed, 2 skipped (full suite on the production
+  preview, including `tests/detail.e2e.ts` and detail cases in the responsive
+  320–1920 px and axe suites). Worker unchanged, its tests not re-run.
+- Screenshots reviewed at 320, 390, 768 and 1440 px: header, every tab, the
+  player at 390 and 1440 px, the settings sheet and panel, and `/kit`.
+- Product rulings recorded in the plan ledger and the handoff: controls below
+  the stage, no fill/zoom or picture-in-picture for YouTube, four settings
+  tabs, auto-resume with a chip, reviews link to the existing review route,
+  touch never auto-hides controls, `frame-src` allowlists exactly one origin.
+- Independent whole-branch review: recorded below once it has run.
+
+## `in_progress` — premium experience, slices 5–8
+
 Browse at `/movies` with filters, search palette, TV/Discover/Picker/Library
 and auth restyles, then the performance/accessibility/visual pass. Each slice
 gets its own plan under `docs/superpowers/plans/`.
