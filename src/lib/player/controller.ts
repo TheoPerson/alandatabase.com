@@ -18,6 +18,7 @@ export function createController(
 	now: () => number
 ) {
 	let current = prefs;
+	let applied: PlayerPrefs | null = null;
 
 	function seekTo(seconds: number) {
 		const { duration } = source.getState();
@@ -28,12 +29,18 @@ export function createController(
 		get state() {
 			return source.getState();
 		},
+		/** Pushes preferences to the source; after the first call only changed fields are sent. */
 		applyPrefs(next: PlayerPrefs = current) {
+			const previous = applied;
 			current = next;
-			source.setRate(next.speed);
-			source.setVolume(next.volume);
-			source.setMuted(next.muted);
-			source.setCaptions(next.captions);
+			applied = next;
+			if (!previous || previous.speed !== next.speed) source.setRate(next.speed);
+			if (!previous || previous.volume !== next.volume) source.setVolume(next.volume);
+			if (!previous || previous.muted !== next.muted) source.setMuted(next.muted);
+			if (!previous || previous.captions !== next.captions) source.setCaptions(next.captions);
+			if (!previous || previous.captionSize !== next.captionSize) {
+				source.setCaptionSize(next.captionSize);
+			}
 		},
 		toggle() {
 			const { status } = source.getState();

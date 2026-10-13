@@ -41,6 +41,7 @@ describe('YouTube source', () => {
 			source.seek(10);
 			source.setRate(1.5);
 			source.setMuted(true);
+			source.setCaptionSize('large');
 		}).not.toThrow();
 		expect(source.getState()).toMatchObject({ rate: 1.5, muted: true });
 		expect(seen).toEqual(['1.5:false', '1.5:true']);

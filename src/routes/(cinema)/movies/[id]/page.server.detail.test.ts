@@ -91,6 +91,31 @@ describe('movie detail loader', () => {
 		services.getUserMovieReviews.mockResolvedValue([]);
 	});
 
+	it('ships review dates as ISO strings so the page can format them', async () => {
+		services.getMovieById.mockResolvedValue(movie);
+		services.getUserMovieReviews.mockResolvedValue([
+			{
+				id: 'r1',
+				content: 'Great',
+				containsSpoilers: false,
+				createdAt: new Date('2026-03-04T10:00:00Z'),
+				user: { id: 'u', username: 'alan', displayName: null }
+			}
+		]);
+
+		const data = await call({ id: movie.id }, null);
+
+		expect(data.reviews).toEqual([
+			{
+				id: 'r1',
+				content: 'Great',
+				containsSpoilers: false,
+				createdAt: '2026-03-04',
+				author: 'alan'
+			}
+		]);
+	});
+
 	it('shapes trailers, crew, providers, similar, details and personal state', async () => {
 		services.getMovieById.mockResolvedValue(movie);
 		services.similarMovies.mockResolvedValue([

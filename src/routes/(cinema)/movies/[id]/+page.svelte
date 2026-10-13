@@ -641,9 +641,9 @@
 					{#each data.reviews as review (review.id)}
 						<li class="review">
 							<p class="review-meta">
-								<strong>{review.user?.displayName || review.user?.username || 'Member'}</strong>
-								{#if formatDate(String(review.createdAt ?? '').slice(0, 10))}
-									<span class="muted"> · {formatDate(String(review.createdAt).slice(0, 10))}</span>
+								<strong>{review.author}</strong>
+								{#if formatDate(review.createdAt)}
+									<span class="muted"> · {formatDate(review.createdAt)}</span>
 								{/if}
 								{#if review.containsSpoilers}<span class="spoiler">Spoilers</span>{/if}
 							</p>

@@ -13,6 +13,8 @@
 		/** Visual-only buffered range, in the same unit as `value`. */
 		buffered?: number;
 		onCommit?: (value: number) => void;
+		/** Fires on every change while dragging or stepping. */
+		onchange?: (value: number) => void;
 		disabled?: boolean;
 		class?: string;
 	}
@@ -26,6 +28,7 @@
 		valueText,
 		buffered = 0,
 		onCommit,
+		onchange,
 		disabled = false,
 		class: className = ''
 	}: Props = $props();
@@ -42,6 +45,7 @@
 	{max}
 	{step}
 	{disabled}
+	onValueChange={(next) => onchange?.(next)}
 	onValueCommit={(committed) => onCommit?.(committed)}
 	class="kit-slider {className}"
 >

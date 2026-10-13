@@ -66,6 +66,60 @@ test.describe('Movie detail', () => {
 		await expect(play).toBeFocused();
 	});
 
+	test('Back closes the player, keyboard users can operate the apron and the settings sheet keeps focus', async ({
+		page
+	}) => {
+		await page.setViewportSize({ width: 1440, height: 900 });
+		const href = await firstMovieHref(page);
+		test.skip(!href, 'needs catalogue data');
+		await gotoHydrated(page, href as string);
+		const play = page.getByRole('button', { name: /Play trailer|Resume/ });
+		test.skip((await play.count()) === 0, 'this film has no trailer');
+
+		await play.click();
+		const dialog = page.getByRole('dialog', { name: /^Trailer: / });
+		await expect(dialog).toBeVisible();
+		await expect(page.locator('iframe, [role="alert"]').first()).toBeAttached({
+			timeout: 20_000
+		});
+
+		// Space on a focused control activates that control, never play/pause.
+		const settings = dialog.getByRole('button', { name: 'Settings' });
+		await settings.focus();
+		await page.keyboard.press('Space');
+		const sheet = page.getByRole('dialog', { name: 'Player settings' });
+		await expect(sheet).toBeVisible();
+
+		// Focus stays inside the settings sheet while it is open.
+		for (let index = 0; index < 25; index += 1) await page.keyboard.press('Tab');
+		expect(await page.evaluate(() => Boolean(document.activeElement?.closest('.kit-sheet')))).toBe(
+			true
+		);
+		await page.keyboard.press('Escape');
+		await expect(sheet).toBeHidden();
+		await expect(dialog).toBeVisible();
+
+		// Arrow keys on the seek thumb move only the slider (no extra 5 s skip per press).
+		const thumb = dialog.getByRole('slider', { name: 'Seek' });
+		if ((await thumb.getAttribute('aria-valuemax')) !== '1') {
+			const before = Number(await thumb.getAttribute('aria-valuenow'));
+			await thumb.focus();
+			await page.keyboard.press('ArrowRight');
+			await page.keyboard.press('ArrowRight');
+			await page.keyboard.press('ArrowRight');
+			const after = Number(await thumb.getAttribute('aria-valuenow'));
+			expect(after - before).toBeGreaterThanOrEqual(3);
+			expect(after - before).toBeLessThan(10);
+		}
+
+		await page.goBack();
+		await expect(dialog).toBeHidden();
+		await expect(page.locator('iframe')).toHaveCount(0);
+		await expect(page.locator('html')).not.toHaveAttribute('data-player-open', '');
+		expect(new URL(page.url()).pathname).toBe(href);
+		await expect(play).toBeFocused();
+	});
+
 	test('signed-out actions lead to login and the page fits 320 px', async ({ page }) => {
 		await page.setViewportSize({ width: 320, height: 568 });
 		const href = await firstMovieHref(page);

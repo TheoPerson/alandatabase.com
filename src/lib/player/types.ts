@@ -1,3 +1,5 @@
+import type { CaptionSize } from './prefs';
+
 // The contract every playback source implements. The shell, controller and
 // settings panel only ever talk to this interface, so a local-file source can
 // slot in later without touching them.
@@ -47,6 +49,7 @@ export interface PlayerSource {
 	setVolume(level: number): void;
 	setMuted(muted: boolean): void;
 	setCaptions(on: boolean): void;
+	setCaptionSize(size: CaptionSize): void;
 	getState(): PlayerSnapshot;
 	on(event: PlayerEvent, handler: (snapshot: PlayerSnapshot) => void): () => void;
 	capabilities(): Capabilities;

@@ -45,6 +45,23 @@ export function matchShortcut(event: Pick<KeyboardEvent, 'key'>): ShortcutAction
 }
 
 const TYPING_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
+const CONTROL_TAGS = new Set(['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA']);
+const CONTROL_ROLES = new Set(['slider', 'button', 'switch', 'tab', 'radio', 'checkbox']);
+// Keys a focused control must keep for its own activation or stepping.
+const CONTROL_KEYS = new Set([' ', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown']);
+
+interface ShortcutTarget {
+	tagName?: string;
+	isContentEditable?: boolean;
+	getAttribute?: (name: string) => string | null;
+}
+
+function isControl(target: ShortcutTarget | null): boolean {
+	if (!target) return false;
+	if (CONTROL_TAGS.has(target.tagName ?? '')) return true;
+	const role = target.getAttribute?.('role');
+	return role !== null && role !== undefined && CONTROL_ROLES.has(role);
+}
 
 /** Shortcuts are single keys, so they never fire while typing or when turned off. */
 export function shouldHandleShortcut(
@@ -52,7 +69,8 @@ export function shouldHandleShortcut(
 	prefs: Pick<PlayerPrefs, 'shortcuts'>
 ): boolean {
 	if (!prefs.shortcuts) return false;
-	const target = event.target as { tagName?: string; isContentEditable?: boolean } | null;
+	const target = event.target as ShortcutTarget | null;
 	if (target && (TYPING_TAGS.has(target.tagName ?? '') || target.isContentEditable)) return false;
+	if (CONTROL_KEYS.has(event.key) && isControl(target)) return false;
 	return matchShortcut(event) !== null;
 }

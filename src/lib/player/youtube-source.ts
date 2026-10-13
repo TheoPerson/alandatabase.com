@@ -3,12 +3,17 @@
 // to name that host; the embed element is created by the API, never by hand.
 
 import { isYouTubeKey } from '$lib/tmdb/images';
+import type { CaptionSize } from './prefs';
+import { withTimeout } from './timeout';
 import type { Capabilities, LoadOptions, PlayerEvent, PlayerSnapshot, PlayerSource } from './types';
 
 export const YOUTUBE_EMBED_ORIGIN = 'https://www.youtube-nocookie.com';
 const API_SRC = 'https://www.youtube.com/iframe_api';
 const POLL_MS = 250;
 const AUTOPLAY_GRACE_MS = 1500;
+const READY_TIMEOUT_MS = 15_000;
+// YouTube caption font sizes: -1 small, 0 default, 2 large.
+const CAPTION_SIZES: Record<CaptionSize, number> = { small: -1, medium: 0, large: 2 };
 const DEFAULT_RATES = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
 interface YTPlayer {
@@ -62,7 +67,10 @@ function loadApi(): Promise<YTNamespace> {
 		window.onYouTubeIframeAPIReady = () => {
 			previous?.();
 			if (window.YT?.Player) resolve(window.YT);
-			else reject(new Error('YouTube API did not initialise'));
+			else {
+				apiPromise = null;
+				reject(new Error('YouTube API did not initialise'));
+			}
 		};
 		const script = document.createElement('script');
 		script.src = API_SRC;
@@ -95,6 +103,15 @@ export function createYouTubeSource(videoKey: string): PlayerSource {
 	const handlers = new Map<PlayerEvent, Set<(snapshot: PlayerSnapshot) => void>>();
 	let timer: number | null = null;
 	let destroyed = false;
+	let captionSize: CaptionSize = 'medium';
+
+	function applyCaptionSize() {
+		try {
+			player?.setOption('captions', 'fontSize', CAPTION_SIZES[captionSize]);
+		} catch {
+			// The captions module may not be loaded yet; the size is re-applied when it is.
+		}
+	}
 
 	function emit(event: PlayerEvent) {
 		for (const handler of handlers.get(event) ?? []) handler(snapshot);
@@ -147,11 +164,11 @@ export function createYouTubeSource(videoKey: string): PlayerSource {
 	return {
 		async load(container: HTMLElement, options: LoadOptions) {
 			patch({ status: 'loading', captions: options.captions });
-			const YT = await loadApi();
+			const YT = await withTimeout(loadApi(), READY_TIMEOUT_MS, 'YouTube API did not load');
 			if (destroyed) return;
 			const mount = document.createElement('div');
 			container.replaceChildren(mount);
-			await new Promise<void>((resolve, reject) => {
+			const ready = new Promise<void>((resolve, reject) => {
 				player = new YT.Player(mount, {
 					host: YOUTUBE_EMBED_ORIGIN,
 					videoId: videoKey,
@@ -188,6 +205,15 @@ export function createYouTubeSource(videoKey: string): PlayerSource {
 					}
 				});
 			});
+			try {
+				await withTimeout(ready, READY_TIMEOUT_MS, 'Player did not become ready');
+			} catch (error) {
+				if (snapshot.status !== 'error') {
+					patch({ status: 'error', error: (error as Error).message }, 'error');
+				}
+				throw error;
+			}
+			applyCaptionSize();
 			if (options.autoplay) {
 				// Mobile browsers may refuse autoplay: if nothing starts within the
 				// grace period the shell shows a Play label instead of a black stage.
@@ -220,6 +246,7 @@ export function createYouTubeSource(videoKey: string): PlayerSource {
 				if (on) {
 					player?.loadModule('captions');
 					player?.setOption('captions', 'track', {});
+					applyCaptionSize();
 				} else {
 					player?.unloadModule('captions');
 				}
@@ -227,6 +254,10 @@ export function createYouTubeSource(videoKey: string): PlayerSource {
 				// The captions module is best-effort; YouTube may not expose it.
 			}
 			patch({ captions: on });
+		},
+		setCaptionSize: (size) => {
+			captionSize = size;
+			applyCaptionSize();
 		},
 		getState: () => snapshot,
 		on: (event, handler) => {

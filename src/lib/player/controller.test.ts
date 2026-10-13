@@ -54,6 +54,9 @@ function fakeSource() {
 			calls.push(`captions:${captions}`);
 			snapshot = { ...snapshot, captions };
 		},
+		setCaptionSize: (size) => {
+			calls.push(`captionSize:${size}`);
+		},
 		getState: () => snapshot,
 		on: (event, handler) => {
 			const set = handlers.get(event) ?? new Set();
@@ -106,7 +109,17 @@ describe('player controller', () => {
 		);
 
 		controller.applyPrefs();
-		expect(source.calls).toEqual(['rate:1.5', 'volume:0.5', 'muted:false', 'captions:false']);
+		expect(source.calls).toEqual([
+			'rate:1.5',
+			'volume:0.5',
+			'muted:false',
+			'captions:false',
+			'captionSize:medium'
+		]);
+
+		source.calls.length = 0;
+		controller.applyPrefs({ ...DEFAULT_PREFS, speed: 1.5, volume: 0.5, captionSize: 'large' });
+		expect(source.calls).toEqual(['captionSize:large']);
 
 		controller.toggle();
 		expect(source.getState().status).toBe('playing');

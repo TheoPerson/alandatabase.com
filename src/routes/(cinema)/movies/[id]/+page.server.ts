@@ -54,6 +54,27 @@ function crewByDepartment(movie: Movie): Array<{ department: string; people: Cre
 	return [...departments].map(([department, people]) => ({ department, people }));
 }
 
+interface ReviewRow {
+	id: string;
+	content: string;
+	containsSpoilers?: boolean | null;
+	createdAt?: Date | string | null;
+	user?: { username?: string | null; displayName?: string | null } | null;
+}
+
+// Dates travel as ISO day strings so the page formats them without guessing the type.
+function toReviewItem(row: ReviewRow) {
+	const created =
+		row.createdAt instanceof Date ? row.createdAt.toISOString() : String(row.createdAt ?? '');
+	return {
+		id: row.id,
+		content: row.content,
+		containsSpoilers: Boolean(row.containsSpoilers),
+		createdAt: /^\d{4}-\d{2}-\d{2}/u.test(created) ? created.slice(0, 10) : null,
+		author: row.user?.displayName || row.user?.username || 'Member'
+	};
+}
+
 function toNumberOrNull(value: unknown): number | null {
 	if (value === null || value === undefined || value === '') return null;
 	const n = Number(value);
@@ -138,7 +159,7 @@ export const load = (async ({ params, locals }) => {
 					rating: toNumberOrNull(personal.rating)
 				}
 			: null,
-		reviews: settled(reviews, [], 'Detail reviews read failed')
+		reviews: settled(reviews, [], 'Detail reviews read failed').map(toReviewItem)
 	};
 }) satisfies PageServerLoad;
 

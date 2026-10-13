@@ -11,6 +11,7 @@ import {
 import { formatTime, spokenTime } from './format-time';
 import { shouldHideControls } from './auto-hide';
 import { matchShortcut, shouldHandleShortcut } from './shortcuts';
+import { withTimeout } from './timeout';
 
 function memoryStorage(): Storage {
 	const map = new Map<string, string>();
@@ -134,6 +135,16 @@ describe('auto-hide', () => {
 	});
 });
 
+describe('withTimeout', () => {
+	it('resolves when the work finishes first and rejects once the deadline passes', async () => {
+		await expect(withTimeout(Promise.resolve('ok'), 50, 'late')).resolves.toBe('ok');
+		const never = new Promise<string>(() => {});
+		await expect(withTimeout(never, 10, 'Player did not become ready')).rejects.toThrow(
+			'Player did not become ready'
+		);
+	});
+});
+
 describe('shortcuts', () => {
 	const div = { tagName: 'DIV', isContentEditable: false } as HTMLElement;
 
@@ -156,5 +167,21 @@ describe('shortcuts', () => {
 		).toBe(false);
 		expect(shouldHandleShortcut({ key: 'k', target: div }, DEFAULT_PREFS)).toBe(true);
 		expect(shouldHandleShortcut({ key: 'q', target: div }, DEFAULT_PREFS)).toBe(false);
+	});
+
+	it('leaves Space, Enter and arrows to a focused control but keeps letters global', () => {
+		const button = { tagName: 'BUTTON', isContentEditable: false } as HTMLElement;
+		const thumb = {
+			tagName: 'SPAN',
+			isContentEditable: false,
+			getAttribute: (name: string) => (name === 'role' ? 'slider' : null)
+		} as unknown as HTMLElement;
+		expect(shouldHandleShortcut({ key: ' ', target: button }, DEFAULT_PREFS)).toBe(false);
+		expect(shouldHandleShortcut({ key: 'Enter', target: button }, DEFAULT_PREFS)).toBe(false);
+		expect(shouldHandleShortcut({ key: 'ArrowLeft', target: thumb }, DEFAULT_PREFS)).toBe(false);
+		expect(shouldHandleShortcut({ key: 'ArrowUp', target: thumb }, DEFAULT_PREFS)).toBe(false);
+		expect(shouldHandleShortcut({ key: 'k', target: button }, DEFAULT_PREFS)).toBe(true);
+		expect(shouldHandleShortcut({ key: 'm', target: thumb }, DEFAULT_PREFS)).toBe(true);
+		expect(shouldHandleShortcut({ key: 'ArrowLeft', target: div }, DEFAULT_PREFS)).toBe(true);
 	});
 });

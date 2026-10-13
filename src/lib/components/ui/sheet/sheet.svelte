@@ -12,6 +12,8 @@
 		detent?: 'medium' | 'large';
 		/** Non-modal sheets keep the page interactive (used by the player settings). */
 		modal?: boolean;
+		/** Keeps Tab inside the sheet; on by default even for non-modal sheets. */
+		trapFocus?: boolean;
 		class?: string;
 		children: Snippet;
 	}
@@ -22,6 +24,7 @@
 		side = 'bottom',
 		detent = $bindable('medium'),
 		modal = true,
+		trapFocus = true,
 		class: className = '',
 		children
 	}: Props = $props();
@@ -39,7 +42,7 @@
 		{/if}
 		<Dialog.Content
 			class="kit-sheet {side} {detent} {className}"
-			trapFocus={modal}
+			{trapFocus}
 			preventScroll={modal}
 			interactOutsideBehavior={modal ? 'close' : 'ignore'}
 		>

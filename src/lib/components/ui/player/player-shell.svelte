@@ -59,6 +59,8 @@
 	const PERSIST_EVERY_MS = 5000;
 	const PILL_RESET_MS = 1500;
 	const TICK_MS = 250;
+	// After a seek the source reports the old position for a moment; keep the committed value meanwhile.
+	const SEEK_HOLD_MS = 1000;
 
 	let root = $state<HTMLElement | null>(null);
 	let stage = $state<HTMLElement | null>(null);
@@ -69,6 +71,7 @@
 	let prefs = $state<PlayerPrefs>({ ...DEFAULT_PREFS });
 	let seekValue = $state(0);
 	let scrubbing = $state(false);
+	let seekHoldUntil = 0;
 	let volumeValue = $state(100);
 	let settingsOpen = $state(false);
 	let helpOpen = $state(false);
@@ -158,7 +161,7 @@
 			source.on('state', (next) => {
 				const wasStatus = snapshot.status;
 				snapshot = next;
-				if (!scrubbing) seekValue = next.position;
+				if (!scrubbing && Date.now() > seekHoldUntil) seekValue = next.position;
 				if (next.status === 'playing' && wasStatus !== 'playing') {
 					announce(resumedAt !== null ? `Resumed at ${formatTime(resumedAt)}` : 'Playing');
 					resumedAt = null;
@@ -173,7 +176,7 @@
 			}),
 			source.on('time', (next) => {
 				snapshot = next;
-				if (!scrubbing) seekValue = next.position;
+				if (!scrubbing && Date.now() > seekHoldUntil) seekValue = next.position;
 			}),
 			source.on('error', (next) => {
 				snapshot = next;
@@ -298,6 +301,8 @@
 
 	function commitSeek(seconds: number) {
 		scrubbing = false;
+		seekHoldUntil = Date.now() + SEEK_HOLD_MS;
+		seekValue = seconds;
 		controller?.seek(seconds);
 		announce(`Moved to ${spokenTime(seconds)}`);
 	}
@@ -470,6 +475,7 @@
 					valueText={spokenTime}
 					buffered={snapshot.buffered}
 					disabled={snapshot.duration <= 0}
+					onchange={() => (scrubbing = true)}
 					onCommit={commitSeek}
 					class="seek"
 				/>
