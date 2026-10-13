@@ -182,11 +182,21 @@ export async function getMovieById(id: string) {
 			},
 			videos: true,
 			watchProviders: true,
-			keywords: true
+			keywords: {
+				with: {
+					keyword: true
+				}
+			}
 		}
 	});
 
-	return prepareStandardMovie(found);
+	const movie = prepareStandardMovie(found);
+	if (!movie) return null;
+	// Names only: the keyword ids are visibility metadata and stay stripped.
+	const keywordNames = ((found?.keywords ?? []) as Array<{ keyword?: { name?: unknown } | null }>)
+		.map((row) => row.keyword?.name)
+		.filter((name): name is string => typeof name === 'string' && name.length > 0);
+	return { ...movie, keywordNames };
 }
 
 const SIMILAR_LIMIT = 12;

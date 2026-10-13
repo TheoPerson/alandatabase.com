@@ -98,4 +98,17 @@ describe('movie detail reads', () => {
 		expect(await collectionMovies(null, base)).toEqual([]);
 		expect(await similarMovies(base, null)).toEqual([]);
 	});
+	it('exposes keyword names for the details tab while the ids stay stripped', async () => {
+		const movieId = await insertMovie(20, 'Keyworded');
+		await pg.query(`insert into keywords (id, name) values (1001, 'dream'), (1002, 'heist')`);
+		await pg.query(
+			`insert into movie_keywords (movie_id, keyword_id) values ($1, 1001), ($1, 1002)`,
+			[movieId]
+		);
+
+		const movie = await getMovieById(movieId);
+
+		expect(movie?.keywordNames).toEqual(['dream', 'heist']);
+		expect(movie).not.toHaveProperty('keywords');
+	});
 });
