@@ -1,6 +1,6 @@
 import { db } from '../db/index.js';
-import { userMovieInteractions, userReviews, users, movies, activities } from '../db/schema.js';
-import { eq, and, desc } from 'drizzle-orm';
+import { userMovieInteractions, userReviews, movies, activities } from '../db/schema.js';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { isStandardMovie, standardMovieVisibilityWhere } from '../policies/movie-visibility.js';
 import { prepareStandardMovie } from './movie.service.js';
 
@@ -23,28 +23,6 @@ export async function logActivity(
 	} catch {
 		// Non-blocking — never fail the main action due to logging
 	}
-}
-
-export async function getOrCreateDefaultUser() {
-	const existing = await db.query.users.findFirst({
-		where: eq(users.username, 'cinephile')
-	});
-	if (existing) return existing;
-
-	const [created] = await db
-		.insert(users)
-		.values({
-			email: 'cinephile@alan.local',
-			username: 'cinephile',
-			passwordHash: 'default_hash',
-			displayName: 'Cinema Enthusiast'
-		})
-		.onConflictDoNothing()
-		.returning();
-
-	if (created) return created;
-	const user = await db.query.users.findFirst({ where: eq(users.username, 'cinephile') });
-	return user!;
 }
 
 const isUuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -157,30 +135,30 @@ export async function applyInteraction(
 	const movieId = await resolveMovieUuid(movieIdOrTmdb);
 	if (!movieId) return null;
 
-	const existing = await db.query.userMovieInteractions.findFirst({
-		where: and(eq(userMovieInteractions.userId, userId), eq(userMovieInteractions.movieId, movieId))
-	});
-
 	const payload: Partial<typeof userMovieInteractions.$inferInsert> = { updatedAt: new Date() };
 	if (update.type === 'rating') {
 		payload.rating = update.value === null ? null : update.value.toFixed(1);
 	} else {
 		payload[update.type] = update.value;
 	}
-	if (update.type === 'watched' && update.value && !existing?.watchDate) {
-		payload.watchDate = new Date().toISOString().split('T')[0];
-	}
+	const today = new Date().toISOString().split('T')[0];
+	const stampsWatchDate = update.type === 'watched' && update.value;
 
-	const [row] = existing
-		? await db
-				.update(userMovieInteractions)
-				.set(payload)
-				.where(eq(userMovieInteractions.id, existing.id))
-				.returning()
-		: await db
-				.insert(userMovieInteractions)
-				.values({ userId, movieId, ...payload })
-				.returning();
+	// One atomic statement: two first interactions racing on the same film cannot collide on the
+	// unique (user, movie) index, and the first watch date is kept once set.
+	const [row] = await db
+		.insert(userMovieInteractions)
+		.values({ userId, movieId, ...payload, ...(stampsWatchDate ? { watchDate: today } : {}) })
+		.onConflictDoUpdate({
+			target: [userMovieInteractions.userId, userMovieInteractions.movieId],
+			set: {
+				...payload,
+				...(stampsWatchDate
+					? { watchDate: sql`coalesce(${userMovieInteractions.watchDate}, ${today})` }
+					: {})
+			}
+		})
+		.returning();
 	if (!row) return null;
 
 	// Activity feed semantics unchanged from the catalogue action: only positive events are logged.
@@ -213,58 +191,34 @@ export async function toggleWatchlist(userId: string, movieId: string) {
 	const resolvedUuid = await resolveMovieUuid(movieId);
 	if (!resolvedUuid) return { watchlist: false };
 
-	const existing = await getUserInteraction(userId, resolvedUuid);
-
-	if (existing) {
-		const newWatchlistState = !existing.watchlist;
-		const [updated] = await db
-			.update(userMovieInteractions)
-			.set({ watchlist: newWatchlistState, updatedAt: new Date() })
-			.where(eq(userMovieInteractions.id, existing.id))
-			.returning();
-		if (newWatchlistState) logActivity(userId, 'watchlisted', resolvedUuid);
-		return updated;
-	} else {
-		const [created] = await db
-			.insert(userMovieInteractions)
-			.values({
-				userId,
-				movieId: resolvedUuid,
-				watchlist: true
-			})
-			.returning();
-		logActivity(userId, 'watchlisted', resolvedUuid);
-		return created;
-	}
+	// Atomic: the flip happens in the database, so a concurrent first interaction cannot collide.
+	const [row] = await db
+		.insert(userMovieInteractions)
+		.values({ userId, movieId: resolvedUuid, watchlist: true })
+		.onConflictDoUpdate({
+			target: [userMovieInteractions.userId, userMovieInteractions.movieId],
+			set: { watchlist: sql`not ${userMovieInteractions.watchlist}`, updatedAt: new Date() }
+		})
+		.returning();
+	if (row?.watchlist) logActivity(userId, 'watchlisted', resolvedUuid);
+	return row;
 }
 
 export async function toggleFavorite(userId: string, movieId: string) {
 	const resolvedUuid = await resolveMovieUuid(movieId);
 	if (!resolvedUuid) return { favorite: false };
 
-	const existing = await getUserInteraction(userId, resolvedUuid);
-
-	if (existing) {
-		const newFavState = !existing.favorite;
-		const [updated] = await db
-			.update(userMovieInteractions)
-			.set({ favorite: newFavState, updatedAt: new Date() })
-			.where(eq(userMovieInteractions.id, existing.id))
-			.returning();
-		if (newFavState) logActivity(userId, 'favorited', resolvedUuid);
-		return updated;
-	} else {
-		const [created] = await db
-			.insert(userMovieInteractions)
-			.values({
-				userId,
-				movieId: resolvedUuid,
-				favorite: true
-			})
-			.returning();
-		logActivity(userId, 'favorited', resolvedUuid);
-		return created;
-	}
+	// Atomic: the flip happens in the database, so a concurrent first interaction cannot collide.
+	const [row] = await db
+		.insert(userMovieInteractions)
+		.values({ userId, movieId: resolvedUuid, favorite: true })
+		.onConflictDoUpdate({
+			target: [userMovieInteractions.userId, userMovieInteractions.movieId],
+			set: { favorite: sql`not ${userMovieInteractions.favorite}`, updatedAt: new Date() }
+		})
+		.returning();
+	if (row?.favorite) logActivity(userId, 'favorited', resolvedUuid);
+	return row;
 }
 
 export async function setMovieWatched(

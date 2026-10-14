@@ -9,7 +9,12 @@ vi.mock('../db', async () => {
 });
 
 import * as dbModule from '../db';
-import { applyInteraction, parseInteractionUpdate } from './interaction.service';
+import {
+	applyInteraction,
+	parseInteractionUpdate,
+	toggleFavorite,
+	toggleWatchlist
+} from './interaction.service';
 
 const { pg } = (dbModule as unknown as { testContext: { pg: PGlite } }).testContext;
 let userId: string;
@@ -91,5 +96,72 @@ describe('applyInteraction', () => {
 		expect(parseInteractionUpdate('watched', 'yes').ok).toBe(false);
 		expect(parseInteractionUpdate('other', 'x').ok).toBe(false);
 		expect(parseInteractionUpdate(undefined, undefined).ok).toBe(false);
+	});
+});
+
+describe('first interactions racing each other', () => {
+	it('two simultaneous first updates both succeed and leave one row', async () => {
+		const racer = (
+			await pg.query<{ id: string }>(
+				`insert into users (email, username, password_hash) values ('r@b.test', 'racer', 'x') returning id`
+			)
+		).rows[0].id;
+		const film = (
+			await pg.query<{ id: string }>(
+				`insert into movies (tmdb_id, title) values (50, 'Race') returning id`
+			)
+		).rows[0].id;
+
+		const [a, b] = await Promise.all([
+			applyInteraction(racer, film, { ok: true, type: 'watchlist', value: true }),
+			applyInteraction(racer, film, { ok: true, type: 'favorite', value: true })
+		]);
+
+		expect(a).not.toBeNull();
+		expect(b).not.toBeNull();
+		const { rows } = await pg.query<{ n: number }>(
+			`select count(*)::int n from user_movie_interactions where user_id = $1`,
+			[racer]
+		);
+		expect(rows[0].n).toBe(1);
+	});
+
+	it('simultaneous watchlist and favorite toggles on a new film both survive', async () => {
+		const racer = (
+			await pg.query<{ id: string }>(
+				`insert into users (email, username, password_hash) values ('t@b.test', 'toggler', 'x') returning id`
+			)
+		).rows[0].id;
+		const film = (
+			await pg.query<{ id: string }>(
+				`insert into movies (tmdb_id, title) values (51, 'Toggle') returning id`
+			)
+		).rows[0].id;
+
+		await Promise.all([toggleWatchlist(racer, film), toggleFavorite(racer, film)]);
+
+		const { rows } = await pg.query<{ n: number; watchlist: boolean; favorite: boolean }>(
+			`select count(*) over ()::int n, watchlist, favorite from user_movie_interactions where user_id = $1`,
+			[racer]
+		);
+		expect(rows).toHaveLength(1);
+		expect(rows[0]).toMatchObject({ n: 1, watchlist: true, favorite: true });
+	});
+
+	it('toggling flips the stored value rather than a stale read', async () => {
+		const user = (
+			await pg.query<{ id: string }>(
+				`insert into users (email, username, password_hash) values ('f@b.test', 'flipper', 'x') returning id`
+			)
+		).rows[0].id;
+		const film = (
+			await pg.query<{ id: string }>(
+				`insert into movies (tmdb_id, title) values (52, 'Flip') returning id`
+			)
+		).rows[0].id;
+
+		expect((await toggleWatchlist(user, film)).watchlist).toBe(true);
+		expect((await toggleWatchlist(user, film)).watchlist).toBe(false);
+		expect((await toggleWatchlist(user, film)).watchlist).toBe(true);
 	});
 });
