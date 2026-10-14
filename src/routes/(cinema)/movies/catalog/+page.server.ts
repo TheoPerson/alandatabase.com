@@ -1,9 +1,6 @@
 import { db } from '$lib/server/db/index.js';
-import { movies, movieGenres } from '$lib/server/db/schema.js';
-import { desc, and, sql } from 'drizzle-orm';
 import { error } from '@sveltejs/kit';
-import { prepareStandardMovies } from '$lib/server/queries/local-movie-search';
-import { standardMovieVisibilityWhere } from '$lib/server/policies/movie-visibility';
+import { listCatalogue } from '$lib/server/services/catalogue.service';
 import { parseCatalogParameters } from '$lib/server/security/request-bounds';
 import { logServerError } from '$lib/server/security/logging';
 
@@ -37,52 +34,13 @@ export async function load({ url }) {
 
 	const { page, genreId, decade, sortBy } = parsedParameters.value;
 	const limit = 24;
-	const offset = (page - 1) * limit;
-
-	// Build the local SQL where clause
-	let whereClause = standardMovieVisibilityWhere();
-	if (genreId) {
-		whereClause = and(
-			whereClause,
-			sql`exists (select 1 from ${movieGenres} where ${movieGenres.movieId} = ${movies.id} and ${movieGenres.genreId} = ${genreId})`
-		) as any;
-	}
-
-	if (decade) {
-		const startYear = decade;
-		const endYear = decade + 9;
-		whereClause = and(
-			whereClause,
-			sql`EXTRACT(YEAR FROM ${movies.releaseDate}) >= ${startYear}`,
-			sql`EXTRACT(YEAR FROM ${movies.releaseDate}) <= ${endYear}`
-		) as any;
-	}
-
-	// Build order by
-	let orderByClause = desc(movies.popularity);
-	if (sortBy === 'rating') {
-		orderByClause = desc(movies.voteAverage);
-	} else if (sortBy === 'release') {
-		orderByClause = desc(movies.releaseDate);
-	}
 
 	// 1. Fetch from local PostgreSQL
-	let localMovies;
-	let totalCountResult;
+	let catalogue;
 	let dbGenres;
 	try {
-		[localMovies, totalCountResult, dbGenres] = await Promise.all([
-			db.query.movies.findMany({
-				where: whereClause,
-				orderBy: [orderByClause, desc(movies.id)],
-				limit,
-				offset,
-				with: { keywords: true, genres: { with: { genre: true } } }
-			}),
-			db
-				.select({ count: sql<number>`count(*)` })
-				.from(movies)
-				.where(whereClause),
+		[catalogue, dbGenres] = await Promise.all([
+			listCatalogue({ page, limit, genreId, decade, sortBy }),
 			db.query.genres.findMany().catch(() => [])
 		]);
 	} catch (err) {
@@ -90,8 +48,8 @@ export async function load({ url }) {
 		throw error(503, 'The catalogue is temporarily unavailable.');
 	}
 
-	const formattedMovies = prepareStandardMovies(localMovies);
-	const totalCount = Number(totalCountResult[0]?.count || 0);
+	const formattedMovies = catalogue.movies;
+	const totalCount = catalogue.totalCount;
 
 	const totalPages = Math.ceil(totalCount / limit);
 	const genreList = dbGenres && dbGenres.length > 0 ? dbGenres : STANDARD_GENRES;
