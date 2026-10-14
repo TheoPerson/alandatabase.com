@@ -3,9 +3,11 @@ import { db } from '$lib/server/db';
 import { userLists, userListItems } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { prepareStandardMovie } from '$lib/server/services/movie.service';
+import { isUuid } from '$lib/server/security/list-input';
 
 export async function load({ params, locals }) {
 	const listId = params.listId;
+	if (!isUuid(listId)) throw error(404, 'List not found');
 
 	const list = await db.query.userLists.findFirst({
 		where: eq(userLists.id, listId),
@@ -58,7 +60,8 @@ export const actions = {
 
 		const formData = await request.formData();
 		const movieId = formData.get('movieId')?.toString();
-		if (!movieId) return fail(400, { error: 'Missing movieId' });
+		if (!isUuid(params.listId)) return fail(404, { error: 'List not found' });
+		if (!isUuid(movieId)) return fail(400, { error: 'Movie identifier is invalid.' });
 
 		const list = await db.query.userLists.findFirst({ where: eq(userLists.id, params.listId) });
 		if (!list || list.userId !== locals.user.id) {
@@ -74,6 +77,7 @@ export const actions = {
 
 	deleteList: async ({ locals, params }) => {
 		if (!locals.user) return fail(401, { error: 'Unauthorized' });
+		if (!isUuid(params.listId)) return fail(404, { error: 'List not found' });
 
 		const list = await db.query.userLists.findFirst({ where: eq(userLists.id, params.listId) });
 		if (!list || list.userId !== locals.user.id) {

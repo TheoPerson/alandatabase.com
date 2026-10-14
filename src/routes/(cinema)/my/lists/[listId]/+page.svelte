@@ -1,8 +1,12 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/button';
+	import Dialog from '$lib/components/ui/dialog';
+	import TrashIcon from 'lucide-svelte/icons/trash-2';
 	import { enhance } from '$app/forms';
 
 	let { data } = $props();
+	let confirmDelete = $state(false);
+	let deleting = $state(false);
 	const list = $derived(data.list);
 	const isOwner = $derived(data.isOwner);
 </script>
@@ -22,12 +26,37 @@
 		</div>
 		<div class="actions">
 			{#if isOwner}
-				<form method="POST" action="?/deleteList" use:enhance>
-					<Button type="submit" variant="ghost" class="text-red-400">🗑️ Delete List</Button>
-				</form>
+				<Button variant="outline" onclick={() => (confirmDelete = true)}>
+					<TrashIcon size={18} aria-hidden="true" />
+					Delete list
+				</Button>
 			{/if}
 		</div>
 	</header>
+
+	<Dialog bind:open={confirmDelete} label="Delete this list?">
+		<p class="confirm-copy">
+			“{list.name}” and its {list.items.length} film{list.items.length === 1 ? '' : 's'} will be removed
+			from your library. The films themselves stay in the catalogue. This cannot be undone.
+		</p>
+		<form
+			method="POST"
+			action="?/deleteList"
+			class="confirm-actions"
+			use:enhance={() => {
+				deleting = true;
+				return async ({ update }) => {
+					await update();
+					deleting = false;
+				};
+			}}
+		>
+			<Button type="button" variant="outline" onclick={() => (confirmDelete = false)}
+				>Keep list</Button
+			>
+			<Button type="submit" variant="danger" loading={deleting}>Delete list</Button>
+		</form>
+	</Dialog>
 
 	<div class="items-grid">
 		{#if list.items.length === 0}
@@ -68,6 +97,18 @@
 </div>
 
 <style>
+	.confirm-copy {
+		margin-top: var(--space-3);
+		color: var(--content-secondary);
+		line-height: 1.5;
+	}
+	.confirm-actions {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: var(--space-3);
+		margin-top: var(--space-5);
+	}
 	.list-page {
 		padding-top: 3rem;
 		padding-bottom: 5rem;

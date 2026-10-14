@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { userLists } from '$lib/server/db/schema';
 import { logServerError } from '$lib/server/security/logging';
+import { parseListInput } from '$lib/server/security/list-input';
 
 export async function load({ locals }) {
 	if (!locals.user) {
@@ -17,13 +18,16 @@ export const actions = {
 		}
 
 		const formData = await request.formData();
-		const name = formData.get('name')?.toString();
-		const description = formData.get('description')?.toString();
+		const parsed = parseListInput(
+			formData.get('name')?.toString(),
+			formData.get('description')?.toString()
+		);
 		const isPublic = formData.get('isPublic') === 'on';
 
-		if (!name || name.trim() === '') {
-			return fail(400, { error: 'List name is required' });
+		if (!parsed.ok) {
+			return fail(400, { error: parsed.error });
 		}
+		const { name, description } = parsed.value;
 
 		try {
 			const [newList] = await db
