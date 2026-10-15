@@ -13,6 +13,7 @@ export interface CatalogueQuery {
 	limit: number;
 	genreId: number | null;
 	decade: number | null;
+	minRating: number | null;
 	sortBy: CatalogSort;
 }
 
@@ -23,7 +24,11 @@ function orderFor(sortBy: CatalogSort): SQL[] {
 	return [sql`${movies.popularity} desc nulls last`, desc(movies.id)];
 }
 
-function whereFor({ genreId, decade }: Pick<CatalogueQuery, 'genreId' | 'decade'>) {
+function whereFor({
+	genreId,
+	decade,
+	minRating
+}: Pick<CatalogueQuery, 'genreId' | 'decade' | 'minRating'>) {
 	const conditions: Array<SQL | undefined> = [standardMovieVisibilityWhere()];
 	if (genreId !== null) {
 		// A query-builder subquery keeps its own table names; hand-written SQL that names
@@ -43,6 +48,7 @@ function whereFor({ genreId, decade }: Pick<CatalogueQuery, 'genreId' | 'decade'
 			sql`${movies.releaseDate} < ${`${decade + 10}-01-01`}::date`
 		);
 	}
+	if (minRating !== null) conditions.push(sql`${movies.voteAverage} >= ${minRating}`);
 	return and(...conditions);
 }
 

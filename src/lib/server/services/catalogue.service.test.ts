@@ -51,7 +51,14 @@ async function tag(movieId: string, genreId: number) {
 	]);
 }
 
-const base = { page: 1, genreId: null, decade: null, sortBy: 'popularity' as const, limit: 24 };
+const base = {
+	page: 1,
+	genreId: null,
+	decade: null,
+	minRating: null,
+	sortBy: 'popularity' as const,
+	limit: 24
+};
 const titles = (rows: Array<{ title: string }>) => rows.map((row) => row.title);
 
 describe('catalogue listing', () => {
@@ -127,6 +134,19 @@ describe('catalogue listing', () => {
 		expect(titles(first.movies)).toEqual(['Paged 0', 'Paged 1']);
 		expect(titles(second.movies)).toEqual(['Paged 2', 'Paged 3']);
 		expect(first.totalCount).toBe(5);
+	});
+
+	it('keeps only films at or above the minimum rating, and drops unrated ones', async () => {
+		const high = await insertMovie(150, 'Rated 8.2', { rating: 8.2 });
+		const edge = await insertMovie(151, 'Rated exactly 7', { rating: 7 });
+		const low = await insertMovie(152, 'Rated 6.9', { rating: 6.9 });
+		const none = await insertMovie(153, 'Unrated', { rating: null });
+		for (const id of [high, edge, low, none]) await tag(id, 37);
+
+		const result = await listCatalogue({ ...base, genreId: 37, minRating: 7, sortBy: 'rating' });
+
+		expect(titles(result.movies)).toEqual(['Rated 8.2', 'Rated exactly 7']);
+		expect(result.totalCount).toBe(2);
 	});
 
 	it('refuses an unbounded page size', async () => {

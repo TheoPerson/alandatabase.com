@@ -64,6 +64,7 @@ describe('catalog request bounds', () => {
 				page: 1,
 				genreId: null,
 				decade: null,
+				minRating: null,
 				sortBy: 'popularity'
 			}
 		});
@@ -71,13 +72,16 @@ describe('catalog request bounds', () => {
 
 	it('accepts bounded catalog filters', () => {
 		expect(
-			parseCatalogParameters(url(`?page=${MAX_CATALOG_PAGE}&genre=878&decade=2020&sort=rating`))
+			parseCatalogParameters(
+				url(`?page=${MAX_CATALOG_PAGE}&genre=878&decade=2020&rating=7&sort=rating`)
+			)
 		).toEqual({
 			ok: true,
 			value: {
 				page: MAX_CATALOG_PAGE,
 				genreId: 878,
 				decade: 2020,
+				minRating: 7,
 				sortBy: 'rating'
 			}
 		});
@@ -91,7 +95,11 @@ describe('catalog request bounds', () => {
 		'?genre=-1',
 		'?decade=2025',
 		'?decade=2110',
-		'?sort=unknown'
+		'?sort=unknown',
+		'?rating=0',
+		'?rating=10',
+		'?rating=7.5',
+		'?rating=abc'
 	])('rejects unsafe catalog parameters: %s', (search) => {
 		expect(parseCatalogParameters(url(search)).ok).toBe(false);
 	});

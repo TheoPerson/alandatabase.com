@@ -24,6 +24,8 @@ export interface CatalogParameters {
 	page: number;
 	genreId: number | null;
 	decade: number | null;
+	// Lowest TMDB average (1-9) a film must have, or null for any.
+	minRating: number | null;
 	sortBy: CatalogSort;
 }
 
@@ -127,6 +129,14 @@ export function parseCatalogParameters(url: URL): ParseResult<CatalogParameters>
 		decade = parsedDecade.value;
 	}
 
+	const rawRating = url.searchParams.get('rating');
+	let minRating: number | null = null;
+	if (rawRating !== null) {
+		const parsedRating = parseWholeNumber(rawRating, 'Rating', 1, 9, 1);
+		if (!parsedRating.ok) return parsedRating;
+		minRating = parsedRating.value;
+	}
+
 	const rawSort = url.searchParams.get('sort') ?? 'popularity';
 	if (!CATALOG_SORTS.has(rawSort as CatalogSort)) {
 		return { ok: false, error: 'Catalog sort is not supported.' };
@@ -138,6 +148,7 @@ export function parseCatalogParameters(url: URL): ParseResult<CatalogParameters>
 			page: parsedPage.value,
 			genreId,
 			decade,
+			minRating,
 			sortBy: rawSort as CatalogSort
 		}
 	};

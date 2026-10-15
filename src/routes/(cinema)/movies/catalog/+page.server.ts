@@ -32,7 +32,7 @@ export async function load({ url }) {
 		throw error(400, parsedParameters.error);
 	}
 
-	const { page, genreId, decade, sortBy } = parsedParameters.value;
+	const { page, genreId, decade, minRating, sortBy } = parsedParameters.value;
 	const limit = 24;
 
 	// 1. Fetch from local PostgreSQL
@@ -40,7 +40,7 @@ export async function load({ url }) {
 	let dbGenres;
 	try {
 		[catalogue, dbGenres] = await Promise.all([
-			listCatalogue({ page, limit, genreId, decade, sortBy }),
+			listCatalogue({ page, limit, genreId, decade, minRating, sortBy }),
 			db.query.genres.findMany().catch(() => [])
 		]);
 	} catch (err) {

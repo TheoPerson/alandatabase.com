@@ -11,11 +11,11 @@ export async function GET({ url }) {
 		return json({ error: parsedParameters.error }, { status: 400 });
 	}
 
-	const { page, genreId, decade, sortBy } = parsedParameters.value;
+	const { page, genreId, decade, minRating, sortBy } = parsedParameters.value;
 
 	let catalogue;
 	try {
-		catalogue = await listCatalogue({ page, limit: PAGE_SIZE, genreId, decade, sortBy });
+		catalogue = await listCatalogue({ page, limit: PAGE_SIZE, genreId, decade, minRating, sortBy });
 	} catch (err) {
 		logServerError('Catalog API read failed', err);
 		return json({ error: 'The catalogue is temporarily unavailable.' }, { status: 503 });
