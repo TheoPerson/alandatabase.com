@@ -17,7 +17,7 @@
 	});
 </script>
 
-<div class="app-layout" data-sveltekit-preload-data="hover" data-sveltekit-preload-code="eager">
+<div class="app-layout" data-sveltekit-preload-data="hover">
 	<NavigationProgressBar />
 	<a href="#main-content" class="sr-only skip-link">Skip to main content</a>
 	<TopBar user={data.user} />

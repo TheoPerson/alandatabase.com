@@ -179,7 +179,7 @@
 		box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 	}
 
-	:global(.w-full) {
+	.auth-form :global(.w-full) {
 		width: 100%;
 		margin-top: 0.5rem;
 	}

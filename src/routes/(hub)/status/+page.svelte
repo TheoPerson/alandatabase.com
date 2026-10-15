@@ -91,7 +91,7 @@
 		</nav>
 	</header>
 
-	<main>
+	<div class="status-main">
 		<section class="hero" aria-labelledby="status-heading">
 			<div
 				class="fluid-field"
@@ -232,7 +232,7 @@
 				{/each}
 			</div>
 		</section>
-	</main>
+	</div>
 
 	<footer>
 		<span>Alan Database · V3 pre-release</span>
@@ -253,7 +253,7 @@
 	}
 
 	.site-header,
-	main,
+	.status-main,
 	footer {
 		width: min(1180px, calc(100% - 2rem));
 		margin-inline: auto;
@@ -887,7 +887,7 @@
 
 	@media (max-width: 520px) {
 		.site-header,
-		main,
+		.status-main,
 		footer {
 			width: min(100% - 1.25rem, 1180px);
 		}

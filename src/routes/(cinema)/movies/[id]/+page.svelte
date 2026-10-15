@@ -40,6 +40,7 @@
 	import Share2Icon from 'lucide-svelte/icons/share-2';
 	import ExternalLinkIcon from 'lucide-svelte/icons/external-link';
 	import LayersIcon from 'lucide-svelte/icons/layers';
+	import { jsonLdScript } from '$lib/seo/json-ld';
 
 	let { data } = $props();
 
@@ -173,7 +174,7 @@
 				ratingCount: data.voteCount
 			};
 		}
-		return JSON.stringify(value).replaceAll('<', '\\u003c');
+		return jsonLdScript(value);
 	});
 
 	function toggleLabel(type: ToggleType, on: boolean): string {
@@ -293,7 +294,9 @@
 	<meta property="og:url" content={canonicalUrl} />
 	{#if socialImage}<meta property="og:image" content={socialImage} />{/if}
 	<meta name="twitter:card" content={socialImage ? 'summary_large_image' : 'summary'} />
-	<svelte:element this={"script"} type="application/ld+json">{structuredMovieJson}</svelte:element>
+	<!-- Safe: jsonLdScript escapes < > & and line separators; see src/lib/seo/json-ld.ts -->
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+	{@html structuredMovieJson}
 </svelte:head>
 
 <article class="detail">

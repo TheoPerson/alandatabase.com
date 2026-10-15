@@ -68,7 +68,7 @@
 	/>
 </svelte:head>
 
-<main class="site">
+<div class="site">
 	<section class="hero" aria-labelledby="hero-title">
 		<div class="hero-image" aria-hidden="true"></div>
 		<div class="hero-overlay" aria-hidden="true"></div>
@@ -160,7 +160,7 @@
 			><ExternalLinkIcon size={16} /> Source on GitHub</a
 		>
 	</footer>
-</main>
+</div>
 
 <style>
 	:global(body) {

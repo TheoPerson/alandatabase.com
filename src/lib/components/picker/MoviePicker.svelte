@@ -262,7 +262,7 @@
 	/>
 
 	<!-- Main Interaction Area -->
-	<main class="picker-stage">
+	<div class="picker-stage">
 		{#if !hasStarted}
 			<!-- Initial Zero-Thinking Hero Screen -->
 			<section class="hero-start-box">
@@ -334,7 +334,7 @@
 				</div>
 			</section>
 		{/if}
-	</main>
+	</div>
 </div>
 
 <style>

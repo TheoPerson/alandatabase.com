@@ -1,6 +1,7 @@
 <script lang="ts">
 	import MovieCard from '$lib/components/movie/MovieCard.svelte';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import { jsonLdScript } from '$lib/seo/json-ld';
 
 	let { data } = $props();
 	const person = $derived(data.person);
@@ -29,9 +30,7 @@
 		birthDate: person.birthday || undefined,
 		birthPlace: person.placeOfBirth || undefined
 	});
-	const structuredPersonJson = $derived(
-		JSON.stringify(structuredPerson).replaceAll('<', '\\u003c')
-	);
+	const structuredPersonJson = $derived(jsonLdScript(structuredPerson));
 </script>
 
 <svelte:head>
@@ -44,7 +43,9 @@
 	<meta property="og:url" content={canonicalUrl} />
 	{#if profileImage}<meta property="og:image" content={profileImage} />{/if}
 	<meta name="twitter:card" content={profileImage ? 'summary_large_image' : 'summary'} />
-	<svelte:element this={"script"} type="application/ld+json">{structuredPersonJson}</svelte:element>
+	<!-- Safe: jsonLdScript escapes < > & and line separators; see src/lib/seo/json-ld.ts -->
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+	{@html structuredPersonJson}
 </svelte:head>
 
 <div class="person-page container">

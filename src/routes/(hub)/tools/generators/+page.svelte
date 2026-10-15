@@ -85,7 +85,7 @@
 	<div class="cyber-grid-overlay"></div>
 </div>
 
-<main class="tool-container">
+<div class="tool-container">
 	<div class="tool-header">
 		<a href="/" class="back-link">← Back to Hub</a>
 		<div class="title-row">
@@ -229,7 +229,7 @@
 			</div>
 		{/if}
 	</div>
-</main>
+</div>
 
 <style>
 	.tool-container {

@@ -27,7 +27,7 @@
 	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
-<main class="access-shell">
+<div class="access-shell">
 	<header class="access-header">
 		<div>
 			<a class="back-link" href="/admin">← Admin console</a>
@@ -180,7 +180,7 @@
 			</div>
 		{/if}
 	</section>
-</main>
+</div>
 
 <style>
 	.access-shell {

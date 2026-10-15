@@ -20,7 +20,8 @@
 	};
 </script>
 
-<nav class="tabs" aria-label="Primary">
+<!-- Only the main sections are preloaded eagerly; film pages (and the player) load on hover or tap. -->
+<nav class="tabs" aria-label="Primary" data-sveltekit-preload-code="eager">
 	{#each TAB_LINKS as link (link.href)}
 		{@const Icon = ICONS[link.icon]}
 		{@const active = isActivePath(page.url.pathname, link.href)}

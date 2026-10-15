@@ -11,7 +11,7 @@
 	<link rel="canonical" href="https://alandatabase.com/admin" />
 </svelte:head>
 
-<main class="admin-shell">
+<div class="admin-shell">
 	<header class="admin-header">
 		<div>
 			<a class="back-link" href="/">← Alan's Database</a>
@@ -49,7 +49,7 @@
 		<span>Alan's Database</span>
 		<span>Owner-only console · No secrets displayed</span>
 	</footer>
-</main>
+</div>
 
 <style>
 	:global(body) {

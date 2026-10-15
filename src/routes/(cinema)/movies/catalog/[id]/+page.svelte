@@ -193,7 +193,7 @@
 		</aside>
 
 		<!-- Main Movie Info -->
-		<main class="info-column">
+		<div class="info-column">
 			<!-- Header Title & Tagline -->
 			<div class="header-group">
 				<h1 class="movie-title">
@@ -274,7 +274,7 @@
 				<h2 class="section-heading">Playback</h2>
 				<StreamPlayerContainer title={movie.title} />
 			</section>
-		</main>
+		</div>
 	</div>
 </div>
 

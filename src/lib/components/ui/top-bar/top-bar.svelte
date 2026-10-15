@@ -39,7 +39,7 @@
 			<span class="sr-only">home</span>
 		</a>
 
-		<nav class="primary" aria-label="Primary">
+		<nav class="primary" aria-label="Primary" data-sveltekit-preload-code="eager">
 			{#each PRIMARY_LINKS as link (link.href)}
 				<a
 					href={link.href}
