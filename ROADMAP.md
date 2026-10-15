@@ -206,11 +206,39 @@ merged, not deployed:
   sibling test, unused `.reviews + .muted` selector, loader re-run per toggle,
   history Forward not reopening the player.
 
-## `in_progress` — premium experience, slices 5–8
+## `verified` — premium experience, slice 5 (Browse and search)
 
-Browse at `/movies` with filters, search palette, TV/Discover/Picker/Library
-and auth restyles, then the performance/accessibility/visual pass. Each slice
-gets its own plan under `docs/superpowers/plans/`.
+Verified in this worktree on 2026-10-15, not merged, not deployed:
+
+- `/movies` is Browse (genre, decade, minimum rating and sort as link chips,
+  Load more with `?page=`, skeleton, empty and unavailable states);
+  `/movies/catalog` redirects (308) to it. The search palette (Ctrl+K, Cmd+K,
+  "/") replaces the legacy command palette; `/search` is rebuilt on the kit.
+- Also in this pass: the TV series page on the film-page layout, the TV
+  snapshot's ids and artwork corrected against TMDB, the catalogue genre 503,
+  atomic interaction writes, list validation, JSON-LD, error pages, sitemap,
+  dependency advisories (`pnpm audit` clean) and a lighter first load.
+- Evidence: `pnpm check` 0 errors; ESLint 0 errors; vitest 541/541 in 76
+  files; `pnpm build` passes; Playwright 109 passed, 2 skipped with two
+  workers on the production preview. With five workers, two navigation tests
+  timed out because the local demo database accepts one connection; both pass
+  6/6 alone. Checked in Chromium only; Safari/iOS not tested.
+- Private live preview: Tailscale Serve exposes the local production preview at
+  the owner's tailnet address (tailnet only, not public; up only while the PC
+  runs). Not a deployment.
+
+## `in_progress` — premium experience, slices 6–8
+
+TV landing, Discover, Picker, Library and auth restyles, then the
+performance/accessibility/visual pass. Audit dimensions still to run:
+accessibility, real-browser sweep and product journeys.
+
+## `proposed` — owner media streaming
+
+The Product Lead's own films streamed through the slice 4 player (a new source
+adapter next to YouTube): progress, resume and subtitles. Needs the storage
+location of the films (folder, NAS, or a Jellyfin/Plex server) and approval.
+Third-party streaming mirrors stay out of scope.
 
 ## `proposed` — picker follow-ups
 

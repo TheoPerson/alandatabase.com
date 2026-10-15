@@ -11,6 +11,8 @@ its launch gates are explicitly verified.
 
 ### Major Updates
 
+- Browse: /movies is now a filterable catalogue (genre, decade, minimum rating, sort) with a sticky bar of link chips, a live result count, a poster grid with Load more that keeps ?page= in the address, skeletons, and honest empty and unavailable states. /movies/catalog redirects permanently (308) to it with the same filters.
+- Search palette: Ctrl+K, Cmd+K or "/" opens instant film results from the local catalogue with keyboard navigation and recent searches; it replaces the legacy command palette.
 - Movie detail page rebuilt on the kit: cinematic header (backdrop, poster, TMDB title logo, tagline, meta, genre chips), Play trailer / Watchlist / Favourite / Watched / Rate / Share with the real saved state and toasts worded from the server result, five tabs (Overview with key crew and Where to watch FR/US from JustWatch data, Cast & crew, Videos, Details with keyword chips, Saga & similar), a reviews list, and shareable `#tab` links.
 - Trailer player: a full-screen dialog playing official YouTube trailers through the IFrame API on `youtube-nocookie.com` (the stage is created by the API, never by a hand-written iframe). Controls sit in an apron below the stage: play, ±10 s, seek with the buffered range, volume, captions, speed, fullscreen, keyboard shortcuts (`?` lists them), resume on this device for 90 days, Back and Escape close it, focus returns to the Play button; a settings sheet (Video, Audio, Subtitles, Playback) says why a row is unavailable for YouTube.
 - New cinema home at `/`: full-bleed featured carousel (backdrop, TMDB title logo, meta, actions, auto-advance with pause and swipe), numbered Top 10, Trending, Top-rated, genre chips, TV and watchlist rails. The former landing page moved to `/about`.
@@ -27,6 +29,11 @@ its launch gates are explicitly verified.
 
 ### Minor Updates
 
+- /search rebuilt on the kit: a form that works without JavaScript, a clearable search field, stable sorting (unrated and undated films last), a popular-now section and genre shortcuts when empty, skeleton and error states.
+- TV series pages rebuilt on the film-page layout: full backdrop, poster, IMDb rating and chart rank, seasons, genres, story, facts and a "More like this" rail. The non-functional season and episode pickers and the "playback unavailable" panel are gone.
+- Film pages show the original language as a name with its flag (for example English with the British flag); a small bundled flag font makes flags render on Windows.
+- Kit error pages for every route, toasts placed above the phone tab bar, list deletion now asks for confirmation.
+- Home, film and Discover links open Browse with the right filters; the header search landmark is named "Site search".
 - UI kit additions: Tabs, Dialog, Sheet, Slider, Tooltip, PersonCard, TrailerFacade, ProviderLogo, StarRating (bits-ui RatingGroup, half stars), ResumeBar, PlayerShell / PlayerSettings / ShortcutHelp; BackdropImage gains `animate` and `priority`, PosterCard can render a link-less frame; all shown on `/kit`.
 - Detail reads: `getMovieById` loads watch providers, up to 30 crew rows and keyword names; new bounded `similarMovies` and `collectionMovies` reads under the standard-content predicate.
 - One server helper (`applyInteraction`) backs the `logInteraction` action on both `/movies/catalog/[id]` and `/movies/[id]` and returns the saved state.
@@ -47,6 +54,10 @@ its launch gates are explicitly verified.
 
 ### Fixed
 
+- The genre filter of the catalogue returned HTTP 503 (a raw subquery was re-aliased by the relational query builder). Home genre chips work again.
+- The TV snapshot used invented artwork paths: 43 of 50 posters and 44 of 50 backdrops were broken, and 13 entries pointed at the wrong TMDB series. Every id now matches its title and first-air year and all 100 images load.
+- Two simultaneous first interactions on the same film (watchlist, favourite, rating) could fail with a duplicate-key error; writes are now atomic upserts.
+- Structured data (JSON-LD) was invalid for titles containing "&"; nested <main> landmarks on 13 pages; a login-page CSS rule leaked into every page; the sitemap listed a disallowed URL and another host.
 - Removed the `PlayerSheet` placeholder and the Browse hero "Playback status" button; the detail page no longer reads raw TMDB field names.
 - Independent review of slice 4 (0 critical, 7 important, all fixed test-first): the seek thumb no longer fights the position poll while dragging or stepping; Space, Enter and arrow keys on a focused player control activate that control instead of firing a shortcut; the caption-size setting now reaches YouTube; the settings sheet keeps Tab focus inside the player; an embed that never becomes ready shows the "Watch on YouTube" fallback after 15 s instead of spinning; review dates render.
 - Kit Tabs scroll only their own list on selection; `scrollIntoView` had also moved the page to the tab list on load.
@@ -117,6 +128,8 @@ its launch gates are explicitly verified.
 
 ### Security
 
+- pnpm audit reports no known vulnerabilities after pinning patched transitive versions (devalue, cookie, source-map-js, brace-expansion, postcss-selector-parser, esbuild).
+- Personal list input is bounded and validated on the server; malformed list and film identifiers are rejected before any database read.
 - The cinema CSP `frame-src` now allows exactly `https://www.youtube-nocookie.com` (previously `'none'`); any incoming `frame-src` is replaced, never merged. `player-safety.test.ts` still scans every source file for iframes and mirrors, allows the embed host string only in the IFrame API adapter and the CSP module, and requires the adapter to build the player through `new YT.Player`.
 - Removed the hard-coded Telegram bot token and chat-ID fallback that `main` still
   shipped in `telegram.service.ts`. The token remains in public Git history and must
@@ -143,6 +156,10 @@ its launch gates are explicitly verified.
 
 ### Technical Improvements
 
+- One tested catalogue service feeds the Browse page and /api/movies/catalog; the decade filter is a sargable date range.
+- Eager code preloading is limited to the primary navigation: first-load JavaScript on Home fell from 665 KB to 374 KB (lab, local preview).
+- Dev and preview servers accept extra hostnames from PREVIEW_ALLOWED_HOSTS, used for a private Tailscale Serve preview.
+- New tested modules: src/lib/catalogue/browse.ts, src/lib/components/browse/_, src/lib/search/_, src/lib/seo/json-ld.ts, src/lib/errors/copy.ts; /tvshow and /tvshows redirect permanently to /tv.
 - Pure, unit-tested player logic under `src/lib/player`: the `PlayerSource` contract, versioned preferences with default-merging, a resume store (90-day expiry, 50 entries), time formatting, the auto-hide reducer, the shortcut table and a controller exercised with a fake source; detail helpers (`pickTrailers`, `keyCrew`, `groupProviders`), PGlite tests for the new reads and a mocked loader test.
 - E2E: `tests/detail.e2e.ts` (single heading, tabs by keyboard and hash, Where to watch, player open/close with at most one `youtube-nocookie` frame, 320 px, signed-out login links) plus detail-page cases in the responsive and axe suites; `tests/helpers.ts` finds a real film from Home.
 - Migration `0005_movie_watch_providers` (additive, `IF NOT EXISTS`, covered by the PGlite migration test).

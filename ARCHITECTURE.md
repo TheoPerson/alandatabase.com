@@ -133,10 +133,10 @@ rollout remain incomplete.
 ## Application surfaces
 
 - `/` is the cinema home: a featured carousel (standard titles with a backdrop and at least 1000 votes, best rated first) and independent rails; one failing rail never blanks the page. `/about` is the former project landing page. `/kit` is the public, `noindex` UI kit showcase.
-- `/movies`, `/movies/catalog`, `/search`, and `/discover` read the approved local movie catalog.
+- `/movies` (Browse: genre, decade, minimum rating and sort filters through `catalogue.service.ts`), `/search`, the search palette (`/api/search`) and `/discover` read the approved local movie catalog. `/movies/catalog` is a permanent redirect to `/movies` with the same filters.
 - `/movies/[id]` renders local metadata as a cinematic header, personal actions (watchlist, favourite, watched, rating through the shared `logInteraction` action), five tabs (overview with key crew and where to watch, cast & crew, videos, details, saga & similar, all bounded local reads under the standard-content predicate), reviews, and the full-screen trailer player.
 - `/my/films`, `/my/lists`, and `/my/settings` manage user-owned interactions, lists, statistics, and settings.
-- `/tv`, `/tvshow`, and `/tvshows` share a committed in-code TV snapshot; TV has no database persistence or real episode catalog.
+- `/tv` and `/tv/[id]` read a committed in-code TV snapshot (ids, titles and artwork verified against TMDB on 2026-10-15); `/tvshow` and `/tvshows` redirect permanently to `/tv`. TV has no database persistence or real episode catalog.
 - `/live` is a protected compatibility surface that accepts no URL and embeds nothing.
 - `/api/search` and `/api/movies/catalog` are bounded local reads.
 - `/cinema/picker` and `/api/picker/*` require a signed-in account. A recommendation reads only stored data (standard-content policy, stored `imdb_*` columns) and writes nothing; `/api/picker/events` records explicit user actions. Request bodies are validated in `src/lib/server/picker/request.ts`.
