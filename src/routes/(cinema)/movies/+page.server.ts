@@ -1,63 +1,47 @@
-import { getTrendingMovies, getTopRatedMovies } from '$lib/server/services/movie.service';
-import { toggleWatchlist } from '$lib/server/services/interaction.service';
+import { error, redirect } from '@sveltejs/kit';
+import { browseHref } from '$lib/catalogue/browse';
+import type { PosterItem } from '$lib/catalogue/items';
 import { logServerError } from '$lib/server/security/logging';
-import { hasPermission } from '$lib/server/auth/permissions';
-import { fail } from '@sveltejs/kit';
+import { parseCatalogParameters } from '$lib/server/security/request-bounds';
+import { listCatalogue } from '$lib/server/services/catalogue.service';
+import { getGenres, toPosterItem } from '$lib/server/services/movie.service';
 
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
+const PAGE_SIZE = 24;
 
-export async function load({ locals }) {
-	const user = hasPermission(locals.user, 'account:access') ? locals.user : null;
+// Browse is public and personal-state free: no session, no writes, only bounded local reads.
+export async function load({ url }) {
+	const parsed = parseCatalogParameters(url);
+	if (!parsed.ok) error(400, parsed.error);
 
-	try {
-		// Zero duplicate guarantee:
-		// top10 = #1 to #10
-		// trending = #11 to #22
-		// topRated = top 12 by vote average
-		const [top10, trending, topRated] = await Promise.all([
-			getTrendingMovies(10, 0),
-			getTrendingMovies(12, 10),
-			getTopRatedMovies(12, 0)
-		]);
+	const { page, ...filters } = parsed.value;
 
-		return {
-			top10,
-			trending,
-			topRated,
-			user
-		};
-	} catch (err: unknown) {
-		logServerError('Movie catalogue load failed', err);
-		return {
-			top10: [],
-			trending: [],
-			topRated: [],
-			user,
-			error: 'The catalogue is temporarily unavailable.'
-		};
+	const [catalogue, genres] = await Promise.allSettled([
+		listCatalogue({ page, limit: PAGE_SIZE, ...filters }),
+		getGenres()
+	]);
+
+	let items: PosterItem[] = [];
+	let totalCount = 0;
+	let unavailable = false;
+	if (catalogue.status === 'fulfilled') {
+		items = catalogue.value.movies.map(toPosterItem);
+		totalCount = catalogue.value.totalCount;
+	} else {
+		logServerError('Browse catalogue read failed', catalogue.reason);
+		unavailable = true;
 	}
+
+	if (genres.status === 'rejected') logServerError('Browse genre list failed', genres.reason);
+
+	const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+	// A stale link past the end lands on the last page instead of an empty grid.
+	if (totalPages > 0 && page > totalPages) redirect(307, browseHref(filters, totalPages));
+
+	return {
+		items,
+		genres: genres.status === 'fulfilled' ? genres.value : [],
+		filters,
+		pagination: { page, pageSize: PAGE_SIZE, totalCount, totalPages },
+		unavailable
+	};
 }
-
-export const actions = {
-	toggleWatchlist: async ({ request, locals }) => {
-		if (!locals.user) {
-			return fail(401, { error: 'Sign in to update your watchlist.' });
-		}
-		if (!hasPermission(locals.user, 'account:access')) {
-			return fail(403, { error: 'Personal watchlists need a signed-in account.' });
-		}
-		const data = await request.formData();
-		const movieId = data.get('movieId')?.toString();
-		if (!movieId || !UUID_PATTERN.test(movieId)) {
-			return fail(400, { error: 'Movie identifier is invalid.' });
-		}
-
-		try {
-			const interaction = await toggleWatchlist(locals.user.id, movieId);
-			return { success: true, watchlist: interaction.watchlist };
-		} catch (err) {
-			logServerError('Watchlist update failed', err);
-			return fail(500, { error: 'Watchlist could not be updated.' });
-		}
-	}
-};

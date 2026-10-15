@@ -5,12 +5,14 @@
 	import { addToast } from '$lib/stores/toast';
 	import {
 		formatDate,
+		formatLanguage,
 		formatMoney,
 		formatRating,
 		formatRuntime,
 		formatVotes,
 		formatYear
 	} from '$lib/format';
+	import { DEFAULT_SORT, browseHref } from '$lib/catalogue/browse';
 	import { logoSrcSet, tmdbImageUrl } from '$lib/tmdb/images';
 	import { formatTime } from '$lib/player/format-time';
 	import { readResume, type ResumePoint } from '$lib/player/resume';
@@ -43,6 +45,7 @@
 	import { jsonLdScript } from '$lib/seo/json-ld';
 
 	let { data } = $props();
+	const language = $derived(formatLanguage(data.details.originalLanguage));
 
 	type ToggleType = 'watchlist' | 'favorite' | 'watched';
 	type Interaction = NonNullable<typeof data.interaction>;
@@ -343,7 +346,14 @@
 				{#if data.genres.length}
 					<div class="genres">
 						{#each data.genres as genre (genre.id)}
-							<Chip href={`/movies/catalog?genre=${genre.id}`}>{genre.name}</Chip>
+							<Chip
+								href={browseHref({
+									genreId: genre.id,
+									decade: null,
+									minRating: null,
+									sortBy: DEFAULT_SORT
+								})}>{genre.name}</Chip
+							>
 						{/each}
 					</div>
 				{/if}
@@ -563,9 +573,12 @@
 							<dt>Original title</dt>
 							<dd>{data.details.originalTitle}</dd>
 						{/if}
-						{#if data.details.originalLanguage}
+						{#if language}
 							<dt>Language</dt>
-							<dd class="upper">{data.details.originalLanguage}</dd>
+							<dd class="language">
+								{#if language.flag}<span class="flag" aria-hidden="true">{language.flag}</span>{/if}
+								{language.name}
+							</dd>
 						{/if}
 						{#if data.details.status}
 							<dt>Status</dt>
@@ -845,8 +858,14 @@
 	.muted {
 		color: var(--content-tertiary);
 	}
-	.upper {
-		text-transform: uppercase;
+	.language {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+	}
+	.flag {
+		font-size: 1.15em;
+		line-height: 1;
 	}
 	.bleed {
 		margin-inline: calc(-1 * var(--page-gutter));

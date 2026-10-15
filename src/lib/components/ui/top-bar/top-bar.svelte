@@ -5,6 +5,9 @@
 	import CompassIcon from 'lucide-svelte/icons/compass';
 	import SparklesIcon from 'lucide-svelte/icons/sparkles';
 	import { isActivePath, PRIMARY_LINKS } from '$lib/navigation/links';
+	import { palette } from '$lib/search/palette-state.svelte';
+	import { normalizeQuery, searchHref } from '$lib/search/query';
+	import { saveRecentSearch } from '$lib/search/recent-searches';
 	import Button from '../button/button.svelte';
 	import Logo from '../logo/logo.svelte';
 
@@ -24,10 +27,22 @@
 		return () => window.removeEventListener('scroll', update);
 	});
 
+	// Without JavaScript the form still submits to /search; with it, navigate in place.
 	function submit(event: SubmitEvent) {
 		event.preventDefault();
-		const trimmed = query.trim();
-		if (trimmed) goto(`/search?q=${encodeURIComponent(trimmed)}`);
+		const normalized = normalizeQuery(query);
+		if (!normalized) return;
+		saveRecentSearch(normalized);
+		goto(searchHref(normalized));
+	}
+
+	// A plain tap opens the palette; modified clicks keep the link's own behaviour.
+	function openPalette(event: MouseEvent) {
+		if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+			return;
+		}
+		event.preventDefault();
+		palette.open();
 	}
 </script>
 
@@ -51,7 +66,14 @@
 		</nav>
 
 		<div class="right">
-			<form class="search" role="search" onsubmit={submit}>
+			<form
+				class="search"
+				role="search"
+				aria-label="Site search"
+				action="/search"
+				method="get"
+				onsubmit={submit}
+			>
 				<SearchIcon size={18} aria-hidden="true" />
 				<input
 					type="search"
@@ -59,9 +81,20 @@
 					placeholder="Search titles"
 					aria-label="Search the catalogue"
 					autocomplete="off"
+					maxlength="120"
 					bind:value={query}
 				/>
-				<kbd aria-hidden="true">⌘K</kbd>
+				<!-- Opens the palette. The visible text is the shortcut, so the name repeats it. -->
+				<button
+					type="button"
+					class="shortcut"
+					aria-haspopup="dialog"
+					aria-keyshortcuts="Control+K Meta+K"
+					aria-label="Quick search, {palette.shortcut}"
+					onclick={() => palette.open()}
+				>
+					{palette.shortcut}
+				</button>
 			</form>
 			<!-- Phones have no primary nav: Discover and Picker stay one tap away here. -->
 			<a href="/discover" class="icon-link" aria-label="Discover">
@@ -70,7 +103,13 @@
 			<a href="/cinema/picker" class="icon-link" aria-label="Picker">
 				<SparklesIcon size={22} aria-hidden="true" />
 			</a>
-			<a href="/search" class="icon-link" aria-label="Search">
+			<a
+				href="/search"
+				class="icon-link"
+				aria-label="Search"
+				aria-haspopup="dialog"
+				onclick={openPalette}
+			>
 				<SearchIcon size={22} aria-hidden="true" />
 			</a>
 			{#if user}
@@ -155,11 +194,12 @@
 		gap: 0.5rem;
 		min-height: var(--touch-target);
 		margin-right: var(--space-2);
-		padding-inline: 0.9rem;
+		padding-inline: 0.9rem 0.6rem;
 		border-radius: var(--radius-full);
-		border: 1px solid var(--border-subtle);
-		background: rgba(255, 255, 255, 0.06);
-		color: var(--content-tertiary);
+		border: 1px solid var(--border-strong);
+		/* Opaque on purpose: text contrast must not depend on the hero behind a transparent bar. */
+		background: var(--surface-raised);
+		color: var(--content-secondary);
 		transition: border-color var(--duration-base) var(--ease-out);
 	}
 	.search:focus-within {
@@ -174,14 +214,30 @@
 		outline: none;
 	}
 	.search input::placeholder {
-		color: var(--content-tertiary);
+		color: var(--content-secondary);
 	}
-	.search kbd {
-		padding: 0.1rem 0.4rem;
+	/* AA on both bar states: secondary text on a solid raised key cap (about 8:1). */
+	.shortcut {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.75rem;
+		min-height: 1.75rem;
+		padding: 0 0.5rem;
+		border: 1px solid var(--border-strong);
 		border-radius: var(--radius-xs);
-		border: 1px solid var(--border-subtle);
+		background: var(--surface-interactive);
+		color: var(--content-secondary);
 		font-family: var(--font-mono);
-		font-size: 0.65rem;
+		font-size: 0.7rem;
+		white-space: nowrap;
+		transition:
+			color var(--duration-fast) var(--ease-out),
+			border-color var(--duration-fast) var(--ease-out);
+	}
+	.shortcut:hover {
+		color: var(--content-primary);
+		border-color: var(--brand-border);
 	}
 	.icon-link {
 		display: inline-flex;

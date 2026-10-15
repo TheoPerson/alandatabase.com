@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { addToast } from '$lib/stores/toast';
 	import { watchlistLabel, watchlistToast } from '$lib/catalogue/watchlist-copy';
+	import { DEFAULT_SORT, browseHref, type BrowseFilters } from '$lib/catalogue/browse';
 	import Button from '$lib/components/ui/button';
 	import Chip from '$lib/components/ui/chip';
 	import Section from '$lib/components/ui/section';
@@ -19,6 +20,14 @@
 
 	const savedIds = $derived(new Set<string>(data.watchlistIds));
 	let pending = $state<string | null>(null);
+
+	// Every "see all" and genre chip lands on Browse with the filters it names.
+	const everyFilm: BrowseFilters = {
+		genreId: null,
+		decade: null,
+		minRating: null,
+		sortBy: DEFAULT_SORT
+	};
 </script>
 
 <svelte:head>
@@ -123,14 +132,14 @@
 	<Section title="Browse by genre" eyebrow="Discover">
 		<div class="genres">
 			{#each data.genres as genre (genre.id)}
-				<Chip href={`/movies/catalog?genre=${genre.id}`}>{genre.name}</Chip>
+				<Chip href={browseHref({ ...everyFilm, genreId: genre.id })}>{genre.name}</Chip>
 			{/each}
 		</div>
 	</Section>
 {/if}
 
 {#if data.trending.length > 0}
-	<Section title="Trending movies" seeAllHref="/movies/catalog">
+	<Section title="Trending movies" seeAllHref={browseHref(everyFilm)}>
 		<Rail label="Trending movies">
 			{#each data.trending as item (item.id)}
 				<PosterCard {...item} />
@@ -140,7 +149,7 @@
 {/if}
 
 {#if data.topRated.length > 0}
-	<Section title="Top-rated cinema" seeAllHref="/movies/catalog?sort=rating">
+	<Section title="Top-rated cinema" seeAllHref={browseHref({ ...everyFilm, sortBy: 'rating' })}>
 		<Rail label="Top-rated cinema">
 			{#each data.topRated as item (item.id)}
 				<PosterCard {...item} />

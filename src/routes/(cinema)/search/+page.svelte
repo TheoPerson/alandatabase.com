@@ -1,339 +1,226 @@
 <script lang="ts">
-	import MovieCard from '$lib/components/movie/MovieCard.svelte';
+	import { invalidateAll } from '$app/navigation';
+	import { navigating, page } from '$app/state';
+	import { browseHref, DEFAULT_SORT } from '$lib/catalogue/browse';
 	import Button from '$lib/components/ui/button';
+	import Chip from '$lib/components/ui/chip';
+	import Section from '$lib/components/ui/section';
+	import PosterCard from '$lib/components/ui/poster-card';
+	import SearchInput from '$lib/components/ui/search-input';
+	import { ResultsGrid, ResultsSkeleton, SearchResults } from '$lib/components/ui/search-results';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
-	import { goto } from '$app/navigation';
 
 	let { data } = $props();
-	let searchInput = $derived(data.query || '');
-	let sortBy = $state<'relevance' | 'rating' | 'recent'>('relevance');
 
-	const sortedResults = $derived.by(() => {
-		const list = [...(data.results || [])];
-		if (sortBy === 'rating') {
-			return list.sort((a, b) => Number(b.voteAverage || 0) - Number(a.voteAverage || 0));
+	// Follows the loaded query (the header search and the palette navigate here too), and
+	// lets the visitor type freely in between.
+	let value = $derived(data.query);
+
+	const searching = $derived(navigating.to?.url.pathname === '/search');
+	// A search that answers within a blink should not flash a skeleton.
+	let showPending = $state(false);
+	$effect(() => {
+		if (!searching) {
+			showPending = false;
+			return;
 		}
-		if (sortBy === 'recent') {
-			return list.sort((a, b) => {
-				const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
-				const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
-				return dateB - dateA;
-			});
-		}
-		return list;
+		const timer = setTimeout(() => (showPending = true), 150);
+		return () => clearTimeout(timer);
 	});
 
-	function handleSubmit(e: SubmitEvent) {
-		e.preventDefault();
-		if (searchInput.trim()) {
-			goto(`/search?q=${encodeURIComponent(searchInput.trim())}`);
+	const resultCount = $derived(data.results.length);
+	const status = $derived.by(() => {
+		if (searching) return 'Searching…';
+		if (!data.query) return 'Find any film in the catalogue by its title.';
+		if (data.searchError) return '';
+		return `${resultCount} ${resultCount === 1 ? 'film' : 'films'}`;
+	});
+	const heading = $derived(data.query ? `Results for “${data.query}”` : 'Search');
+	const pageTitle = $derived(
+		data.query ? `Results for ${data.query} | Alan's Database` : "Search | Alan's Database"
+	);
+
+	function genreHref(genreId: number): string {
+		return browseHref({ genreId, decade: null, minRating: null, sortBy: DEFAULT_SORT });
+	}
+
+	let retrying = $state(false);
+	async function retry(event: MouseEvent) {
+		// Re-runs the loader in place; the plain link (same address) covers a missing script.
+		event.preventDefault();
+		retrying = true;
+		try {
+			await invalidateAll();
+		} finally {
+			retrying = false;
 		}
 	}
 </script>
 
 <svelte:head>
-	<title>{data.query ? `Search: ${data.query} | Alan Database` : 'Search | Alan Database'}</title>
-	<meta name="description" content="Search the Alan Database local movie catalogue by title." />
+	<title>{pageTitle}</title>
+	<meta name="description" content="Search the Alan's Database catalogue by film title." />
 	<meta name="robots" content="noindex,follow" />
 	<link rel="canonical" href="https://alandatabase.com/search" />
-	<meta
-		property="og:title"
-		content={data.query ? `Search: ${data.query} | Alan Database` : 'Search | Alan Database'}
-	/>
-	<meta property="og:description" content="Search by title, director, actor, or genre keywords" />
+	<meta property="og:title" content={pageTitle} />
 	<meta property="og:type" content="website" />
 </svelte:head>
 
-<div class="container search-page">
-	<div class="search-hero">
-		<h1 class="page-title">Discover Cinema</h1>
-		<p class="subtitle">Search the reviewed local catalogue by movie title.</p>
+<div class="page">
+	<header class="head">
+		<h1 class="title">{heading}</h1>
+		<p class="status" aria-live="polite" aria-atomic="true">{status}</p>
 
-		<form onsubmit={handleSubmit} class="main-search-form">
-			<label class="sr-only" for="catalog-search">Movie title</label>
-			<input
-				id="catalog-search"
-				name="q"
-				type="search"
-				placeholder="Search by movie title"
-				bind:value={searchInput}
-				class="hero-search-input"
-				autocomplete="off"
-			/>
-			<Button type="submit" variant="primary" size="lg">Search</Button>
+		<form
+			class="main-search-form"
+			action="/search"
+			method="get"
+			role="search"
+			aria-label="Search films"
+			data-sveltekit-keepfocus
+		>
+			<div class="field">
+				<SearchInput
+					name="q"
+					label="Movie title"
+					placeholder="Search films"
+					maxlength={120}
+					autofocus={!data.query}
+					bind:value
+				/>
+			</div>
+			<Button type="submit" size="lg">Search</Button>
 		</form>
-	</div>
+	</header>
 
-	{#if data.query}
-		<div class="results-header">
-			<div class="results-title-group">
-				<h2>Results for <span class="query-text">"{data.query}"</span></h2>
-				<span class="count"
-					>{data.results.length} movie{data.results.length === 1 ? '' : 's'} found</span
+	{#if data.query || showPending}
+		<section class="results" aria-labelledby="results-heading" aria-busy={searching}>
+			<h2 id="results-heading" class="sr-only">Search results</h2>
+			{#if showPending}
+				<ResultsSkeleton />
+			{:else if data.searchError}
+				<ErrorState
+					title="Search is temporarily unavailable"
+					description="The catalogue could not be searched just now. Nothing was changed, so you can safely try again."
 				>
-			</div>
-
-			{#if data.results.length > 0}
-				<div class="sort-controls">
-					<span class="sort-label">Sort:</span>
-					<div class="sort-pills">
-						<button
-							type="button"
-							class="sort-pill"
-							class:active={sortBy === 'relevance'}
-							onclick={() => (sortBy = 'relevance')}
-							aria-pressed={sortBy === 'relevance'}
+					{#snippet action()}
+						<Button
+							href={`${page.url.pathname}${page.url.search}`}
+							variant="outline"
+							loading={retrying}
+							onclick={retry}>Try again</Button
 						>
-							Best match
-						</button>
-						<button
-							type="button"
-							class="sort-pill"
-							class:active={sortBy === 'rating'}
-							onclick={() => (sortBy = 'rating')}
-							aria-pressed={sortBy === 'rating'}
-						>
-							Rating
-						</button>
-						<button
-							type="button"
-							class="sort-pill"
-							class:active={sortBy === 'recent'}
-							onclick={() => (sortBy = 'recent')}
-							aria-pressed={sortBy === 'recent'}
-						>
-							Newest
-						</button>
-					</div>
-				</div>
+					{/snippet}
+				</ErrorState>
+			{:else if data.results.length === 0}
+				<EmptyState
+					title={`No films match “${data.query}”`}
+					description="Check the spelling, or try a shorter or more general title. You can also browse the whole catalogue."
+				>
+					{#snippet action()}
+						<Button href="/movies" variant="outline">Browse movies</Button>
+					{/snippet}
+				</EmptyState>
+			{:else}
+				{#key data.query}
+					<SearchResults items={data.results} limit={data.limit} />
+				{/key}
 			{/if}
-		</div>
+		</section>
+	{:else}
+		{#if data.trending.length > 0}
+			<Section title="Popular right now" eyebrow="Trending" seeAllHref="/movies">
+				<div class="grid-pad">
+					<ResultsGrid>
+						{#each data.trending as item, index (item.id)}
+							<div class="cell">
+								<PosterCard
+									{...item}
+									eager={index < 6}
+									sizes="(min-width: 1024px) 200px, (min-width: 640px) 22vw, 46vw"
+								/>
+							</div>
+						{/each}
+					</ResultsGrid>
+				</div>
+			</Section>
+		{/if}
 
-		{#if data.searchError}
-			<ErrorState
-				title="Search is temporarily unavailable"
-				description="The local catalogue could not be queried. Nothing was changed; try the request again."
-			>
-				{#snippet action()}
-					<Button href={`/search?q=${encodeURIComponent(data.query)}`} variant="outline"
-						>Try again</Button
-					>
-				{/snippet}
-			</ErrorState>
-		{:else if sortedResults.length > 0}
-			<div class="grid-movies">
-				{#each sortedResults as movie (movie.id || movie.tmdbId)}
-					<MovieCard
-						id={movie.id || movie.tmdbId}
-						title={movie.title}
-						posterPath={movie.posterPath}
-						releaseDate={movie.releaseDate}
-						voteAverage={movie.voteAverage}
-						genres={movie.genres?.map(
-							(g: any) => g?.genre?.name || g?.name || (typeof g === 'string' ? g : '')
-						)}
-					/>
-				{/each}
-			</div>
-		{:else}
-			<EmptyState
-				title={`No movies found for "${data.query}"`}
-				description="Try another title or browse the complete reviewed catalogue."
-			>
-				{#snippet action()}
-					<Button href="/movies/catalog" variant="outline">Browse catalogue</Button>
-				{/snippet}
-			</EmptyState>
+		{#if data.genres.length > 0}
+			<Section title="Browse by genre" eyebrow="Discover">
+				<div class="genres">
+					{#each data.genres as genre (genre.id)}
+						<Chip href={genreHref(genre.id)}>{genre.name}</Chip>
+					{/each}
+				</div>
+			</Section>
 		{/if}
 	{/if}
 </div>
 
 <style>
-	.search-page {
-		padding-top: 3rem;
-		padding-bottom: 5rem;
-		min-height: 70dvh;
+	.page {
+		max-width: var(--container-wide);
+		margin-inline: auto;
+		padding-bottom: var(--space-8);
 	}
-
-	.search-hero {
-		text-align: center;
-		max-width: 700px;
-		margin: 0 auto 4rem auto;
+	.head {
+		display: grid;
+		/* A bare column would grow to the form's intrinsic width and push the page sideways. */
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-2);
+		padding: var(--space-6) var(--page-gutter) var(--space-2);
 	}
-
-	.page-title {
-		font-size: 2.75rem;
+	.title {
+		font-size: var(--type-headline);
 		font-weight: 800;
-		color: #ffffff;
-		letter-spacing: -0.02em;
+		letter-spacing: var(--tracking-tight);
+		line-height: 1.15;
+		overflow-wrap: anywhere;
 	}
-
-	.subtitle {
-		font-size: 1.05rem;
-		color: var(--text-secondary);
-		margin-top: 0.5rem;
-		margin-bottom: 2rem;
+	.status {
+		min-height: 1.5em;
+		color: var(--content-secondary);
+		font-size: var(--text-md);
 	}
-
 	.main-search-form {
 		display: flex;
-		gap: 0.75rem;
+		align-items: stretch;
+		gap: var(--space-2);
+		max-width: 44rem;
+		margin-top: var(--space-3);
 	}
-
-	.hero-search-input {
+	.field {
 		flex: 1;
-		padding: 0.85rem 1.25rem;
-		background: var(--bg-surface-1);
-		border: 1px solid var(--border-subtle);
-		border-radius: var(--radius-md);
-		color: var(--text-primary);
-		font-size: 1rem;
-		min-height: var(--touch-target);
-		transition:
-			border-color var(--transition-fast),
-			box-shadow var(--transition-fast);
+		min-width: 0;
 	}
-
-	.hero-search-input:focus-visible {
-		outline: none;
-		border-color: var(--brand-primary);
-		box-shadow: 0 0 0 3px var(--brand-muted);
+	.results,
+	.grid-pad {
+		padding: var(--space-5) var(--page-gutter) 0;
 	}
-
-	.results-header {
+	.grid-pad {
+		padding-top: 0;
+	}
+	.cell {
+		min-width: 0;
+	}
+	.genres {
 		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		margin-bottom: 2rem;
-		padding-bottom: 1rem;
-		border-bottom: 1px solid var(--border-subtle);
+		gap: var(--space-2);
+		/* Room for the focus ring, which a scrolling row would otherwise clip. */
+		margin-block: -0.4rem;
+		padding: 0.4rem var(--page-gutter);
+		overflow-x: auto;
+		scrollbar-width: none;
 	}
-
+	.genres::-webkit-scrollbar {
+		display: none;
+	}
 	@media (min-width: 768px) {
-		.results-header {
-			flex-direction: row;
-			align-items: center;
-			justify-content: space-between;
-		}
-	}
-
-	.results-title-group {
-		display: flex;
-		align-items: baseline;
-		gap: 1rem;
-	}
-
-	.results-header h2 {
-		font-size: 1.5rem;
-		font-weight: 700;
-	}
-
-	.query-text {
-		color: #10b981;
-	}
-
-	.count {
-		font-size: 0.9rem;
-		color: var(--text-tertiary);
-	}
-
-	.sort-controls {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-	}
-
-	.sort-label {
-		font-size: 0.75rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		color: var(--text-tertiary);
-	}
-
-	.sort-pills {
-		display: flex;
-		align-items: center;
-		background: var(--bg-surface-1);
-		border: 1px solid var(--border-subtle);
-		border-radius: 9999px;
-		padding: 3px;
-		gap: 2px;
-		flex-wrap: wrap;
-	}
-
-	.sort-pill {
-		border: 1px solid transparent;
-		background: transparent;
-		color: var(--text-secondary);
-		font-size: 0.78rem;
-		font-weight: 600;
-		min-height: var(--touch-target);
-		padding: 0.35rem 0.75rem;
-		border-radius: 9999px;
-		cursor: pointer;
-		transition: all 150ms ease;
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-		user-select: none;
-	}
-
-	.sort-pill:hover {
-		color: var(--text-primary);
-		background: rgba(255, 255, 255, 0.05);
-	}
-
-	.sort-pill.active {
-		background: rgba(16, 185, 129, 0.15);
-		color: var(--accent-emerald);
-		border-color: rgba(16, 185, 129, 0.4);
-		font-weight: 700;
-	}
-
-	.grid-movies {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-		gap: 1.5rem;
-	}
-
-	@media (max-width: 640px) {
-		.search-page {
-			padding-top: 1.5rem;
-			padding-bottom: calc(5rem + env(safe-area-inset-bottom));
-		}
-
-		.search-hero {
-			margin-bottom: 2.5rem;
-			text-align: left;
-		}
-
-		.page-title {
-			font-size: clamp(2rem, 12vw, 2.75rem);
-		}
-
-		.main-search-form {
-			flex-direction: column;
-		}
-
-		.main-search-form :global(.btn) {
-			width: 100%;
-		}
-
-		.results-title-group,
-		.sort-controls {
-			align-items: flex-start;
-			flex-direction: column;
-		}
-
-		.sort-pills {
-			width: 100%;
-			border-radius: var(--radius-md);
-		}
-
-		.sort-pill {
-			flex: 1;
+		.genres {
+			flex-wrap: wrap;
+			overflow: visible;
 		}
 	}
 </style>

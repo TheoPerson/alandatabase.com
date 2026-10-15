@@ -8,6 +8,7 @@ const sourceRoot = resolve(currentDirectory, '../../..');
 
 const localOnlyRoutes = [
 	'routes/(cinema)/search/+page.server.ts',
+	'routes/(cinema)/movies/+page.server.ts',
 	'routes/(cinema)/movies/catalog/+page.server.ts',
 	'routes/(cinema)/movies/catalog/[id]/+page.server.ts',
 	'routes/api/search/+server.ts',
@@ -41,6 +42,29 @@ describe('route side-effect containment', () => {
 			expect(source).not.toMatch(/s-maxage/iu);
 		});
 	}
+
+	it('keeps the legacy catalogue page a pure redirect to Browse: no reads, no writes', () => {
+		const source = readFileSync(
+			resolve(sourceRoot, 'routes/(cinema)/movies/catalog/+page.server.ts'),
+			'utf8'
+		);
+
+		expect(source).toMatch(/redirect\(308/u);
+		expect(source).not.toMatch(/\$lib\/server\/(db|services)|locals|actions/u);
+		expect(() =>
+			readFileSync(resolve(sourceRoot, 'routes/(cinema)/movies/catalog/+page.svelte'), 'utf8')
+		).toThrow(/ENOENT/u);
+	});
+
+	it('keeps Browse a public, read-only loader with no account state or form actions', () => {
+		const source = readFileSync(
+			resolve(sourceRoot, 'routes/(cinema)/movies/+page.server.ts'),
+			'utf8'
+		);
+
+		expect(source).not.toMatch(/export const actions|locals|interaction\.service|toggleWatchlist/u);
+		expect(source).toMatch(/listCatalogue/u);
+	});
 
 	it('keeps the public status route safe while exposing bounded liveness', () => {
 		const serverSource = readFileSync(

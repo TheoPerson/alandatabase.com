@@ -30,7 +30,7 @@
 				{#if data.dailyMasterpiece}
 					<a href="/movies/{data.dailyMasterpiece.id}" class="btn-primary">View Details</a>
 				{/if}
-				<a href="/movies/catalog" class="btn-secondary">Browse All Movies</a>
+				<a href="/movies" class="btn-secondary">Browse All Movies</a>
 			</div>
 		</div>
 	</header>

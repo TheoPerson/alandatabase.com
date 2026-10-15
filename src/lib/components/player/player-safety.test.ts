@@ -98,7 +98,8 @@ describe('playback source quarantine', () => {
 
 		expect(movieBrowse).not.toContain('/cinema/movies/');
 		expect(tvBrowse).not.toContain('/cinema/tvshow/');
-		expect(movieBrowse).toContain('href="/movies/{movie.id || movie.tmdbId}"');
+		// Browse renders loader-built PosterItems whose href is always /movies/<id> (toPosterItem).
+		expect(movieBrowse).not.toContain('href="/cinema/');
 		expect(tvBrowse).toContain('href="/tv/{hero.tmdbId}"');
 		expect(tvBrowse).toContain('href="/tv/{show.tmdbId}"');
 	});

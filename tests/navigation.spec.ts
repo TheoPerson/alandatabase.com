@@ -16,7 +16,7 @@ test.describe('Navigation and Search Flow', () => {
 
 	test('movie catalogue shell stays visible even when the database is empty', async ({ page }) => {
 		await page.goto('/movies');
-		await expect(page.getByRole('heading', { name: 'TOP 10 Today' })).toBeVisible();
+		await expect(page.getByRole('heading', { level: 1, name: 'Movies' })).toBeVisible();
 	});
 
 	test('search page allows searching', async ({ page }) => {

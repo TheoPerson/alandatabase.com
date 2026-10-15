@@ -68,3 +68,80 @@ export function formatDate(date: unknown): string | null {
 	const parsed = new Date(`${date.slice(0, 10)}T00:00:00Z`);
 	return Number.isNaN(parsed.getTime()) ? null : LONG_DATE.format(parsed);
 }
+
+// The country whose flag stands for a film's original language. Languages spoken across many
+// countries without one obvious home (Latin, Esperanto...) get a name but no flag.
+const LANGUAGE_REGIONS: Record<string, string> = {
+	en: 'GB',
+	fr: 'FR',
+	es: 'ES',
+	de: 'DE',
+	it: 'IT',
+	pt: 'PT',
+	ja: 'JP',
+	ko: 'KR',
+	zh: 'CN',
+	cn: 'HK',
+	hi: 'IN',
+	ta: 'IN',
+	te: 'IN',
+	ml: 'IN',
+	bn: 'BD',
+	ru: 'RU',
+	uk: 'UA',
+	pl: 'PL',
+	cs: 'CZ',
+	sk: 'SK',
+	hu: 'HU',
+	ro: 'RO',
+	bg: 'BG',
+	el: 'GR',
+	tr: 'TR',
+	ar: 'SA',
+	he: 'IL',
+	fa: 'IR',
+	th: 'TH',
+	vi: 'VN',
+	id: 'ID',
+	ms: 'MY',
+	tl: 'PH',
+	nl: 'NL',
+	sv: 'SE',
+	da: 'DK',
+	no: 'NO',
+	nb: 'NO',
+	fi: 'FI',
+	is: 'IS',
+	et: 'EE',
+	lv: 'LV',
+	lt: 'LT',
+	sr: 'RS',
+	hr: 'HR',
+	sl: 'SI',
+	ga: 'IE',
+	cy: 'GB',
+	ka: 'GE',
+	hy: 'AM',
+	kk: 'KZ',
+	ur: 'PK',
+	sw: 'KE',
+	af: 'ZA'
+};
+
+function regionFlag(region: string): string {
+	return String.fromCodePoint(...[...region].map((letter) => 0x1f1e6 + letter.charCodeAt(0) - 65));
+}
+
+/** ISO 639-1 code ("en") to a readable English name and, when one country fits, its flag. */
+export function formatLanguage(code: unknown): { name: string; flag: string | null } | null {
+	if (typeof code !== 'string' || !/^[a-z]{2}$/iu.test(code.trim())) return null;
+	const iso = code.trim().toLowerCase();
+	let name = iso.toUpperCase();
+	try {
+		name = new Intl.DisplayNames(['en'], { type: 'language' }).of(iso) ?? name;
+	} catch {
+		// Older runtimes without DisplayNames keep the code.
+	}
+	const region = LANGUAGE_REGIONS[iso];
+	return { name, flag: region ? regionFlag(region) : null };
+}
