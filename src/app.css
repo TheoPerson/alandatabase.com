@@ -205,6 +205,21 @@
 	padding: 0;
 }
 
+html {
+	scroll-padding-top: calc(var(--top-bar-height) + var(--safe-top) + var(--space-3));
+	scroll-padding-bottom: calc(var(--bottom-bar-height) + var(--safe-bottom) + var(--space-3));
+}
+html:has(.filter-bar) {
+	scroll-padding-top: calc(
+		var(--top-bar-height) + var(--safe-top) + var(--filter-bar-height, 7rem)
+	);
+}
+@media (min-width: 1024px) {
+	html {
+		scroll-padding-bottom: var(--space-4);
+	}
+}
+
 html,
 body {
 	min-height: 100%;
@@ -442,6 +457,7 @@ svg {
 	margin: 0;
 	overflow: visible;
 	clip: auto;
+	clip-path: none;
 	white-space: normal;
 	border-radius: var(--radius-md);
 	background: var(--brand-primary);

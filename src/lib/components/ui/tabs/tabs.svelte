@@ -78,6 +78,12 @@
 </Tabs.Root>
 
 <style>
+	/* The panel takes focus after the tab list (WAI-ARIA tabs); show it like every other control. */
+	:global(.kit-tabs-panel:focus-visible) {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 4px;
+		border-radius: var(--radius-md);
+	}
 	:global(.kit-tabs) {
 		display: flex;
 		flex-direction: column;

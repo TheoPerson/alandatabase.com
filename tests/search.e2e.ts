@@ -119,7 +119,9 @@ test.describe('Search page', () => {
 	test('an unknown query shows the empty state with a way back to browsing', async ({ page }) => {
 		await gotoHydrated(page, `/search?q=${NO_MATCH}`);
 
-		await expect(page.getByRole('heading', { name: `No films match “${NO_MATCH}”` })).toBeVisible();
+		await expect(
+			page.getByRole('heading', { name: `Nothing matches “${NO_MATCH}”` })
+		).toBeVisible();
 		await expect(page.getByText('0 films')).toBeVisible();
 		await expect(page.getByRole('link', { name: 'Browse movies' })).toHaveAttribute(
 			'href',
@@ -184,7 +186,7 @@ test.describe('Search page', () => {
 			page.getByRole('heading', { level: 1, name: `Results for “${hostile}”` })
 		).toBeVisible();
 		await expect(field(page)).toHaveValue(hostile);
-		await expect(page.getByText(`No films match “${hostile}”`)).toBeVisible();
+		await expect(page.getByText(`Nothing matches “${hostile}”`)).toBeVisible();
 		expect(await page.evaluate(() => (window as unknown as { __xss?: number }).__xss)).toBe(
 			undefined
 		);
@@ -193,7 +195,7 @@ test.describe('Search page', () => {
 
 		// A lone percent sign is a literal here, not a wildcard that matches the whole catalogue.
 		await gotoHydrated(page, '/search?q=%25');
-		await expect(page.getByRole('heading', { name: /^No films match/u })).toBeVisible();
+		await expect(page.getByRole('heading', { name: /^Nothing matches/u })).toBeVisible();
 	});
 
 	test('rejects a malformed request with a 400 instead of a server error', async ({ request }) => {

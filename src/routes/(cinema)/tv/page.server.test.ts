@@ -22,6 +22,10 @@ describe('TV landing loader', () => {
 	it('ranks the top 10 in chart order', async () => {
 		const data = await run();
 		const expected = [...TOP_50_IMDB_TV].sort((a, b) => a.rank - b.rank).slice(0, 10);
+		// The TV chart carries IMDb ratings: posters must not call them TMDB.
+		expect(
+			data.top10.every((item: { ratingSource?: string }) => item.ratingSource === 'IMDb')
+		).toBe(true);
 		expect(data.top10.map((item: { title: string }) => item.title)).toEqual(
 			expected.map((show) => show.title)
 		);

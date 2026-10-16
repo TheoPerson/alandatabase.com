@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PosterItem } from '$lib/catalogue/items';
 import { searchLocalMovies } from '$lib/server/queries/local-movie-search';
+import { searchSeries } from '$lib/server/services/tv.service';
 import { parseSearchParameters } from '$lib/server/security/request-bounds';
 import { logServerError } from '$lib/server/security/logging';
 import { getGenres, getTrendingMovies, toPosterItem } from '$lib/server/services/movie.service';
@@ -34,10 +35,22 @@ export async function load({ url }) {
 			logServerError('Local movie search failed', err);
 			searchError = true;
 		}
+		// The TV chart is a static snapshot: matching it cannot fail and costs no database read.
+		const series: PosterItem[] = searchSeries(query, 12).map((show) => ({
+			id: `tv-${show.tmdbId}`,
+			href: `/tv/${show.tmdbId}`,
+			title: show.title,
+			posterPath: show.posterPath,
+			releaseDate: show.firstAirDate,
+			rating: show.imdbRating,
+			genre: show.genres[0] ?? null,
+			ratingSource: 'IMDb'
+		}));
 		return {
 			query,
 			limit,
 			results,
+			series,
 			searchError,
 			trending: [] as PosterItem[],
 			genres: [] as GenreOption[]
@@ -54,6 +67,7 @@ export async function load({ url }) {
 	if (genres.status === 'rejected') logServerError('Search genre list failed', genres.reason);
 
 	return {
+		series: [] as PosterItem[],
 		query,
 		limit,
 		results: [] as PosterItem[],

@@ -31,7 +31,8 @@
 				scroller.scrollWidth,
 				direction
 			),
-			behavior: 'smooth'
+			// An explicit 'smooth' would override the reduced-motion rule in app.css.
+			behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'
 		});
 	}
 

@@ -204,6 +204,7 @@
 				<Command.List
 					class="kit-palette-list"
 					aria-label="Results"
+					tabindex={0}
 					aria-busy={model.busy}
 					onmousedown={(event: MouseEvent) => event.preventDefault()}
 				>

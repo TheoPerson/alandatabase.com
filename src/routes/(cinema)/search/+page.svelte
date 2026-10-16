@@ -32,9 +32,10 @@
 	const resultCount = $derived(data.results.length);
 	const status = $derived.by(() => {
 		if (searching) return 'Searching…';
-		if (!data.query) return 'Find any film in the catalogue by its title.';
+		if (!data.query) return 'Find a film or a series by its title.';
 		if (data.searchError) return '';
-		return `${resultCount} ${resultCount === 1 ? 'film' : 'films'}`;
+		const films = `${resultCount} ${resultCount === 1 ? 'film' : 'films'}`;
+		return data.series.length ? `${films} · ${data.series.length} series` : films;
 	});
 	const heading = $derived(data.query ? `Results for “${data.query}”` : 'Search');
 	const pageTitle = $derived(
@@ -113,19 +114,37 @@
 						>
 					{/snippet}
 				</ErrorState>
-			{:else if data.results.length === 0}
+			{:else if data.results.length === 0 && data.series.length === 0}
 				<EmptyState
-					title={`No films match “${data.query}”`}
-					description="Check the spelling, or try a shorter or more general title. You can also browse the whole catalogue."
+					title={`Nothing matches “${data.query}”`}
+					description="Search covers film titles and the TV chart. Try a shorter or more general title, or browse."
 				>
 					{#snippet action()}
 						<Button href="/movies" variant="outline">Browse movies</Button>
+						<Button href="/tv" variant="ghost">Browse series</Button>
 					{/snippet}
 				</EmptyState>
 			{:else}
-				{#key data.query}
-					<SearchResults items={data.results} limit={data.limit} />
-				{/key}
+				{#if data.results.length > 0}
+					{#key data.query}
+						<SearchResults items={data.results} limit={data.limit} />
+					{/key}
+				{/if}
+				{#if data.series.length > 0}
+					<section class="series" aria-labelledby="series-heading">
+						<h2 id="series-heading">Series</h2>
+						<ResultsGrid>
+							{#each data.series as item (item.id)}
+								<div class="cell">
+									<PosterCard
+										{...item}
+										sizes="(min-width: 1024px) 200px, (min-width: 640px) 22vw, 46vw"
+									/>
+								</div>
+							{/each}
+						</ResultsGrid>
+					</section>
+				{/if}
 			{/if}
 		</section>
 	{:else}
@@ -160,6 +179,14 @@
 </div>
 
 <style>
+	.series {
+		margin-top: var(--space-7);
+	}
+	.series h2 {
+		margin-bottom: var(--space-4);
+		font-size: var(--type-title);
+		font-weight: 800;
+	}
 	.page {
 		max-width: var(--container-wide);
 		margin-inline: auto;

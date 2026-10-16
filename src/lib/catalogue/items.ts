@@ -9,6 +9,8 @@ export interface PosterItem {
 	releaseDate?: string | null;
 	rating?: number | string | null;
 	genre?: string | null;
+	// Where the rating comes from; films default to TMDB, the TV chart is IMDb.
+	ratingSource?: string;
 }
 
 export interface HeroItem extends PosterItem {

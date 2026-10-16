@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { navigating } from '$app/state';
 	import Button from '$lib/components/ui/button';
@@ -60,7 +60,7 @@
 			const result = fold(shown, next);
 			shown = result.shown;
 			if (result.added > 0) {
-				announcement = addedAnnouncement(result.added, result.shown.items.length, totalCount);
+				announcement = addedAnnouncement(result.added);
 				if (paging) focusIndex = result.direction === 'prepend' ? 0 : before;
 			}
 			paging = false;
@@ -134,12 +134,19 @@
 	}
 
 	// Back from a film returns to the films that were on screen, not just the page in the address.
+	// Back from a film restores every loaded film. SvelteKit applies the saved scroll position while
+	// only the last page is rendered, so the position is re-applied once the full grid is back.
+	type BrowseSnapshot = ShownFilms<PosterItem> & { scrollY?: number };
 	export const snapshot = {
-		capture: (): ShownFilms<PosterItem> => shown,
-		restore: (value: ShownFilms<PosterItem> | null) => {
+		capture: (): BrowseSnapshot => ({ ...shown, scrollY: window.scrollY }),
+		restore: (value: BrowseSnapshot | null) => {
 			const page = data.pagination.page;
 			if (value && value.key === key && page >= value.firstPage && page <= value.page) {
-				shown = value;
+				const { scrollY, ...films } = value;
+				shown = films;
+				if (typeof scrollY === 'number') {
+					tick().then(() => window.scrollTo({ top: scrollY, behavior: 'instant' }));
+				}
 			}
 		}
 	};

@@ -25,7 +25,7 @@ export type PaletteItem =
 	| { kind: 'retry'; value: 'retry'; label: string };
 
 export interface PaletteGroup {
-	id: 'recent' | 'goto' | 'movies' | 'browse' | 'retry';
+	id: 'recent' | 'goto' | 'movies' | 'series' | 'browse' | 'retry';
 	heading: string | null;
 	items: PaletteItem[];
 }
@@ -86,6 +86,40 @@ function emptyQueryModel(recents: string[]): PaletteModel {
 	return { top: [], groups, placeholders: 0, busy: false, note: null, announcement: '' };
 }
 
+function seriesGroup(hits: SearchHit[], query: string): PaletteGroup {
+	return {
+		id: 'series',
+		heading: 'Series',
+		items: hits.map((hit): PaletteItem => ({
+			kind: 'movie',
+			value: `series:${hit.id}`,
+			label: hit.title,
+			href: `/tv/${encodeURIComponent(hit.id)}`,
+			hit,
+			query
+		}))
+	};
+}
+
+// Films first, then series; a group appears only when it has matches.
+function resultGroups(hits: SearchHit[], query: string): PaletteGroup[] {
+	const films = hits.filter((hit) => hit.type !== 'series');
+	const series = hits.filter((hit) => hit.type === 'series');
+	const groups: PaletteGroup[] = [];
+	if (films.length > 0) groups.push(filmGroup(films, query));
+	if (series.length > 0) groups.push(seriesGroup(series, query));
+	return groups;
+}
+
+function foundAnnouncement(hits: SearchHit[]): string {
+	const series = hits.filter((hit) => hit.type === 'series').length;
+	const films = hits.length - series;
+	const parts: string[] = [];
+	if (films > 0) parts.push(`${films} ${films === 1 ? 'film' : 'films'}`);
+	if (series > 0) parts.push(`${series} series`);
+	return `${parts.join(' and ')} found`;
+}
+
 function filmGroup(hits: SearchHit[], query: string): PaletteGroup {
 	return {
 		id: 'movies',
@@ -138,7 +172,7 @@ export function buildPaletteModel({
 	if (status === 'idle' || status === 'loading') {
 		model.busy = true;
 		model.announcement = 'Searching…';
-		if (hits.length > 0) model.groups.push(filmGroup(hits, query));
+		if (hits.length > 0) model.groups.push(...resultGroups(hits, query));
 		else model.placeholders = PLACEHOLDER_ROWS;
 		return model;
 	}
@@ -165,7 +199,7 @@ export function buildPaletteModel({
 		return model;
 	}
 
-	model.groups.push(filmGroup(hits, query));
-	model.announcement = `${hits.length} ${hits.length === 1 ? 'film' : 'films'} found`;
+	model.groups.push(...resultGroups(hits, query));
+	model.announcement = foundAnnouncement(hits);
 	return model;
 }

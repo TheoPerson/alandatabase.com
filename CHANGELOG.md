@@ -29,6 +29,7 @@ its launch gates are explicitly verified.
 
 ### Minor Updates
 
+- Search finds series too: the palette shows a Series group next to Movies and /search lists matching series from the TV chart; the empty state covers both and offers Browse movies and Browse series.
 - Picker rebuilt on the kit: mood chips, filters in a sheet that sends one request, a backdrop result card with reason and signals, a pinned Another button and swipe on phones, ArrowRight for another film; skeleton, empty and error states.
 - Sign-in and registration rebuilt on the kit: centred card, labelled fields with inline errors, announced server errors, show-password toggle, returnTo kept on every link, honest invitation-only copy.
 - Lists rebuilt on the kit: list cards with poster thumbnails, a create form with live character counters and a public switch, and a list page with owner-only removal.
@@ -61,6 +62,8 @@ its launch gates are explicitly verified.
 
 ### Fixed
 
+- Accessibility pass from an independent audit: the skip link is visible when focused; focused controls are no longer hidden under the sticky top bar, the Browse filter bar or the phone tab bar (scroll padding); the film tab panel shows a focus ring; rail arrows respect reduced motion; filter-bar labels and tab-bar labels meet AA contrast; the palette result list is keyboard-reachable when it scrolls.
+- TV posters labelled IMDb ratings as TMDB; coming back from a cast member reopened the wrong film tab; the person page Back link always went to the catalogue; going back to Browse after Load more landed about 3,000px too low; the Load more announcement repeated the count; a filler biography showed for people without one; the 404 text spoke of a film on every page.
 - The Picker showed saved and watched states it had not saved and posted to a legacy route; it now saves through the film page action and shows only server-confirmed state. It labels ratings IMDb or TMDB truthfully, has one h1 and a placeholder for films without artwork.
 - The kit switch had no visible track on the dark theme; it is now drawn from tokens and keyed on aria-checked, with a 44px hit area.
 - After signing in, the content notice no longer drops people on /movies: it returns them to the page they asked for (validated to stay on this site).

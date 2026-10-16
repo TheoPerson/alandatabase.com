@@ -12,7 +12,8 @@ function toPoster(show: TVShowSummary): PosterItem {
 		posterPath: show.posterPath,
 		releaseDate: show.firstAirDate,
 		rating: show.imdbRating,
-		genre: show.genres[0] ?? null
+		genre: show.genres[0] ?? null,
+		ratingSource: 'IMDb'
 	};
 }
 

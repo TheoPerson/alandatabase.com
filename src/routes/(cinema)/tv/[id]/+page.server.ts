@@ -26,7 +26,8 @@ export const load = (async ({ params }) => {
 			posterPath: other.posterPath,
 			releaseDate: other.firstAirDate,
 			rating: other.imdbRating,
-			genre: other.genres[0] ?? null
+			genre: other.genres[0] ?? null,
+			ratingSource: 'IMDb'
 		}));
 
 	return {

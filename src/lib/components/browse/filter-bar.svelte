@@ -117,7 +117,7 @@
 		flex: 0 0 auto;
 	}
 	.label {
-		color: var(--content-tertiary);
+		color: var(--content-secondary);
 		font-size: var(--text-xs);
 		font-weight: 800;
 		letter-spacing: var(--tracking-wide);

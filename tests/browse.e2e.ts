@@ -156,7 +156,7 @@ test.describe('Browse: paging', () => {
 		await expect(page).toHaveURL(/\/movies\?page=2$/u);
 		await expect(countLine(page)).toHaveText(`Showing ${PAGE_SIZE * 2} of ${total} films`);
 		await expect(page.getByRole('status').filter({ hasText: 'more films loaded' })).toHaveText(
-			`${PAGE_SIZE} more films loaded. Showing ${PAGE_SIZE * 2} of ${total}.`
+			`${PAGE_SIZE} more films loaded.`
 		);
 		// Keyboard focus stays on the button so the next press loads the next page.
 		await expect(loadMore(page)).toBeFocused();
@@ -242,6 +242,8 @@ test.describe('Browse: paging', () => {
 
 		const film = films(page).nth(PAGE_SIZE + 4);
 		const href = (await film.getAttribute('href')) as string;
+		await film.scrollIntoViewIfNeeded();
+		const before = await page.evaluate(() => window.scrollY);
 		await film.click();
 		await expect(page).toHaveURL(new RegExp(`${href}$`, 'u'));
 
@@ -250,6 +252,11 @@ test.describe('Browse: paging', () => {
 		await expect(page).toHaveURL(/\/movies\?page=2$/u);
 		await expect(films(page)).toHaveCount(PAGE_SIZE * 2);
 		await expect(countLine(page)).toContainText(`Showing ${PAGE_SIZE * 2} of`);
+		// The visitor lands where they left, not a page of films further down.
+		await expect
+			.poll(async () => Math.abs((await page.evaluate(() => window.scrollY)) - before))
+			.toBeLessThan(120);
+		await expect(page.locator(`a[href="${href}"]`)).toBeInViewport();
 	});
 
 	test('a filter change shows a skeleton grid until the new films arrive', async ({ page }) => {

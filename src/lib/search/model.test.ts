@@ -170,3 +170,30 @@ describe('buildPaletteModel while typing', () => {
 		expect(model.top[0]).toMatchObject({ href: '/search?q=the%20matrix' });
 	});
 });
+
+describe('buildPaletteModel with series', () => {
+	it('lists films and series in separate groups, series linking to /tv', () => {
+		const series: SearchHit = { ...hit('1396', 'Breaking Bad'), type: 'series' };
+		const model = buildPaletteModel(
+			input({ query: 'br', status: 'ready', hits: [hit('a', 'Brave'), series] })
+		);
+		const movies = model.groups.find((group) => group.id === 'movies');
+		const shows = model.groups.find((group) => group.id === 'series');
+		expect(movies?.items.map((item) => item.label)).toEqual(['Brave']);
+		expect(shows?.heading).toBe('Series');
+		expect(shows?.items.map((item) => ('href' in item ? item.href : null))).toEqual(['/tv/1396']);
+		expect(model.announcement).toBe('1 film and 1 series found');
+	});
+
+	it('shows only the series group when no film matches', () => {
+		const model = buildPaletteModel(
+			input({
+				query: 'wire',
+				status: 'ready',
+				hits: [{ ...hit('1438', 'The Wire'), type: 'series' }]
+			})
+		);
+		expect(model.groups.map((group) => group.id)).toEqual(['series']);
+		expect(model.note).toBeNull();
+	});
+});

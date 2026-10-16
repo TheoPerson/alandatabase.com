@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { searchLocalMovies } from '$lib/server/queries/local-movie-search';
 import { parseSearchParameters } from '$lib/server/security/request-bounds';
+import { searchSeries } from '$lib/server/services/tv.service';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const parsedParameters = parseSearchParameters(url, {
@@ -31,6 +32,13 @@ export const GET: RequestHandler = async ({ url }) => {
 			releaseDate: m.releaseDate,
 			posterPath: m.posterPath,
 			voteAverage: m.voteAverage
+		})),
+		series: searchSeries(query, Math.min(limit, 6)).map((show) => ({
+			id: show.tmdbId,
+			title: show.title,
+			firstAirDate: show.firstAirDate,
+			posterPath: show.posterPath,
+			rating: show.imdbRating
 		}))
 	});
 };

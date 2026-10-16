@@ -20,6 +20,7 @@
 		releaseDate = null,
 		rating = null,
 		genre = null,
+		ratingSource = 'TMDB',
 		rank = null,
 		eager = false,
 		sizes = '(min-width: 1024px) 180px, (min-width: 640px) 160px, 140px',
@@ -60,7 +61,7 @@
 				<span class="fallback" aria-hidden="true">{title}</span>
 			{/if}
 		{/key}
-		{#if score}<RatingBadge value={score} class="badge" />{/if}
+		{#if score}<RatingBadge value={score} source={ratingSource} class="badge" />{/if}
 		{#if href}
 			<div class="overlay" aria-hidden="true">
 				<span class="overlay-title">{title}</span>

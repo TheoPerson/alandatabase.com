@@ -2,7 +2,7 @@
 	<div class="container footer-content">
 		<div class="footer-left">
 			<a href="/" class="footer-brand">ALAN<span class="accent">DB</span></a>
-			<p class="footer-tagline">Open-source cinema operating system. Built for movie lovers.</p>
+			<p class="footer-tagline">A personal cinema: films, series and what to watch tonight.</p>
 		</div>
 
 		<nav class="footer-links" aria-label="Footer">

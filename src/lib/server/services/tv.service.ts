@@ -808,3 +808,36 @@ export async function getTVShowDetails(tmdbId: number): Promise<TVShowDetails | 
 		}))
 	};
 }
+
+function fold(text: string): string {
+	return text
+		.normalize('NFKD')
+		.replace(/[\u0300-\u036f]/gu, '')
+		.toLowerCase();
+}
+
+/** Series whose title contains the query (accent- and case-insensitive), best ranked first. */
+export function searchSeries(query: string, limit = 6): TVShowSummary[] {
+	const needle = fold(query.trim());
+	if (needle.length < 2) return [];
+	return TOP_50_IMDB_TV.filter((show) => fold(show.title).includes(needle))
+		.sort((a, b) => a.rank - b.rank)
+		.slice(0, Math.max(0, limit))
+		.map((show) => ({
+			rank: show.rank,
+			id: show.tmdbId,
+			tmdbId: show.tmdbId,
+			imdbId: show.imdbId,
+			title: show.title,
+			imdbRating: show.imdbRating,
+			voteAverage: show.imdbRating,
+			voteCount: 'IMDb chart',
+			firstAirDate: show.year.split('–')[0],
+			year: show.year,
+			seasonsCount: show.seasons,
+			posterPath: show.posterPath,
+			backdropPath: show.backdropPath,
+			overview: show.overview,
+			genres: show.genres
+		}));
+}

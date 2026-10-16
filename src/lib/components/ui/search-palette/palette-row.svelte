@@ -56,7 +56,7 @@
 <Command.Item
 	value={item.value}
 	class="kit-palette-item"
-	data-kind={item.kind}
+	data-kind={item.kind === 'movie' && item.hit.type === 'series' ? 'series' : item.kind}
 	onSelect={() => onselect(item)}
 >
 	{#if item.kind === 'movie'}
@@ -97,7 +97,8 @@
 		user-select: none;
 		-webkit-tap-highlight-color: transparent;
 	}
-	:global(.kit-palette-item[data-kind='movie']) {
+	:global(.kit-palette-item[data-kind='movie']),
+	:global(.kit-palette-item[data-kind='series']) {
 		min-height: 4rem;
 	}
 	/* The active row: a tint plus a brand bar, so it never relies on colour alone. */

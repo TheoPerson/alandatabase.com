@@ -8,6 +8,8 @@ export interface SearchHit {
 	year: string | null;
 	rating: string | null;
 	posterPath: string | null;
+	// Absent for films; series link to /tv/<id>.
+	type?: 'series';
 }
 
 // Ids end up in a URL path; anything outside this alphabet is dropped, not escaped.
@@ -44,6 +46,25 @@ export function parseSearchResponse(body: unknown): SearchHit[] {
 			rating: formatRating(record.voteAverage),
 			posterPath: readText(record.posterPath)
 		});
+	}
+	const series = (body as { series?: unknown }).series;
+	if (Array.isArray(series)) {
+		for (const entry of series) {
+			if (!entry || typeof entry !== 'object') continue;
+			const record = entry as Record<string, unknown>;
+			const id = readId(record.id);
+			const title = readText(record.title);
+			if (!id || !title || seen.has(`series:${id}`)) continue;
+			seen.add(`series:${id}`);
+			hits.push({
+				id,
+				title,
+				year: formatYear(record.firstAirDate),
+				rating: formatRating(record.rating),
+				posterPath: readText(record.posterPath),
+				type: 'series'
+			});
+		}
 	}
 	return hits;
 }

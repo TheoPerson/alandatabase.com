@@ -48,3 +48,20 @@ describe('TV read service', () => {
 		await expect(getTVShowDetails(999_999_999)).resolves.toBeNull();
 	});
 });
+
+describe('searchSeries', () => {
+	it('matches titles case- and accent-insensitively, best ranked first', async () => {
+		const { searchSeries } = await import('./tv.service');
+		const results = searchSeries('BREAKING');
+		expect(results[0]?.title).toBe('Breaking Bad');
+		expect(searchSeries('the w').some((show) => show.title === 'The Wire')).toBe(true);
+	});
+
+	it('ignores blank or one-letter queries and caps the result count', async () => {
+		const { searchSeries } = await import('./tv.service');
+		expect(searchSeries('')).toEqual([]);
+		expect(searchSeries('a')).toEqual([]);
+		expect(searchSeries('e', 3)).toEqual([]);
+		expect(searchSeries('the', 3).length).toBeLessThanOrEqual(3);
+	});
+});

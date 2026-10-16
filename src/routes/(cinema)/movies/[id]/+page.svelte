@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
+	import type { Snapshot } from '@sveltejs/kit';
 	import { addToast } from '$lib/stores/toast';
 	import {
 		formatDate,
@@ -65,6 +66,13 @@
 	]);
 
 	let tab = $state('overview');
+	// Back and forward restore the open tab, for example after visiting a cast member.
+	export const snapshot: Snapshot<string> = {
+		capture: () => tab,
+		restore: (value) => {
+			if (TAB_ITEMS.some((item) => item.value === value)) tab = value;
+		}
+	};
 	let region = $state<'FR' | 'US'>('FR');
 	let rateOpen = $state(false);
 	let wide = $state(false);

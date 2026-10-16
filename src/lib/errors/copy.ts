@@ -17,8 +17,7 @@ export function errorCopy(status: number, message?: string): ErrorCopy {
 	if (status === 404) {
 		return {
 			title: "We can't find that page",
-			description:
-				'The link may be old, or the film may have been moved or removed from the catalogue.',
+			description: 'The link may be old, or the page may have been moved or removed.',
 			retryable: false
 		};
 	}

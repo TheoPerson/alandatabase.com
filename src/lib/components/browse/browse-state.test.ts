@@ -199,8 +199,8 @@ describe('countLine', () => {
 });
 
 describe('addedAnnouncement', () => {
-	it('tells a screen reader how many films arrived and where that leaves the list', () => {
-		expect(addedAnnouncement(24, 48, 178)).toBe('24 more films loaded. Showing 48 of 178.');
-		expect(addedAnnouncement(1, 25, 25)).toBe('1 more film loaded. Showing 25 of 25.');
+	it('tells a screen reader how many films arrived (the count line says where that leaves the list)', () => {
+		expect(addedAnnouncement(24)).toBe('24 more films loaded.');
+		expect(addedAnnouncement(1)).toBe('1 more film loaded.');
 	});
 });

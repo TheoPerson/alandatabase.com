@@ -88,3 +88,24 @@ describe('parseSearchResponse', () => {
 		expect(hit.title).toBe('<img src=x onerror=alert(1)>');
 	});
 });
+
+describe('parseSearchResponse with series', () => {
+	it('keeps series as their own hits after the films', () => {
+		const hits = parseSearchResponse({
+			results: [{ id: 'f1', title: 'Film', releaseDate: '2001-01-01', voteAverage: 7 }],
+			series: [
+				{ id: 1396, title: 'Breaking Bad', firstAirDate: '2008', rating: 9.5, posterPath: '/b.jpg' }
+			]
+		});
+		expect(hits.map((h) => [h.id, h.type ?? 'movie', h.year])).toEqual([
+			['f1', 'movie', '2001'],
+			['1396', 'series', '2008']
+		]);
+	});
+
+	it('drops malformed series entries', () => {
+		expect(
+			parseSearchResponse({ results: [], series: [{ id: '../x', title: 'Bad' }, null] })
+		).toEqual([]);
+	});
+});

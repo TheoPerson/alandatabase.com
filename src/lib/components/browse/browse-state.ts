@@ -131,6 +131,6 @@ export function countLine({
 }
 
 /** What a screen reader hears once "Load more" has appended films. */
-export function addedAnnouncement(added: number, shownCount: number, totalCount: number): string {
-	return `${added} more ${filmWord(added)} loaded. Showing ${shownCount} of ${totalCount}.`;
+export function addedAnnouncement(added: number): string {
+	return `${added} more ${filmWord(added)} loaded.`;
 }

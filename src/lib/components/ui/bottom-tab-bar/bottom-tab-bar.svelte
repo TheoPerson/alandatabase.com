@@ -41,7 +41,7 @@
 		grid-template-columns: repeat(5, 1fr);
 		height: calc(var(--bottom-bar-height) + var(--safe-bottom));
 		padding-bottom: var(--safe-bottom);
-		background: rgba(8, 9, 11, 0.9);
+		background: rgba(8, 9, 11, 0.96);
 		backdrop-filter: blur(16px) saturate(140%);
 		-webkit-backdrop-filter: blur(16px) saturate(140%);
 		border-top: 1px solid var(--border-subtle);
@@ -53,8 +53,8 @@
 		justify-content: center;
 		gap: 0.2rem;
 		min-height: var(--bottom-bar-height);
-		color: var(--content-tertiary);
-		font-size: 0.65rem;
+		color: var(--content-secondary);
+		font-size: 0.6875rem;
 		font-weight: 700;
 		letter-spacing: 0.02em;
 		transition: color var(--duration-base) var(--ease-out);

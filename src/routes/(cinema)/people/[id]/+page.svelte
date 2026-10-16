@@ -5,6 +5,20 @@
 
 	let { data } = $props();
 	const person = $derived(data.person);
+
+	// Back returns to the page the visitor came from on this site (a film's cast tab), else Browse.
+	function goBack(event: MouseEvent) {
+		let sameSite = false;
+		try {
+			sameSite = new URL(document.referrer).origin === location.origin;
+		} catch {
+			sameSite = false;
+		}
+		if (sameSite && history.length > 1) {
+			event.preventDefault();
+			history.back();
+		}
+	}
 	const canonicalUrl = $derived(`https://alandatabase.com/people/${person.id}`);
 	const biography = $derived(person.biography || `${person.name} film and television credits.`);
 	const profileImage = $derived(
@@ -49,7 +63,7 @@
 </svelte:head>
 
 <div class="person-page container">
-	<a class="back-link" href="/movies">Back to movies</a>
+	<a class="back-link" href="/movies" onclick={goBack}>Back</a>
 	<header class="person-header">
 		<div class="profile-frame">
 			{#if profileImage}
@@ -67,7 +81,7 @@
 					{[person.birthday, person.placeOfBirth].filter(Boolean).join(' / ')}
 				</p>
 			{/if}
-			<p class="biography">{biography}</p>
+			{#if person.biography}<p class="biography">{person.biography}</p>{/if}
 		</div>
 	</header>
 
