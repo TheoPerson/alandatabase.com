@@ -29,6 +29,7 @@ its launch gates are explicitly verified.
 
 ### Minor Updates
 
+- Browse on phones: a Filters button with the number of active filters opens a sheet with Sort, Decade and Rating (Decade and Rating used to sit off-screen); the desktop strip is unchanged and the links still work without JavaScript.
 - Search finds series too: the palette shows a Series group next to Movies and /search lists matching series from the TV chart; the empty state covers both and offers Browse movies and Browse series.
 - Picker rebuilt on the kit: mood chips, filters in a sheet that sends one request, a backdrop result card with reason and signals, a pinned Another button and swipe on phones, ArrowRight for another film; skeleton, empty and error states.
 - Sign-in and registration rebuilt on the kit: centred card, labelled fields with inline errors, announced server errors, show-password toggle, returnTo kept on every link, honest invitation-only copy.

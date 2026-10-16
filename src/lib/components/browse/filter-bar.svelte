@@ -1,12 +1,9 @@
 <script lang="ts">
+	import { MediaQuery } from 'svelte/reactivity';
 	import Chip from '$lib/components/ui/chip';
-	import {
-		DECADES,
-		MIN_RATINGS,
-		SORT_OPTIONS,
-		browseHref,
-		type BrowseFilters
-	} from '$lib/catalogue/browse';
+	import { browseHref, type BrowseFilters } from '$lib/catalogue/browse';
+	import { filterGroups } from './filter-groups';
+	import FilterSheet from './filter-sheet.svelte';
 	import FilterStrip from './filter-strip.svelte';
 
 	interface Props {
@@ -15,6 +12,11 @@
 	}
 
 	let { filters, genres }: Props = $props();
+
+	// Phones get a Filters button and sheet instead of the long Sort, Decade and Rating strip.
+	// The server cannot know the width, so it renders the strip: phones without JavaScript keep it.
+	const compact = new MediaQuery('(max-width: 767.98px)', false);
+	const groups = $derived(filterGroups(filters));
 </script>
 
 <!--
@@ -44,49 +46,21 @@
 				</div>
 			</FilterStrip>
 		{/if}
-		<FilterStrip>
-			<div class="group" role="group" aria-labelledby="browse-sort-label">
-				<span class="label" id="browse-sort-label">Sort</span>
-				{#each SORT_OPTIONS as option (option.value)}
-					<Chip
-						href={browseHref({ ...filters, sortBy: option.value })}
-						selected={filters.sortBy === option.value}
-					>
-						{option.label}
-					</Chip>
+		{#if compact.current}
+			<FilterSheet {filters} />
+		{:else}
+			<FilterStrip>
+				{#each groups as group, index (group.key)}
+					{#if index > 0}<span class="divider" aria-hidden="true"></span>{/if}
+					<div class="group" role="group" aria-labelledby="browse-{group.key}-label">
+						<span class="label" id="browse-{group.key}-label">{group.label}</span>
+						{#each group.options as option (option.href)}
+							<Chip href={option.href} selected={option.selected}>{option.label}</Chip>
+						{/each}
+					</div>
 				{/each}
-			</div>
-			<span class="divider" aria-hidden="true"></span>
-			<div class="group" role="group" aria-labelledby="browse-decade-label">
-				<span class="label" id="browse-decade-label">Decade</span>
-				<Chip href={browseHref({ ...filters, decade: null })} selected={filters.decade === null}>
-					Any
-				</Chip>
-				{#each DECADES as decade (decade)}
-					<Chip href={browseHref({ ...filters, decade })} selected={filters.decade === decade}>
-						{decade}s
-					</Chip>
-				{/each}
-			</div>
-			<span class="divider" aria-hidden="true"></span>
-			<div class="group" role="group" aria-labelledby="browse-rating-label">
-				<span class="label" id="browse-rating-label">Rating</span>
-				<Chip
-					href={browseHref({ ...filters, minRating: null })}
-					selected={filters.minRating === null}
-				>
-					Any
-				</Chip>
-				{#each MIN_RATINGS as rating (rating)}
-					<Chip
-						href={browseHref({ ...filters, minRating: rating })}
-						selected={filters.minRating === rating}
-					>
-						{rating}+
-					</Chip>
-				{/each}
-			</div>
-		</FilterStrip>
+			</FilterStrip>
+		{/if}
 	</div>
 </nav>
 
@@ -122,6 +96,11 @@
 		font-weight: 800;
 		letter-spacing: var(--tracking-wide);
 		text-transform: uppercase;
+	}
+	@media (max-height: 700px) {
+		.inner {
+			padding-block: 0;
+		}
 	}
 	.divider {
 		align-self: stretch;

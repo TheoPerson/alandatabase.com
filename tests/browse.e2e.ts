@@ -419,8 +419,125 @@ test.describe('Browse: small screens', () => {
 	});
 });
 
+test.describe('Browse: phone filters', () => {
+	const filtersButton = (page: Page) => page.getByRole('button', { name: /^Filters/u });
+	const sheet = (page: Page) => page.getByRole('dialog', { name: 'Filters' });
+
+	test('below 768px a Filters button opens every Sort, Decade and Rating chip in a sheet', async ({
+		page
+	}) => {
+		await page.setViewportSize({ width: 320, height: 640 });
+		await gotoHydrated(page, '/movies');
+
+		await expect(filtersButton(page)).toBeVisible();
+		expect((await filtersButton(page).boundingBox())?.height).toBeGreaterThanOrEqual(44);
+		await expect(page.locator('#browse-filters-summary')).toHaveText(
+			'Popular · Any decade · Any rating'
+		);
+		await expect(filtersButton(page)).toHaveAttribute('aria-expanded', 'false');
+		await expect(group(page, 'Rating')).toHaveCount(0);
+
+		await filtersButton(page).click();
+
+		await expect(sheet(page)).toBeVisible();
+		await expect(filtersButton(page)).toHaveAttribute('aria-expanded', 'true');
+		for (const name of ['Sort', 'Decade', 'Rating']) {
+			await expect(group(page, name)).toBeVisible();
+		}
+		const chips = await sheet(page).getByRole('link').all();
+		expect(chips).toHaveLength(15);
+		for (const chip of chips) {
+			await expect
+				.poll(async () => (await chip.boundingBox())?.height ?? 0)
+				.toBeGreaterThanOrEqual(44);
+			const box = await chip.boundingBox();
+			expect((box?.x ?? 999) + (box?.width ?? 0)).toBeLessThanOrEqual(320);
+		}
+		expect(
+			await page.evaluate(
+				() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+			)
+		).toBeLessThanOrEqual(0);
+	});
+
+	test('a chip in the sheet filters, closes the sheet and hands focus back to Filters', async ({
+		page
+	}) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await gotoHydrated(page, '/movies');
+
+		await filtersButton(page).click();
+		await group(page, 'Rating').getByRole('link', { name: '7+' }).click();
+
+		await expect(page).toHaveURL(/\/movies\?rating=7$/u);
+		await expect(sheet(page)).toHaveCount(0);
+		await expect(filtersButton(page)).toBeFocused();
+		await expect(filtersButton(page)).toHaveAccessibleName('Filters · 1 active');
+		await expect(page.locator('#browse-filters-summary')).toHaveText(
+			'Popular · Any decade · 7+ rating'
+		);
+		await expect(countLine(page)).toContainText('7+ rating');
+
+		// The same flow from the keyboard, then Escape also returns focus.
+		await page.keyboard.press('Enter');
+		await expect(sheet(page)).toBeVisible();
+		await expect(group(page, 'Rating').getByRole('link', { name: '7+' })).toHaveAttribute(
+			'aria-current',
+			'true'
+		);
+		await group(page, 'Decade').getByRole('link', { name: '2010s' }).focus();
+		await page.keyboard.press('Enter');
+		await expect(page).toHaveURL(/\/movies\?decade=2010&rating=7$/u);
+		await expect(sheet(page)).toHaveCount(0);
+		await expect(filtersButton(page)).toBeFocused();
+		await expect(filtersButton(page)).toHaveAccessibleName('Filters · 2 active');
+
+		await page.keyboard.press('Enter');
+		await expect(sheet(page)).toBeVisible();
+		await page.keyboard.press('Escape');
+		await expect(sheet(page)).toHaveCount(0);
+		await expect(filtersButton(page)).toBeFocused();
+	});
+
+	test('from 768px the desktop strip stays and there is no Filters button', async ({ page }) => {
+		await page.setViewportSize({ width: 768, height: 900 });
+		await gotoHydrated(page, '/movies');
+
+		await expect(filtersButton(page)).toHaveCount(0);
+		for (const name of ['Sort', 'Decade', 'Rating']) {
+			await expect(group(page, name)).toHaveCount(1);
+		}
+	});
+
+	test('on a short phone screen the sticky filter bar stays compact', async ({ page }) => {
+		await page.setViewportSize({ width: 320, height: 640 });
+		await gotoHydrated(page, '/movies');
+		test.skip((await films(page).count()) < PAGE_SIZE, 'needs a full page of films');
+
+		await page.evaluate(() => window.scrollTo(0, 1200));
+		const bar = page.getByRole('navigation', { name: 'Filter films' });
+		await expect
+			.poll(async () => Math.round((await bar.boundingBox())?.y ?? -1))
+			.toBeGreaterThanOrEqual(55);
+		const box = await bar.boundingBox();
+		expect(box?.y ?? 999).toBeLessThanOrEqual(70);
+		// The genre strip (50px) plus the 44px Filters row, with no extra padding.
+		expect(box?.height).toBeLessThanOrEqual(96);
+	});
+});
+
 test.describe('Browse: without JavaScript', () => {
 	test.use({ javaScriptEnabled: false });
+
+	test('a phone keeps the Sort, Decade and Rating chips as working links', async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto('/movies');
+
+		await expect(page.getByRole('button', { name: /^Filters/u })).toHaveCount(0);
+		await group(page, 'Rating').getByRole('link', { name: '7+' }).click();
+		await expect(page).toHaveURL(/\/movies\?rating=7$/u);
+		await expect(countLine(page)).toContainText('7+ rating');
+	});
 
 	test('every filter chip and Load more are plain links that still work', async ({ page }) => {
 		await page.goto('/movies');
