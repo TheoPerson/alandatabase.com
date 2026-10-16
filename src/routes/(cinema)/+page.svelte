@@ -49,7 +49,7 @@
 </svelte:head>
 
 {#if data.featured.length > 0}
-	<HeroCarousel items={data.featured}>
+	<HeroCarousel items={data.featured} heading="Alan's Database: films and series">
 		{#snippet actions(item)}
 			{@const saved = savedIds.has(item.id)}
 			<Button href={item.href} size="lg">

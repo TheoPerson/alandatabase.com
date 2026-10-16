@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { signInReason } from '$lib/components/auth/sign-in-reason';
 	import Button from '$lib/components/ui/button';
 	import AuthShell from '$lib/components/auth/AuthShell.svelte';
 	import FormField from '$lib/components/auth/FormField.svelte';
@@ -22,7 +23,8 @@
 <AuthShell
 	eyebrow="Private access"
 	title="Sign in"
-	description="Your personal cinema data and the tools your role allows."
+	description={signInReason(data.returnTo) ??
+		'Your personal cinema data and the tools your role allows.'}
 	error={form?.error}
 	errorKey={form}
 >

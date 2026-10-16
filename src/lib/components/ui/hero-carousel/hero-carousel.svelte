@@ -14,9 +14,11 @@
 		intervalMs?: number;
 		// Rendered inside the text block, below the overview: the page decides the actions.
 		actions?: Snippet<[HeroItem]>;
+		// The page's own h1 (visually hidden): slide titles change, the page heading must not.
+		heading?: string;
 	}
 
-	let { items, intervalMs = 8000, actions }: Props = $props();
+	let { items, intervalMs = 8000, actions, heading }: Props = $props();
 
 	let index = $state(0);
 	let hovered = $state(false);
@@ -110,6 +112,7 @@
 		onpointerup={onPointerUp}
 		onpointercancel={() => (pointerStartX = null)}
 	>
+		{#if heading}<h1 class="sr-only">{heading}</h1>{/if}
 		<div class="layers" aria-hidden="true">
 			{#each layers as layer (layer.id)}
 				<BackdropImage path={layer.backdropPath} eager={layer.id === items[0]?.id} sizes="100vw" />
@@ -134,15 +137,14 @@
 							<PauseIcon size={18} aria-hidden="true" />
 						{/if}
 					</button>
-					<div class="dots" role="tablist" aria-label="Choose featured title">
+					<div class="dots" role="group" aria-label="Choose featured title">
 						{#each items as item, dotIndex (item.id)}
 							<button
 								type="button"
-								role="tab"
 								class="dot"
 								class:active={dotIndex === index}
-								aria-selected={dotIndex === index}
-								aria-label={item.title}
+								aria-current={dotIndex === index ? 'true' : undefined}
+								aria-label={`Show ${dotIndex + 1} of ${count}: ${item.title}`}
 								onclick={() => (index = dotIndex)}
 							>
 								<span class="dot-fill" style:animation-duration={`${intervalMs}ms`}></span>
@@ -171,9 +173,9 @@
 									loading="eager"
 									decoding="async"
 								/>
-								<h1 class="sr-only">{current.title}</h1>
+								<h2 class="sr-only">{current.title}</h2>
 							{:else}
-								<h1 class="title">{current.title}</h1>
+								<h2 class="title">{current.title}</h2>
 							{/if}
 						</div>
 						<MetaChips items={meta} class="meta" />

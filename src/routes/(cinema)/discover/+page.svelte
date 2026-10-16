@@ -27,7 +27,7 @@
 </svelte:head>
 
 {#if data.pick}
-	<HeroCarousel items={[data.pick]}>
+	<HeroCarousel items={[data.pick]} heading="Discover">
 		{#snippet actions(item)}
 			<Button href={item.href} size="lg">
 				<InfoIcon size={20} aria-hidden="true" />

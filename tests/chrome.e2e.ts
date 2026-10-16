@@ -65,7 +65,7 @@ test.describe('Featured carousel', () => {
 		await page.setViewportSize({ width: 1440, height: 900 });
 		await gotoHydrated(page, '/');
 		const hero = page.getByRole('region', { name: 'Featured titles' });
-		const dots = hero.getByRole('tab');
+		const dots = hero.getByRole('group', { name: 'Choose featured title' }).getByRole('button');
 		test.skip((await dots.count()) < 2, 'needs at least two featured titles');
 		const before = await hero.locator('.actions').boundingBox();
 		await dots.nth(1).click();

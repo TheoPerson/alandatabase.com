@@ -33,7 +33,7 @@
 </svelte:head>
 
 {#if data.featured.length > 0}
-	<HeroCarousel items={data.featured}>
+	<HeroCarousel items={data.featured} heading="TV series">
 		{#snippet actions(item)}
 			<Button href={item.href} size="lg">
 				<InfoIcon size={20} aria-hidden="true" />
