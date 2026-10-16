@@ -341,6 +341,15 @@ test.describe('Search palette', () => {
 	test('rows are at least 44px tall', async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 844 });
 		await openWithShortcut(page);
+		// The opening animation scales the panel slightly; measure the settled layout.
+		await dialog(page).evaluate((panel) =>
+			Promise.all(
+				panel
+					.getAnimations({ subtree: true })
+					.filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
+					.map((animation) => animation.finished)
+			)
+		);
 		for (const option of await dialog(page).getByRole('option').all()) {
 			expect((await option.boundingBox())?.height).toBeGreaterThanOrEqual(44);
 		}

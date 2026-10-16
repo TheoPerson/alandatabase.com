@@ -29,6 +29,9 @@ its launch gates are explicitly verified.
 
 ### Minor Updates
 
+- TV landing rebuilt on the kit: featured carousel of the five best-ranked series, a Top 10 ranked rail and all 50 series with shareable genre filters (?genre=); phones no longer download a 1 MB original-size backdrop.
+- Discover rebuilt: a pick of the day, four mood rails and "Best of the 2010s/2000s/1990s/1980s", each with See all into Browse with the matching filters; no emoji headings.
+- Library (/my/films) rebuilt: linkable Watchlist, Favourites, Watched and Stats tabs (?tab=), stat tiles with top genres and films-per-decade bars, empty states with a way forward, and Lists and Settings reachable from the page.
 - /search rebuilt on the kit: a form that works without JavaScript, a clearable search field, stable sorting (unrated and undated films last), a popular-now section and genre shortcuts when empty, skeleton and error states.
 - TV series pages rebuilt on the film-page layout: full backdrop, poster, IMDb rating and chart rank, seasons, genres, story, facts and a "More like this" rail. The non-functional season and episode pickers and the "playback unavailable" panel are gone.
 - Film pages show the original language as a name with its flag (for example English with the British flag); a small bundled flag font makes flags render on Windows.
@@ -54,6 +57,7 @@ its launch gates are explicitly verified.
 
 ### Fixed
 
+- After signing in, the content notice no longer drops people on /movies: it returns them to the page they asked for (validated to stay on this site).
 - The genre filter of the catalogue returned HTTP 503 (a raw subquery was re-aliased by the relational query builder). Home genre chips work again.
 - The TV snapshot used invented artwork paths: 43 of 50 posters and 44 of 50 backdrops were broken, and 13 entries pointed at the wrong TMDB series. Every id now matches its title and first-air year and all 100 images load.
 - Two simultaneous first interactions on the same film (watchlist, favourite, rating) could fail with a duplicate-key error; writes are now atomic upserts.

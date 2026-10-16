@@ -237,7 +237,10 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 			return applySecurityHeaders(
 				new Response(null, {
 					status: 302,
-					headers: { location: '/disclaimer', ...PRIVATE_RESPONSE_HEADERS }
+					headers: {
+						location: `/disclaimer?returnTo=${encodeURIComponent(pathname + event.url.search)}`,
+						...PRIVATE_RESPONSE_HEADERS
+					}
 				}),
 				event
 			);

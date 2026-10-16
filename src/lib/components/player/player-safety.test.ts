@@ -100,8 +100,13 @@ describe('playback source quarantine', () => {
 		expect(tvBrowse).not.toContain('/cinema/tvshow/');
 		// Browse renders loader-built PosterItems whose href is always /movies/<id> (toPosterItem).
 		expect(movieBrowse).not.toContain('href="/cinema/');
-		expect(tvBrowse).toContain('href="/tv/{hero.tmdbId}"');
-		expect(tvBrowse).toContain('href="/tv/{show.tmdbId}"');
+		// The TV landing renders loader-built items too; the loader test pins href to /tv/<id>.
+		expect(tvBrowse).not.toContain('href="/cinema/');
+		const tvLoader = readFileSync(
+			resolve(sourceRoot, 'routes/(cinema)/tv/+page.server.ts'),
+			'utf8'
+		);
+		expect(tvLoader).toContain('href: `/tv/${show.tmdbId}`');
 	});
 
 	it('renders movie detail fields from the server database model', () => {

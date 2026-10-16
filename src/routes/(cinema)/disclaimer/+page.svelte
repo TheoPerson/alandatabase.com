@@ -2,6 +2,7 @@
 	import Button from '$lib/components/ui/button';
 	import { enhance } from '$app/forms';
 
+	let { data } = $props();
 	let isSubmitting = $state(false);
 </script>
 
@@ -49,6 +50,7 @@
 				};
 			}}
 		>
+			<input type="hidden" name="returnTo" value={data.returnTo} />
 			<Button
 				type="button"
 				variant="ghost"

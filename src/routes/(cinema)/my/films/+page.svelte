@@ -1,551 +1,284 @@
 <script lang="ts">
-	import Badge from '$lib/components/ui/Badge.svelte';
 	import Button from '$lib/components/ui/button';
-	import MovieCard from '$lib/components/movie/MovieCard.svelte';
-	import { SvelteDate } from 'svelte/reactivity';
+	import Chip from '$lib/components/ui/chip';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import PosterGrid from '$lib/components/browse/poster-grid.svelte';
+	import { LIBRARY_TABS, type LibraryTab } from '$lib/catalogue/library';
+	import ListIcon from 'lucide-svelte/icons/list';
+	import SettingsIcon from 'lucide-svelte/icons/settings';
+	import CompassIcon from 'lucide-svelte/icons/compass';
 
 	let { data } = $props();
-	let activeTab = $state<'overview' | 'watched' | 'watchlist' | 'favorites'>('overview');
 
-	const stats = $derived(data.stats);
-	const watched = $derived(data.watched);
-	const watchlist = $derived(data.watchlist);
-	const favorites = $derived(data.favorites);
-
-	const genreList = $derived(
-		Object.entries(stats.genreCounts)
-			.sort((a, b) => b[1] - a[1])
-			.slice(0, 5)
-	);
-
-	const heatmapDays = $derived.by(() => {
-		const days = [];
-		const today = new SvelteDate();
-		for (let i = 363; i >= 0; i--) {
-			const d = new SvelteDate(today);
-			d.setDate(d.getDate() - i);
-			const dateStr = d.toISOString().split('T')[0];
-
-			const count = watched.filter((w: any) => {
-				if (!w.updatedAt) return false;
-				return new SvelteDate(w.updatedAt).toISOString().split('T')[0] === dateStr;
-			}).length;
-
-			days.push({
-				date: dateStr,
-				count,
-				level: count === 0 ? 0 : count === 1 ? 1 : count === 2 ? 2 : 3
-			});
-		}
-		return days;
+	const name = $derived(data.user.displayName || data.user.username);
+	const counts = $derived<Record<LibraryTab, number | null>>({
+		watchlist: data.counts.watchlist,
+		favorites: data.counts.favorites,
+		watched: data.counts.watched,
+		stats: null
 	});
+	const lists = $derived({
+		watchlist: data.watchlist,
+		favorites: data.favorites,
+		watched: data.watched
+	});
+	const empty: Record<Exclude<LibraryTab, 'stats'>, { title: string; description: string }> = {
+		watchlist: {
+			title: 'Your watchlist is empty',
+			description:
+				'Add films from any film page with the Watchlist button; they will wait for you here.'
+		},
+		favorites: {
+			title: 'No favourites yet',
+			description: 'Mark the films you love as favourites from their page.'
+		},
+		watched: {
+			title: 'Nothing watched yet',
+			description: 'Use Mark watched on a film page to build your history and your stats.'
+		}
+	};
+	const maxGenre = $derived(Math.max(1, ...data.stats.topGenres.map((genre) => genre.count)));
+	const maxDecade = $derived(Math.max(1, ...data.stats.decades.map((decade) => decade.count)));
+	const tiles = $derived([
+		{ label: 'Films watched', value: data.stats.watchedCount.toLocaleString('en') },
+		{ label: 'Hours watched', value: data.stats.hours.toLocaleString('en') },
+		{ label: 'On the watchlist', value: data.counts.watchlist.toLocaleString('en') },
+		{ label: 'Favourites', value: data.counts.favorites.toLocaleString('en') }
+	]);
 </script>
 
 <svelte:head>
-	<title>My Films | CinemaDB</title>
-	<meta name="description" content="Personal Cinema Archive" />
-	<meta property="og:title" content="My Films | CinemaDB" />
-	<meta property="og:description" content="Personal Cinema Archive" />
-	<meta property="og:type" content="website" />
+	<title>Library | Alan's Database</title>
+	<meta name="robots" content="noindex,nofollow" />
 </svelte:head>
 
-<div class="container my-films-page">
-	<!-- Profile Banner Header -->
-	<header class="profile-header">
-		<div class="user-info">
-			<div class="avatar">🎬</div>
-			<div>
-				<h1 class="user-name">Personal Cinema Archive</h1>
-				<p class="user-handle">@{data.user.username} • Personal Cinema Operating System</p>
-			</div>
+<div class="library">
+	<header class="head">
+		<div>
+			<p class="eyebrow">Library</p>
+			<h1>{name}'s library</h1>
+			<p class="summary">
+				{data.counts.watchlist} to watch · {data.counts.watched} watched · {data.counts.favorites}
+				favourite{data.counts.favorites === 1 ? '' : 's'}
+			</p>
 		</div>
-
-		<div class="quick-stats">
-			<div class="stat-pill">
-				<span class="stat-num">{stats.watchedCount}</span>
-				<span class="stat-label">Watched</span>
-			</div>
-			<div class="stat-pill">
-				<span class="stat-num">{stats.watchlistCount}</span>
-				<span class="stat-label">Watchlist</span>
-			</div>
-			<div class="stat-pill">
-				<span class="stat-num">{stats.favoritesCount}</span>
-				<span class="stat-label">Favorites</span>
-			</div>
-			<div class="stat-pill">
-				<span class="stat-num">{stats.totalRuntimeHours}h</span>
-				<span class="stat-label">Runtime</span>
-			</div>
+		<div class="links">
+			<Button href="/my/lists" variant="secondary" size="sm">
+				<ListIcon size={16} aria-hidden="true" />
+				Lists
+			</Button>
+			<Button href="/my/settings" variant="ghost" size="sm">
+				<SettingsIcon size={16} aria-hidden="true" />
+				Settings
+			</Button>
 		</div>
 	</header>
 
-	<!-- Navigation Tabs -->
-	<div class="tab-nav" role="group" aria-label="Library views">
-		<button
-			class="tab-btn"
-			class:active={activeTab === 'overview'}
-			aria-pressed={activeTab === 'overview'}
-			onclick={() => (activeTab = 'overview')}
-		>
-			Analytics Overview
-		</button>
-		<button
-			class="tab-btn"
-			class:active={activeTab === 'watched'}
-			aria-pressed={activeTab === 'watched'}
-			onclick={() => (activeTab = 'watched')}
-		>
-			Watched ({stats.watchedCount})
-		</button>
-		<button
-			class="tab-btn"
-			class:active={activeTab === 'watchlist'}
-			aria-pressed={activeTab === 'watchlist'}
-			onclick={() => (activeTab = 'watchlist')}
-		>
-			Watchlist ({stats.watchlistCount})
-		</button>
-		<button
-			class="tab-btn"
-			class:active={activeTab === 'favorites'}
-			aria-pressed={activeTab === 'favorites'}
-			onclick={() => (activeTab = 'favorites')}
-		>
-			Favorites ({stats.favoritesCount})
-		</button>
-	</div>
+	<nav class="tabs" aria-label="Library sections" data-sveltekit-noscroll data-sveltekit-keepfocus>
+		{#each LIBRARY_TABS as tab (tab.key)}
+			<Chip href={`?tab=${tab.key}`} selected={data.tab === tab.key}>
+				{tab.label}
+				{#if counts[tab.key] !== null}<span class="count">{counts[tab.key]}</span>{/if}
+			</Chip>
+		{/each}
+	</nav>
 
-	<!-- Overview / Analytics -->
-	{#if activeTab === 'overview'}
-		<div class="dashboard-grid">
-			<!-- Favorite Genres -->
-			<div class="dash-card">
-				<h3 class="card-title">🎭 Top Genres</h3>
-				{#if genreList.length > 0}
-					<div class="genre-bars">
-						{#each genreList as [genreName, count]}
-							<div class="bar-row">
-								<span class="genre-name">{genreName}</span>
-								<div class="bar-bg">
-									<div
-										class="bar-fill"
-										style="width: {Math.min(
-											100,
-											(count / Math.max(1, stats.watchedCount)) * 100
-										)}%;"
-									></div>
-								</div>
-								<span class="count">{count}</span>
-							</div>
-						{/each}
-					</div>
-				{:else}
-					<p class="empty-hint">Log films to discover your genre affinity breakdown.</p>
-				{/if}
-			</div>
+	<section class="panel" aria-label={LIBRARY_TABS.find((tab) => tab.key === data.tab)?.label}>
+		{#if data.tab === 'stats'}
+			<ul class="tiles">
+				{#each tiles as tile (tile.label)}
+					<li class="tile">
+						<span class="tile-label">{tile.label}</span>
+						<span class="tile-value">{tile.value}</span>
+					</li>
+				{/each}
+			</ul>
 
-			<!-- Quick Activity Summary -->
-			<div class="dash-card">
-				<h3 class="card-title">📊 Cinema Universe Stats</h3>
-				<div class="stats-summary-grid">
-					<div class="summary-box">
-						<span class="box-num">{stats.watchedCount}</span>
-						<span class="box-label">Films Logged</span>
-					</div>
-					<div class="summary-box">
-						<span class="box-num">{stats.totalRuntimeHours} hrs</span>
-						<span class="box-label">Total Screen Time</span>
-					</div>
-					<div class="summary-box">
-						<span class="box-num">{stats.favoritesCount}</span>
-						<span class="box-label">All-Time Favorites</span>
-					</div>
+			{#if data.stats.watchedCount === 0}
+				<EmptyState
+					title="Stats appear as you watch"
+					description="Mark films as watched and your genres and decades show up here."
+					compact
+				/>
+			{:else}
+				<div class="charts">
+					<section aria-labelledby="genres-heading">
+						<h2 id="genres-heading">Top genres</h2>
+						<ol class="bars">
+							{#each data.stats.topGenres as genre (genre.name)}
+								<li>
+									<span class="bar-label">{genre.name}</span>
+									<span class="bar-value">{genre.count}</span>
+									<span class="track" aria-hidden="true">
+										<span class="fill" style:width={`${(genre.count / maxGenre) * 100}%`}></span>
+									</span>
+								</li>
+							{/each}
+						</ol>
+					</section>
+					<section aria-labelledby="decades-heading">
+						<h2 id="decades-heading">Films by decade</h2>
+						<ol class="bars">
+							{#each data.stats.decades as decade (decade.decade)}
+								<li>
+									<span class="bar-label">{decade.decade}s</span>
+									<span class="bar-value">{decade.count}</span>
+									<span class="track" aria-hidden="true">
+										<span class="fill" style:width={`${(decade.count / maxDecade) * 100}%`}></span>
+									</span>
+								</li>
+							{/each}
+						</ol>
+					</section>
 				</div>
-			</div>
-		</div>
-
-		<!-- 365-Day Cinema Activity Heatmap -->
-		<div class="dash-card heatmap-card">
-			<div class="heatmap-header">
-				<h3 class="card-title">📅 365-Day Cinema Activity Heatmap</h3>
-				<div class="heatmap-legend">
-					<span class="legend-label">Less</span>
-					<span class="heat-box lvl-0"></span>
-					<span class="heat-box lvl-1"></span>
-					<span class="heat-box lvl-2"></span>
-					<span class="heat-box lvl-3"></span>
-					<span class="legend-label">More</span>
-				</div>
-			</div>
-			<div class="heatmap-grid">
-				{#each heatmapDays as day}
-					<div
-						class="heat-square lvl-{day.level}"
-						title="{day.date}: {day.count} {day.count === 1 ? 'film' : 'films'} logged"
-					></div>
-				{/each}
-			</div>
-		</div>
-	{/if}
-
-	<!-- Watched Tab -->
-	{#if activeTab === 'watched'}
-		{#if watched.length > 0}
-			<div class="grid-movies">
-				{#each watched as item}
-					{#if item.movie}
-						<MovieCard
-							id={item.movie.id}
-							title={item.movie.title}
-							posterPath={item.movie.posterPath}
-							releaseDate={item.movie.releaseDate}
-							voteAverage={item.movie.voteAverage}
-							genres={item.movie.genres?.map((g: any) => g.genre.name)}
-						/>
-					{/if}
-				{/each}
-			</div>
+			{/if}
+		{:else if lists[data.tab].length > 0}
+			<PosterGrid items={lists[data.tab]} label={`${data.counts[data.tab]} films`} />
 		{:else}
-			<div class="empty-tab">
-				<p>🎥 Your watched history timeline will populate as you log films!</p>
-				<Button href="/search" variant="primary">Explore Movies to Log</Button>
-			</div>
+			<EmptyState title={empty[data.tab].title} description={empty[data.tab].description}>
+				{#snippet action()}
+					<Button href="/movies" variant="outline">
+						<CompassIcon size={18} aria-hidden="true" />
+						Browse movies
+					</Button>
+				{/snippet}
+			</EmptyState>
 		{/if}
-	{/if}
-
-	<!-- Watchlist Tab -->
-	{#if activeTab === 'watchlist'}
-		{#if watchlist.length > 0}
-			<div class="grid-movies">
-				{#each watchlist as item}
-					{#if item.movie}
-						<MovieCard
-							id={item.movie.id}
-							title={item.movie.title}
-							posterPath={item.movie.posterPath}
-							releaseDate={item.movie.releaseDate}
-							voteAverage={item.movie.voteAverage}
-							genres={item.movie.genres?.map((g: any) => g.genre.name)}
-						/>
-					{/if}
-				{/each}
-			</div>
-		{:else}
-			<div class="empty-tab">
-				<p>📌 Your watchlist is currently empty.</p>
-				<Button href="/search" variant="primary">Find Movies to Watch</Button>
-			</div>
-		{/if}
-	{/if}
-
-	<!-- Favorites Tab -->
-	{#if activeTab === 'favorites'}
-		{#if favorites.length > 0}
-			<div class="grid-movies">
-				{#each favorites as item}
-					{#if item.movie}
-						<MovieCard
-							id={item.movie.id}
-							title={item.movie.title}
-							posterPath={item.movie.posterPath}
-							releaseDate={item.movie.releaseDate}
-							voteAverage={item.movie.voteAverage}
-							genres={item.movie.genres?.map((g: any) => g.genre.name)}
-						/>
-					{/if}
-				{/each}
-			</div>
-		{:else}
-			<div class="empty-tab">
-				<p>❤️ No favorite movies saved yet. Click the Favorite button on any movie detail page!</p>
-				<Button href="/search" variant="primary">Explore Cinema</Button>
-			</div>
-		{/if}
-	{/if}
+	</section>
 </div>
 
 <style>
-	.my-films-page {
-		padding-top: 3rem;
-		padding-bottom: 5rem;
+	.library {
+		width: 100%;
+		max-width: var(--container-wide);
+		margin: 0 auto;
+		padding: var(--space-6) var(--page-gutter) var(--space-8);
 	}
-
-	.profile-header {
+	.head {
 		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-		justify-content: space-between;
-		padding: 2rem;
-		background: var(--bg-surface-1);
-		border-radius: var(--radius-lg);
-		border: 1px solid var(--border-subtle);
-		margin-bottom: 2rem;
-	}
-
-	@media (min-width: 768px) {
-		.profile-header {
-			flex-direction: row;
-			align-items: center;
-		}
-	}
-
-	.user-info {
-		display: flex;
-		align-items: center;
-		gap: 1.25rem;
-	}
-
-	.avatar {
-		width: 64px;
-		height: 64px;
-		border-radius: 50%;
-		background: var(--bg-surface-3);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 2rem;
-		border: 2px solid var(--border-accent);
-	}
-
-	.user-name {
-		font-size: 1.5rem;
-		font-weight: 800;
-		color: #ffffff;
-	}
-
-	.user-handle {
-		font-size: 0.85rem;
-		color: var(--text-tertiary);
-	}
-
-	.quick-stats {
-		display: flex;
-		gap: 1rem;
 		flex-wrap: wrap;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: var(--space-4);
 	}
-
-	.stat-pill {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		padding: 0.6rem 1.25rem;
-		background: var(--bg-surface-2);
-		border-radius: var(--radius-md);
-		border: 1px solid var(--border-subtle);
-	}
-
-	.stat-num {
-		font-size: 1.25rem;
+	.eyebrow {
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
 		font-weight: 800;
-		color: var(--accent-gold);
-	}
-
-	.stat-label {
-		font-size: 0.75rem;
-		color: var(--text-tertiary);
+		letter-spacing: var(--tracking-wide);
 		text-transform: uppercase;
 	}
-
-	/* Tabs */
-	.tab-nav {
+	h1 {
+		margin-top: var(--space-2);
+		font-size: var(--type-headline);
+		font-weight: 900;
+		letter-spacing: var(--tracking-tight);
+		overflow-wrap: anywhere;
+	}
+	.summary {
+		margin-top: var(--space-2);
+		color: var(--content-secondary);
+	}
+	.links {
 		display: flex;
-		gap: 1rem;
-		border-bottom: 1px solid var(--border-subtle);
-		margin-bottom: 2.5rem;
+		gap: var(--space-2);
+	}
+	.tabs {
+		display: flex;
+		gap: var(--space-2);
+		margin: var(--space-6) calc(-1 * var(--page-gutter)) 0;
+		padding: 0 var(--page-gutter) var(--space-2);
 		overflow-x: auto;
+		scrollbar-width: none;
 	}
-
-	.tab-btn {
-		padding: 0.75rem 0.5rem;
-		font-size: 0.95rem;
-		font-weight: 600;
-		color: var(--text-tertiary);
-		border-bottom: 2px solid transparent;
-		transition: all var(--transition-fast);
-		white-space: nowrap;
-		cursor: pointer;
-		background: none;
-		border-top: none;
-		border-left: none;
-		border-right: none;
+	.tabs::-webkit-scrollbar {
+		display: none;
 	}
-
-	.tab-btn:hover {
-		color: var(--text-primary);
-	}
-
-	.tab-btn.active {
-		color: var(--accent-gold);
-		border-bottom-color: var(--accent-gold);
-	}
-
-	/* Dashboard Grid */
-	.dashboard-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
-		gap: 1.75rem;
-	}
-
-	.dash-card {
-		background: var(--bg-surface-1);
-		border-radius: var(--radius-lg);
-		border: 1px solid var(--border-subtle);
-		padding: 1.5rem;
-	}
-
-	.card-title {
-		font-size: 1.1rem;
-		font-weight: 700;
-		margin-bottom: 1.25rem;
-		color: var(--text-primary);
-	}
-
-	.genre-bars {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.bar-row {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.genre-name {
-		width: 100px;
-		font-size: 0.85rem;
-		color: var(--text-secondary);
-	}
-
-	.bar-bg {
-		flex: 1;
-		height: 8px;
-		background: var(--bg-surface-3);
-		border-radius: var(--radius-full);
-		overflow: hidden;
-	}
-
-	.bar-fill {
-		height: 100%;
-		background: var(--accent-gold);
-		border-radius: var(--radius-full);
-	}
-
 	.count {
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--text-tertiary);
-	}
-
-	.stats-summary-grid {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.summary-box {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 1rem;
-		background: var(--bg-surface-2);
-		border: 1px solid var(--border-subtle);
-		border-radius: var(--radius-md);
-	}
-
-	.box-num {
-		font-size: 1.2rem;
-		font-weight: 800;
-		color: var(--accent-gold);
-	}
-
-	.box-label {
-		font-size: 0.9rem;
-		color: var(--text-secondary);
-	}
-
-	.empty-hint {
-		font-size: 0.9rem;
-		color: var(--text-tertiary);
-		font-style: italic;
-	}
-
-	.empty-tab {
+		min-width: 1.5rem;
+		padding: 0 0.4rem;
+		border-radius: var(--radius-full);
+		background: rgba(255, 255, 255, 0.08);
+		color: var(--content-secondary);
+		font-size: var(--text-xs);
 		text-align: center;
-		padding: 4rem 2rem;
-		background: var(--bg-surface-1);
-		border-radius: var(--radius-lg);
-		border: 1px solid var(--border-subtle);
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
 	}
-
-	.heatmap-card {
-		margin-top: 1.5rem;
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
+	.panel {
+		margin-top: var(--space-5);
 	}
-
-	.heatmap-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		flex-wrap: wrap;
-		gap: 1rem;
-	}
-
-	.heatmap-legend {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		font-size: 0.75rem;
-		color: #71717a;
-	}
-
-	.heat-box {
-		width: 10px;
-		height: 10px;
-		border-radius: 2px;
-	}
-
-	.heatmap-grid {
+	.tiles {
 		display: grid;
-		grid-template-rows: repeat(7, 1fr);
-		grid-auto-flow: column;
-		gap: 4px;
-		overflow-x: auto;
-		padding: 0.5rem 0;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--space-3);
+		list-style: none;
 	}
-
-	.heat-square {
-		width: 11px;
-		height: 11px;
-		border-radius: 3px;
-		transition: transform 100ms ease;
-		cursor: pointer;
+	.tile {
+		display: grid;
+		gap: var(--space-2);
+		padding: var(--space-4);
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-lg);
+		background: var(--surface-raised);
 	}
-
-	.heat-square:hover {
-		transform: scale(1.3);
-		z-index: 2;
+	.tile-label {
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
+		font-weight: 600;
 	}
-
-	.lvl-0 {
-		background: rgba(255, 255, 255, 0.05);
+	.tile-value {
+		font-size: var(--type-headline);
+		font-weight: 700;
+		letter-spacing: var(--tracking-tight);
 	}
-	.lvl-1 {
-		background: rgba(16, 185, 129, 0.35);
+	.charts {
+		display: grid;
+		gap: var(--space-6);
+		margin-top: var(--space-6);
 	}
-	.lvl-2 {
-		background: rgba(16, 185, 129, 0.65);
+	.charts h2 {
+		font-size: var(--type-title);
+		font-weight: 800;
 	}
-	.lvl-3 {
-		background: #10b981;
-		box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+	.bars {
+		display: grid;
+		gap: var(--space-3);
+		margin-top: var(--space-4);
+		list-style: none;
+	}
+	.bars li {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: 0.35rem var(--space-3);
+	}
+	.bar-label {
+		font-size: var(--text-sm);
+		font-weight: 600;
+	}
+	.bar-value {
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
+		font-variant-numeric: tabular-nums;
+	}
+	.track {
+		grid-column: 1 / -1;
+		height: 8px;
+		border-radius: var(--radius-full);
+		background: var(--brand-muted);
+	}
+	.fill {
+		display: block;
+		height: 100%;
+		min-width: 8px;
+		border-radius: var(--radius-full);
+		background: var(--brand-primary);
+	}
+	@media (min-width: 768px) {
+		.tiles {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+		.charts {
+			grid-template-columns: 1fr 1fr;
+			gap: var(--space-7);
+		}
 	}
 </style>
