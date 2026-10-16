@@ -29,6 +29,10 @@ its launch gates are explicitly verified.
 
 ### Minor Updates
 
+- Picker rebuilt on the kit: mood chips, filters in a sheet that sends one request, a backdrop result card with reason and signals, a pinned Another button and swipe on phones, ArrowRight for another film; skeleton, empty and error states.
+- Sign-in and registration rebuilt on the kit: centred card, labelled fields with inline errors, announced server errors, show-password toggle, returnTo kept on every link, honest invitation-only copy.
+- Lists rebuilt on the kit: list cards with poster thumbnails, a create form with live character counters and a public switch, and a list page with owner-only removal.
+- The home page has a social preview image; film pages request a poster sized for how it is shown.
 - TV landing rebuilt on the kit: featured carousel of the five best-ranked series, a Top 10 ranked rail and all 50 series with shareable genre filters (?genre=); phones no longer download a 1 MB original-size backdrop.
 - Discover rebuilt: a pick of the day, four mood rails and "Best of the 2010s/2000s/1990s/1980s", each with See all into Browse with the matching filters; no emoji headings.
 - Library (/my/films) rebuilt: linkable Watchlist, Favourites, Watched and Stats tabs (?tab=), stat tiles with top genres and films-per-decade bars, empty states with a way forward, and Lists and Settings reachable from the page.
@@ -57,6 +61,8 @@ its launch gates are explicitly verified.
 
 ### Fixed
 
+- The Picker showed saved and watched states it had not saved and posted to a legacy route; it now saves through the film page action and shows only server-confirmed state. It labels ratings IMDb or TMDB truthfully, has one h1 and a placeholder for films without artwork.
+- The kit switch had no visible track on the dark theme; it is now drawn from tokens and keyed on aria-checked, with a 44px hit area.
 - After signing in, the content notice no longer drops people on /movies: it returns them to the page they asked for (validated to stay on this site).
 - The genre filter of the catalogue returned HTTP 503 (a raw subquery was re-aliased by the relational query builder). Home genre chips work again.
 - The TV snapshot used invented artwork paths: 43 of 50 posters and 44 of 50 backdrops were broken, and 13 entries pointed at the wrong TMDB series. Every id now matches its title and first-air year and all 100 images load.

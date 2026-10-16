@@ -1,43 +1,91 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
 	import Button from '$lib/components/ui/button';
 	import Dialog from '$lib/components/ui/dialog';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import PosterGrid from '$lib/components/browse/poster-grid.svelte';
+	import BackLink from '$lib/components/lists/back-link.svelte';
+	import ListFilmGrid from '$lib/components/lists/list-film-grid.svelte';
+	import VisibilityBadge from '$lib/components/lists/visibility-badge.svelte';
+	import { filmCount, toListPosterItem } from '$lib/components/lists/list-form';
 	import TrashIcon from 'lucide-svelte/icons/trash-2';
-	import { enhance } from '$app/forms';
+	import CompassIcon from 'lucide-svelte/icons/compass';
 
 	let { data } = $props();
 	let confirmDelete = $state(false);
 	let deleting = $state(false);
+	let filmsHeading = $state<HTMLHeadingElement | null>(null);
+
 	const list = $derived(data.list);
-	const isOwner = $derived(data.isOwner);
+	const isOwner = $derived(data.isOwner === true);
+	const owner = $derived(list.user.displayName || list.user.username);
+	const films = $derived(list.items.map((item) => toListPosterItem(item.movie)));
+	const count = $derived(filmCount(films.length));
 </script>
 
-<div class="container list-page">
-	<header class="page-header">
-		<div>
-			<h1 class="title">{list.name}</h1>
-			<p class="subtitle">
-				By {list.user.displayName || list.user.username} • {list.items.length} films • {list.isPublic
-					? 'Public'
-					: 'Private'}
-			</p>
-			{#if list.description}
-				<p class="description">{list.description}</p>
-			{/if}
-		</div>
-		<div class="actions">
-			{#if isOwner}
-				<Button variant="outline" onclick={() => (confirmDelete = true)}>
-					<TrashIcon size={18} aria-hidden="true" />
-					Delete list
-				</Button>
-			{/if}
-		</div>
-	</header>
+<svelte:head>
+	<title>{list.name} | Alan's Database</title>
+	<meta name="robots" content="noindex,nofollow" />
+</svelte:head>
 
+<div class="list">
+	<div class="page">
+		<BackLink href="/my/films" label="Library" />
+
+		<header class="head">
+			<div class="title">
+				<p class="eyebrow">List</p>
+				<h1>{list.name}</h1>
+				<p class="meta">
+					<span>By {owner}</span>
+					<span aria-hidden="true">·</span>
+					<span>{count}</span>
+					<VisibilityBadge isPublic={list.isPublic} />
+				</p>
+				{#if list.description}<p class="description">{list.description}</p>{/if}
+			</div>
+			{#if isOwner}
+				<div class="links">
+					<Button href="/my/lists" variant="secondary">All lists</Button>
+					<Button variant="outline" onclick={() => (confirmDelete = true)}>
+						<TrashIcon size={18} aria-hidden="true" />
+						Delete list
+					</Button>
+				</div>
+			{/if}
+		</header>
+
+		<h2 class="sr-only" id="films-heading" tabindex="-1" bind:this={filmsHeading}>Films</h2>
+	</div>
+
+	{#if films.length === 0}
+		<div class="page">
+			<EmptyState
+				title="This list is empty"
+				description={isOwner
+					? 'Find films in Browse, then add them to this list from their page.'
+					: `${owner} has not added any films yet.`}
+			>
+				{#snippet action()}
+					<Button href="/movies" variant="outline">
+						<CompassIcon size={18} aria-hidden="true" />
+						Browse movies
+					</Button>
+				{/snippet}
+			</EmptyState>
+		</div>
+	{:else if isOwner}
+		<ListFilmGrid items={films} label={count} onemptied={() => filmsHeading?.focus()} />
+	{:else}
+		<PosterGrid items={films} label={count} />
+	{/if}
+</div>
+
+{#if isOwner}
 	<Dialog bind:open={confirmDelete} label="Delete this list?">
 		<p class="confirm-copy">
-			“{list.name}” and its {list.items.length} film{list.items.length === 1 ? '' : 's'} will be removed
-			from your library. The films themselves stay in the catalogue. This cannot be undone.
+			“{list.name}” and its {count} will be removed from your library. The films themselves stay in the
+			catalogue. This cannot be undone.
 		</p>
 		<form
 			method="POST"
@@ -57,46 +105,64 @@
 			<Button type="submit" variant="danger" loading={deleting}>Delete list</Button>
 		</form>
 	</Dialog>
-
-	<div class="items-grid">
-		{#if list.items.length === 0}
-			<div class="empty-state glass-card">
-				<div class="icon">🎬</div>
-				<h3>List is empty</h3>
-				<p>Search for movies and add them to this list.</p>
-			</div>
-		{:else}
-			{#each list.items as item (item.movieId)}
-				<div class="item-card glass-card">
-					<a href="/movies/{item.movie.id}" class="poster-link">
-						{#if item.movie.posterPath}
-							<img
-								src="https://image.tmdb.org/t/p/w342{item.movie.posterPath}"
-								alt={item.movie.title}
-							/>
-						{:else}
-							<div class="placeholder">No Image</div>
-						{/if}
-					</a>
-					<div class="item-info">
-						<h3 class="movie-title"><a href="/movies/{item.movie.id}">{item.movie.title}</a></h3>
-						{#if item.movie.releaseDate}
-							<p class="movie-year">{item.movie.releaseDate.substring(0, 4)}</p>
-						{/if}
-					</div>
-					{#if isOwner}
-						<form method="POST" action="?/removeItem" use:enhance class="remove-action">
-							<input type="hidden" name="movieId" value={item.movieId} />
-							<button class="remove-btn" title="Remove from list">✕</button>
-						</form>
-					{/if}
-				</div>
-			{/each}
-		{/if}
-	</div>
-</div>
+{/if}
 
 <style>
+	.list {
+		padding: var(--space-4) 0 var(--space-8);
+	}
+	.page {
+		width: 100%;
+		max-width: var(--container-wide);
+		margin: 0 auto;
+		padding-inline: var(--page-gutter);
+	}
+	.head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: var(--space-4);
+		margin: var(--space-2) 0 var(--space-6);
+	}
+	.title {
+		min-width: 0;
+		max-width: var(--container-reading);
+	}
+	.eyebrow {
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+	}
+	h1 {
+		margin-top: var(--space-2);
+		font-size: var(--type-headline);
+		font-weight: 900;
+		letter-spacing: var(--tracking-tight);
+		overflow-wrap: anywhere;
+	}
+	.meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
+		color: var(--content-secondary);
+	}
+	.description {
+		margin-top: var(--space-3);
+		color: var(--content-secondary);
+		line-height: var(--leading-body);
+		white-space: pre-line;
+		overflow-wrap: anywhere;
+	}
+	.links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
 	.confirm-copy {
 		margin-top: var(--space-3);
 		color: var(--content-secondary);
@@ -108,157 +174,5 @@
 		justify-content: flex-end;
 		gap: var(--space-3);
 		margin-top: var(--space-5);
-	}
-	.list-page {
-		padding-top: 3rem;
-		padding-bottom: 5rem;
-	}
-
-	.page-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		margin-bottom: 3rem;
-	}
-
-	.title {
-		font-size: 2.5rem;
-		font-weight: 800;
-		color: var(--text-primary);
-		margin-bottom: 0.25rem;
-	}
-
-	.subtitle {
-		color: var(--text-tertiary);
-		font-size: 0.95rem;
-		font-weight: 500;
-	}
-
-	.description {
-		margin-top: 1.5rem;
-		color: var(--text-secondary);
-		max-width: 800px;
-		line-height: 1.6;
-	}
-
-	.empty-state {
-		grid-column: 1 / -1;
-		padding: 4rem 2rem;
-		text-align: center;
-		border-radius: var(--radius-lg);
-	}
-
-	.empty-state .icon {
-		font-size: 3rem;
-		margin-bottom: 1rem;
-	}
-
-	.items-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-		gap: 2rem;
-	}
-
-	.item-card {
-		display: flex;
-		flex-direction: column;
-		position: relative;
-		border-radius: var(--radius-md);
-		overflow: hidden;
-		transition:
-			transform var(--transition-fast),
-			border-color var(--transition-fast);
-	}
-
-	.item-card:hover {
-		transform: translateY(-4px);
-		border-color: var(--border-accent);
-	}
-
-	.item-card:hover .remove-btn {
-		opacity: 1;
-	}
-
-	.item-card:focus-within .remove-btn,
-	.remove-btn:focus-visible {
-		opacity: 1;
-	}
-
-	.poster-link {
-		display: block;
-		aspect-ratio: 2 / 3;
-		background: var(--bg-surface-2);
-	}
-
-	.poster-link img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	.placeholder {
-		width: 100%;
-		height: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: var(--text-tertiary);
-		font-size: 0.9rem;
-	}
-
-	.item-info {
-		padding: 1rem;
-	}
-
-	.movie-title {
-		font-weight: 700;
-		font-size: 1rem;
-		line-height: 1.3;
-		margin-bottom: 0.25rem;
-	}
-
-	.movie-title a {
-		color: var(--text-primary);
-		text-decoration: none;
-	}
-
-	.movie-year {
-		color: var(--text-tertiary);
-		font-size: 0.85rem;
-	}
-
-	.remove-action {
-		position: absolute;
-		top: 0.5rem;
-		right: 0.5rem;
-	}
-
-	.remove-btn {
-		width: 32px;
-		height: 32px;
-		border-radius: 50%;
-		background: rgba(0, 0, 0, 0.6);
-		color: white;
-		border: 1px solid rgba(255, 255, 255, 0.2);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		opacity: 0;
-		transition: all var(--transition-fast);
-		backdrop-filter: blur(4px);
-	}
-
-	.remove-btn:hover {
-		background: rgba(239, 68, 68, 0.9);
-		border-color: rgba(239, 68, 68, 1);
-		transform: scale(1.1);
-	}
-
-	/* Always show remove button on touch devices */
-	@media (hover: none) {
-		.remove-btn {
-			opacity: 1;
-		}
 	}
 </style>

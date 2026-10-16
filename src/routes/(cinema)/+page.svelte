@@ -15,8 +15,11 @@
 	import InfoIcon from 'lucide-svelte/icons/info';
 	import PlusIcon from 'lucide-svelte/icons/plus';
 	import CheckIcon from 'lucide-svelte/icons/check';
+	import { tmdbImageUrl } from '$lib/tmdb/images';
 
 	let { data } = $props();
+	// Social previews use the first featured backdrop when there is one.
+	const socialImage = $derived(tmdbImageUrl(data.featured[0]?.backdropPath, 'w1280'));
 
 	const savedIds = $derived(new Set<string>(data.watchlistIds));
 	let pending = $state<string | null>(null);
@@ -41,6 +44,8 @@
 	<meta property="og:description" content="Films, series and your personal cinema." />
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="https://alandatabase.com/" />
+	{#if socialImage}<meta property="og:image" content={socialImage} />{/if}
+	<meta name="twitter:card" content={socialImage ? 'summary_large_image' : 'summary'} />
 </svelte:head>
 
 {#if data.featured.length > 0}

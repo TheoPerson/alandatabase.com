@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { Switch as SwitchPrimitive } from 'bits-ui';
-	import { cn, type WithoutChildrenOrChild } from '$lib/utils.js';
+	import type { WithoutChildrenOrChild } from '$lib/utils.js';
 
+	// Kit switch: state is read from aria-checked (always set by bits-ui on role="switch"),
+	// so the visuals cannot drift from what assistive technology announces.
 	let {
 		ref = $bindable(null),
-		class: className,
+		class: className = '',
 		checked = $bindable(false),
 		size = 'default',
 		...restProps
@@ -17,15 +19,77 @@
 	bind:ref
 	bind:checked
 	data-slot="switch"
-	data-size={size}
-	class={cn(
-		'shrink-0 rounded-full border border-transparent focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=default]:h-[18.4px] data-[size=default]:w-[32px] data-[size=sm]:h-[14px] data-[size=sm]:w-[24px] dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:bg-primary data-unchecked:bg-input dark:data-unchecked:bg-input/80 peer group/switch relative inline-flex items-center transition-all outline-none after:absolute after:-inset-x-3 after:-inset-y-2 data-disabled:cursor-not-allowed data-disabled:opacity-50',
-		className
-	)}
+	class="kit-switch {size} {className}"
 	{...restProps}
 >
-	<SwitchPrimitive.Thumb
-		data-slot="switch-thumb"
-		class="rounded-full bg-background group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)] group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)] dark:data-checked:bg-primary-foreground group-data-[size=default]/switch:data-unchecked:translate-x-0 group-data-[size=sm]/switch:data-unchecked:translate-x-0 dark:data-unchecked:bg-foreground pointer-events-none block ring-0 transition-transform rtl:data-[state=checked]:translate-x-[calc(-100%)]"
-	/>
+	<SwitchPrimitive.Thumb data-slot="switch-thumb" class="kit-switch-thumb" />
 </SwitchPrimitive.Root>
+
+<style>
+	:global(.kit-switch) {
+		--switch-width: 2.75rem;
+		--switch-height: 1.6rem;
+		--switch-gap: 0.2rem;
+		position: relative;
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+		width: var(--switch-width);
+		height: var(--switch-height);
+		padding: var(--switch-gap);
+		border: 1px solid var(--border-strong);
+		border-radius: var(--radius-full);
+		background: var(--surface-interactive);
+		cursor: pointer;
+		transition:
+			background-color var(--duration-base) var(--ease-out),
+			border-color var(--duration-base) var(--ease-out);
+	}
+	/* A 44px hit area around the visible track. */
+	:global(.kit-switch)::after {
+		content: '';
+		position: absolute;
+		inset: calc((var(--switch-height) - var(--touch-target)) / 2) -0.5rem;
+	}
+	:global(.kit-switch.sm) {
+		--switch-width: 2.25rem;
+		--switch-height: 1.3rem;
+	}
+	:global(.kit-switch[aria-checked='true']) {
+		border-color: var(--brand-border);
+		background: var(--brand-primary);
+	}
+	:global(.kit-switch:focus-visible) {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 3px;
+	}
+	:global(.kit-switch[data-disabled]) {
+		cursor: not-allowed;
+		opacity: 0.5;
+	}
+	:global(.kit-switch-thumb) {
+		display: block;
+		width: calc(var(--switch-height) - 2 * var(--switch-gap) - 2px);
+		height: calc(var(--switch-height) - 2 * var(--switch-gap) - 2px);
+		border-radius: 50%;
+		background: var(--content-primary);
+		box-shadow: var(--elevation-1);
+		pointer-events: none;
+		transition: transform var(--duration-base) var(--ease-out);
+	}
+	:global(.kit-switch[aria-checked='true'] .kit-switch-thumb) {
+		background: var(--content-inverse);
+		transform: translateX(calc(var(--switch-width) - var(--switch-height)));
+	}
+	@media (forced-colors: active) {
+		:global(.kit-switch[aria-checked='true']) {
+			background: Highlight;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		:global(.kit-switch),
+		:global(.kit-switch-thumb) {
+			transition: none;
+		}
+	}
+</style>

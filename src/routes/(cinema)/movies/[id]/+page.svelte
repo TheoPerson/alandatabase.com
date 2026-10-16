@@ -319,7 +319,7 @@
 					title={data.hero.title}
 					posterPath={data.posterPath}
 					eager
-					sizes="280px"
+					sizes="(min-width: 768px) 220px, 112px"
 				/>
 			</div>
 			<div class="text">

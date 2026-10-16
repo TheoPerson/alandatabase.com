@@ -1,174 +1,111 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/button';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import BackLink from '$lib/components/lists/back-link.svelte';
+	import ListCard from '$lib/components/lists/list-card.svelte';
+	import PlusIcon from 'lucide-svelte/icons/plus';
 
 	let { data } = $props();
-	const lists = $derived(data.lists);
+
+	const lists = $derived(
+		data.lists.map((list) => ({
+			id: list.id,
+			name: list.name,
+			description: list.description,
+			isPublic: list.isPublic,
+			films: list.items.map((item) => ({
+				id: item.movieId,
+				title: item.movie.title,
+				posterPath: item.movie.posterPath ?? null
+			}))
+		}))
+	);
+	const publicCount = $derived(lists.filter((list) => list.isPublic).length);
 </script>
 
 <svelte:head>
-	<title>My Lists | CinemaDB</title>
-	<meta name="description" content="Manage your custom movie collections." />
+	<title>Your lists | Alan's Database</title>
+	<meta name="robots" content="noindex,nofollow" />
 </svelte:head>
 
-<div class="container lists-page">
-	<header class="page-header">
+<div class="lists">
+	<BackLink href="/my/films" label="Library" />
+
+	<header class="head">
 		<div>
-			<h1 class="title">My Lists</h1>
-			<p class="subtitle">Create and manage your custom movie collections.</p>
+			<p class="eyebrow">Library</p>
+			<h1>Your lists</h1>
+			{#if lists.length > 0}
+				<p class="summary">
+					{lists.length} list{lists.length === 1 ? '' : 's'} · {publicCount} public
+				</p>
+			{/if}
 		</div>
-		<Button href="/my/lists/create" variant="primary">+ Create List</Button>
+		{#if lists.length > 0}
+			<Button href="/my/lists/create" variant="primary">
+				<PlusIcon size={18} aria-hidden="true" />
+				Create list
+			</Button>
+		{/if}
 	</header>
 
 	{#if lists.length === 0}
-		<div class="empty-state glass-card">
-			<div class="icon">📋</div>
-			<h3>No lists yet</h3>
-			<p>Create a custom list to organize your favorite films.</p>
-			<Button href="/my/lists/create" variant="primary" class="mt-4">Create First List</Button>
-		</div>
+		<EmptyState
+			title="No lists yet"
+			description="Group films your way: a director's run, a rainy-Sunday shortlist, the ones to show a friend."
+		>
+			{#snippet action()}
+				<Button href="/my/lists/create" variant="primary">
+					<PlusIcon size={18} aria-hidden="true" />
+					Create list
+				</Button>
+			{/snippet}
+		</EmptyState>
 	{:else}
-		<div class="lists-grid">
-			{#each lists as list}
-				<a href="/my/lists/{list.id}" class="list-card glass-card">
-					<div class="covers">
-						{#if list.items.length === 0}
-							<div class="empty-cover">Empty</div>
-						{:else}
-							{#each list.items as item, i}
-								{#if item.movie.posterPath}
-									<img
-										src="https://image.tmdb.org/t/p/w154{item.movie.posterPath}"
-										alt="Cover"
-										class="cover-img"
-										style="z-index: {4 - i}; transform: translateX({i * 10}px);"
-									/>
-								{/if}
-							{/each}
-						{/if}
-					</div>
-					<div class="list-info">
-						<h3 class="list-title">{list.name}</h3>
-						<p class="list-meta">
-							{list.items.length} films • {list.isPublic ? 'Public' : 'Private'}
-						</p>
-					</div>
-				</a>
+		<ul class="grid" aria-label="Your lists">
+			{#each lists as list (list.id)}
+				<li><ListCard {...list} /></li>
 			{/each}
-		</div>
+		</ul>
 	{/if}
 </div>
 
 <style>
-	.lists-page {
-		padding-top: 3rem;
-		padding-bottom: 5rem;
-	}
-
-	.page-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-end;
-		margin-bottom: 3rem;
-	}
-
-	.title {
-		font-size: 2.5rem;
-		font-weight: 800;
-		color: var(--text-primary);
-	}
-
-	.subtitle {
-		color: var(--text-secondary);
-		margin-top: 0.5rem;
-	}
-
-	.empty-state {
-		padding: 4rem 2rem;
-		text-align: center;
-		border-radius: var(--radius-lg);
-	}
-
-	.empty-state .icon {
-		font-size: 3rem;
-		margin-bottom: 1rem;
-	}
-
-	.empty-state h3 {
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: var(--text-primary);
-		margin-bottom: 0.5rem;
-	}
-
-	.empty-state p {
-		color: var(--text-secondary);
-	}
-
-	.lists-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-		gap: 2rem;
-	}
-
-	.list-card {
-		display: block;
-		padding: 1.5rem;
-		border-radius: var(--radius-lg);
-		text-decoration: none;
-		transition:
-			transform var(--transition-fast),
-			border-color var(--transition-fast);
-	}
-
-	.list-card:hover {
-		transform: translateY(-4px);
-		border-color: var(--border-emerald);
-	}
-
-	.covers {
-		position: relative;
-		height: 140px;
-		margin-bottom: 1.5rem;
-		display: flex;
-		justify-content: center;
-	}
-
-	.cover-img {
-		position: absolute;
-		width: 90px;
-		height: 135px;
-		object-fit: cover;
-		border-radius: var(--radius-sm);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-	}
-
-	.empty-cover {
+	.lists {
 		width: 100%;
-		height: 100%;
-		background: rgba(255, 255, 255, 0.05);
-		border-radius: var(--radius-sm);
+		max-width: var(--container-wide);
+		margin: 0 auto;
+		padding: var(--space-4) var(--page-gutter) var(--space-8);
+	}
+	.head {
 		display: flex;
-		align-items: center;
-		justify-content: center;
-		color: var(--text-tertiary);
-		font-size: 0.9rem;
-		border: 1px dashed rgba(255, 255, 255, 0.1);
+		flex-wrap: wrap;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: var(--space-4);
+		margin: var(--space-2) 0 var(--space-6);
 	}
-
-	.list-info {
-		text-align: center;
+	.eyebrow {
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
 	}
-
-	.list-title {
-		font-size: 1.1rem;
-		font-weight: 700;
-		color: var(--text-primary);
-		margin-bottom: 0.25rem;
+	h1 {
+		margin-top: var(--space-2);
+		font-size: var(--type-headline);
+		font-weight: 900;
+		letter-spacing: var(--tracking-tight);
 	}
-
-	.list-meta {
-		font-size: 0.85rem;
-		color: var(--text-tertiary);
+	.summary {
+		margin-top: var(--space-2);
+		color: var(--content-secondary);
+	}
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
+		gap: var(--space-4);
+		list-style: none;
 	}
 </style>
