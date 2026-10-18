@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { enhance } from '$app/forms';
 	import { page } from '$app/state';
 	import { replaceState } from '$app/navigation';
 	import BackdropImage from '$lib/components/ui/backdrop-image';
@@ -17,6 +18,9 @@
 	import PlayIcon from 'lucide-svelte/icons/play';
 	import RotateCcwIcon from 'lucide-svelte/icons/rotate-ccw';
 	import CircleCheckIcon from 'lucide-svelte/icons/circle-check';
+	import BookmarkIcon from 'lucide-svelte/icons/bookmark';
+	import BookmarkCheckIcon from 'lucide-svelte/icons/bookmark-check';
+	import HeartIcon from 'lucide-svelte/icons/heart';
 	import type { SeriesEpisode, SeriesSeason } from './+page.server';
 
 	let { data } = $props();
@@ -127,6 +131,63 @@
 		const large = tmdbImageUrl(path, 'w780');
 		if (!small || !large) return null;
 		return { src: small, srcset: `${small} 300w, ${large} 780w` };
+	}
+
+	type ToggleType = 'watchlist' | 'favorite';
+	type Interaction = NonNullable<typeof data.interaction>;
+	const EMPTY_INTERACTION: Interaction = { watchlist: false, favorite: false };
+	const TOGGLES = ['watchlist', 'favorite'] as const;
+
+	let pending = $state<ToggleType | null>(null);
+	let interaction = $state<Interaction | null>(null);
+	// The server state is the truth; optimistic flips are reverted when the save fails.
+	$effect(() => {
+		interaction = data.interaction;
+	});
+	const loginHref = $derived(`/auth/login?returnTo=${encodeURIComponent(`/tv/${show.tmdbId}`)}`);
+
+	function toggleLabel(type: ToggleType, on: boolean): string {
+		if (type === 'watchlist') return on ? 'In watchlist' : 'Watchlist';
+		return on ? 'Favourited' : 'Favourite';
+	}
+
+	// Toast copy comes from the saved state the server returned, never from the click.
+	function toggleToast(type: ToggleType, saved: Interaction): string {
+		if (type === 'watchlist') {
+			return saved.watchlist
+				? `${show.title} added to your watchlist`
+				: `${show.title} removed from your watchlist`;
+		}
+		return saved.favorite
+			? `${show.title} added to favourites`
+			: `${show.title} removed from favourites`;
+	}
+
+	function submitToggle(type: ToggleType) {
+		return () => {
+			const previous = interaction;
+			const base = interaction ?? EMPTY_INTERACTION;
+			pending = type;
+			interaction = { ...base, [type]: !base[type] };
+			return async ({
+				result,
+				update
+			}: {
+				result: { type: string; data?: unknown };
+				update: (options?: { reset?: boolean }) => Promise<void>;
+			}) => {
+				pending = null;
+				const saved = (result.data as { interaction?: Interaction } | undefined)?.interaction;
+				if (result.type === 'success' && saved) {
+					interaction = saved;
+					addToast(toggleToast(type, saved), 'success');
+					await update({ reset: false });
+				} else {
+					interaction = previous;
+					addToast('That could not be saved. Please try again.', 'error');
+				}
+			};
+		};
 	}
 
 	async function share() {
@@ -293,9 +354,42 @@
 					</p>
 				{/if}
 				<div class="actions">
-					<Button variant="secondary" onclick={share}>
+					{#each TOGGLES as type (type)}
+						{@const on = Boolean(interaction?.[type])}
+						{#if data.signedIn}
+							<form method="POST" action="?/logInteraction" use:enhance={submitToggle(type)}>
+								<input type="hidden" name="type" value={type} />
+								<input type="hidden" name="value" value={String(!on)} />
+								<Button
+									type="submit"
+									variant="secondary"
+									aria-pressed={on}
+									loading={pending === type}
+								>
+									{#if type === 'watchlist'}
+										{#if on}<BookmarkCheckIcon size={18} aria-hidden="true" />{:else}<BookmarkIcon
+												size={18}
+												aria-hidden="true"
+											/>{/if}
+									{:else}
+										<HeartIcon size={18} aria-hidden="true" fill={on ? 'currentColor' : 'none'} />
+									{/if}
+									<span>{toggleLabel(type, on)}</span>
+								</Button>
+							</form>
+						{:else}
+							<Button href={loginHref} variant="secondary">
+								{#if type === 'watchlist'}<BookmarkIcon
+										size={18}
+										aria-hidden="true"
+									/>{:else}<HeartIcon size={18} aria-hidden="true" />{/if}
+								<span>{toggleLabel(type, false)}</span>
+							</Button>
+						{/if}
+					{/each}
+					<Button variant="secondary" class="share" onclick={share}>
 						<ShareIcon size={18} aria-hidden="true" />
-						Share
+						<span class="share-label">Share</span>
 					</Button>
 				</div>
 			</div>
@@ -611,6 +705,21 @@
 		flex-wrap: wrap;
 		gap: var(--space-3);
 		margin-top: var(--space-2);
+	}
+	/* Phones: Watchlist, Favourite and Share stay on one row; Share keeps its name for readers. */
+	@media (max-width: 479px) {
+		.actions :global(.share) {
+			width: var(--touch-target);
+			padding-inline: 0;
+		}
+		.share-label {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+		}
 	}
 	.body {
 		display: grid;

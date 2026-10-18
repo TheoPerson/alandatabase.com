@@ -9,6 +9,12 @@ const repo = vi.hoisted(() => ({
 }));
 vi.mock('$lib/server/services/tv-db.service', () => tvDb);
 vi.mock('$lib/server/media/repository', () => repo);
+// Signed-in loads read the series flags; covered in page.server.interaction.test.ts.
+vi.mock('$lib/server/services/show-interaction.service', () => ({
+	getShowInteraction: vi.fn(async () => ({ watchlist: false, favorite: false })),
+	setShowFlag: vi.fn(),
+	isShowFlag: vi.fn()
+}));
 
 import { load } from './+page.server';
 import { TOP_50_IMDB_TV } from '$lib/server/services/tv.service';

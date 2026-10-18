@@ -39,11 +39,11 @@
 		watchlist: {
 			title: 'Your watchlist is empty',
 			description:
-				'Add films from any film page with the Watchlist button; they will wait for you here.'
+				'Add films and series from their page with the Watchlist button; they will wait for you here.'
 		},
 		favorites: {
 			title: 'No favourites yet',
-			description: 'Mark the films you love as favourites from their page.'
+			description: 'Mark the films and series you love as favourites from their page.'
 		},
 		watched: {
 			title: 'Nothing watched yet',

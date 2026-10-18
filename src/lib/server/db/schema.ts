@@ -651,6 +651,26 @@ export const mediaProgress = pgTable(
 	]
 );
 
+// A user's watchlist and favourite flags for a series, keyed by its TMDB id: a series page can
+// come from the IMDb Top TV snapshot alone, without a tv_shows row.
+export const userShowInteractions = pgTable(
+	'user_show_interactions',
+	{
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		tmdbId: integer('tmdb_id').notNull(),
+		watchlist: boolean('watchlist').default(false).notNull(),
+		favorite: boolean('favorite').default(false).notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		primaryKey({ columns: [table.userId, table.tmdbId] }),
+		index('idx_usi_user_updated').on(table.userId, table.updatedAt)
+	]
+);
+
 // -----------------------------------------------------------------------------
 // RELATIONS
 // -----------------------------------------------------------------------------

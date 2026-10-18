@@ -15,6 +15,8 @@ const repo = vi.hoisted(() => ({
 vi.mock('$lib/server/media/repository', () => repo);
 const hqpCatalogue = vi.hoisted(() => ({ listUnmatchedFiles: vi.fn() }));
 vi.mock('$lib/server/hqp/catalogue', () => hqpCatalogue);
+const showLists = vi.hoisted(() => ({ listShowPosters: vi.fn() }));
+vi.mock('$lib/server/services/show-interaction.service', () => showLists);
 
 import { load } from './+page.server';
 
@@ -48,9 +50,28 @@ beforeEach(() => {
 	repo.listLocalMovies.mockResolvedValue([]);
 	repo.listLocalShows.mockResolvedValue([]);
 	hqpCatalogue.listUnmatchedFiles.mockResolvedValue([]);
+	showLists.listShowPosters.mockResolvedValue([]);
 });
 
 describe('Library loader', () => {
+	it('lists saved series after the films and counts them', async () => {
+		const series = { id: 'tv-1396', href: '/tv/1396', title: 'Breaking Bad', posterPath: null };
+		showLists.listShowPosters.mockImplementation(async (_user: string, flag: string) =>
+			flag === 'watchlist' ? [series] : []
+		);
+		const data = await run(member, '?tab=watchlist');
+		expect(data.watchlist.map((item: { id: string }) => item.id)).toEqual(['a', 'b', 'tv-1396']);
+		expect(data.counts.watchlist).toBe(3);
+		expect(data.counts.favorites).toBe(1);
+		expect(showLists.listShowPosters).toHaveBeenCalledWith(member.id, 'watchlist');
+	});
+
+	it('keeps the films when the saved series cannot be read', async () => {
+		showLists.listShowPosters.mockRejectedValue(new Error('db down'));
+		const data = await run(member, '?tab=watchlist');
+		expect(data.counts.watchlist).toBe(2);
+	});
+
 	it('sends a visitor without a session to sign in and back', async () => {
 		await expect(run(null)).rejects.toMatchObject({
 			status: 302,

@@ -1,12 +1,18 @@
-import { error } from '@sveltejs/kit';
+import { error, fail } from '@sveltejs/kit';
 import type { PosterItem } from '$lib/catalogue/items';
 import { isOwnerUser } from '$lib/server/auth/owner';
 import { hasPermission } from '$lib/server/auth/permissions';
 import { getLocalShow, type LocalShow } from '$lib/server/hqp/local';
 import { logServerError } from '$lib/server/security/logging';
+import {
+	getShowInteraction,
+	isShowFlag,
+	setShowFlag,
+	type ShowInteractionState
+} from '$lib/server/services/show-interaction.service';
 import { getTop50IMDbTVShows, type TVShowSummary } from '$lib/server/services/tv.service';
 import { getTvShowByTmdbId, type TvShowDetailView } from '$lib/server/services/tv-db.service';
-import type { PageServerLoad } from './$types';
+import type { Actions, PageServerLoad } from './$types';
 
 const SIMILAR_LIMIT = 12;
 
@@ -120,6 +126,15 @@ export const load = (async ({ params, locals }) => {
 		}
 	}
 
+	let interaction: ShowInteractionState | null = null;
+	if (user) {
+		try {
+			interaction = await getShowInteraction(user.id, tmdbId);
+		} catch (err) {
+			logServerError('Series interaction read failed', err);
+		}
+	}
+
 	const genres = chart?.genres ?? stored?.genres ?? [];
 	const genreSet = new Set(genres);
 	const similar: PosterItem[] = shows
@@ -157,6 +172,41 @@ export const load = (async ({ params, locals }) => {
 		},
 		seasons,
 		local,
-		similar
+		similar,
+		signedIn: user !== null,
+		interaction
 	};
 }) satisfies PageServerLoad;
+
+export const actions: Actions = {
+	// One field per submit: watchlist | favorite as 'true'/'false'.
+	logInteraction: async ({ request, locals, params }) => {
+		if (!locals.user) return fail(401, { error: 'Sign in to save series.' });
+		if (!hasPermission(locals.user, 'account:access')) {
+			return fail(403, { error: 'Saving series needs a signed-in account.' });
+		}
+		if (!/^\d{1,9}$/u.test(params.id)) return fail(404, { error: 'Series not found.' });
+		const tmdbId = Number(params.id);
+
+		const data = await request.formData();
+		const type = data.get('type')?.toString();
+		const value = data.get('value')?.toString();
+		if (!isShowFlag(type)) return fail(400, { error: 'Unknown interaction type.' });
+		if (value !== 'true' && value !== 'false') {
+			return fail(400, { error: 'Interaction value must be true or false.' });
+		}
+
+		try {
+			// Only a series a standard page can show may be saved (chart or standard row).
+			const onChart = (await getTop50IMDbTVShows()).some((show) => show.tmdbId === tmdbId);
+			if (!onChart && !(await getTvShowByTmdbId(tmdbId))) {
+				return fail(404, { error: 'Series not found.' });
+			}
+			const interaction = await setShowFlag(locals.user.id, tmdbId, type, value === 'true');
+			return { success: true, interaction };
+		} catch (err) {
+			logServerError('Series interaction update failed', err);
+			return fail(500, { error: 'Failed to update interaction.' });
+		}
+	}
+};

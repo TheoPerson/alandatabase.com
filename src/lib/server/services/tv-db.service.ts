@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { db } from '../db';
 import { tvEpisodes, tvSeasons, tvShows } from '../db/schema';
 import { isStandardTvShow, standardTvShowVisibilityWhere } from '../policies/tv-visibility';
@@ -13,6 +13,7 @@ import { MAX_SEARCH_QUERY_LENGTH } from '../security/request-bounds';
 
 export const MAX_TV_PAGE_SIZE = 60;
 const MAX_TV_SEARCH_RESULTS = 30;
+const MAX_TV_LOOKUP_IDS = 500;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 
 // Only text fields an editor may correct. Counts and other numbers are never overridable, so an
@@ -234,6 +235,20 @@ export async function listTvShows(limit = 24, offset = 0): Promise<TvShowSummary
 		orderBy: [sql`${tvShows.popularity} desc nulls last`, desc(tvShows.id)],
 		limit: boundedLimit(limit, MAX_TV_PAGE_SIZE),
 		offset: boundedOffset(offset),
+		with: summaryRelations
+	});
+	return toSummaries(rows);
+}
+
+/** Standard shows among the given TMDB ids (any order; unknown or quarantined ids are left out). */
+export async function listTvShowsByTmdbIds(tmdbIds: number[]): Promise<TvShowSummaryView[]> {
+	const ids = [...new Set(tmdbIds.filter((id) => Number.isSafeInteger(id) && id > 0))].slice(
+		0,
+		MAX_TV_LOOKUP_IDS
+	);
+	if (ids.length === 0) return [];
+	const rows = await db.query.tvShows.findMany({
+		where: and(inArray(tvShows.tmdbId, ids), standardTvShowVisibilityWhere()),
 		with: summaryRelations
 	});
 	return toSummaries(rows);

@@ -57,6 +57,13 @@
       "when": 1792179022177,
       "tag": "0007_media_progress",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792347783672,
+      "tag": "0008_user_show_interactions",
+      "breakpoints": true
     }
   ]
 }

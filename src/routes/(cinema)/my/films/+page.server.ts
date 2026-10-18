@@ -18,6 +18,7 @@ import {
 	type LocalPosterItem
 } from '$lib/server/media/repository';
 import { logServerError } from '$lib/server/security/logging';
+import { listShowPosters } from '$lib/server/services/show-interaction.service';
 import {
 	getUserFavorites,
 	getUserWatchedHistory,
@@ -164,7 +165,15 @@ export const load = (async ({ locals, url }) => {
 	const owner = isOwnerUser(user);
 	const tab = parseLibraryTab(url.searchParams.get('tab'), owner);
 
-	const [watchlistRows, favoriteRows, watchedRows, continueRows, summary] = await Promise.all([
+	const [
+		watchlistRows,
+		favoriteRows,
+		watchedRows,
+		continueRows,
+		summary,
+		watchlistShows,
+		favoriteShows
+	] = await Promise.all([
 		getUserWatchlist(user.id),
 		getUserFavorites(user.id),
 		getUserWatchedHistory(user.id),
@@ -177,7 +186,10 @@ export const load = (async ({ locals, url }) => {
 			: Promise.resolve([]),
 		owner
 			? attempt<LibrarySummary | null>(getLibrarySummary, null, 'Library summary failed')
-			: Promise.resolve(null)
+			: Promise.resolve(null),
+		// Saved series (from their page) sit after the films in the same tabs.
+		attempt(() => listShowPosters(user.id, 'watchlist'), [], 'Library series watchlist failed'),
+		attempt(() => listShowPosters(user.id, 'favorite'), [], 'Library series favourites failed')
 	]);
 
 	let local: LocalLibrary | null = null;
@@ -204,13 +216,13 @@ export const load = (async ({ locals, url }) => {
 		owner,
 		tab,
 		counts: {
-			watchlist: watchlist.length,
-			favorites: favorites.length,
+			watchlist: watchlist.length + watchlistShows.length,
+			favorites: favorites.length + favoriteShows.length,
 			watched: watched.length,
 			local: summary ? summary.films + summary.shows : null
 		},
-		watchlist: watchlist.map(toPoster),
-		favorites: favorites.map(toPoster),
+		watchlist: [...watchlist.map(toPoster), ...watchlistShows],
+		favorites: [...favorites.map(toPoster), ...favoriteShows],
 		watched: watched.map(toPoster),
 		stats: {
 			...libraryStats(
