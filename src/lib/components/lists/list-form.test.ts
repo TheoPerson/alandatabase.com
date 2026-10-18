@@ -4,6 +4,8 @@ import {
 	LIST_DESCRIPTION_MAX,
 	LIST_NAME_MAX,
 	LIST_PREVIEW_LIMIT,
+	LIST_STARTERS,
+	listPrefill,
 	fieldStatus,
 	filmCount,
 	previewCountLabel,
@@ -123,5 +125,54 @@ describe('toListPosterItem', () => {
 			releaseDate: null,
 			rating: null
 		});
+	});
+});
+
+describe('fieldStatus counter visibility', () => {
+	it('stays quiet until 80% of the limit', () => {
+		expect(fieldStatus('x'.repeat(95), LIST_NAME_MAX)).toMatchObject({
+			showCounter: false,
+			near: false
+		});
+		expect(fieldStatus('x'.repeat(96), LIST_NAME_MAX)).toMatchObject({
+			showCounter: true,
+			near: true
+		});
+	});
+
+	it('keeps the counter visible, and not merely near, once over the limit', () => {
+		expect(fieldStatus('x'.repeat(130), LIST_NAME_MAX)).toMatchObject({
+			showCounter: true,
+			near: false,
+			over: true
+		});
+	});
+});
+
+describe('LIST_STARTERS and listPrefill', () => {
+	it('offers short starters whose links prefill the create form', () => {
+		expect(LIST_STARTERS.length).toBeGreaterThanOrEqual(2);
+		for (const starter of LIST_STARTERS) {
+			const url = new URL(starter.href, 'https://alandatabase.com');
+			expect(url.pathname).toBe('/my/lists/create');
+			expect(listPrefill(url.searchParams)).toEqual({
+				name: starter.name,
+				description: starter.description
+			});
+		}
+	});
+
+	it('reads name and description, trimmed and cut to the limits', () => {
+		const params = new URLSearchParams({
+			name: `  ${'n'.repeat(200)}  `,
+			description: 'd'.repeat(1500)
+		});
+		const prefill = listPrefill(params);
+		expect(prefill.name).toHaveLength(LIST_NAME_MAX);
+		expect(prefill.description).toHaveLength(LIST_DESCRIPTION_MAX);
+	});
+
+	it('gives empty strings when nothing is asked for', () => {
+		expect(listPrefill(new URLSearchParams())).toEqual({ name: '', description: '' });
 	});
 });

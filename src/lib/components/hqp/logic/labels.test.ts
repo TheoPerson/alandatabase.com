@@ -13,6 +13,8 @@ import {
 	errorCopy,
 	infoAudioValue,
 	infoSubtitleValue,
+	imageSubtitlesNote,
+	subtitleDetail,
 	qualityRows,
 	upNextMeta
 } from './panel-labels';
@@ -65,14 +67,14 @@ describe('eyebrow and runtime', () => {
 
 	it('uses year and runtime for films', () => {
 		expect(eyebrow(item({ kind: 'movie', showTitle: null, runtimeMinutes: 131 }), false)).toBe(
-			'2025 · 2 h 11 min'
+			'2025 · 2h 11m'
 		);
 		expect(eyebrow(item({ kind: 'movie', year: null, runtimeMinutes: null }), true)).toBe('');
 	});
 
 	it('formats runtimes', () => {
-		expect(runtimeLabel(58)).toBe('58 min');
-		expect(runtimeLabel(120)).toBe('2 h');
+		expect(runtimeLabel(58)).toBe('58m');
+		expect(runtimeLabel(120)).toBe('2h');
 		expect(runtimeLabel(null)).toBe('');
 	});
 });
@@ -227,7 +229,7 @@ describe('qualityRows', () => {
 
 describe('upNextMeta', () => {
 	it('joins runtime, resolution and HDR', () => {
-		expect(upNextMeta(item())).toBe('58 min · 4K · HDR10');
+		expect(upNextMeta(item())).toBe('58m · 4K · HDR10');
 	});
 });
 
@@ -308,5 +310,61 @@ describe('playback info values (built from fields, never the container title)', 
 		expect(infoSubtitleValue(subs(null, 2))).toBe('WebVTT · French · forced');
 		expect(infoSubtitleValue(subs(3, 2))).toBe('WebVTT · English · SDH');
 		expect(infoSubtitleValue(subs(null, null))).toBe('Off');
+	});
+});
+
+describe('subtitleDetail', () => {
+	const sub = (partial: Partial<HqpSubtitleState['options'][number]>) => ({
+		ordinal: 3,
+		label: 'French',
+		language: 'fre',
+		title: null,
+		forced: false,
+		sdh: false,
+		isText: true,
+		url: null,
+		...partial
+	});
+
+	it('turns raw MKV titles into a kind and a format', () => {
+		expect(subtitleDetail(sub({ title: 'FR Forced : SRT', forced: true }))).toBe('Forced · SRT');
+		expect(subtitleDetail(sub({ title: 'FR Full : SRT' }))).toBe('Full · SRT');
+		expect(subtitleDetail(sub({ title: 'ENG Full : SRT', language: 'eng' }))).toBe('Full · SRT');
+		expect(subtitleDetail(sub({ title: 'English SDH', language: 'eng', sdh: true }))).toBe('SDH');
+	});
+
+	it('uses the flags when the title says nothing more', () => {
+		expect(subtitleDetail(sub({ title: null, forced: true }))).toBe('Forced');
+		expect(subtitleDetail(sub({ title: 'Français', forced: false }))).toBe('');
+		expect(subtitleDetail(sub({ title: 'French' }))).toBe('');
+	});
+
+	it('keeps a meaningful free title, without the spaced colon', () => {
+		expect(subtitleDetail(sub({ title: 'Commentary : director' }))).toBe('Commentary · director');
+	});
+});
+
+describe('imageSubtitlesNote', () => {
+	const image = (language: string | null) => ({
+		ordinal: 9,
+		label: '',
+		language,
+		title: null,
+		forced: false,
+		sdh: false,
+		isText: false,
+		url: null
+	});
+
+	it('folds image tracks into one line', () => {
+		expect(imageSubtitlesNote([])).toBeNull();
+		expect(imageSubtitlesNote([image('fre')])).toBe('French image subtitles can’t be shown here');
+		expect(imageSubtitlesNote([image('fre'), image('fre')])).toBe(
+			'2 image subtitle tracks (French) can’t be shown here'
+		);
+		expect(imageSubtitlesNote([image('fre'), image('eng')])).toBe(
+			'2 image subtitle tracks (French, English) can’t be shown here'
+		);
+		expect(imageSubtitlesNote([image(null)])).toBe('1 image subtitle track can’t be shown here');
 	});
 });

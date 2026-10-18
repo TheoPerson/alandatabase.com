@@ -50,8 +50,10 @@
 		align-items: flex-end;
 		justify-content: space-between;
 		gap: var(--space-4);
+		/* Same left edge as the top bar logo and the hero copy, at every width. */
+		max-width: var(--container-wide);
+		margin: 0 auto var(--space-4);
 		padding-inline: var(--page-gutter);
-		margin-bottom: var(--space-4);
 	}
 	.eyebrow {
 		color: var(--brand-primary);

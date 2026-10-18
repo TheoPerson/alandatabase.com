@@ -62,7 +62,27 @@ describe('getFeaturedMovies', () => {
 		expect(toPosterItem(featured[1]).genre).toBeNull();
 	});
 
-	it('lists genres alphabetically', async () => {
-		expect((await getGenres()).map((genre) => genre.name)).toEqual(['Action', 'Drama']);
+	it('lists only genres that a visible standard film uses, alphabetically', async () => {
+		// TV-only genres share the genre table, but no film carries them.
+		await pg.query(
+			`insert into genres (id, name) values (10759, 'Action & Adventure'), (10764, 'Reality'),
+			 (10765, 'Sci-Fi & Fantasy'), (35, 'Comedy'), (878, 'Science Fiction')`
+		);
+		// Comedy is carried only by the adult film, so standard surfaces must not offer it.
+		await pg.query(
+			`insert into movie_genres (movie_id, genre_id) select id, 35 from movies where tmdb_id = 3`
+		);
+		// Two films sharing Drama must not list it twice.
+		await pg.query(
+			`insert into movie_genres (movie_id, genre_id)
+			 select id, g from movies, unnest(array[878, 18]) as g where tmdb_id = 4`
+		);
+
+		const list = await getGenres();
+
+		expect(list.map((genre) => genre.name)).toEqual(['Drama', 'Science Fiction']);
+		for (const tvOnly of [10759, 10764, 10765, 28, 35]) {
+			expect(list.map((genre) => genre.id)).not.toContain(tvOnly);
+		}
 	});
 });

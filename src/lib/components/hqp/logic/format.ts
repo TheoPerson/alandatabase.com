@@ -65,6 +65,41 @@ for (const [codes, name, short] of LANGUAGE_ROWS) {
 	for (const code of codes) LANGUAGES[code] = [name, short];
 }
 
+// Language words seen in container titles ("FR", "SRB", "Français", "English"): never repeated
+// in a detail line, since the row title already names the language.
+const LANGUAGE_NAMES = new Set(LANGUAGE_ROWS.map(([, name]) => name.toLowerCase()));
+const LOCAL_LANGUAGE_WORDS = new Set([
+	'français',
+	'francais',
+	'anglais',
+	'english',
+	'deutsch',
+	'español',
+	'espanol',
+	'italiano',
+	'português',
+	'portugues',
+	'srpski',
+	'hrvatski',
+	'srb',
+	'vf',
+	'vff',
+	'vfq',
+	'vo',
+	'vost',
+	'vostfr'
+]);
+
+/** Whether one word of a track title only names a language (or a dub/sub tag such as "VFF"). */
+export function isLanguageWord(word: string): boolean {
+	const raw = word.trim();
+	const value = raw.toLowerCase();
+	if (!value) return false;
+	// Codes only when written as a tag ("FR", "ENG"), so "it" or "is" in a free title survive.
+	const code = raw === raw.toUpperCase() && value in LANGUAGES;
+	return code || LANGUAGE_NAMES.has(value) || LOCAL_LANGUAGE_WORDS.has(value);
+}
+
 function normalizeCode(code: string | null): string | null {
 	const value = code?.trim().toLowerCase();
 	if (!value || value === 'und' || value === 'mul' || value === 'zxx') return null;

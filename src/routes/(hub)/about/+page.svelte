@@ -2,13 +2,13 @@
 	import ArrowUpRightIcon from 'lucide-svelte/icons/arrow-up-right';
 	import ActivityIcon from 'lucide-svelte/icons/activity';
 	import Code2Icon from 'lucide-svelte/icons/code-2';
-	import CommandIcon from 'lucide-svelte/icons/command';
 	import FilmIcon from 'lucide-svelte/icons/film';
 	import ExternalLinkIcon from 'lucide-svelte/icons/external-link';
 	import LockKeyholeIcon from 'lucide-svelte/icons/lock-keyhole';
 	import MonitorSmartphoneIcon from 'lucide-svelte/icons/monitor-smartphone';
 	import SearchCheckIcon from 'lucide-svelte/icons/search-check';
 	import ServerIcon from 'lucide-svelte/icons/server';
+	import Logo from '$lib/components/ui/logo/logo.svelte';
 
 	const experiences = [
 		{
@@ -46,22 +46,22 @@
 </script>
 
 <svelte:head>
-	<title>Alan Database | A personal cinema archive</title>
+	<title>About | Alan's Database</title>
 	<meta
 		name="description"
 		content="Explore films and series in a focused public catalogue, then keep personal lists and history in a protected account."
 	/>
 	<link rel="canonical" href="https://alandatabase.com/" />
-	<meta property="og:title" content="Alan Database | A personal cinema archive" />
+	<meta property="og:title" content="Alan's Database | A personal cinema archive" />
 	<meta
 		property="og:description"
 		content="A focused movie and TV catalogue with protected personal lists and history."
 	/>
 	<meta property="og:type" content="website" />
 	<meta property="og:url" content="https://alandatabase.com/" />
-	<meta property="og:site_name" content="Alan Database" />
+	<meta property="og:site_name" content="Alan's Database" />
 	<meta name="twitter:card" content="summary_large_image" />
-	<meta name="twitter:title" content="Alan Database | A personal cinema archive" />
+	<meta name="twitter:title" content="Alan's Database | A personal cinema archive" />
 	<meta
 		name="twitter:description"
 		content="A focused movie and TV catalogue with protected personal lists and history."
@@ -73,8 +73,9 @@
 		<div class="hero-image" aria-hidden="true"></div>
 		<div class="hero-overlay" aria-hidden="true"></div>
 		<nav class="nav page-width" aria-label="Primary navigation">
-			<a class="brand" href="/" aria-label="Alan's Database home">
-				<span class="brand-mark"><CommandIcon size={16} /></span> ALAN'S DATABASE
+			<a class="brand" href="/movies" aria-label="Alan's Database, open the cinema">
+				<Logo size={28} />
+				<span class="word" aria-hidden="true">ALAN<span class="accent">DB</span></span>
 			</a>
 			<div class="nav-links">
 				<a href="#experience">Explore features</a>
@@ -154,17 +155,19 @@
 	</section>
 
 	<footer class="footer page-width">
-		<span class="brand dark-brand"><CommandIcon size={15} /> Alan's Database</span><span
-			>Public discovery. Personal data stays personal.</span
-		><a href="https://github.com/TheoPerson/alandatabase.com" target="_blank" rel="noreferrer"
-			><ExternalLinkIcon size={16} /> Source on GitHub</a
+		<span class="brand dark-brand"
+			><Logo size={22} /><span class="word">ALAN<span class="accent">DB</span></span></span
+		><span>Public discovery. Personal data stays personal.</span><a
+			href="https://github.com/TheoPerson/alandatabase.com"
+			target="_blank"
+			rel="noreferrer"><ExternalLinkIcon size={16} /> Source on GitHub</a
 		>
 	</footer>
 </div>
 
 <style>
 	:global(body) {
-		background: #08090a;
+		background: var(--surface-canvas);
 	}
 	.site {
 		background: var(--surface-canvas);
@@ -172,7 +175,7 @@
 		font-family: var(--font-sans);
 	}
 	.page-width {
-		width: min(1200px, calc(100% - 48px));
+		width: min(1200px, calc(100% - 2 * var(--page-gutter)));
 		margin: 0 auto;
 	}
 	.hero {
@@ -182,7 +185,7 @@
 		flex-direction: column;
 		isolation: isolate;
 		overflow: hidden;
-		color: #f7f8f5;
+		color: var(--content-primary);
 	}
 	.hero-image,
 	.hero-overlay {
@@ -196,14 +199,14 @@
 	}
 	.hero-overlay {
 		z-index: -1;
-		background: rgba(7, 10, 11, 0.64);
+		background: color-mix(in srgb, var(--surface-canvas) 64%, transparent);
 	}
 	.nav {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 27px 0;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+		padding: var(--space-4) 0;
+		border-bottom: 1px solid var(--border-strong);
 	}
 	.brand,
 	.nav-links,
@@ -215,36 +218,37 @@
 		display: inline-flex;
 		align-items: center;
 	}
+	/* Same lockup as the cinema top bar, with a 44px target. */
 	.brand {
-		gap: 10px;
-		color: #fff;
-		font-size: 0.72rem;
-		font-weight: 800;
-		letter-spacing: 0.16em;
+		gap: 0.5rem;
+		min-height: var(--touch-target);
+		color: var(--content-primary);
+		font-weight: 900;
+		letter-spacing: 0.04em;
 	}
-	.brand-mark {
-		display: grid;
-		place-items: center;
-		width: 30px;
-		height: 30px;
-		border: 1px solid rgba(255, 255, 255, 0.4);
-		border-radius: 50%;
+	.accent {
+		color: var(--brand-primary);
 	}
 	.nav-links {
-		gap: 25px;
-		color: rgba(255, 255, 255, 0.7);
-		font-size: 0.82rem;
+		gap: var(--space-2);
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
 	}
 	.nav-links a,
 	.footer a {
 		display: inline-flex;
 		align-items: center;
 		gap: 5px;
-		transition: color 0.18s ease;
+		min-height: var(--touch-target);
+		padding-inline: var(--space-2);
+		transition: color var(--duration-fast) var(--ease-standard);
+	}
+	.footer a {
+		margin-inline: calc(-1 * var(--space-2));
 	}
 	.nav-links a:hover,
 	.footer a:hover {
-		color: #8ee8c0;
+		color: var(--brand-hover);
 	}
 	.hero-content {
 		flex: 1;
@@ -258,8 +262,8 @@
 		align-items: center;
 		gap: 9px;
 		margin-bottom: 23px;
-		color: rgba(255, 255, 255, 0.68);
-		font-size: 0.69rem;
+		color: var(--content-secondary);
+		font-size: var(--text-xs);
 		font-weight: 800;
 		letter-spacing: 0.16em;
 		text-transform: uppercase;
@@ -268,8 +272,8 @@
 		width: 7px;
 		height: 7px;
 		border-radius: 50%;
-		background: #8ee8c0;
-		box-shadow: 0 0 0 5px rgba(142, 232, 192, 0.14);
+		background: var(--brand-primary);
+		box-shadow: 0 0 0 5px var(--brand-muted);
 	}
 	.eyebrow.dark {
 		color: var(--content-secondary);
@@ -290,7 +294,7 @@
 	.hero-copy {
 		max-width: 500px;
 		margin-top: 30px;
-		color: rgba(255, 255, 255, 0.75);
+		color: var(--content-secondary);
 		font-size: clamp(1rem, 1.5vw, 1.2rem);
 		line-height: 1.6;
 	}
@@ -307,33 +311,35 @@
 		border: 1px solid transparent;
 		font-size: 0.88rem;
 		font-weight: 750;
+		border-radius: var(--radius-full);
 		transition:
-			transform 0.18s ease,
-			background 0.18s ease;
+			transform var(--duration-fast) var(--ease-standard),
+			background var(--duration-fast) var(--ease-standard);
 	}
 	.button:hover {
 		transform: translateY(-2px);
 	}
 	.primary {
-		background: #a5f2cd;
-		color: #0b2017;
+		background: var(--brand-primary);
+		color: var(--content-inverse);
 	}
 	.primary:hover {
-		background: #c2f9dc;
+		background: var(--brand-hover);
 	}
 	.secondary {
-		border-color: rgba(255, 255, 255, 0.32);
-		color: #fff;
+		border-color: var(--border-strong);
+		color: var(--content-primary);
+		background: color-mix(in srgb, var(--surface-canvas) 30%, transparent);
 	}
 	.secondary:hover {
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--surface-interactive);
 	}
 	.hero-meta {
 		display: flex;
 		align-items: center;
 		gap: 14px;
 		padding-bottom: 28px;
-		color: rgba(255, 255, 255, 0.55);
+		color: var(--content-secondary);
 		font-size: 0.67rem;
 		font-weight: 700;
 		letter-spacing: 0.12em;
@@ -342,7 +348,7 @@
 	.hero-meta i {
 		width: 34px;
 		height: 1px;
-		background: rgba(255, 255, 255, 0.32);
+		background: var(--border-strong);
 	}
 	.craft {
 		padding: 128px 0 100px;
@@ -409,7 +415,7 @@
 		place-items: center;
 		width: 48px;
 		height: 48px;
-		border: 1px solid #c9cdc7;
+		border: 1px solid var(--brand-border);
 		border-radius: 50%;
 		color: var(--brand-primary);
 	}
@@ -492,7 +498,9 @@
 	}
 	.tool-links a {
 		gap: 7px;
-		padding: 11px 13px;
+		min-height: var(--touch-target);
+		padding: 0 var(--space-4);
+		border-radius: var(--radius-full);
 		border: 1px solid var(--border-strong);
 		color: var(--content-secondary);
 		font-size: 0.77rem;
@@ -515,7 +523,6 @@
 	}
 	.dark-brand {
 		color: var(--content-primary);
-		letter-spacing: 0;
 	}
 	.footer a {
 		gap: 7px;
@@ -523,11 +530,8 @@
 		font-weight: 750;
 	}
 	@media (max-width: 760px) {
-		.page-width {
-			width: calc(100% - 32px);
-		}
 		.nav {
-			padding: 20px 0;
+			padding: var(--space-3) 0;
 		}
 		.nav-links a:first-child {
 			display: none;
@@ -541,7 +545,7 @@
 		.hero-meta {
 			flex-wrap: wrap;
 			gap: 10px;
-			font-size: 0.57rem;
+			font-size: 0.625rem;
 		}
 		.hero-meta i {
 			width: 18px;

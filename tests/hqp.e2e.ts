@@ -295,6 +295,34 @@ test.describe('Alan’s HQP for the owner', () => {
 		await expect(page.locator(`.continue a[href="/watch/${fileId}"]`)).toBeVisible();
 	});
 
+	test('a tap on a paused player keeps its chrome and the Play button', async () => {
+		test.skip(!titles.film, 'No film on this PC');
+		await gotoHydrated(page, titles.film!);
+		const play = page.getByRole('group', { name: 'On this PC' }).getByRole('link').first();
+		const fileId = fileIdOf((await play.getAttribute('href')) ?? '');
+		test.skip(
+			await libraryOffline(page.request, fileId),
+			'The media library answers 503 (offline)'
+		);
+
+		await page.goto(`/watch/${fileId}`);
+		const root = page.locator('.hqp');
+		await waitForPlayback(page, 45_000);
+		await page.keyboard.press('k');
+		await expect
+			.poll(() => page.locator('.hqp video').evaluate((video: HTMLVideoElement) => video.paused))
+			.toBe(true);
+
+		// Twice: a tap on a paused player shows the chrome, and a second tap never hides it.
+		for (let tap = 0; tap < 2; tap += 1) {
+			await page.touchscreen.tap(720, 270);
+			await page.waitForTimeout(700);
+			await expect(root).toHaveAttribute('data-chrome', 'on');
+		}
+		await expect(page.getByRole('button', { name: 'Play', exact: true }).first()).toBeVisible();
+		await closePlayer(page);
+	});
+
 	test('an episode near its end offers Up next and moves the URL to the next file', async () => {
 		test.skip(!titles.series, 'No series on this PC');
 		await gotoHydrated(page, titles.series!);

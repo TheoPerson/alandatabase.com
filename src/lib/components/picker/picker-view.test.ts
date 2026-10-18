@@ -5,7 +5,8 @@ import {
 	isAnotherShortcut,
 	pickerRating,
 	pickerSignals,
-	swipeDecision
+	swipeDecision,
+	pickerBackdrops
 } from './picker-view';
 
 describe('pickerRating', () => {
@@ -187,5 +188,30 @@ describe('swipeDecision', () => {
 		expect(swipeDecision(-40, 0)).toBe('cancel');
 		expect(swipeDecision(120, 0)).toBe('cancel');
 		expect(swipeDecision(-90, 80)).toBe('cancel');
+	});
+});
+
+describe('pickerBackdrops', () => {
+	it('keeps distinct backdrops, in order, up to the limit', () => {
+		const films = [
+			{ id: '1', backdropPath: '/a.jpg' },
+			{ id: '2', backdropPath: null },
+			{ id: '3', backdropPath: '/a.jpg' },
+			{ id: '4', backdropPath: '/b.jpg' },
+			{ id: '5', backdropPath: '' },
+			{ id: '6', backdropPath: '/c.jpg' }
+		];
+		expect(pickerBackdrops(films)).toEqual(['/a.jpg', '/b.jpg', '/c.jpg']);
+		expect(pickerBackdrops(films, 2)).toEqual(['/a.jpg', '/b.jpg']);
+	});
+
+	it('ignores anything that is not a TMDB image path', () => {
+		expect(
+			pickerBackdrops([
+				{ id: '1', backdropPath: 'https://evil.example/x.jpg' },
+				{ id: '2', backdropPath: 'javascript:alert(1)' },
+				{ id: '3', backdropPath: '/ok.jpg' }
+			])
+		).toEqual(['/ok.jpg']);
 	});
 });

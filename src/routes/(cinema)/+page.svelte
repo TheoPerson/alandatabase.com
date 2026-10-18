@@ -196,7 +196,9 @@
 	.genres {
 		display: flex;
 		gap: var(--space-2);
-		padding-inline: var(--page-gutter);
+		/* Room for the focus ring, which a scrolling row would otherwise clip. */
+		margin-block: -0.4rem;
+		padding: 0.4rem var(--page-inset);
 		overflow-x: auto;
 		scrollbar-width: none;
 	}

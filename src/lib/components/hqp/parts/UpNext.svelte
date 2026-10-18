@@ -246,19 +246,21 @@
 	}
 	.play {
 		flex: 1;
+		gap: 8px;
 	}
 	.countdown-ring {
-		width: 24px;
-		height: 24px;
+		width: 20px;
+		height: 20px;
 		flex: none;
 		rotate: -90deg;
 	}
 	.countdown-ring circle {
 		fill: none;
-		stroke-width: 2.5;
+		stroke-width: 2.4;
 	}
+	/* The full track is always visible on the white button, so the arc reads as a ring emptying. */
 	.countdown-ring .bg {
-		stroke: var(--hqp-fill-press);
+		stroke: var(--hqp-ink-on-light-faint);
 	}
 	.countdown-ring .fg {
 		stroke: var(--hqp-ink-on-light);

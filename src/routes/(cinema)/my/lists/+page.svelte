@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/button';
-	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import BackLink from '$lib/components/lists/back-link.svelte';
+	import ListsEmpty from '$lib/components/lists/lists-empty.svelte';
 	import ListCard from '$lib/components/lists/list-card.svelte';
 	import PlusIcon from 'lucide-svelte/icons/plus';
 
@@ -29,11 +29,9 @@
 </svelte:head>
 
 <div class="lists">
-	<BackLink href="/my/films" label="Library" />
-
 	<header class="head">
 		<div>
-			<p class="eyebrow">Library</p>
+			<BackLink href="/my/films" label="Library" />
 			<h1>Your lists</h1>
 			{#if lists.length > 0}
 				<p class="summary">
@@ -50,17 +48,7 @@
 	</header>
 
 	{#if lists.length === 0}
-		<EmptyState
-			title="No lists yet"
-			description="Group films your way: a director's run, a rainy-Sunday shortlist, the ones to show a friend."
-		>
-			{#snippet action()}
-				<Button href="/my/lists/create" variant="primary">
-					<PlusIcon size={18} aria-hidden="true" />
-					Create list
-				</Button>
-			{/snippet}
-		</EmptyState>
+		<ListsEmpty posters={data.fan} />
 	{:else}
 		<ul class="grid" aria-label="Your lists">
 			{#each lists as list (list.id)}
@@ -75,7 +63,7 @@
 		width: 100%;
 		max-width: var(--container-wide);
 		margin: 0 auto;
-		padding: var(--space-4) var(--page-gutter) var(--space-8);
+		padding: var(--space-6) var(--page-gutter) var(--space-8);
 	}
 	.head {
 		display: flex;
@@ -83,20 +71,14 @@
 		align-items: flex-end;
 		justify-content: space-between;
 		gap: var(--space-4);
-		margin: var(--space-2) 0 var(--space-6);
-	}
-	.eyebrow {
-		color: var(--brand-primary);
-		font-size: var(--text-xs);
-		font-weight: 800;
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
+		margin-bottom: var(--space-6);
 	}
 	h1 {
 		margin-top: var(--space-2);
 		font-size: var(--type-headline);
 		font-weight: 900;
 		letter-spacing: var(--tracking-tight);
+		line-height: var(--leading-tight);
 	}
 	.summary {
 		margin-top: var(--space-2);

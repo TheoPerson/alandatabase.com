@@ -98,9 +98,10 @@
 	.hqp-transport > :global(button) {
 		pointer-events: auto;
 	}
-	/* Portrait: the play centre sits 210 px above the bottom. */
+	/* Portrait: the transport follows the picture, under the title block and resume capsule
+	   (picture bottom + 156 px), and never sinks below 210 px above the bottom (play centre). */
 	:global(.hqp[data-layout='phone-portrait']) .hqp-transport {
-		bottom: calc(210px - 38px);
+		top: min(calc(var(--frame-bottom) + 156px), calc(100cqh - 210px - 38px));
 	}
 	/* Short portrait: over the picture centre, clear glass, 48 / 64 / 48. */
 	:global(.hqp[data-layout='phone-portrait-short']) .hqp-transport {

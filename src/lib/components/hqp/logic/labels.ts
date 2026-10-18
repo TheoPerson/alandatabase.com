@@ -10,13 +10,11 @@ import {
 	resolutionBadge,
 	subtitleValue
 } from './format';
+import { formatRuntime } from '$lib/format';
 
+/** One runtime format across the site and the player: '1h 47m', '58m', '2h'. */
 export function runtimeLabel(minutes: number | null): string {
-	if (!minutes || minutes <= 0) return '';
-	const h = Math.floor(minutes / 60);
-	const m = Math.round(minutes % 60);
-	if (h === 0) return `${m} min`;
-	return m === 0 ? `${h} h` : `${h} h ${m} min`;
+	return formatRuntime(minutes) ?? '';
 }
 
 /** "Stranger Things · S5 · E1" (short) or "… · Season 5 · Episode 1"; films: year and runtime. */

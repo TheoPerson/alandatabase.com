@@ -104,7 +104,15 @@
 		--container-reading: 46rem;
 		--container-content: 74rem;
 		--container-wide: 90rem;
-		--page-gutter: clamp(1rem, 3vw, 2.5rem);
+		/* Never narrower than the landscape side inset, so copy and posters clear the island. */
+		--page-gutter: max(clamp(1rem, 3vw, 2.5rem), var(--chrome-inset-x));
+		/* Where full-bleed rows (rails, chip strips) start: the gutter, or on screens wider than
+		   the wide container, the container's own edge, so they line up with the hero and logo.
+		   The percentage resolves against the row that uses it. */
+		--page-inset: max(
+			var(--page-gutter),
+			calc((100% - var(--container-wide)) / 2 + var(--page-gutter))
+		);
 		--touch-target: 2.75rem;
 
 		/* Shape */
@@ -157,9 +165,19 @@
 		--z-toast: 70;
 		--z-palette: 80;
 
-		/* Device safe areas and chrome */
-		--safe-top: env(safe-area-inset-top, 0px);
+		/* Device safe areas and chrome.
+		   Island-free: chrome never lays itself out around the Dynamic Island. Insets are capped
+		   at 47px (the iPhone 13 Pro Max notch inset), so content starts right under the island
+		   instead of below an empty band, and the side gutters are symmetric so nothing jumps
+		   when the phone turns 180 degrees in landscape. */
+		--chrome-inset-max: 2.9375rem;
+		--safe-top: min(env(safe-area-inset-top, 0px), var(--chrome-inset-max));
 		--safe-bottom: env(safe-area-inset-bottom, 0px);
+		--safe-left: env(safe-area-inset-left, 0px);
+		--safe-right: env(safe-area-inset-right, 0px);
+		--chrome-inset-x: min(max(var(--safe-left), var(--safe-right)), var(--chrome-inset-max));
+		/* The home indicator may overlap the tab bar's lower padding, as in iOS itself. */
+		--tab-bar-inset: max(calc(var(--safe-bottom) - 0.75rem), 0px);
 		--top-bar-height: 3.75rem;
 		--bottom-bar-height: 3.5rem;
 
@@ -185,6 +203,20 @@
 		--ring: 158 64% 52%;
 		--radius: 0.75rem;
 	}
+
+	/* Phones: a 52px top bar, as tall as the 44px controls it holds need. */
+	@media (max-width: 767.98px) {
+		:root {
+			--top-bar-height: 3.25rem;
+		}
+	}
+	/* Landscape phones (iOS compact height): every pixel of a 440px-tall screen counts. */
+	@media (max-height: 500px) and (orientation: landscape) {
+		:root {
+			--top-bar-height: 3rem;
+			--bottom-bar-height: 2.75rem;
+		}
+	}
 }
 
 @layer base {
@@ -207,7 +239,7 @@
 
 html {
 	scroll-padding-top: calc(var(--top-bar-height) + var(--safe-top) + var(--space-3));
-	scroll-padding-bottom: calc(var(--bottom-bar-height) + var(--safe-bottom) + var(--space-3));
+	scroll-padding-bottom: calc(var(--bottom-bar-height) + var(--tab-bar-inset) + var(--space-3));
 }
 html:has(.filter-bar) {
 	scroll-padding-top: calc(

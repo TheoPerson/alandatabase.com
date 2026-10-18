@@ -11,6 +11,11 @@
 	let { providerName, logoPath, href }: Props = $props();
 
 	const src = $derived(tmdbImageUrl(logoPath, 'w92'));
+	// 44 css px: w92 covers 2x, w154 covers 3x (132 device px) without a blurry upscale.
+	const srcset = $derived.by(() => {
+		const large = tmdbImageUrl(logoPath, 'w154');
+		return src && large ? `${src} 2x, ${large} 3x` : undefined;
+	});
 	const initials = $derived(
 		providerName
 			.split(/\s+/u)
@@ -26,6 +31,7 @@
 	{#if src && !failed}
 		<img
 			{src}
+			{srcset}
 			alt={providerName}
 			width="44"
 			height="44"

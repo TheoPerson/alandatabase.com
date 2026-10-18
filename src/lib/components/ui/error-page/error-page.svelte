@@ -63,24 +63,33 @@
 </section>
 
 <style>
+	/* Both variants share one optical anchor: the block sits a little above the middle of
+	   the space left by the chrome (bottom padding larger than the top). */
 	.error-page {
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		min-height: 60dvh;
-		padding: calc(var(--top-bar-height) + var(--space-7)) var(--page-gutter) var(--space-8);
+		min-height: calc(
+			100dvh - var(--top-bar-height) - var(--safe-top) - var(--bottom-bar-height) -
+				var(--safe-bottom)
+		);
+		padding: var(--space-7) var(--page-gutter) calc(var(--space-7) + 8dvh);
 		text-align: center;
 	}
 	.standalone {
 		min-height: 100dvh;
-		padding-top: var(--space-7);
+		padding-top: calc(var(--touch-target) + var(--space-7) + var(--safe-top));
 	}
 	.brand {
+		position: absolute;
+		top: max(var(--space-4), var(--safe-top));
+		left: var(--page-gutter);
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
-		margin-bottom: var(--space-7);
+		min-height: var(--touch-target);
 		font-weight: 900;
 		letter-spacing: 0.04em;
 	}
@@ -97,8 +106,9 @@
 	h1 {
 		margin-top: var(--space-3);
 		font-size: var(--type-headline);
-		font-weight: 800;
+		font-weight: 900;
 		letter-spacing: var(--tracking-tight);
+		line-height: var(--leading-tight);
 	}
 	.description {
 		max-width: 34rem;

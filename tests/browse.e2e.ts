@@ -126,17 +126,35 @@ test.describe('Browse: filters', () => {
 		);
 	});
 
-	test('the filter bar stays under the top bar while the grid scrolls', async ({ page }) => {
+	test('the filter bar tucks away while reading down and returns under the top bar on scroll up', async ({
+		page
+	}) => {
 		await page.setViewportSize({ width: 390, height: 844 });
 		await gotoHydrated(page, '/movies');
 		test.skip((await films(page).count()) < PAGE_SIZE, 'needs a full page of films');
+		const bar = page.getByRole('navigation', { name: 'Filter films' });
+		const bottom = async () => {
+			const box = await bar.boundingBox();
+			return Math.round((box?.y ?? 0) + (box?.height ?? 0));
+		};
 
 		await page.evaluate(() => window.scrollTo(0, 1200));
-		const bar = page.getByRole('navigation', { name: 'Filter films' });
+		// Tucked under the 52px phone top bar.
+		await expect.poll(bottom).toBeLessThanOrEqual(53);
+
+		await page.evaluate(() => window.scrollTo(0, 1100));
 		await expect
 			.poll(async () => Math.round((await bar.boundingBox())?.y ?? -1))
-			.toBeGreaterThanOrEqual(55);
+			.toBeGreaterThanOrEqual(50);
 		expect((await bar.boundingBox())?.y ?? 999).toBeLessThanOrEqual(70);
+
+		// Keyboard focus entering the tucked bar brings it back.
+		await page.evaluate(() => window.scrollTo(0, 1600));
+		await expect.poll(bottom).toBeLessThanOrEqual(53);
+		await bar.getByRole('link').first().focus();
+		await expect
+			.poll(async () => Math.round((await bar.boundingBox())?.y ?? -1))
+			.toBeGreaterThanOrEqual(50);
 	});
 });
 
@@ -514,11 +532,14 @@ test.describe('Browse: phone filters', () => {
 		await gotoHydrated(page, '/movies');
 		test.skip((await films(page).count()) < PAGE_SIZE, 'needs a full page of films');
 
+		// Read down, then back up a little: the bar returns under the top bar.
 		await page.evaluate(() => window.scrollTo(0, 1200));
+		await page.waitForTimeout(100);
+		await page.evaluate(() => window.scrollTo(0, 1100));
 		const bar = page.getByRole('navigation', { name: 'Filter films' });
 		await expect
 			.poll(async () => Math.round((await bar.boundingBox())?.y ?? -1))
-			.toBeGreaterThanOrEqual(55);
+			.toBeGreaterThanOrEqual(50);
 		const box = await bar.boundingBox();
 		expect(box?.y ?? 999).toBeLessThanOrEqual(70);
 		// The genre strip (50px) plus the 44px Filters row, with no extra padding.
@@ -554,5 +575,29 @@ test.describe('Browse: without JavaScript', () => {
 			'href',
 			'/movies?sort=rating'
 		);
+	});
+});
+
+test.describe('Browse: phone held sideways', () => {
+	test.use({ viewport: { width: 956, height: 440 }, hasTouch: true, isMobile: true });
+
+	test('the genres and the Filters button share one row, and the header is one line', async ({
+		page
+	}) => {
+		await gotoHydrated(page, '/movies');
+		const bar = page.getByRole('navigation', { name: 'Filter films' });
+		const filters = page.getByRole('button', { name: /^Filters/u });
+		await expect(filters).toBeVisible();
+		const [barBox, buttonBox, heading] = await Promise.all([
+			bar.boundingBox(),
+			filters.boundingBox(),
+			page.getByRole('heading', { level: 1, name: 'Movies' }).boundingBox()
+		]);
+		expect(barBox?.height).toBeLessThanOrEqual(60);
+		expect((buttonBox?.x ?? 0) + (buttonBox?.width ?? 0)).toBeLessThanOrEqual(956);
+		expect(buttonBox?.height).toBeGreaterThanOrEqual(44);
+		// Title, count and filters all sit in the first 160px of a 440px screen.
+		expect((barBox?.y ?? 999) + (barBox?.height ?? 0)).toBeLessThanOrEqual(170);
+		expect(heading?.height).toBeLessThanOrEqual(40);
 	});
 });

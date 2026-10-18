@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Logo from '$lib/components/ui/logo/logo.svelte';
+	import ChevronDownIcon from 'lucide-svelte/icons/chevron-down';
+
 	const { data } = $props();
 
 	type ServiceState = 'operational' | 'degraded' | 'outage' | 'unknown';
@@ -25,6 +28,9 @@
 			detail: 'Live checks could not establish the current state.'
 		}
 	};
+
+	// Long release sections show their first notes; the rest unfold on demand.
+	const NOTES_SHOWN = 4;
 
 	const overall = $derived(statusCopy[data.status.overallState as ServiceState]);
 	const uptime = $derived(data.status.externalUptime);
@@ -66,23 +72,23 @@
 </script>
 
 <svelte:head>
-	<title>System Status & Release Notes | Alan Database</title>
+	<title>Status | Alan's Database</title>
 	<meta
 		name="description"
-		content="Live service health, uptime, incidents, and Alan Database V3 release notes."
+		content="Live service health, uptime, incidents, and Alan's Database release notes."
 	/>
 	<link rel="canonical" href="https://status.alandatabase.com/" />
-	<meta property="og:title" content="Alan Database — System Status" />
-	<meta property="og:description" content="Live service health, uptime, and V3 release notes." />
+	<meta property="og:title" content="Status | Alan's Database" />
+	<meta property="og:description" content="Live service health, uptime, and release notes." />
 	<meta property="og:url" content="https://status.alandatabase.com/" />
 	<meta property="og:type" content="website" />
 </svelte:head>
 
 <div class="status-shell">
 	<header class="site-header">
-		<a class="brand" href="/" aria-label="Alan Database home">
-			<span class="brand-mark" aria-hidden="true">A</span>
-			<span>ALAN DATABASE</span>
+		<a class="brand" href="/movies" aria-label="Alan's Database, open the cinema">
+			<Logo size={28} />
+			<span class="word" aria-hidden="true">ALAN<span class="accent">DB</span></span>
 		</a>
 		<nav aria-label="Status navigation">
 			<a href="#services">Services</a>
@@ -104,7 +110,7 @@
 				<span class="fluid-layer fluid-layer-three"></span>
 			</div>
 			<div class="hero-copy">
-				<p class="eyebrow">Public System Status · V3 Alpha</p>
+				<p class="eyebrow">System status</p>
 				<div class="overall-line">
 					<span
 						class="pulse"
@@ -126,28 +132,32 @@
 					<span>30-day uptime</span>
 					<span class="source-badge">{uptime.configured ? 'UptimeRobot v3' : 'Live probes'}</span>
 				</div>
-				<strong>{formatPercent(uptime.uptimePercent)}</strong>
-				<div class="metric-grid">
-					<div>
-						<span>Response</span>
-						<b>{formatLatency(uptime.averageResponseMs)}</b>
+				{#if uptime.configured}
+					<strong>{formatPercent(uptime.uptimePercent)}</strong>
+					<div class="metric-grid">
+						<div>
+							<span>Response</span>
+							<b>{formatLatency(uptime.averageResponseMs)}</b>
+						</div>
+						<div>
+							<span>Incidents</span>
+							<b>{uptime.incidentCount ?? '—'}</b>
+						</div>
+						<div>
+							<span>Downtime</span>
+							<b>{formatDowntime(uptime.downtimeSeconds)}</b>
+						</div>
 					</div>
-					<div>
-						<span>Incidents</span>
-						<b>{uptime.incidentCount ?? '—'}</b>
-					</div>
-					<div>
-						<span>Downtime</span>
-						<b>{formatDowntime(uptime.downtimeSeconds)}</b>
-					</div>
-				</div>
+				{:else}
+					<p class="live-only">Live probes only</p>
+				{/if}
 				<p class="monitor-note">
 					{#if uptime.configured && uptime.state !== 'unknown'}
 						External monitor {uptime.monitorId} · {uptime.monitorName}
 					{:else if uptime.configured}
 						External monitor configured; its latest sample is temporarily unavailable.
 					{:else}
-						Add the server-only UptimeRobot key to publish independent historical uptime.
+						Each visit checks the services directly; no historical uptime is recorded yet.
 					{/if}
 				</p>
 			</div>
@@ -202,40 +212,75 @@
 			</div>
 
 			<div class="release-list">
+				{#snippet releaseBody(release: (typeof data.releases)[number])}
+					<div class="release-sections">
+						{#each release.sections as section (section.title)}
+							<section class="change-group tone-{sectionTone(section.title)}">
+								<h4>{section.title}</h4>
+								<ul>
+									{#each section.items.slice(0, NOTES_SHOWN) as item (item)}
+										<li>{item}</li>
+									{/each}
+								</ul>
+								{#if section.items.length > NOTES_SHOWN}
+									<details class="more-notes">
+										<summary>
+											Show {section.items.length - NOTES_SHOWN} more
+											<ChevronDownIcon size={16} aria-hidden="true" />
+										</summary>
+										<ul>
+											{#each section.items.slice(NOTES_SHOWN) as item (item)}
+												<li>{item}</li>
+											{/each}
+										</ul>
+									</details>
+								{/if}
+							</section>
+						{/each}
+					</div>
+				{/snippet}
 				{#each data.releases as release, index (release.version)}
-					<article class="release-card">
-						<header class="release-card-header">
-							<div>
-								<span class="release-index">{String(index + 1).padStart(2, '0')}</span>
-								<h3>
-									{release.version === 'Unreleased'
-										? 'V3 current patch'
-										: `Version ${release.version}`}
-								</h3>
-							</div>
-							<span class="release-date">{release.date ?? 'In progress'}</span>
-						</header>
-
-						<div class="release-sections">
-							{#each release.sections as section (section.title)}
-								<section class="change-group tone-{sectionTone(section.title)}">
-									<h4>{section.title}</h4>
-									<ul>
-										{#each section.items as item (item)}
-											<li>{item}</li>
-										{/each}
-									</ul>
-								</section>
-							{/each}
-						</div>
-					</article>
+					{#if index === 0}
+						<article class="release-card">
+							<header class="release-card-header">
+								<div>
+									<span class="release-index">{String(index + 1).padStart(2, '0')}</span>
+									<h3>
+										{release.version === 'Unreleased'
+											? 'Current patch'
+											: `Version ${release.version}`}
+									</h3>
+								</div>
+								<span class="release-date">{release.date ?? 'In progress'}</span>
+							</header>
+							{@render releaseBody(release)}
+						</article>
+					{:else}
+						<details class="release-card older">
+							<summary class="release-card-header">
+								<div>
+									<span class="release-index">{String(index + 1).padStart(2, '0')}</span>
+									<h3>
+										{release.version === 'Unreleased'
+											? 'Current patch'
+											: `Version ${release.version}`}
+									</h3>
+								</div>
+								<span class="release-meta">
+									<span class="release-date">{release.date ?? 'In progress'}</span>
+									<ChevronDownIcon size={18} aria-hidden="true" />
+								</span>
+							</summary>
+							{@render releaseBody(release)}
+						</details>
+					{/if}
 				{/each}
 			</div>
 		</section>
 	</div>
 
 	<footer>
-		<span>Alan Database · V3 pre-release</span>
+		<span>Alan's Database</span>
 		<span>Status data is cached for 60 seconds.</span>
 	</footer>
 </div>
@@ -248,14 +293,15 @@
 	.status-shell {
 		min-height: 100vh;
 		background:
-			radial-gradient(circle at 78% 5%, rgba(52, 211, 153, 0.09), transparent 28rem), #050607;
-		color: #f5f7f6;
+			radial-gradient(circle at 78% 5%, var(--brand-muted), transparent 28rem),
+			var(--surface-canvas);
+		color: var(--content-primary);
 	}
 
 	.site-header,
 	.status-main,
 	footer {
-		width: min(1180px, calc(100% - 2rem));
+		width: min(1180px, calc(100% - 2 * var(--page-gutter)));
 		margin-inline: auto;
 	}
 
@@ -265,28 +311,23 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+		border-bottom: 1px solid var(--border-subtle);
 	}
 
+	/* Same lockup as the cinema top bar, with a 44px target. */
 	.brand {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.7rem;
-		color: #f5f7f6;
-		font: 750 0.78rem/1 var(--font-sans);
-		letter-spacing: 0.16em;
+		gap: 0.5rem;
+		min-height: var(--touch-target);
+		color: var(--content-primary);
+		font-weight: 900;
+		letter-spacing: 0.04em;
 		text-decoration: none;
 	}
 
-	.brand-mark {
-		width: 30px;
-		height: 30px;
-		display: grid;
-		place-items: center;
-		border: 1px solid rgba(52, 211, 153, 0.55);
-		border-radius: 50%;
-		color: #6ee7b7;
-		letter-spacing: 0;
+	.accent {
+		color: var(--brand-primary);
 	}
 
 	nav {
@@ -297,8 +338,11 @@
 
 	nav a,
 	.repository-link {
-		color: #929b97;
-		font-size: 0.82rem;
+		display: inline-flex;
+		align-items: center;
+		min-height: var(--touch-target);
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
 		text-decoration: none;
 	}
 
@@ -306,13 +350,13 @@
 	nav a:focus-visible,
 	.repository-link:hover,
 	.repository-link:focus-visible {
-		color: #d1fae5;
+		color: var(--brand-hover);
 	}
 
 	.return-link {
-		padding: 0.65rem 0.9rem;
-		border: 1px solid rgba(255, 255, 255, 0.13);
-		border-radius: 999px;
+		padding: 0 var(--space-4);
+		border: 1px solid var(--border-strong);
+		border-radius: var(--radius-full);
 	}
 
 	.hero {
@@ -350,13 +394,17 @@
 		display: block;
 		border-radius: 43% 57% 63% 37% / 52% 38% 62% 48%;
 		background:
-			radial-gradient(circle at 28% 30%, rgba(167, 243, 208, 0.72), transparent 25%),
+			radial-gradient(
+				circle at 28% 30%,
+				color-mix(in srgb, var(--brand-hover) 72%, transparent),
+				transparent 25%
+			),
 			conic-gradient(
 				from 120deg,
-				rgba(16, 185, 129, 0.58),
-				rgba(6, 78, 59, 0.08),
-				rgba(52, 211, 153, 0.42),
-				rgba(16, 185, 129, 0.58)
+				color-mix(in srgb, var(--brand-active) 58%, transparent),
+				color-mix(in srgb, var(--brand-active) 8%, transparent),
+				color-mix(in srgb, var(--brand-primary) 42%, transparent),
+				color-mix(in srgb, var(--brand-active) 58%, transparent)
 			);
 		mix-blend-mode: screen;
 		transform: translate3d(0, 0, 0);
@@ -369,13 +417,17 @@
 		inset: 19% 8% 7% 23%;
 		border-radius: 61% 39% 42% 58% / 38% 55% 45% 62%;
 		background:
-			radial-gradient(circle at 68% 34%, rgba(110, 231, 183, 0.55), transparent 22%),
+			radial-gradient(
+				circle at 68% 34%,
+				color-mix(in srgb, var(--brand-hover) 55%, transparent),
+				transparent 22%
+			),
 			conic-gradient(
 				from 250deg,
-				rgba(5, 150, 105, 0.05),
-				rgba(52, 211, 153, 0.5),
-				rgba(6, 95, 70, 0.12),
-				rgba(5, 150, 105, 0.05)
+				color-mix(in srgb, var(--brand-active) 5%, transparent),
+				color-mix(in srgb, var(--brand-primary) 50%, transparent),
+				color-mix(in srgb, var(--brand-active) 12%, transparent),
+				color-mix(in srgb, var(--brand-active) 5%, transparent)
 			);
 		opacity: 0.76;
 		animation-name: fluid-drift-reverse;
@@ -387,8 +439,8 @@
 		border-radius: 35% 65% 55% 45% / 58% 44% 56% 42%;
 		background: radial-gradient(
 			circle at 44% 46%,
-			rgba(209, 250, 229, 0.68),
-			rgba(16, 185, 129, 0.1) 42%,
+			color-mix(in srgb, var(--brand-hover) 68%, transparent),
+			color-mix(in srgb, var(--brand-active) 10%, transparent) 42%,
 			transparent 70%
 		);
 		opacity: 0.58;
@@ -397,32 +449,40 @@
 
 	.fluid-field.degraded .fluid-layer {
 		background:
-			radial-gradient(circle at 28% 30%, rgba(254, 243, 199, 0.72), transparent 25%),
+			radial-gradient(
+				circle at 28% 30%,
+				color-mix(in srgb, var(--color-warning) 72%, transparent),
+				transparent 25%
+			),
 			conic-gradient(
 				from 120deg,
-				rgba(245, 158, 11, 0.56),
-				rgba(120, 53, 15, 0.08),
-				rgba(251, 191, 36, 0.38),
-				rgba(245, 158, 11, 0.56)
+				color-mix(in srgb, var(--color-warning) 56%, transparent),
+				color-mix(in srgb, var(--color-warning) 8%, transparent),
+				color-mix(in srgb, var(--color-warning) 38%, transparent),
+				color-mix(in srgb, var(--color-warning) 56%, transparent)
 			);
 	}
 
 	.fluid-field.outage .fluid-layer {
 		background:
-			radial-gradient(circle at 28% 30%, rgba(255, 228, 230, 0.7), transparent 25%),
+			radial-gradient(
+				circle at 28% 30%,
+				color-mix(in srgb, var(--color-error) 70%, transparent),
+				transparent 25%
+			),
 			conic-gradient(
 				from 120deg,
-				rgba(244, 63, 94, 0.54),
-				rgba(76, 5, 25, 0.08),
-				rgba(251, 113, 133, 0.38),
-				rgba(244, 63, 94, 0.54)
+				color-mix(in srgb, var(--color-error) 54%, transparent),
+				color-mix(in srgb, var(--color-error) 8%, transparent),
+				color-mix(in srgb, var(--color-error) 38%, transparent),
+				color-mix(in srgb, var(--color-error) 54%, transparent)
 			);
 	}
 
 	.eyebrow,
 	.kicker {
 		margin: 0 0 1rem;
-		color: #6ee7b7;
+		color: var(--brand-hover);
 		font-size: 0.72rem;
 		font-weight: 750;
 		letter-spacing: 0.16em;
@@ -434,7 +494,7 @@
 		align-items: center;
 		gap: 0.65rem;
 		margin-bottom: 1.25rem;
-		color: #c7d0cc;
+		color: var(--content-secondary);
 		font-size: 0.88rem;
 		font-weight: 650;
 	}
@@ -442,15 +502,15 @@
 	.pulse,
 	.service-dot {
 		border-radius: 50%;
-		background: #34d399;
-		box-shadow: 0 0 0 5px rgba(52, 211, 153, 0.11);
+		background: var(--brand-primary);
+		box-shadow: 0 0 0 5px color-mix(in srgb, var(--brand-primary) 11%, transparent);
 	}
 
 	.pulse {
 		width: 10px;
 		height: 10px;
 		border-radius: 41% 59% 63% 37% / 55% 39% 61% 45%;
-		background: linear-gradient(135deg, #a7f3d0, #10b981);
+		background: linear-gradient(135deg, var(--brand-hover), var(--brand-active));
 		transform: translateZ(0);
 		will-change: transform;
 		animation: fluid-indicator 4.8s linear infinite;
@@ -458,19 +518,19 @@
 
 	.pulse.degraded,
 	.state-degraded {
-		background: #fbbf24;
-		box-shadow: 0 0 0 5px rgba(251, 191, 36, 0.11);
+		background: var(--color-warning);
+		box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-warning) 11%, transparent);
 	}
 
 	.pulse.outage,
 	.state-outage {
-		background: #fb7185;
-		box-shadow: 0 0 0 5px rgba(251, 113, 133, 0.11);
+		background: var(--color-error);
+		box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-error) 11%, transparent);
 	}
 
 	.state-unknown {
-		background: #71717a;
-		box-shadow: 0 0 0 5px rgba(113, 113, 122, 0.12);
+		background: var(--content-tertiary);
+		box-shadow: 0 0 0 5px color-mix(in srgb, var(--content-tertiary) 12%, transparent);
 	}
 
 	h1 {
@@ -485,39 +545,39 @@
 	.hero-detail {
 		max-width: 620px;
 		margin: 1.5rem 0 0;
-		color: #9aa39f;
+		color: var(--content-secondary);
 		font-size: clamp(1rem, 2vw, 1.16rem);
 		line-height: 1.65;
 	}
 
 	.checked {
 		margin: 1.6rem 0 0;
-		color: #929b97;
+		color: var(--content-secondary);
 		font: 0.75rem/1.4 var(--font-mono);
 	}
 
 	.checked time {
-		color: #aab3af;
+		color: var(--content-secondary);
 	}
 
 	.uptime-card {
 		padding: 1.5rem;
-		background: rgba(13, 16, 15, 0.86);
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--surface-raised);
+		border: 1px solid var(--border-subtle);
 		border-radius: 18px;
-		box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
+		box-shadow: var(--shadow-md);
 	}
 
 	.metric-heading {
 		display: flex;
 		justify-content: space-between;
 		gap: 1rem;
-		color: #aab3af;
+		color: var(--content-secondary);
 		font-size: 0.78rem;
 	}
 
 	.source-badge {
-		color: #6ee7b7;
+		color: var(--brand-hover);
 	}
 
 	.uptime-card > strong {
@@ -535,7 +595,7 @@
 
 	.metric-grid div {
 		padding-top: 0.8rem;
-		border-top: 1px solid rgba(255, 255, 255, 0.08);
+		border-top: 1px solid var(--border-subtle);
 	}
 
 	.metric-grid span,
@@ -544,7 +604,7 @@
 	}
 
 	.metric-grid span {
-		color: #929b97;
+		color: var(--content-secondary);
 		font-size: 0.68rem;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
@@ -555,17 +615,23 @@
 		font: 600 0.84rem/1 var(--font-mono);
 	}
 
+	.live-only {
+		margin: 0.75rem 0 0;
+		font-size: var(--type-title);
+		font-weight: 700;
+	}
+
 	.monitor-note {
 		margin: 1.25rem 0 0;
-		color: #717a76;
-		font-size: 0.72rem;
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
 		line-height: 1.5;
 	}
 
 	.services-section,
 	.release-section {
 		padding: clamp(3.5rem, 8vw, 6rem) 0;
-		border-top: 1px solid rgba(255, 255, 255, 0.08);
+		border-top: 1px solid var(--border-subtle);
 	}
 
 	.section-heading {
@@ -585,14 +651,14 @@
 	.section-heading > p {
 		max-width: 420px;
 		margin: 0;
-		color: #737c78;
-		font-size: 0.86rem;
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
 		line-height: 1.55;
 		text-align: right;
 	}
 
 	.service-list {
-		border: 1px solid rgba(255, 255, 255, 0.09);
+		border: 1px solid var(--border-subtle);
 		border-radius: 18px;
 		overflow: hidden;
 	}
@@ -603,11 +669,11 @@
 		justify-content: space-between;
 		gap: 1.5rem;
 		padding: 1.25rem 1.4rem;
-		background: rgba(11, 13, 12, 0.72);
+		background: var(--surface-raised);
 	}
 
 	.service-row + .service-row {
-		border-top: 1px solid rgba(255, 255, 255, 0.07);
+		border-top: 1px solid var(--border-subtle);
 	}
 
 	.service-identity {
@@ -635,33 +701,33 @@
 
 	.service-row p {
 		margin-top: 0.25rem;
-		color: #6f7773;
-		font-size: 0.76rem;
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
 	}
 
 	.service-result {
 		display: flex;
 		align-items: center;
 		gap: 1.5rem;
-		color: #6f7773;
-		font: 0.73rem/1 var(--font-mono);
+		color: var(--content-secondary);
+		font: var(--text-sm) / 1 var(--font-mono);
 	}
 
 	.service-result strong {
 		min-width: 88px;
-		color: #6ee7b7;
-		font: 650 0.75rem/1 var(--font-sans);
+		color: var(--brand-hover);
+		font: 650 var(--text-sm) / 1 var(--font-sans);
 		text-align: right;
 	}
 
 	.service-result strong.state-degraded {
-		color: #fbbf24;
+		color: var(--color-warning);
 		background: none;
 		box-shadow: none;
 	}
 
 	.service-result strong.state-outage {
-		color: #fb7185;
+		color: var(--color-error);
 		background: none;
 		box-shadow: none;
 	}
@@ -680,8 +746,8 @@
 
 	.repository-link {
 		padding-bottom: 0.2rem;
-		border-bottom: 1px solid rgba(110, 231, 183, 0.35);
-		color: #a7f3d0;
+		border-bottom: 1px solid color-mix(in srgb, var(--brand-hover) 35%, transparent);
+		color: var(--brand-hover);
 	}
 
 	.release-list {
@@ -690,8 +756,8 @@
 	}
 
 	.release-card {
-		background: rgba(10, 12, 11, 0.72);
-		border: 1px solid rgba(255, 255, 255, 0.09);
+		background: var(--surface-raised);
+		border: 1px solid var(--border-subtle);
 		border-radius: 18px;
 		overflow: hidden;
 	}
@@ -702,7 +768,7 @@
 		justify-content: space-between;
 		gap: 1rem;
 		padding: 1.35rem 1.5rem;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+		border-bottom: 1px solid var(--border-subtle);
 	}
 
 	.release-card-header > div {
@@ -713,10 +779,68 @@
 
 	.release-index,
 	.release-date {
-		color: #929b97;
+		color: var(--content-secondary);
 		font: 0.7rem/1 var(--font-mono);
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
+	}
+
+	.more-notes summary {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: var(--touch-target);
+		margin-top: var(--space-2);
+		color: var(--brand-primary);
+		font-size: var(--text-sm);
+		font-weight: 700;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.more-notes summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.more-notes[open] summary :global(svg) {
+		transform: rotate(180deg);
+	}
+
+	.more-notes ul {
+		margin-top: var(--space-2);
+	}
+
+	details.release-card > summary {
+		cursor: pointer;
+		list-style: none;
+		min-height: var(--touch-target);
+	}
+
+	details.release-card > summary::-webkit-details-marker {
+		display: none;
+	}
+
+	details.release-card:not([open]) > summary {
+		border-bottom: 0;
+	}
+
+	details.release-card > summary:hover h3 {
+		color: var(--brand-hover);
+	}
+
+	.release-meta {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		color: var(--content-secondary);
+	}
+
+	.release-meta :global(svg) {
+		transition: transform var(--duration-base) var(--ease-standard);
+	}
+
+	details[open] .release-meta :global(svg) {
+		transform: rotate(180deg);
 	}
 
 	.release-card h3 {
@@ -732,35 +856,35 @@
 
 	.change-group {
 		padding: 1.4rem 1.5rem;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+		border-bottom: 1px solid var(--border-subtle);
 	}
 
 	.change-group:nth-child(odd) {
-		border-right: 1px solid rgba(255, 255, 255, 0.06);
+		border-right: 1px solid var(--border-subtle);
 	}
 
 	.change-group h4 {
 		margin: 0 0 0.9rem;
-		color: #a7f3d0;
+		color: var(--brand-hover);
 		font-size: 0.72rem;
 		letter-spacing: 0.1em;
 		text-transform: uppercase;
 	}
 
 	.change-group.tone-major h4 {
-		color: #f5f5f4;
+		color: var(--content-primary);
 	}
 
 	.change-group.tone-security h4 {
-		color: #93c5fd;
+		color: var(--color-info);
 	}
 
 	.change-group.tone-fixed h4 {
-		color: #86efac;
+		color: var(--brand-primary);
 	}
 
 	.change-group.tone-known h4 {
-		color: #fcd34d;
+		color: var(--color-warning);
 	}
 
 	.change-group ul {
@@ -772,8 +896,8 @@
 	.change-group li {
 		position: relative;
 		padding-left: 1rem;
-		color: #a4aca8;
-		font-size: 0.82rem;
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
 		line-height: 1.58;
 	}
 
@@ -789,7 +913,7 @@
 		width: 4px;
 		height: 4px;
 		border-radius: 50%;
-		background: #4b5563;
+		background: var(--content-tertiary);
 	}
 
 	footer {
@@ -797,9 +921,9 @@
 		justify-content: space-between;
 		gap: 1rem;
 		padding: 1.5rem 0 2.5rem;
-		border-top: 1px solid rgba(255, 255, 255, 0.08);
-		color: #929b97;
-		font-size: 0.72rem;
+		border-top: 1px solid var(--border-subtle);
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
 	}
 
 	@keyframes fluid-drift {
@@ -886,16 +1010,6 @@
 	}
 
 	@media (max-width: 520px) {
-		.site-header,
-		.status-main,
-		footer {
-			width: min(100% - 1.25rem, 1180px);
-		}
-
-		.brand span:last-child {
-			display: none;
-		}
-
 		.hero {
 			padding-top: 3.5rem;
 		}
@@ -920,7 +1034,8 @@
 			text-align: right;
 		}
 
-		.release-date {
+		.release-date,
+		.release-meta {
 			padding-left: 2.25rem;
 		}
 
@@ -937,6 +1052,10 @@
 		.fluid-layer,
 		.pulse {
 			animation: none;
+		}
+
+		.release-meta :global(svg) {
+			transition: none;
 		}
 	}
 </style>

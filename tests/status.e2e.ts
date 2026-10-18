@@ -5,7 +5,7 @@ test.describe('Public status and release surface', () => {
 		const response = await page.goto('/status');
 
 		expect(response?.status()).toBe(200);
-		await expect(page).toHaveTitle('System Status & Release Notes | Alan Database');
+		await expect(page).toHaveTitle("Status | Alan's Database");
 		await expect(page.getByRole('heading', { level: 1 })).toContainText(/systems|monitoring/i);
 		await expect(page.getByRole('heading', { name: 'Services' })).toBeVisible();
 		await expect(page.getByRole('heading', { name: 'Release notes' })).toBeVisible();

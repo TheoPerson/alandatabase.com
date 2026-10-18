@@ -26,6 +26,7 @@ import {
 import type { PageServerLoad } from './$types';
 
 const CONTINUE_RAIL_LIMIT = 12;
+const RECENT_WATCHED_LIMIT = 6;
 
 interface LibraryMovie {
 	id: string;
@@ -211,13 +212,21 @@ export const load = (async ({ locals, url }) => {
 		watchlist: watchlist.map(toPoster),
 		favorites: favorites.map(toPoster),
 		watched: watched.map(toPoster),
-		stats: libraryStats(
-			watched.map((movie) => ({
-				runtime: movie.runtime ?? null,
-				genres: genreNames(movie),
-				releaseDate: movie.releaseDate ?? null
-			}))
-		),
+		stats: {
+			...libraryStats(
+				watched.map((movie) => ({
+					runtime: movie.runtime ?? null,
+					genres: genreNames(movie),
+					releaseDate: movie.releaseDate ?? null
+				}))
+			),
+			// Exact total, so Stats can say "20 h 12 min" rather than a rounded decimal.
+			minutes: watched.reduce(
+				(total, movie) => total + (movie.runtime && movie.runtime > 0 ? movie.runtime : 0),
+				0
+			)
+		},
+		recentWatched: watched.slice(0, RECENT_WATCHED_LIMIT).map(toPoster),
 		continueWatching: continueRows.map(toContinueCardItem),
 		local,
 		localError

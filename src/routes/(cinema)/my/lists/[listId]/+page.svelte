@@ -30,11 +30,13 @@
 
 <div class="list">
 	<div class="page">
-		<BackLink href="/my/films" label="Library" />
-
 		<header class="head">
 			<div class="title">
-				<p class="eyebrow">List</p>
+				{#if isOwner}
+					<BackLink href="/my/lists" label="Lists" />
+				{:else}
+					<BackLink href="/my/films" label="Library" />
+				{/if}
 				<h1>{list.name}</h1>
 				<p class="meta">
 					<span>By {owner}</span>
@@ -46,7 +48,6 @@
 			</div>
 			{#if isOwner}
 				<div class="links">
-					<Button href="/my/lists" variant="secondary">All lists</Button>
 					<Button variant="outline" onclick={() => (confirmDelete = true)}>
 						<TrashIcon size={18} aria-hidden="true" />
 						Delete list
@@ -109,7 +110,7 @@
 
 <style>
 	.list {
-		padding: var(--space-4) 0 var(--space-8);
+		padding: var(--space-6) 0 var(--space-8);
 	}
 	.page {
 		width: 100%;
@@ -123,24 +124,18 @@
 		align-items: flex-end;
 		justify-content: space-between;
 		gap: var(--space-4);
-		margin: var(--space-2) 0 var(--space-6);
+		margin-bottom: var(--space-6);
 	}
 	.title {
 		min-width: 0;
 		max-width: var(--container-reading);
-	}
-	.eyebrow {
-		color: var(--brand-primary);
-		font-size: var(--text-xs);
-		font-weight: 800;
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
 	}
 	h1 {
 		margin-top: var(--space-2);
 		font-size: var(--type-headline);
 		font-weight: 900;
 		letter-spacing: var(--tracking-tight);
+		line-height: var(--leading-tight);
 		overflow-wrap: anywhere;
 	}
 	.meta {

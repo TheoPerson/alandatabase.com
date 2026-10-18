@@ -50,7 +50,7 @@
 		padding: 0 0.95rem;
 		border-radius: var(--radius-full);
 		border: 1px solid var(--border-subtle);
-		background: rgba(255, 255, 255, 0.04);
+		background: color-mix(in srgb, var(--content-primary) 4%, transparent);
 		color: var(--content-secondary);
 		font-size: var(--text-sm);
 		font-weight: 600;
@@ -93,6 +93,17 @@
 		color: inherit;
 	}
 	.remove:hover {
-		background: rgba(255, 255, 255, 0.12);
+		background: color-mix(in srgb, var(--content-primary) 12%, transparent);
+	}
+	/* A finger gets the full 44px target; a mouse keeps the calmer 40px chip. */
+	@media (pointer: coarse) {
+		.chip,
+		.label {
+			min-height: var(--touch-target);
+		}
+		.remove {
+			width: var(--touch-target);
+			height: var(--touch-target);
+		}
 	}
 </style>

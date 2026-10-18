@@ -3,12 +3,14 @@ import { db } from '$lib/server/db';
 import { userLists } from '$lib/server/db/schema';
 import { logServerError } from '$lib/server/security/logging';
 import { parseListInput } from '$lib/server/security/list-input';
+import { listPrefill } from '$lib/components/lists/list-form';
 
-export async function load({ locals }) {
+export async function load({ locals, url }) {
 	if (!locals.user) {
 		throw redirect(302, '/auth/login');
 	}
-	return {};
+	// The Lists starters link here with ?name=…&description=… to prefill the form.
+	return { prefill: listPrefill(url.searchParams) };
 }
 
 export const actions = {

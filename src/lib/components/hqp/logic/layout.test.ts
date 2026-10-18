@@ -4,6 +4,7 @@ import {
 	chromeEdges,
 	fillCrop,
 	frameRect,
+	glideTop,
 	intersects,
 	islandRects,
 	layoutFor,
@@ -73,14 +74,30 @@ describe('chromeEdges', () => {
 	});
 });
 
+describe('glideTop', () => {
+	it('caps the island inset at the 47 px island-free edge (iPhone 18 Pro Max, top 62)', () => {
+		expect(glideTop(SIM18_PORTRAIT)).toBe(47);
+	});
+
+	it('keeps a 13 Pro Max inset and never goes above 12 px', () => {
+		expect(glideTop({ top: 47, right: 0, bottom: 34, left: 0 })).toBe(47);
+		expect(glideTop({ top: 20, right: 0, bottom: 0, left: 0 })).toBe(20);
+		expect(glideTop({ top: 0, right: 0, bottom: 0, left: 0 })).toBe(12);
+	});
+
+	it('shares its top line with the portrait chrome edge', () => {
+		expect(glideTop(SIM18_PORTRAIT)).toBe(chromeEdges('phone-portrait', SIM18_PORTRAIT).top - 6);
+	});
+});
+
 describe('frameRect', () => {
-	it('places a 16:9 picture full width centred at 43% in portrait', () => {
+	it('places a 16:9 picture full width centred at 39% in portrait (less dead band above)', () => {
 		const r = frameRect('phone-portrait', PORTRAIT, 16 / 9, 'fit');
 		expect(r.x).toBe(0);
 		expect(r.width).toBe(440);
 		expect(r.height).toBeCloseTo(247.5, 1);
-		expect(Math.round(r.y)).toBe(287);
-		expect(Math.round(r.y + r.height)).toBe(535);
+		expect(Math.round(r.y)).toBe(249);
+		expect(Math.round(r.y + r.height)).toBe(497);
 	});
 
 	it('keeps the portrait picture top at 118 px or lower', () => {

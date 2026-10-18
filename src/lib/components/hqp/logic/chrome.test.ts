@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { shouldHideChrome, type ChromeInput } from './chrome';
+import { chromeAfterTap, shouldHideChrome, type ChromeInput } from './chrome';
 
 const idle: ChromeInput = {
 	playing: true,
@@ -26,5 +26,17 @@ describe('shouldHideChrome', () => {
 		expect(shouldHideChrome({ ...idle, overlayOpen: true })).toBe(false);
 		expect(shouldHideChrome({ ...idle, scrubbing: true })).toBe(false);
 		expect(shouldHideChrome({ ...idle, pointerOverControls: true })).toBe(false);
+	});
+});
+
+describe('chromeAfterTap', () => {
+	it('toggles the chrome while playing', () => {
+		expect(chromeAfterTap({ chrome: true, playing: true })).toBe(false);
+		expect(chromeAfterTap({ chrome: false, playing: true })).toBe(true);
+	});
+
+	it('keeps the chrome on a paused (or blocked) player: a tap never leaves a bare still frame', () => {
+		expect(chromeAfterTap({ chrome: true, playing: false })).toBe(true);
+		expect(chromeAfterTap({ chrome: false, playing: false })).toBe(true);
 	});
 });

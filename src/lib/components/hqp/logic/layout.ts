@@ -56,6 +56,14 @@ export function chromeEdges(
 	return { top, x, bottom };
 }
 
+/**
+ * Top line of the glided portrait picture and of the panels laid out from it: the island-free
+ * edge (min(safe top, 47)), never closer than 12 px to the screen top. Mirrors --hqp-glide-top.
+ */
+export function glideTop(safe: Insets): number {
+	return Math.max(Math.min(safe.top, 47), 12);
+}
+
 function safeAspect(aspect: number): number {
 	return Number.isFinite(aspect) && aspect > 0 ? aspect : DEFAULT_ASPECT;
 }
@@ -74,7 +82,7 @@ export function frameRect(
 	const height = Math.min(vh, vw / ar);
 	const x = (vw - width) / 2;
 	if (isPortrait(layout)) {
-		const centre = (layout === 'phone-portrait-short' ? 0.36 : 0.43) * vh;
+		const centre = (layout === 'phone-portrait-short' ? 0.36 : 0.39) * vh;
 		const y = Math.min(Math.max(PORTRAIT_FRAME_MIN_TOP, centre - height / 2), vh - height);
 		return { x, y: Math.max(0, y), width, height };
 	}

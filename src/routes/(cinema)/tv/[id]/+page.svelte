@@ -10,9 +10,8 @@
 	import Section from '$lib/components/ui/section';
 	import Tabs from '$lib/components/ui/tabs';
 	import { addToast } from '$lib/stores/toast';
-	import { formatDate } from '$lib/format';
+	import { formatDate, formatRuntime } from '$lib/format';
 	import { tmdbImageUrl } from '$lib/tmdb/images';
-	import ArrowLeftIcon from 'lucide-svelte/icons/arrow-left';
 	import ShareIcon from 'lucide-svelte/icons/share-2';
 	import ExternalLinkIcon from 'lucide-svelte/icons/external-link';
 	import PlayIcon from 'lucide-svelte/icons/play';
@@ -36,6 +35,16 @@
 		(show.overview || `Explore ${show.title} on Alan's Database.`).slice(0, 155)
 	);
 	const firstAired = $derived(formatDate(show.firstAirDate) ?? show.firstYear);
+	// One season on the page: name it in the eyebrow instead of a one-tab selector.
+	const seasonEyebrow = $derived.by(() => {
+		const only = data.seasons.length === 1 ? data.seasons[0] : null;
+		const name = only
+			? only.seasonNumber === 0
+				? 'Specials'
+				: `Season ${only.seasonNumber}`
+			: 'Seasons';
+		return data.local ? `On this PC · ${name}` : name;
+	});
 
 	// The owner's local copies, by "season:episode" (Alan's HQP). Empty for everyone else.
 	const localByEpisode = $derived(
@@ -97,7 +106,7 @@
 	}
 
 	function episodeFacts(episode: SeriesEpisode): string {
-		return [episode.runtime ? `${episode.runtime} min` : null, formatDate(episode.airDate)]
+		return [formatRuntime(episode.runtime), formatDate(episode.airDate)]
 			.filter(Boolean)
 			.join(' · ');
 	}
@@ -237,16 +246,16 @@
 				/>
 			</div>
 			<div class="text">
-				<p class="eyebrow">Series</p>
+				<p class="eyebrow-pill">Series</p>
 				<h1 class="title">{show.title}</h1>
 				<div class="rating-line">
 					{#if show.rating !== null && show.ratingSource}
-						<span
-							class="score"
-							aria-label={`${show.ratingSource} rating ${show.rating.toFixed(1)} out of 10`}
-						>
-							<span class="score-value">{show.rating.toFixed(1)}</span>
-							<span class="score-source">{show.ratingSource}</span>
+						<span class="score">
+							<span class="sr-only"
+								>{show.ratingSource} rating {show.rating.toFixed(1)} out of 10</span
+							>
+							<span class="score-value" aria-hidden="true">{show.rating.toFixed(1)}</span>
+							<span class="score-source" aria-hidden="true">{show.ratingSource}</span>
 						</span>
 					{/if}
 					<MetaChips items={meta} />
@@ -288,72 +297,78 @@
 						<ShareIcon size={18} aria-hidden="true" />
 						Share
 					</Button>
-					{#if show.imdbId}
-						<Button
-							variant="ghost"
-							href={`https://www.imdb.com/title/${show.imdbId}/`}
-							target="_blank"
-							rel="noopener noreferrer"
-						>
-							<ExternalLinkIcon size={18} aria-hidden="true" />
-							IMDb page
-						</Button>
-					{/if}
 				</div>
 			</div>
 		</div>
 	</header>
 
 	<div class="body">
-		<section class="story" aria-labelledby="story-heading">
-			<h2 id="story-heading">Story</h2>
-			{#if show.tagline}<p class="tagline">{show.tagline}</p>{/if}
-			<p>{show.overview ?? 'No synopsis yet.'}</p>
-			<dl class="facts">
-				{#if firstAired}
-					<div>
-						<dt>First aired</dt>
-						<dd>{firstAired}</dd>
-					</div>
-				{/if}
-				{#if show.seasons}
-					<div>
-						<dt>Seasons</dt>
-						<dd>{show.seasons}</dd>
-					</div>
-				{/if}
-				{#if show.episodes}
-					<div>
-						<dt>Episodes</dt>
-						<dd>{show.episodes}</dd>
-					</div>
-				{/if}
-				{#if show.status}
-					<div>
-						<dt>Status</dt>
-						<dd>{show.status}</dd>
-					</div>
-				{/if}
-				{#if show.rating !== null && show.ratingSource}
-					<div>
-						<dt>{show.ratingSource} rating</dt>
-						<dd>{show.rating.toFixed(1)} / 10</dd>
-					</div>
-				{/if}
-				{#if show.rank}
-					<div>
-						<dt>Chart rank</dt>
-						<dd>#{show.rank} of 50</dd>
-					</div>
-				{/if}
-			</dl>
-		</section>
+		<div class="overview">
+			<section class="story" aria-labelledby="story-heading">
+				<h2 id="story-heading">Synopsis</h2>
+				{#if show.tagline}<p class="tagline">{show.tagline}</p>{/if}
+				<p>{show.overview ?? 'No synopsis yet.'}</p>
+			</section>
+			<aside class="facts-card" aria-labelledby="facts-heading">
+				<h2 id="facts-heading">Details</h2>
+				<dl class="facts">
+					{#if firstAired}
+						<div>
+							<dt>First aired</dt>
+							<dd>{firstAired}</dd>
+						</div>
+					{/if}
+					{#if show.seasons}
+						<div>
+							<dt>Seasons</dt>
+							<dd>{show.seasons}</dd>
+						</div>
+					{/if}
+					{#if show.episodes}
+						<div>
+							<dt>Episodes</dt>
+							<dd>{show.episodes}</dd>
+						</div>
+					{/if}
+					{#if show.status}
+						<div>
+							<dt>Status</dt>
+							<dd>{show.status}</dd>
+						</div>
+					{/if}
+					{#if show.rating !== null && show.ratingSource}
+						<div>
+							<dt>{show.ratingSource} rating</dt>
+							<dd>{show.rating.toFixed(1)} / 10</dd>
+						</div>
+					{/if}
+					{#if show.rank}
+						<div>
+							<dt>Chart rank</dt>
+							<dd>#{show.rank} of 50</dd>
+						</div>
+					{/if}
+					{#if show.imdbId}
+						<div>
+							<dt>Links</dt>
+							<dd>
+								<a
+									class="ext"
+									href={`https://www.imdb.com/title/${show.imdbId}/`}
+									target="_blank"
+									rel="noopener noreferrer"
+									>IMDb <ExternalLinkIcon size={12} aria-hidden="true" /></a
+								>
+							</dd>
+						</div>
+					{/if}
+				</dl>
+			</aside>
+		</div>
 
 		{#if data.seasons.length > 0}
 			<section class="episodes" aria-labelledby="episodes-heading">
-				<p class="eyebrow">
-					{data.local ? 'Seasons · On this PC' : 'Seasons'}
-				</p>
+				<p class="eyebrow">{seasonEyebrow}</p>
 				<h2 id="episodes-heading">Episodes</h2>
 				{#if data.seasons.length > 1}
 					<Tabs
@@ -371,21 +386,20 @@
 				{/if}
 			</section>
 		{/if}
+
+		{#if data.similar.length}
+			<!-- Same rail recipe as the film page: the first card lines up with the page content. -->
+			<div class="bleed">
+				<Section title="More like this" eyebrow="Series" seeAllHref="/tv" seeAllLabel="All series">
+					<Rail label="More like this">
+						{#each data.similar as item (item.id)}
+							<PosterCard {...item} />
+						{/each}
+					</Rail>
+				</Section>
+			</div>
+		{/if}
 	</div>
-
-	{#if data.similar.length}
-		<Section title="More like this" eyebrow="Series" seeAllHref="/tv" seeAllLabel="All series">
-			<Rail label="More like this">
-				{#each data.similar as item (item.id)}
-					<PosterCard {...item} />
-				{/each}
-			</Rail>
-		</Section>
-	{/if}
-
-	<p class="back">
-		<a href="/tv"><ArrowLeftIcon size={16} aria-hidden="true" /> Back to TV</a>
-	</p>
 </article>
 
 <style>
@@ -407,13 +421,25 @@
 		position: absolute;
 		inset: 0;
 	}
-	/* Lighter than a full black wash: the artwork stays readable, the text keeps AA contrast. */
+	/* The film hero's scrim: bottom-weighted, so every hero text keeps AA over bright skies. */
 	.scrim {
 		position: absolute;
 		inset: 0;
 		background:
-			linear-gradient(to top, var(--surface-canvas) 4%, rgba(8, 9, 11, 0.72) 38%, transparent 78%),
-			linear-gradient(to right, rgba(8, 9, 11, 0.6), transparent 60%);
+			linear-gradient(
+				to top,
+				var(--surface-canvas) 0%,
+				color-mix(in srgb, var(--surface-canvas) 92%, transparent) 36%,
+				color-mix(in srgb, var(--surface-canvas) 72%, transparent) 56%,
+				color-mix(in srgb, var(--surface-canvas) 24%, transparent) 76%,
+				transparent 92%
+			),
+			linear-gradient(
+				to right,
+				color-mix(in srgb, var(--surface-canvas) 88%, transparent) 0%,
+				color-mix(in srgb, var(--surface-canvas) 35%, transparent) 55%,
+				transparent 100%
+			);
 	}
 	.header-content {
 		position: relative;
@@ -430,9 +456,43 @@
 		width: 120px;
 	}
 	.text {
+		position: relative;
+		isolation: isolate;
 		display: grid;
+		justify-items: start;
 		gap: var(--space-3);
 		min-width: 0;
+	}
+	.text > * {
+		max-width: 100%;
+	}
+	.text::before {
+		content: '';
+		position: absolute;
+		inset: -1.5rem -2.5rem -1rem;
+		z-index: -1;
+		background: radial-gradient(
+			closest-side,
+			color-mix(in srgb, var(--surface-canvas) 66%, transparent),
+			transparent
+		);
+		pointer-events: none;
+	}
+	.rating-line,
+	.local-note {
+		text-shadow: 0 1px 2px color-mix(in srgb, var(--surface-canvas) 85%, transparent);
+	}
+	/* The kind of title, on its own surface so the emerald never sits on raw artwork. */
+	.eyebrow-pill {
+		padding: 0.2rem 0.6rem;
+		border: 1px solid var(--brand-border);
+		border-radius: var(--radius-full);
+		background: color-mix(in srgb, var(--surface-canvas) 90%, transparent);
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
 	}
 	.eyebrow {
 		color: var(--brand-primary);
@@ -443,9 +503,9 @@
 	}
 	.title {
 		font-size: var(--type-display);
-		font-weight: 900;
+		font-weight: 700;
 		letter-spacing: var(--tracking-tight);
-		line-height: 1.02;
+		line-height: var(--leading-tight);
 		overflow-wrap: anywhere;
 	}
 	.rating-line {
@@ -460,8 +520,9 @@
 		gap: 0.35rem;
 		padding: 0.3rem 0.7rem;
 		border-radius: var(--radius-full);
-		background: var(--brand-muted);
+		background: color-mix(in srgb, var(--surface-canvas) 70%, var(--brand-active) 12%);
 		border: 1px solid var(--brand-border);
+		text-shadow: none;
 	}
 	.score-value {
 		color: var(--content-primary);
@@ -484,7 +545,7 @@
 		padding: 0.35rem 0.85rem;
 		border-radius: var(--radius-full);
 		border: 1px solid var(--border-subtle);
-		background: rgba(255, 255, 255, 0.06);
+		background: color-mix(in srgb, var(--surface-canvas) 72%, transparent);
 		color: var(--content-secondary);
 		font-size: var(--text-sm);
 		font-weight: 600;
@@ -553,26 +614,56 @@
 	}
 	.body {
 		display: grid;
+		/* minmax(0, 1fr): the rail scrolls inside the column instead of widening it. */
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-8);
 		width: 100%;
 		max-width: var(--container-wide);
 		margin: 0 auto;
 		padding: var(--space-7) var(--page-gutter) 0;
 	}
-	.story {
-		max-width: var(--container-reading);
+	/* Synopsis and a details card: two columns from 1024 px, like the film overview. */
+	.overview {
+		display: grid;
+		gap: var(--space-6);
+		align-items: start;
 	}
 	.story h2,
-	.episodes h2 {
+	.episodes h2,
+	.facts-card h2 {
 		font-size: var(--type-title);
 		font-weight: 800;
 		letter-spacing: var(--tracking-tight);
 	}
 	.story p {
+		max-inline-size: 62ch;
 		margin-top: var(--space-3);
 		color: var(--content-secondary);
-		font-size: var(--text-lg);
-		line-height: 1.7;
+		font-size: var(--text-md);
+		line-height: var(--leading-body);
+	}
+	.facts-card {
+		padding: var(--space-5);
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-lg);
+		background: var(--surface-raised);
+	}
+	.ext {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		min-height: var(--touch-target);
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+	.ext:hover {
+		color: var(--brand-primary);
+	}
+	.bleed {
+		margin-inline: calc(-1 * var(--page-gutter));
+	}
+	.bleed :global(.section) {
+		margin-block: 0;
 	}
 	.story .tagline {
 		color: var(--content-primary);
@@ -580,11 +671,9 @@
 	}
 	.facts {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
 		gap: var(--space-4);
-		margin-top: var(--space-6);
-		padding-top: var(--space-5);
-		border-top: 1px solid var(--border-subtle);
+		margin-top: var(--space-4);
 	}
 	.facts dt {
 		color: var(--content-tertiary);
@@ -613,22 +702,25 @@
 		margin-top: var(--space-4);
 		list-style: none;
 	}
+	/* Every row on the same padded tonal surface; Up next only changes the border colour. */
 	.episode {
 		display: grid;
 		grid-template-columns: 8.5rem minmax(0, 1fr);
 		align-items: start;
 		gap: var(--space-3);
-		padding: var(--space-2);
-		border: 1px solid transparent;
+		height: 100%;
+		padding: var(--space-3);
+		border: 1px solid var(--border-subtle);
 		border-radius: var(--radius-lg);
+		background: var(--surface-raised);
 		color: inherit;
 	}
 	.episode.playable {
 		-webkit-tap-highlight-color: transparent;
 	}
 	.episode.playable:hover {
-		border-color: var(--border-subtle);
-		background: var(--surface-raised);
+		border-color: var(--border-strong);
+		background: var(--surface-overlay);
 	}
 	.episode.playable:focus-visible {
 		outline: 2px solid var(--brand-primary);
@@ -636,7 +728,6 @@
 	}
 	.episode.current {
 		border-color: var(--brand-border);
-		background: var(--brand-muted);
 	}
 	.still {
 		position: relative;
@@ -701,8 +792,8 @@
 		font-weight: 800;
 		line-height: 1.25;
 		overflow-wrap: anywhere;
-		-webkit-line-clamp: 2;
-		line-clamp: 2;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
 		-webkit-box-orient: vertical;
 	}
 	.episode-facts {
@@ -726,27 +817,11 @@
 		color: var(--content-secondary);
 		font-size: var(--text-sm);
 		line-height: 1.55;
-		-webkit-line-clamp: 3;
-		line-clamp: 3;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
 		-webkit-box-orient: vertical;
 	}
 
-	.back {
-		max-width: var(--container-wide);
-		margin: var(--space-6) auto 0;
-		padding-inline: var(--page-gutter);
-	}
-	.back a {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		min-height: var(--touch-target);
-		color: var(--content-secondary);
-		font-weight: 700;
-	}
-	.back a:hover {
-		color: var(--brand-primary);
-	}
 	@media (min-width: 560px) {
 		.local :global(.local-play) {
 			flex: 0 0 auto;
@@ -786,6 +861,39 @@
 	@media (min-width: 1024px) {
 		.episode-list {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.overview {
+			grid-template-columns: 7fr 5fr;
+			gap: var(--space-8);
+		}
+		.story p {
+			font-size: var(--text-lg);
+			line-height: 1.7;
+		}
+	}
+	/* Phone landscape: the film page's compact hero, so Play and Share sit above the tab bar. */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.header {
+			min-height: 0;
+		}
+		.header-content {
+			grid-template-columns: 140px minmax(0, 1fr);
+			align-items: end;
+			gap: var(--space-5);
+			padding-top: calc(var(--top-bar-height) + var(--safe-top) + var(--space-4));
+			padding-bottom: var(--space-4);
+		}
+		.poster {
+			width: 140px;
+		}
+		.text {
+			gap: var(--space-2);
+		}
+		.title {
+			font-size: 2rem;
+		}
+		.genres {
+			display: none;
 		}
 	}
 	@media (prefers-reduced-motion: no-preference) {

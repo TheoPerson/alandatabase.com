@@ -48,8 +48,18 @@
 
 	const invalid = $derived(status.over || !!error);
 	const describedBy = $derived(
-		[`${id}-hint`, error ? `${id}-error` : null, `${id}-count`].filter(Boolean).join(' ')
+		[hint ? `${id}-hint` : null, error ? `${id}-error` : null, `${id}-count`]
+			.filter(Boolean)
+			.join(' ')
 	);
+
+	// The description grows with its text (3 rows to start, capped), so short notes stay compact.
+	$effect(() => {
+		void value;
+		if (!multiline || !(ref instanceof HTMLTextAreaElement)) return;
+		ref.style.height = 'auto';
+		ref.style.height = `${ref.scrollHeight + 2}px`;
+	});
 </script>
 
 <div class="field" class:invalid>
@@ -58,16 +68,20 @@
 			{label}
 			{#if !required}<span class="optional">Optional</span>{/if}
 		</label>
-		<span class="counter" class:over={status.over} aria-hidden="true">{status.counter}</span>
+		{#if status.showCounter}
+			<span class="counter" class:near={status.near} class:over={status.over} aria-hidden="true"
+				>{status.counter}</span
+			>
+		{/if}
 	</div>
-	<p class="hint" id={`${id}-hint`}>{hint ? `${hint} ` : ''}Up to {max} characters.</p>
+	{#if hint}<p class="hint" id={`${id}-hint`}>{hint}</p>{/if}
 	{#if multiline}
 		<textarea
 			{id}
 			{name}
 			{placeholder}
 			{required}
-			rows="4"
+			rows="3"
 			bind:value
 			bind:this={ref}
 			aria-invalid={invalid ? 'true' : undefined}
@@ -120,6 +134,10 @@
 		font-size: var(--text-xs);
 		font-variant-numeric: tabular-nums;
 	}
+	.counter.near {
+		color: var(--color-warning);
+		font-weight: 700;
+	}
 	.counter.over {
 		color: var(--color-error);
 		font-weight: 700;
@@ -143,8 +161,10 @@
 		transition: border-color var(--duration-fast) var(--ease-standard);
 	}
 	textarea {
-		min-height: 7.5rem;
-		resize: vertical;
+		min-height: 6.25rem;
+		max-height: 16rem;
+		resize: none;
+		overflow-y: auto;
 		line-height: var(--leading-body);
 	}
 	input::placeholder,

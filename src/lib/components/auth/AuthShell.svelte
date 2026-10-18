@@ -201,4 +201,42 @@
 		color: var(--brand-hover);
 		text-decoration: underline;
 	}
+
+	/* Phone landscape (about 440px tall between two bars): a wide, top-aligned card with the
+	   fields side by side, so the whole form and its submit button fit above the tab bar. */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.auth {
+			align-items: start;
+			padding-top: calc(var(--top-bar-height) + var(--safe-top) + var(--space-3));
+			padding-bottom: var(--space-5);
+		}
+		.card {
+			width: min(100%, 44rem);
+			padding: var(--space-4) var(--space-5);
+		}
+		.eyebrow,
+		.description {
+			display: none;
+		}
+		h1 {
+			margin-top: 0;
+			font-size: var(--text-xl);
+		}
+		.alert,
+		.card > :global(form) {
+			margin-top: var(--space-3);
+		}
+		.card > :global(form) {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: var(--space-3) var(--space-4);
+		}
+		.card > :global(form > :not(.field)) {
+			grid-column: 1 / -1;
+		}
+		.foot {
+			margin-top: var(--space-3);
+			padding-top: 0;
+			border-top: 0;
+		}
+	}
 </style>

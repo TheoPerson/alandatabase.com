@@ -70,6 +70,10 @@
 		>
 			<Icon name="chevron-down" />
 		</button>
+		<!-- The resume capsule takes the title block's badge row: the quality signal moves up here. -->
+		{#if $snapshot.resume !== null && $snapshot.status !== 'error'}
+			<div class="signal signal-portrait hqp-x-upnext"><SignalChip /></div>
+		{/if}
 		{@render outputs(false)}
 	</div>
 {:else if ui.layout === 'phone-landscape'}
@@ -159,5 +163,11 @@
 		display: flex;
 		min-width: 0;
 		max-width: 30cqw;
+	}
+	.signal-portrait {
+		flex: 0 1 auto;
+		justify-content: center;
+		max-width: none;
+		margin-inline: auto;
 	}
 </style>

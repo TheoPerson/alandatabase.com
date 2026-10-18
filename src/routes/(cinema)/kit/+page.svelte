@@ -96,16 +96,27 @@
 </script>
 
 <svelte:head>
-	<title>UI kit | Alan Database</title>
+	<title>UI kit | Alan's Database</title>
 	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
-<HeroCarousel items={samples}>
-	{#snippet actions(item)}
-		<Button href={item.href} size="lg">Details</Button>
-		<Button variant="secondary" size="lg">+ Watchlist</Button>
-	{/snippet}
-</HeroCarousel>
+<header class="page-head">
+	<p class="eyebrow">Design system</p>
+	<h1>UI kit</h1>
+	<p class="summary">
+		Every component of Alan’s Database, with its states. Targets marked dense are desktop-only
+		sizes; on touch screens the kit uses its 44px variants.
+	</p>
+</header>
+
+<div class="hero-demo">
+	<HeroCarousel items={samples}>
+		{#snippet actions(item)}
+			<Button href={item.href} size="lg">Details</Button>
+			<Button variant="secondary" size="lg">+ Watchlist</Button>
+		{/snippet}
+	</HeroCarousel>
+</div>
 
 <div class="kit">
 	<Section title="Colour tokens" eyebrow="Tokens">
@@ -142,7 +153,7 @@
 			<Button href="/kit" variant="outline">As link</Button>
 		</div>
 		<div class="row">
-			<Button size="sm">Small</Button>
+			<Button size="sm">Small (dense)</Button>
 			<Button size="md">Medium</Button>
 			<Button size="lg">Large</Button>
 			<Button size="icon" aria-label="Icon only">★</Button>
@@ -160,7 +171,7 @@
 							: [...selected, genre])}>{genre}</Chip
 				>
 			{/each}
-			<Chip onremove={() => (selected = [])}>Removable</Chip>
+			<Chip onremove={() => (selected = [])}>Removable (dense)</Chip>
 			<Chip href="/kit">Link chip</Chip>
 		</div>
 		<div class="row">
@@ -279,6 +290,35 @@
 </Dialog>
 
 <style>
+	.page-head {
+		width: 100%;
+		max-width: var(--container-wide);
+		margin: 0 auto;
+		padding: var(--space-6) var(--page-gutter) var(--space-5);
+	}
+	.eyebrow {
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+	}
+	h1 {
+		margin-top: var(--space-2);
+		font-size: var(--type-headline);
+		font-weight: 900;
+		letter-spacing: var(--tracking-tight);
+		line-height: var(--leading-tight);
+	}
+	.summary {
+		max-width: var(--container-reading);
+		margin-top: var(--space-2);
+		color: var(--content-secondary);
+	}
+	/* The hero normally runs under the top bar; here it sits below the page header. */
+	.hero-demo :global(.hero) {
+		margin-top: 0;
+	}
 	.kit {
 		padding-bottom: var(--space-8);
 	}

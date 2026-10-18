@@ -46,7 +46,7 @@
 		flex-direction: column;
 		min-height: 100dvh;
 		/* Clearance for the fixed tab bar, footer included. */
-		padding-bottom: calc(var(--bottom-bar-height) + var(--safe-bottom));
+		padding-bottom: calc(var(--bottom-bar-height) + var(--tab-bar-inset));
 	}
 	/* Hero sections pull themselves under the sticky bar; other pages keep normal flow. */
 	.main-content {

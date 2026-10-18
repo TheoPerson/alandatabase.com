@@ -1,47 +1,39 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/button';
 	import { enhance } from '$app/forms';
+	import ShieldIcon from 'lucide-svelte/icons/shield-check';
 
 	let { data } = $props();
 	let isSubmitting = $state(false);
+
+	function goBack() {
+		if (window.history.length > 1) window.history.back();
+		else window.location.href = '/';
+	}
 </script>
 
-<div class="gate-container">
-	<div class="gate-card glass-card">
-		<div class="icon-wrapper">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="48"
-				height="48"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				class="lucide lucide-shield-alert text-red-500"
-				><path
-					d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2-1 4-2 7-2 2 0 5 1 7 2a1 1 0 0 1 1 1v7z"
-				/><path d="M12 8v4" /><path d="M12 16h.01" /></svg
-			>
-		</div>
-		<h1 class="title">Content Advisory</h1>
-		<p class="subtitle">
-			CinemaDB may include mature themes, R-rated movies, and explicit TV shows. Adult and explicit
-			records stay quarantined outside standard catalogue, search, and recommendations.
-		</p>
+<svelte:head>
+	<title>Content notice | Alan's Database</title>
+	<meta name="robots" content="noindex,nofollow" />
+</svelte:head>
 
-		<div class="warning-box">
-			<p>
-				By proceeding, you acknowledge that you are of legal age and consent to viewing mature
-				content.
-			</p>
-		</div>
+<div class="gate">
+	<section class="card" aria-labelledby="gate-title">
+		<span class="mark" aria-hidden="true"><ShieldIcon size={24} /></span>
+		<p class="eyebrow">Before you continue</p>
+		<h1 id="gate-title">Content notice</h1>
+		<p class="copy">
+			Alan’s Database includes mature themes, R-rated films and explicit series. Adult and explicit
+			records stay quarantined, outside the standard catalogue, search and recommendations.
+		</p>
+		<p class="consent">
+			By continuing, you confirm that you are of legal age and agree to see mature content.
+		</p>
 
 		<form
 			method="POST"
 			action="?/accept"
-			class="action-buttons"
+			class="actions"
 			use:enhance={() => {
 				isSubmitting = true;
 				return async ({ update }) => {
@@ -51,101 +43,101 @@
 			}}
 		>
 			<input type="hidden" name="returnTo" value={data.returnTo} />
-			<Button
-				type="button"
-				variant="ghost"
-				class="w-full text-muted-foreground"
-				onclick={() => window.history.back()}
-			>
-				Go Back
+			<Button type="submit" size="lg" loading={isSubmitting}>
+				{isSubmitting ? 'Entering' : 'I agree, enter'}
 			</Button>
-			<Button type="submit" variant="primary" class="w-full" disabled={isSubmitting}>
-				{isSubmitting ? 'Loading...' : 'I Agree, Enter Cinema'}
-			</Button>
+			<Button type="button" variant="ghost" size="lg" onclick={goBack}>Go back</Button>
 		</form>
-	</div>
+	</section>
 </div>
 
 <style>
-	.gate-container {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		min-height: calc(100vh - var(--header-height, 64px));
-		padding: 2rem 1rem;
-		background: radial-gradient(circle at 50% 0%, rgba(20, 20, 25, 1) 0%, rgba(10, 10, 12, 1) 100%);
+	/* Covers the cinema chrome on purpose: nothing behind it is reachable until accepted. */
+	.gate {
 		position: fixed;
 		inset: 0;
-		z-index: 50;
-		backdrop-filter: blur(20px);
+		z-index: var(--z-sheet);
+		display: grid;
+		place-items: center;
+		min-height: 100dvh;
 		overflow-y: auto;
-		padding-top: max(2rem, env(safe-area-inset-top));
-		padding-bottom: max(2rem, env(safe-area-inset-bottom));
+		padding: max(var(--space-6), var(--safe-top)) var(--page-gutter)
+			max(var(--space-6), var(--safe-bottom));
+		background:
+			radial-gradient(70% 45% at 50% 0%, var(--brand-muted), transparent 70%), var(--surface-canvas);
 	}
-
-	.gate-card {
-		width: 100%;
-		max-width: 440px;
-		padding: 3rem 2.5rem;
-		border-radius: 1.5rem;
-		background: rgba(15, 15, 18, 0.85);
-		border: 1px solid rgba(239, 68, 68, 0.2);
-		box-shadow:
-			0 25px 50px -12px rgba(0, 0, 0, 0.7),
-			0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-	}
-
-	.icon-wrapper {
-		background: rgba(239, 68, 68, 0.1);
-		padding: 1.5rem;
-		border-radius: 50%;
-		margin-bottom: 1.5rem;
-	}
-
-	.title {
-		font-size: 1.75rem;
-		font-weight: 700;
+	.card {
+		display: grid;
+		justify-items: center;
+		gap: var(--space-3);
+		width: min(100%, 28rem);
+		padding: var(--space-6) var(--space-5);
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-xl);
+		background: var(--surface-raised);
+		box-shadow: var(--elevation-3);
 		text-align: center;
-		margin-bottom: 1rem;
-		color: #fff;
-		letter-spacing: -0.025em;
 	}
-
-	.subtitle {
-		text-align: center;
-		color: #a1a1aa;
-		margin-bottom: 2rem;
-		font-size: 1rem;
+	.mark {
+		display: grid;
+		place-items: center;
+		width: 3.5rem;
+		height: 3.5rem;
+		margin-bottom: var(--space-2);
+		border: 1px solid var(--brand-border);
+		border-radius: var(--radius-full);
+		background: var(--brand-muted);
+		color: var(--brand-primary);
+	}
+	.eyebrow {
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+	}
+	h1 {
+		font-size: var(--type-headline);
+		font-weight: 900;
+		letter-spacing: var(--tracking-tight);
+		line-height: var(--leading-tight);
+	}
+	.copy {
+		color: var(--content-secondary);
 		line-height: 1.6;
 	}
-
-	.warning-box {
-		background: rgba(0, 0, 0, 0.4);
-		border-left: 4px solid #ef4444;
-		padding: 1.25rem;
-		border-radius: 0.5rem;
-		margin-bottom: 2.5rem;
-		color: #d4d4d8;
-		font-size: 0.9rem;
+	.consent {
+		width: 100%;
+		margin-top: var(--space-2);
+		padding: var(--space-3) var(--space-4);
+		border: 1px solid var(--border-subtle);
+		border-left: 3px solid var(--color-warning);
+		border-radius: var(--radius-md);
+		background: var(--surface-subtle);
+		color: var(--content-primary);
+		font-size: var(--text-sm);
 		line-height: 1.5;
+		text-align: start;
 	}
-
-	.action-buttons {
-		display: flex;
-		gap: 1rem;
+	/* Always stacked, primary on top: two long labels never squeeze side by side. */
+	.actions {
+		display: grid;
+		gap: var(--space-2);
+		width: 100%;
+		margin-top: var(--space-3);
+	}
+	.actions :global(.btn) {
 		width: 100%;
 	}
-
-	@media (max-width: 420px) {
-		.gate-card {
-			padding: 2rem 1.25rem;
+	@media (prefers-reduced-motion: no-preference) {
+		.card {
+			animation: rise var(--duration-slow) var(--ease-out) both;
 		}
-
-		.action-buttons {
-			flex-direction: column-reverse;
+	}
+	@keyframes rise {
+		from {
+			opacity: 0;
+			transform: translateY(8px);
 		}
 	}
 </style>

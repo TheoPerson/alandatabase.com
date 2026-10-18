@@ -79,6 +79,7 @@ describe('Library loader', () => {
 		expect(data.stats).toEqual({
 			watchedCount: 1,
 			hours: 2,
+			minutes: 120,
 			topGenres: [{ name: 'Drama', count: 1 }],
 			decades: [{ decade: 2010, count: 1 }]
 		});
@@ -217,5 +218,24 @@ describe('Library loader: On this PC and Continue watching (owner only)', () => 
 		expect(data.local).toBeNull();
 		expect(data.counts.local).toBeNull();
 		expect(JSON.stringify(data)).not.toContain('/watch/');
+	});
+
+	it('sends exact watch minutes and the latest watched posters for Stats', async () => {
+		services.getUserWatchedHistory.mockResolvedValue([
+			movie('w1', { runtime: 100 }),
+			movie('w2', { runtime: 95 }),
+			movie('w3', { runtime: null }),
+			...Array.from({ length: 6 }, (_, index) => movie(`x${index}`, { runtime: 90 }))
+		]);
+		const data = await run(member, '?tab=stats');
+		expect(data.stats.minutes).toBe(100 + 95 + 6 * 90);
+		expect(data.recentWatched.map((item: { id: string }) => item.id)).toEqual([
+			'w1',
+			'w2',
+			'w3',
+			'x0',
+			'x1',
+			'x2'
+		]);
 	});
 });

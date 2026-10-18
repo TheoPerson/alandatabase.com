@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { firstMovieHref, gotoHydrated } from './helpers';
 
@@ -138,5 +139,46 @@ test.describe('Movie detail', () => {
 			() => document.documentElement.scrollWidth - document.documentElement.clientWidth
 		);
 		expect(overflow).toBeLessThanOrEqual(1);
+	});
+});
+
+test.describe('Series detail in phone landscape', () => {
+	const state = process.env.E2E_OWNER_STATE;
+	test.use({
+		viewport: { width: 956, height: 440 },
+		hasTouch: true,
+		isMobile: true,
+		// The owner sees the tallest hero: Play, Start over and the episodes note.
+		storageState: state && existsSync(state) ? state : undefined
+	});
+
+	test('the whole series hero, actions included, fits above the tab bar', async ({ page }) => {
+		await page.goto('/tv');
+		const hrefs = [
+			...new Set(
+				await page
+					.locator('a[href^="/tv/"]')
+					.evaluateAll((links) => links.map((a) => a.getAttribute('href') ?? ''))
+			)
+		].filter((href) => /^\/tv\/\d+$/.test(href));
+		test.skip(hrefs.length === 0, 'needs a series in the catalogue');
+		// Prefer a series with episodes on this PC (its hero is the tallest).
+		let target = hrefs[0];
+		for (const href of hrefs) {
+			await page.goto(href);
+			if ((await page.getByRole('group', { name: 'On this PC' }).count()) > 0) {
+				target = href;
+				break;
+			}
+		}
+		await gotoHydrated(page, target);
+		const tabBar = await page.getByRole('navigation', { name: 'Primary' }).boundingBox();
+		const share = await page.getByRole('button', { name: 'Share' }).boundingBox();
+		const poster = await page.locator('.header .poster').boundingBox();
+		expect(tabBar).not.toBeNull();
+		expect(share).not.toBeNull();
+		const limit = tabBar?.y ?? 440;
+		expect((share?.y ?? 0) + (share?.height ?? 0)).toBeLessThanOrEqual(limit);
+		expect((poster?.y ?? 0) + (poster?.height ?? 0)).toBeLessThanOrEqual(limit);
 	});
 });

@@ -181,7 +181,11 @@
 		</div>
 	</header>
 
-	<FilterBar {filters} genres={data.genres} />
+	<FilterBar
+		{filters}
+		genres={data.genres}
+		total={data.unavailable ? null : data.pagination.totalCount}
+	/>
 
 	<section
 		bind:this={results}
@@ -323,6 +327,37 @@
 		min-width: 0;
 		color: var(--content-secondary);
 		font-size: var(--text-sm);
+	}
+	/* Landscape phones: title and count share one short row above the filters. */
+	@media (max-height: 500px) and (orientation: landscape) {
+		.header {
+			display: flex;
+			align-items: center;
+			gap: var(--space-4);
+			padding-block: var(--space-2) 0;
+		}
+		.eyebrow {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+		}
+		h1 {
+			flex: none;
+			font-size: var(--type-title);
+		}
+		.summary {
+			flex: 1;
+			min-width: 0;
+			margin-top: 0;
+		}
+		.count {
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
 	}
 	.results {
 		padding-block: var(--space-5) var(--space-7);

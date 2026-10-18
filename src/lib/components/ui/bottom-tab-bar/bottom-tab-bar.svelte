@@ -39,9 +39,10 @@
 		z-index: var(--z-bar);
 		display: grid;
 		grid-template-columns: repeat(5, 1fr);
-		height: calc(var(--bottom-bar-height) + var(--safe-bottom));
-		padding-bottom: var(--safe-bottom);
-		background: rgba(8, 9, 11, 0.96);
+		height: calc(var(--bottom-bar-height) + var(--tab-bar-inset));
+		/* Symmetric side insets keep the edge tabs clear of the island in landscape. */
+		padding: 0 var(--chrome-inset-x) var(--tab-bar-inset);
+		background: color-mix(in srgb, var(--surface-canvas) 96%, transparent);
 		backdrop-filter: blur(16px) saturate(140%);
 		-webkit-backdrop-filter: blur(16px) saturate(140%);
 		border-top: 1px solid var(--border-subtle);
@@ -64,6 +65,14 @@
 	}
 	.active {
 		color: var(--brand-primary);
+	}
+	/* Landscape phones: the iOS compact tab bar, icon beside its label on one short row. */
+	@media (max-height: 500px) and (orientation: landscape) {
+		.tab {
+			flex-direction: row;
+			gap: var(--space-2);
+			font-size: var(--text-xs);
+		}
 	}
 	@media (min-width: 1024px) {
 		.tabs {

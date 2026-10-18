@@ -14,10 +14,12 @@
 	} from '$lib/components/lists/list-form';
 	import { addToast } from '$lib/stores/toast';
 
-	let { form } = $props();
+	let { data, form } = $props();
 
-	let name = $state('');
-	let description = $state('');
+	// svelte-ignore state_referenced_locally
+	let name = $state(data.prefill?.name ?? '');
+	// svelte-ignore state_referenced_locally
+	let description = $state(data.prefill?.description ?? '');
 	let isPublic = $state(false);
 	let submitting = $state(false);
 	let problem = $state<ListFormProblem | null>(null);
@@ -69,10 +71,8 @@
 </svelte:head>
 
 <div class="create">
-	<BackLink href="/my/lists" label="Lists" />
-
 	<header class="head">
-		<p class="eyebrow">Library</p>
+		<BackLink href="/my/lists" label="Lists" />
 		<h1>New list</h1>
 		<p class="summary">Name it, describe it if you like, then add films from their pages.</p>
 	</header>
@@ -143,11 +143,11 @@
 
 		<label class="toggle" for="list-public">
 			<span class="toggle-text">
-				<span class="toggle-title" id="list-public-label">Public list</span>
+				<span class="toggle-title" id="list-public-label">Share publicly</span>
 				<span class="toggle-hint" id="list-public-hint">
 					{isPublic
-						? 'Anyone with the link can view it. Only you can change it.'
-						: 'Only you can see it.'}
+						? 'Public: anyone with the link can view it. Only you can change it.'
+						: 'Private: only you can see it.'}
 				</span>
 			</span>
 			<Switch
@@ -160,7 +160,7 @@
 		</label>
 
 		<div class="actions">
-			<Button href="/my/lists" variant="ghost">Cancel</Button>
+			<Button href="/my/lists" variant="secondary">Cancel</Button>
 			<Button type="submit" variant="primary" loading={submitting}>
 				{submitting ? 'Creating' : 'Create list'}
 			</Button>
@@ -170,27 +170,25 @@
 </div>
 
 <style>
+	/* Same container edge as Library and Lists; the form keeps a reading width, left-aligned. */
 	.create {
 		width: 100%;
-		max-width: var(--container-reading);
+		max-width: var(--container-wide);
 		margin: 0 auto;
-		padding: var(--space-4) var(--page-gutter) var(--space-8);
+		padding: var(--space-6) var(--page-gutter) var(--space-8);
+	}
+	.create > :global(*) {
+		max-width: var(--container-reading);
 	}
 	.head {
-		margin: var(--space-2) 0 var(--space-6);
-	}
-	.eyebrow {
-		color: var(--brand-primary);
-		font-size: var(--text-xs);
-		font-weight: 800;
-		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
+		margin-bottom: var(--space-6);
 	}
 	h1 {
 		margin-top: var(--space-2);
 		font-size: var(--type-headline);
 		font-weight: 900;
 		letter-spacing: var(--tracking-tight);
+		line-height: var(--leading-tight);
 	}
 	.summary {
 		margin-top: var(--space-2);
@@ -223,15 +221,15 @@
 	.notice a {
 		color: var(--brand-primary);
 	}
+	/* One flat row (no card in the card): the whole row toggles the switch. */
 	.toggle {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-4);
 		min-height: var(--touch-target);
-		padding: var(--space-3) var(--space-4);
-		border: 1px solid var(--border-subtle);
-		border-radius: var(--radius-md);
+		padding-top: var(--space-4);
+		border-top: 1px solid var(--border-subtle);
 		cursor: pointer;
 	}
 	.toggle-text {
@@ -252,12 +250,28 @@
 		justify-content: flex-end;
 		gap: var(--space-3);
 	}
+	/* Phone landscape: a tighter rhythm so the actions arrive after one scroll. */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.create {
+			padding-top: var(--space-4);
+		}
+		.head {
+			margin-bottom: var(--space-4);
+		}
+		.summary {
+			display: none;
+		}
+		.panel {
+			gap: var(--space-4);
+			padding: var(--space-4);
+		}
+	}
 	@media (max-width: 479px) {
 		.panel {
 			padding: var(--space-4);
 		}
 		.actions :global(.btn) {
-			flex: 1 1 auto;
+			flex: 1 1 0;
 		}
 	}
 </style>

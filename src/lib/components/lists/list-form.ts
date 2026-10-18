@@ -23,9 +23,15 @@ export interface FieldStatus {
 	over: boolean;
 	/** Short visible counter, e.g. "12/120". */
 	counter: string;
+	/** The visible counter only appears from 80% of the limit. */
+	showCounter: boolean;
+	/** Within the last 20% of the limit (a warning, not yet an error). */
+	near: boolean;
 	/** Sentence for the polite live region, e.g. "108 characters left". */
 	announcement: string;
 }
+
+const COUNTER_FROM = 0.8;
 
 const characters = (count: number) => `${count} character${count === 1 ? '' : 's'}`;
 
@@ -38,6 +44,8 @@ export function fieldStatus(value: string, max: number, multiline = false): Fiel
 		remaining,
 		over,
 		counter: `${length}/${max}`,
+		showCounter: length >= max * COUNTER_FROM,
+		near: !over && length >= max * COUNTER_FROM,
 		announcement: over
 			? `${characters(-remaining)} over the limit`
 			: `${characters(remaining)} left`
@@ -92,5 +100,32 @@ export function toListPosterItem(movie: ListMovie): PosterItem {
 		posterPath: movie.posterPath ?? null,
 		releaseDate: movie.releaseDate ?? null,
 		rating: movie.voteAverage ?? null
+	};
+}
+
+/** One-tap starting points offered on the empty Lists page; they prefill the create form. */
+export const LIST_STARTERS = [
+	{
+		name: 'Director’s run',
+		description: 'One filmmaker, start to finish, in release order.'
+	},
+	{
+		name: 'Rainy Sunday',
+		description: 'Slow, warm films for a day indoors.'
+	},
+	{
+		name: 'Show a friend',
+		description: 'The ones I keep recommending.'
+	}
+].map((starter) => ({
+	...starter,
+	href: `/my/lists/create?${new URLSearchParams(starter)}`
+}));
+
+/** Name and description asked for in the create URL, trimmed and cut to the limits. */
+export function listPrefill(params: URLSearchParams): { name: string; description: string } {
+	return {
+		name: (params.get('name') ?? '').trim().slice(0, LIST_NAME_MAX),
+		description: (params.get('description') ?? '').trim().slice(0, LIST_DESCRIPTION_MAX)
 	};
 }

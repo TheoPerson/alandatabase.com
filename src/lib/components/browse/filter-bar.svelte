@@ -5,18 +5,58 @@
 	import { filterGroups } from './filter-groups';
 	import FilterSheet from './filter-sheet.svelte';
 	import FilterStrip from './filter-strip.svelte';
+	import { nextReveal, type RevealState } from './scroll-reveal';
 
 	interface Props {
 		filters: BrowseFilters;
 		genres: ReadonlyArray<{ id: number; name: string }>;
+		/** Films the current filters match, for the sheet's "Show N films"; null when unknown. */
+		total?: number | null;
 	}
 
-	let { filters, genres }: Props = $props();
+	let { filters, genres, total = null }: Props = $props();
 
-	// Phones get a Filters button and sheet instead of the long Sort, Decade and Rating strip.
-	// The server cannot know the width, so it renders the strip: phones without JavaScript keep it.
-	const compact = new MediaQuery('(max-width: 767.98px)', false);
+	// Phones (and phones held sideways) get a Filters button and sheet instead of the long Sort,
+	// Decade and Rating strip. The server cannot know the screen, so it renders the strip: phones
+	// without JavaScript keep it.
+	const compact = new MediaQuery(
+		'(max-width: 767.98px), (max-height: 500px) and (orientation: landscape) and (pointer: coarse)',
+		false
+	);
 	const groups = $derived(filterGroups(filters));
+
+	let bar = $state<HTMLElement>();
+	let reveal = $state<RevealState>({ hidden: false, anchorY: 0 });
+
+	// The bar tucks away while the visitor reads down the grid and returns on the first scroll up.
+	// It stays sticky either way, so nothing below it moves.
+	$effect(() => {
+		const element = bar;
+		if (!element) return;
+		let frame = 0;
+		const update = () => {
+			frame = 0;
+			// The bar may tuck away only once the results it sits above have reached it.
+			const results = element.nextElementSibling;
+			const tuckAfter = results
+				? results.getBoundingClientRect().top + window.scrollY - element.offsetHeight
+				: Number.POSITIVE_INFINITY;
+			reveal = nextReveal(reveal, window.scrollY, Math.max(tuckAfter, 0));
+		};
+		const onScroll = () => {
+			if (!frame) frame = requestAnimationFrame(update);
+		};
+		window.addEventListener('scroll', onScroll, { passive: true });
+		return () => {
+			window.removeEventListener('scroll', onScroll);
+			if (frame) cancelAnimationFrame(frame);
+		};
+	});
+
+	// Keyboard focus entering the bar always brings it back into view.
+	function show() {
+		if (reveal.hidden) reveal = { hidden: false, anchorY: window.scrollY };
+	}
 </script>
 
 <!--
@@ -24,8 +64,16 @@
 	reload. The noscroll and keepfocus hints (read from this ancestor) stop a filter change from
 	jumping the page or dropping keyboard focus.
 -->
-<nav class="filter-bar" aria-label="Filter films" data-sveltekit-noscroll data-sveltekit-keepfocus>
-	<div class="inner">
+<nav
+	bind:this={bar}
+	class="filter-bar"
+	class:tucked={reveal.hidden}
+	aria-label="Filter films"
+	data-sveltekit-noscroll
+	data-sveltekit-keepfocus
+	onfocusin={show}
+>
+	<div class="inner" class:compact={compact.current}>
 		{#if genres.length > 0}
 			<FilterStrip selectedKey={String(filters.genreId)} keepSelectedInView>
 				<div class="group" role="group" aria-label="Genre">
@@ -47,7 +95,7 @@
 			</FilterStrip>
 		{/if}
 		{#if compact.current}
-			<FilterSheet {filters} />
+			<FilterSheet {filters} {total} />
 		{:else}
 			<FilterStrip>
 				{#each groups as group, index (group.key)}
@@ -73,6 +121,15 @@
 		backdrop-filter: blur(16px) saturate(140%);
 		-webkit-backdrop-filter: blur(16px) saturate(140%);
 		box-shadow: 0 1px 0 var(--border-subtle);
+		transition:
+			transform var(--duration-slow) var(--ease-out),
+			opacity var(--duration-base) var(--ease-out);
+	}
+	/* Slides up under the top bar; still in the tab order, and focus brings it back. */
+	.tucked {
+		transform: translateY(calc(-100% - 1px));
+		opacity: 0;
+		pointer-events: none;
 	}
 	.inner {
 		display: grid;
@@ -100,6 +157,16 @@
 	@media (max-height: 700px) {
 		.inner {
 			padding-block: 0;
+		}
+	}
+	/* Landscape phones: one row. The genre strip scrolls on the left, Filters sits on the right,
+	   and before hydration the two strips share the row, so nothing moves when it swaps. */
+	@media (max-height: 500px) and (orientation: landscape) and (pointer: coarse) {
+		.inner {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		}
+		.inner.compact {
+			grid-template-columns: minmax(0, 1fr) auto;
 		}
 	}
 	.divider {

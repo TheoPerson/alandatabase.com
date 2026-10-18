@@ -596,7 +596,7 @@
 
 <style>
 	.hqp {
-		/* Picture geometry (section 5): Fit centred; portrait at 43% (36% when short), never above 118 px. */
+		/* Picture geometry (section 5): Fit centred; portrait at 39% (36% when short), never above 118 px. */
 		--ar: 1.7778;
 		--frame-w: min(100cqw, 100cqh * var(--ar));
 		--frame-h: min(100cqh, 100cqw / var(--ar));
@@ -627,7 +627,7 @@
 	}
 	@media (orientation: portrait) and (max-width: 599px) {
 		.hqp {
-			--frame-top: clamp(118px, 43cqh - var(--frame-h) / 2, 100cqh - var(--frame-h));
+			--frame-top: clamp(118px, 39cqh - var(--frame-h) / 2, 100cqh - var(--frame-h));
 		}
 	}
 	@media (orientation: portrait) and (max-width: 599px) and (max-height: 759px) {

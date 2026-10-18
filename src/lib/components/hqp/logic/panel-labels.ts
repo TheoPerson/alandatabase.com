@@ -10,7 +10,14 @@ import type {
 	QualityChoice
 } from '$lib/player/hqp/types';
 import { formatTime } from '$lib/player/format-time';
-import { channelLabel, codecLabel, hdrBadge, languageName, resolutionBadge } from './format';
+import {
+	channelLabel,
+	codecLabel,
+	hdrBadge,
+	isLanguageWord,
+	languageName,
+	resolutionBadge
+} from './format';
 import { runtimeLabel } from './labels';
 
 /**
@@ -168,4 +175,64 @@ export function audioDetail(option: HqpAudioOption): string {
 		.filter(Boolean)
 		.join(' ');
 	return [format, option.isOriginal ? 'Original' : ''].filter(Boolean).join(' · ');
+}
+
+const SUB_KIND: Array<[RegExp, string]> = [
+	[/^(forced|forc[eé]s?|forcés)$/iu, 'Forced'],
+	[/^(sdh|cc|hi|sourds|malentendants)$/iu, 'SDH'],
+	[/^(full|complete?|complets?|int[eé]gral)$/iu, 'Full']
+];
+const SUB_FORMAT: Array<[RegExp, string]> = [
+	[/^(srt|subrip)$/iu, 'SRT'],
+	[/^(ass|ssa)$/iu, 'ASS'],
+	[/^(vtt|webvtt)$/iu, 'WebVTT'],
+	[/^(pgs|sup)$/iu, 'PGS']
+];
+
+/**
+ * Secondary line of a subtitle row: '<Forced|SDH|Full> · <format>' read from the container title
+ * ('FR Forced : SRT' gives 'Forced · SRT'). The language (already the row title) and the spaced
+ * colons are dropped; other meaningful words survive ('Commentary · director'). '' when nothing
+ * is left to say.
+ */
+export function subtitleDetail(option: HqpSubtitleState['options'][number]): string {
+	const kinds = new Set<string>();
+	if (option.forced) kinds.add('Forced');
+	if (option.sdh) kinds.add('SDH');
+	let format = '';
+	const free: string[] = [];
+	const own = new Set(
+		[option.label, languageName(option.language)].map((value) => value.trim().toLowerCase())
+	);
+	for (const segment of (option.title ?? '').split(/\s*[:|·]\s*|\s+[-–]\s+/u)) {
+		const words: string[] = [];
+		for (const word of segment.split(/[\s[\]()_,]+/u).filter(Boolean)) {
+			const kind = SUB_KIND.find(([pattern]) => pattern.test(word));
+			const fmt = SUB_FORMAT.find(([pattern]) => pattern.test(word));
+			if (kind) kinds.add(kind[1]);
+			else if (fmt) format = fmt[1];
+			else if (!isLanguageWord(word) && !own.has(word.toLowerCase())) words.push(word);
+		}
+		if (words.length > 0) free.push(words.join(' '));
+	}
+	// Forced or SDH already say it is not the plain full track.
+	if (kinds.has('Full') && kinds.size > 1) kinds.delete('Full');
+	const ordered = ['Forced', 'SDH', 'Full'].filter((kind) => kinds.has(kind));
+	return [...ordered, ...free, format].filter(Boolean).join(' · ');
+}
+
+/** One muted line for the image subtitles (PGS) this browser cannot draw; null when none. */
+export function imageSubtitlesNote(options: HqpSubtitleState['options']): string | null {
+	const images = options.filter((option) => !option.isText);
+	if (images.length === 0) return null;
+	const names = [
+		...new Set(
+			images.map((option) => languageName(option.language)).filter((name) => name !== 'Unknown')
+		)
+	];
+	if (images.length === 1 && names.length === 1) {
+		return `${names[0]} image subtitles can’t be shown here`;
+	}
+	const count = `${images.length} image subtitle ${images.length === 1 ? 'track' : 'tracks'}`;
+	return `${count}${names.length ? ` (${names.join(', ')})` : ''} can’t be shown here`;
 }

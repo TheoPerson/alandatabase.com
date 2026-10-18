@@ -7,6 +7,7 @@
 		type GestureAction,
 		type PointerSample
 	} from '../logic/gestures';
+	import { chromeAfterTap } from '../logic/chrome';
 	import { fillCrop, frameRect } from '../logic/layout';
 
 	// The picture area: one Pointer Events recognizer (section 6.1). Pointer moves are coalesced into
@@ -20,6 +21,7 @@
 	let pending: { scrub?: number; rate?: 1 | 0.5 | 0.25; dy?: number; pinch?: number } = {};
 	let seekLabelTotal = 0;
 	let seekOrigin = 0;
+	let chromeBeforeTap: boolean | null = null;
 
 	const aspect = () => ($snapshot.aspect && $snapshot.aspect > 0 ? $snapshot.aspect : 16 / 9);
 
@@ -53,12 +55,20 @@
 				if (ui.overlay) ui.close();
 				else if (ui.info && !ui.chrome) ui.info = false;
 				else {
-					ui.toggleChrome();
-					if (ui.chrome) ui.arm();
+					const playing =
+						($snapshot.status === 'playing' || $snapshot.status === 'buffering') &&
+						!$snapshot.autoplayBlocked;
+					chromeBeforeTap = ui.chrome;
+					if (chromeAfterTap({ chrome: ui.chrome, playing })) {
+						ui.showChrome();
+						if (!chromeBeforeTap) ui.arm();
+					} else ui.toggleChrome();
 				}
 				break;
 			case 'revertChrome':
-				ui.chrome = !ui.chrome;
+				// A double tap undoes what its first tap did (which may have been nothing when paused).
+				ui.chrome = chromeBeforeTap ?? !ui.chrome;
+				chromeBeforeTap = null;
 				break;
 			case 'seekTap': {
 				if (seekLabelTotal === 0) seekOrigin = $clock.position;

@@ -6,6 +6,8 @@
 	import Chip from '$lib/components/ui/chip';
 	import Section from '$lib/components/ui/section';
 	import PosterCard from '$lib/components/ui/poster-card';
+	import Rail from '$lib/components/ui/rail';
+	import SearchIcon from 'lucide-svelte/icons/search';
 	import SearchInput from '$lib/components/ui/search-input';
 	import { ResultsGrid, ResultsSkeleton, SearchResults } from '$lib/components/ui/search-results';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
@@ -35,12 +37,15 @@
 		if (!data.query) return 'Find a film or a series by its title.';
 		if (data.searchError) return '';
 		const films = `${resultCount} ${resultCount === 1 ? 'film' : 'films'}`;
-		return data.series.length ? `${films} · ${data.series.length} series` : films;
+		// Search covers films and series, so the count always names both.
+		return `${films} · ${data.series.length} series`;
 	});
 	const heading = $derived(data.query ? `Results for “${data.query}”` : 'Search');
 	const pageTitle = $derived(
 		data.query ? `Results for ${data.query} | Alan's Database` : "Search | Alan's Database"
 	);
+
+	const matches = (count: number) => `${count} ${count === 1 ? 'match' : 'matches'}`;
 
 	function genreHref(genreId: number): string {
 		return browseHref({ genreId, decade: null, minRating: null, sortBy: DEFAULT_SORT });
@@ -91,7 +96,11 @@
 					bind:value
 				/>
 			</div>
-			<Button type="submit" size="lg">Search</Button>
+			<!-- On a phone the keyboard's Go key submits, so the button shrinks to its icon. -->
+			<Button type="submit" size="lg" class="submit" aria-label="Search">
+				<SearchIcon size={20} aria-hidden="true" />
+				<span class="submit-label">Search</span>
+			</Button>
 		</form>
 	</header>
 
@@ -120,30 +129,41 @@
 					description="Search covers film titles and the TV chart. Try a shorter or more general title, or browse."
 				>
 					{#snippet action()}
-						<Button href="/movies" variant="outline">Browse movies</Button>
-						<Button href="/tv" variant="ghost">Browse series</Button>
+						<div class="empty-actions">
+							<Button href="/movies" variant="outline">Browse movies</Button>
+							<Button href="/tv" variant="outline">Browse series</Button>
+						</div>
 					{/snippet}
 				</EmptyState>
 			{:else}
-				{#if data.results.length > 0}
-					{#key data.query}
-						<SearchResults items={data.results} limit={data.limit} />
-					{/key}
-				{/if}
+				<!-- Series first, as one short row: a long film grid would otherwise bury them. -->
 				{#if data.series.length > 0}
-					<section class="series" aria-labelledby="series-heading">
-						<h2 id="series-heading">Series</h2>
-						<ResultsGrid>
-							{#each data.series as item (item.id)}
-								<div class="cell">
-									<PosterCard
-										{...item}
-										sizes="(min-width: 1024px) 200px, (min-width: 640px) 22vw, 46vw"
-									/>
-								</div>
+					<Section
+						title="Series"
+						eyebrow={matches(data.series.length)}
+						id="search-series"
+						class="result-group"
+					>
+						<Rail label="Series results">
+							{#each data.series as item, index (item.id)}
+								<PosterCard {...item} eager={index < 3} />
 							{/each}
-						</ResultsGrid>
-					</section>
+						</Rail>
+					</Section>
+				{/if}
+				{#if data.results.length > 0}
+					<Section
+						title="Films"
+						eyebrow={matches(resultCount)}
+						id="search-films"
+						class="result-group"
+					>
+						<div class="films">
+							{#key data.query}
+								<SearchResults items={data.results} limit={data.limit} />
+							{/key}
+						</div>
+					</Section>
 				{/if}
 			{/if}
 		</section>
@@ -157,7 +177,7 @@
 								<PosterCard
 									{...item}
 									eager={index < 6}
-									sizes="(min-width: 1024px) 200px, (min-width: 640px) 22vw, 46vw"
+									sizes="(min-width: 1024px) 200px, (min-width: 640px) 20vw, 31vw"
 								/>
 							</div>
 						{/each}
@@ -179,14 +199,6 @@
 </div>
 
 <style>
-	.series {
-		margin-top: var(--space-7);
-	}
-	.series h2 {
-		margin-bottom: var(--space-4);
-		font-size: var(--type-title);
-		font-weight: 800;
-	}
 	.page {
 		max-width: var(--container-wide);
 		margin-inline: auto;
@@ -222,12 +234,35 @@
 		flex: 1;
 		min-width: 0;
 	}
-	.results,
-	.grid-pad {
-		padding: var(--space-5) var(--page-gutter) 0;
+	.results {
+		padding-top: var(--space-3);
 	}
+	.empty-actions {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--space-2);
+	}
+	/* States and the film grid keep the gutter; the series rail bleeds to the edges. */
+	.results > :global(:not(.section)),
+	.films,
 	.grid-pad {
-		padding-top: 0;
+		padding-inline: var(--page-gutter);
+	}
+	.results :global(.result-group) {
+		margin-block: var(--space-4) var(--space-6);
+	}
+	.main-search-form :global(.submit) {
+		gap: var(--space-2);
+	}
+	@media (max-width: 639px) {
+		.main-search-form :global(.submit) {
+			width: 3.25rem;
+			padding-inline: 0;
+		}
+		.submit-label {
+			display: none;
+		}
 	}
 	.cell {
 		min-width: 0;

@@ -1,7 +1,13 @@
 <script lang="ts">
 	import { getHqpContext } from '../context';
 	import { codecLabel, languageName } from '../logic/format';
-	import { audioDetail, audioName, isAudioDescription } from '../logic/panel-labels';
+	import {
+		audioDetail,
+		audioName,
+		imageSubtitlesNote,
+		isAudioDescription,
+		subtitleDetail
+	} from '../logic/panel-labels';
 	import { rovingGroup } from './a11y';
 	import Icon from './Icon.svelte';
 
@@ -15,6 +21,7 @@
 	const selectedAudio = $derived(audio.options.find((o) => o.selected));
 	const hasForced = $derived(subs.options.some((o) => o.forced && o.isText));
 	const auto = $derived($prefs.subtitleMode === 'auto');
+	const imageNote = $derived(imageSubtitlesNote(subs.options));
 	const note = $derived.by(() => {
 		if (audio.mode === 'copy') return { tone: 'accent', text: 'Passed through untouched' };
 		if (audio.mode === 'transcode') {
@@ -30,8 +37,7 @@
 	function chooseAudio(ordinal: number) {
 		if (selectedAudio?.ordinal === ordinal) return;
 		void ctx.engine.setAudio(ordinal);
-		if (ui.layout === 'phone-portrait-short')
-			ui.toast('Changing audio restarts the stream here (about 1 s)', 2400);
+		if (ui.layout === 'phone-portrait-short') ui.toast('Switching audio takes a second', 2400);
 	}
 	function chooseSubs(ordinal: number | null) {
 		ctx.engine.setSubtitles(ordinal);
@@ -101,6 +107,7 @@
 			</button>
 			{#each subs.options.filter((o) => o.isText) as option (option.ordinal)}
 				{@const checked = subs.selected === option.ordinal}
+				{@const detail = subtitleDetail(option)}
 				<button
 					type="button"
 					class="hqp-row"
@@ -112,40 +119,19 @@
 					<span class="hqp-row-check"><Icon name="check" size={20} /></span>
 					<span class="text">
 						<span class="hqp-row-label">{subLabel(option.language, option.label)}</span>
-						{#if option.title && option.title !== option.label}
-							<span class="hqp-row-detail">{option.title}</span>
-						{:else if option.label}
-							<span class="hqp-row-detail">{option.label}</span>
-						{/if}
+						{#if detail}<span class="hqp-row-detail">{detail}</span>{/if}
 					</span>
 					<span class="hqp-row-tags">
-						{#if option.forced}<span class="hqp-tag">Forced</span>{/if}
-						{#if option.sdh}<span class="hqp-tag">SDH</span>{/if}
 						{#if auto && (checked || (subs.selected === null && subs.forced === option.ordinal))}
 							<span class="hqp-tag" data-tone="accent">Auto</span>
 						{/if}
 					</span>
 				</button>
 			{/each}
-			{#each subs.options.filter((o) => !o.isText) as option (option.ordinal)}
-				<button
-					type="button"
-					class="hqp-row"
-					role="radio"
-					aria-checked="false"
-					aria-disabled="true"
-					tabindex="-1"
-					disabled
-				>
-					<span class="hqp-row-check"></span>
-					<span class="text">
-						<span class="hqp-row-label">{subLabel(option.language, option.label)}</span>
-						<span class="hqp-row-detail">Image subtitles · not supported here</span>
-					</span>
-					<span></span>
-				</button>
-			{/each}
 		</div>
+		{#if imageNote}
+			<p class="image-note">{imageNote}</p>
+		{/if}
 		<button type="button" class="hqp-row style-link" onclick={() => (ui.sheetPage = 'style')}>
 			<span class="hqp-row-check style-icon"><Icon name="subtitles" size={20} /></span>
 			<span class="text"><span class="hqp-row-label">Subtitle style</span></span>
@@ -155,7 +141,7 @@
 </div>
 <p class="foot">
 	<Icon name="refresh" size={16} />
-	<span>Changing audio restarts the stream here (about 1 s). Subtitles switch instantly.</span>
+	<span>Switching audio takes a second. Subtitles switch instantly.</span>
 </p>
 
 <style>
@@ -214,6 +200,14 @@
 	}
 	.note[data-tone='warn'] .dot {
 		background: var(--hqp-warn);
+	}
+	.image-note {
+		margin: 2px 12px 0;
+		padding: 4px 0 4px 36px;
+		font-size: 13px;
+		line-height: 17px;
+		font-weight: 500;
+		color: var(--hqp-ink-3);
 	}
 	.style-link {
 		margin-top: 6px;

@@ -103,8 +103,19 @@ export async function getFeaturedMovies(limit = 5) {
 	return prepareVisibleMovies(results);
 }
 
+/**
+ * The genres a visible standard film actually carries. The genre table is shared with TV
+ * (Action & Adventure, Reality, Sci-Fi & Fantasy...), and genres used only by quarantined
+ * films must not leak into standard filters either.
+ */
 export async function getGenres() {
-	return db.select({ id: genres.id, name: genres.name }).from(genres).orderBy(asc(genres.name));
+	return db
+		.selectDistinct({ id: genres.id, name: genres.name })
+		.from(genres)
+		.innerJoin(movieGenres, eq(movieGenres.genreId, genres.id))
+		.innerJoin(movies, eq(movies.id, movieGenres.movieId))
+		.where(standardMovieVisibilityWhere())
+		.orderBy(asc(genres.name));
 }
 
 function genreNames(movie: any): string[] {

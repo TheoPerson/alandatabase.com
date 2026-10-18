@@ -14,8 +14,8 @@
 
 	let { items, placeholders = 0, eagerCount = 6, label }: Props = $props();
 
-	// Mirrors the grid below: 140px columns on phones, 180px from desktop widths.
-	const sizes = '(min-width: 1024px) 200px, (min-width: 640px) 25vw, 45vw';
+	// Mirrors the grid below: three columns on a phone, about five on a tablet, 180px+ on desktop.
+	const sizes = '(min-width: 1024px) 200px, (min-width: 640px) 20vw, 31vw';
 </script>
 
 <ul class="grid" aria-label={label}>
@@ -35,10 +35,11 @@
 
 <style>
 	.grid {
-		--min-column: 140px;
+		/* Three posters across a phone (about 128px at 440), the density of a TV app. */
+		--min-column: 7.5rem;
 		--gap: var(--space-3);
 		display: grid;
-		/* Two columns even at 320px: the minimum never exceeds half the row. */
+		/* Never fewer than two columns, even at 320px: the minimum never exceeds half the row. */
 		grid-template-columns: repeat(
 			auto-fill,
 			minmax(min(var(--min-column), calc((100% - var(--gap)) / 2)), 1fr)

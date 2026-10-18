@@ -35,8 +35,8 @@
 					eyebrow: 'Invitation',
 					title: 'Accept invitation',
 					description: `Choose a username and a password for your ${data.invitation?.role ?? 'member'} account.`,
-					headTitle: 'Accept Invitation',
-					headDescription: 'Accept a private Alan Database invitation.'
+					headTitle: 'Accept invitation',
+					headDescription: 'Accept a private Alan’s Database invitation.'
 				}
 			: data.mode === 'owner'
 				? {
@@ -44,8 +44,8 @@
 						title: 'Owner setup',
 						description:
 							'Create the first and only owner account. Setup closes as soon as it exists.',
-						headTitle: 'Owner Setup',
-						headDescription: 'One-time Alan Database owner setup.'
+						headTitle: 'Owner setup',
+						headDescription: 'One-time Alan’s Database owner setup.'
 					}
 				: {
 						eyebrow: 'Invitation only',
@@ -53,14 +53,14 @@
 						description: hadInviteLink
 							? 'This invitation link is invalid, expired or already used. Ask the owner for a new one.'
 							: 'Accounts are created by invitation only. Open the invitation link you received from the owner.',
-						headTitle: 'Invitation Only',
-						headDescription: 'Alan Database accounts are by invitation only.'
+						headTitle: 'Invitation only',
+						headDescription: 'Alan’s Database accounts are by invitation only.'
 					}
 	);
 </script>
 
 <svelte:head>
-	<title>{copy.headTitle} | Alan Database</title>
+	<title>{copy.headTitle} | Alan's Database</title>
 	<meta name="description" content={copy.headDescription} />
 	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>

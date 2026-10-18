@@ -93,7 +93,7 @@
 					aria-label="Quick search, {palette.shortcut}"
 					onclick={() => palette.open()}
 				>
-					{palette.shortcut}
+					<kbd>{palette.shortcut}</kbd>
 				</button>
 			</form>
 			<!-- Phones have no primary nav: Discover and Picker stay one tap away here. -->
@@ -128,11 +128,15 @@
 		top: 0;
 		z-index: var(--z-bar);
 		padding-top: var(--safe-top);
-		background: linear-gradient(to bottom, rgba(8, 9, 11, 0.85), transparent);
+		background: linear-gradient(
+			to bottom,
+			color-mix(in srgb, var(--surface-canvas) 85%, transparent),
+			transparent
+		);
 		transition: background-color var(--duration-slow) var(--ease-out);
 	}
 	.scrolled {
-		background: rgba(8, 9, 11, 0.82);
+		background: color-mix(in srgb, var(--surface-canvas) 82%, transparent);
 		backdrop-filter: blur(16px) saturate(140%);
 		-webkit-backdrop-filter: blur(16px) saturate(140%);
 		box-shadow: 0 1px 0 var(--border-subtle);
@@ -176,11 +180,11 @@
 	}
 	.link:hover {
 		color: var(--content-primary);
-		background: rgba(255, 255, 255, 0.06);
+		background: color-mix(in srgb, var(--content-primary) 6%, transparent);
 	}
 	.link[aria-current='page'] {
 		color: var(--content-primary);
-		background: rgba(255, 255, 255, 0.1);
+		background: color-mix(in srgb, var(--content-primary) 10%, transparent);
 	}
 	.right {
 		display: flex;
@@ -192,9 +196,9 @@
 		display: none;
 		align-items: center;
 		gap: 0.5rem;
-		min-height: var(--touch-target);
+		height: var(--touch-target);
 		margin-right: var(--space-2);
-		padding-inline: 0.9rem 0.6rem;
+		padding-inline: 0.9rem 0.2rem;
 		border-radius: var(--radius-full);
 		border: 1px solid var(--border-strong);
 		/* Opaque on purpose: text contrast must not depend on the hero behind a transparent bar. */
@@ -206,7 +210,9 @@
 		border-color: var(--brand-border);
 		color: var(--content-primary);
 	}
+	/* The field fills the capsule's height, so a click anywhere on it lands in the input. */
 	.search input {
+		align-self: stretch;
 		width: 11rem;
 		background: transparent;
 		border: 0;
@@ -216,8 +222,17 @@
 	.search input::placeholder {
 		color: var(--content-secondary);
 	}
-	/* AA on both bar states: secondary text on a solid raised key cap (about 8:1). */
+	/* The whole right end of the capsule is the button; the key cap inside it is only a label. */
 	.shortcut {
+		display: inline-flex;
+		align-items: center;
+		align-self: stretch;
+		padding-inline: 0.4rem;
+		border-radius: var(--radius-full);
+		color: var(--content-secondary);
+	}
+	/* AA on both bar states: secondary text on a solid raised key cap (about 8:1). */
+	.shortcut kbd {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -235,7 +250,7 @@
 			color var(--duration-fast) var(--ease-out),
 			border-color var(--duration-fast) var(--ease-out);
 	}
-	.shortcut:hover {
+	.shortcut:hover kbd {
 		color: var(--content-primary);
 		border-color: var(--brand-border);
 	}
@@ -259,8 +274,10 @@
 		.icon-link {
 			display: none;
 		}
+		/* As tall as the search capsule, so the right cluster reads as one row. */
 		.right :global(.account) {
 			display: inline-flex;
+			min-height: var(--touch-target);
 		}
 	}
 </style>

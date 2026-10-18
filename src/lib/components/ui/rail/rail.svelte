@@ -78,12 +78,13 @@
 	.scroller {
 		display: flex;
 		gap: var(--space-3);
-		padding-inline: var(--page-gutter);
+		/* Full bleed, but the first card lines up with the section title and the hero copy. */
+		padding-inline: var(--page-inset);
 		padding-block: var(--space-2);
 		overflow-x: auto;
 		overscroll-behavior-x: contain;
 		scroll-snap-type: x mandatory;
-		scroll-padding-inline: var(--page-gutter);
+		scroll-padding-inline: var(--page-inset);
 		scrollbar-width: none;
 		-webkit-overflow-scrolling: touch;
 	}
@@ -102,7 +103,7 @@
 		width: 2.75rem;
 		height: 2.75rem;
 		border-radius: 50%;
-		background: rgba(8, 9, 11, 0.82);
+		background: color-mix(in srgb, var(--surface-canvas) 82%, transparent);
 		color: var(--content-primary);
 		box-shadow: var(--elevation-2);
 		transform: translateY(-50%);
@@ -115,10 +116,10 @@
 		visibility: hidden;
 	}
 	.left {
-		left: calc(var(--page-gutter) - 1.375rem);
+		left: calc(var(--page-inset) - 1.375rem);
 	}
 	.right {
-		right: calc(var(--page-gutter) - 1.375rem);
+		right: calc(var(--page-inset) - 1.375rem);
 	}
 	@media (hover: hover) and (min-width: 1024px) {
 		.arrow {

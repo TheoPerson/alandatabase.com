@@ -15,6 +15,7 @@
 	import ArrowRightIcon from 'lucide-svelte/icons/arrow-right';
 	import RefreshIcon from 'lucide-svelte/icons/refresh-cw';
 	import SparklesIcon from 'lucide-svelte/icons/sparkles';
+	import { tmdbImageUrl } from '$lib/tmdb/images';
 	import PickerCard from './PickerCard.svelte';
 	import PickerFiltersComponent from './PickerFilters.svelte';
 	import {
@@ -28,9 +29,14 @@
 	interface Props {
 		initialGenres: string[];
 		initialPick?: PickerRecommendationResponse | null;
+		/** TMDB backdrop paths from the viewer's watchlist, for the idle stage's ambient strip. */
+		backdrops?: string[];
 	}
 
-	let { initialGenres, initialPick = null }: Props = $props();
+	let { initialGenres, initialPick = null, backdrops = [] }: Props = $props();
+	const ambient = $derived(
+		backdrops.map((path) => tmdbImageUrl(path, 'w780')).filter((src): src is string => !!src)
+	);
 
 	// Session State
 	let sessionId = $state('');
@@ -273,7 +279,7 @@
 
 	<p class="sr-only" role="status" aria-live="polite">{announcement}</p>
 
-	<div class="stage" bind:this={stage}>
+	<div class="stage" class:idle={!hasStarted} bind:this={stage}>
 		{#if recommendation && outcome === 'ready'}
 			<PickerCard
 				{recommendation}
@@ -302,13 +308,27 @@
 			</div>
 		{:else if !hasStarted}
 			<section class="frame start" aria-labelledby="picker-start-title">
-				<span class="mark" aria-hidden="true"><SparklesIcon size={26} /></span>
-				<h2 id="picker-start-title">One film, chosen for tonight</h2>
-				<p>
-					Pick a mood above, or let the picker choose a well-rated film that suits what you usually
-					watch.
-				</p>
-				<Button size="lg" onclick={() => findMovie()}>Pick a film</Button>
+				{#if ambient.length >= 3}
+					<div class="ambient" aria-hidden="true">
+						{#each ambient as src, index (src)}
+							<img {src} alt="" loading={index < 4 ? 'eager' : 'lazy'} decoding="async" />
+						{/each}
+					</div>
+				{/if}
+				<div class="start-copy">
+					<span class="mark" aria-hidden="true"><SparklesIcon size={26} /></span>
+					<div class="start-text">
+						<h2 id="picker-start-title">One film, chosen for tonight</h2>
+						<p>
+							Pick a mood above, or let the picker choose a well-rated film that suits what you
+							usually watch.
+						</p>
+					</div>
+				</div>
+				<Button size="lg" class="start-cta" onclick={() => findMovie()}>
+					<SparklesIcon size={18} aria-hidden="true" />
+					Pick a film
+				</Button>
 			</section>
 		{:else if outcome === 'empty'}
 			<div class="frame state">
@@ -414,12 +434,78 @@
 	.skeleton-body {
 		grid-column: 1 / -1;
 	}
+	/* Idle: a calm, compact invitation (not a screen-tall void). */
+	.stage.idle {
+		min-height: 0;
+	}
 	.start {
+		position: relative;
+		isolation: isolate;
 		align-items: center;
 		justify-content: center;
-		gap: var(--space-4);
-		padding: var(--space-6) var(--space-5);
+		gap: var(--space-5);
+		min-height: min(26rem, 60svh);
+		padding: var(--space-7) var(--space-5);
+		overflow: hidden;
 		text-align: center;
+	}
+	.start-copy {
+		display: grid;
+		justify-items: center;
+		gap: var(--space-4);
+	}
+	.start-text {
+		display: grid;
+		gap: var(--space-3);
+		justify-items: center;
+	}
+	/* A soft strip of the viewer's own watchlist, far behind the copy. */
+	.ambient {
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		display: grid;
+		grid-auto-flow: column;
+		grid-auto-columns: minmax(12rem, 1fr);
+		gap: var(--space-2);
+		opacity: 0.32;
+		filter: blur(6px) saturate(1.1);
+		transform: scale(1.08);
+		mask-image: radial-gradient(75% 90% at 50% 50%, transparent 15%, black 85%);
+	}
+	.ambient img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+	.ambient::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(
+			to bottom,
+			var(--surface-raised),
+			transparent 35%,
+			transparent 65%,
+			var(--surface-raised)
+		);
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.ambient {
+			animation:
+				ambient-in var(--duration-slow) var(--ease-out) both,
+				ambient-drift 60s linear infinite alternate;
+		}
+	}
+	@keyframes ambient-in {
+		from {
+			opacity: 0;
+		}
+	}
+	@keyframes ambient-drift {
+		to {
+			transform: scale(1.08) translateX(-4%);
+		}
 	}
 	.mark {
 		display: grid;
@@ -503,6 +589,12 @@
 		.stage {
 			min-height: min(36rem, calc(100dvh - var(--top-bar-height) - 14rem));
 		}
+		.stage.idle {
+			min-height: 0;
+		}
+		.start {
+			min-height: 24rem;
+		}
 		.decision {
 			position: static;
 		}
@@ -516,6 +608,43 @@
 		}
 		.hint {
 			display: inline-flex;
+		}
+	}
+	/* Phone landscape: the stage never outgrows the screen; the idle state is one row with the
+	   call to action on the right, above the fold next to the moods. */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.stage {
+			min-height: 0;
+		}
+		.start {
+			flex-direction: row;
+			justify-content: space-between;
+			gap: var(--space-5);
+			min-height: 0;
+			padding: var(--space-4) var(--space-5);
+			text-align: start;
+		}
+		.start-copy {
+			grid-template-columns: auto minmax(0, 1fr);
+			align-items: center;
+			justify-items: start;
+		}
+		.start-text {
+			justify-items: start;
+			gap: var(--space-1);
+		}
+		.start h2 {
+			font-size: var(--type-title);
+		}
+		.start p {
+			font-size: var(--text-sm);
+		}
+		.mark {
+			width: 2.75rem;
+			height: 2.75rem;
+		}
+		.start :global(.start-cta) {
+			flex: none;
 		}
 	}
 	@keyframes spin {

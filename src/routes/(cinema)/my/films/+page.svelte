@@ -7,7 +7,9 @@
 	import PosterCard from '$lib/components/ui/poster-card';
 	import ContinueCard from '$lib/components/ui/continue-card';
 	import { libraryTabsFor, type LibraryTab } from '$lib/catalogue/library';
-	import { untrack } from 'svelte';
+	import { afterNavigate } from '$app/navigation';
+	import { tick, untrack } from 'svelte';
+	import { decadeSentence, scrollEdges, watchTime } from './library-view';
 	import ListIcon from 'lucide-svelte/icons/list';
 	import PlayIcon from 'lucide-svelte/icons/play';
 	import HardDriveIcon from 'lucide-svelte/icons/hard-drive';
@@ -93,15 +95,64 @@
 
 	const maxGenre = $derived(Math.max(1, ...data.stats.topGenres.map((genre) => genre.count)));
 	const maxDecade = $derived(Math.max(1, ...data.stats.decades.map((decade) => decade.count)));
+	const decadeLine = $derived(decadeSentence(data.stats.decades));
+	const time = $derived(watchTime(data.stats.minutes));
 	// Mirrors the local grid: 140 px columns on phones, 180 px from desktop widths.
 	const GRID_SIZES = '(min-width: 1024px) 200px, (min-width: 640px) 25vw, 45vw';
 
 	const tiles = $derived([
 		{ label: 'Films watched', value: data.stats.watchedCount.toLocaleString('en') },
-		{ label: 'Hours watched', value: data.stats.hours.toLocaleString('en') },
 		{ label: 'On the watchlist', value: data.counts.watchlist.toLocaleString('en') },
 		{ label: 'Favourites', value: data.counts.favorites.toLocaleString('en') }
 	]);
+	// Continue watching belongs with the "what next" sections, not with Favourites or Stats.
+	const showContinue = $derived(
+		data.continueWatching.length > 0 && (data.tab === 'local' || data.tab === 'watchlist')
+	);
+
+	// Section tabs: a sticky, horizontally scrolling row on phones. The fades show which side
+	// still hides tabs, and the selected tab is always scrolled into view.
+	let tabsAnchor = $state<HTMLDivElement>();
+	let tabsBar = $state<HTMLDivElement>();
+	let tabsRow = $state<HTMLElement>();
+	let edges = $state({ start: false, end: false });
+
+	function measureTabs() {
+		if (!tabsRow) return;
+		edges = scrollEdges(tabsRow.scrollLeft, tabsRow.scrollWidth, tabsRow.clientWidth);
+	}
+
+	function revealSelectedTab(smooth: boolean) {
+		const chip = tabsRow?.querySelector<HTMLElement>('[aria-current="true"]');
+		if (!tabsRow || !chip) return;
+		const pad = parseFloat(getComputedStyle(tabsRow).paddingInlineStart) || 0;
+		const left = chip.offsetLeft - pad;
+		const right = chip.offsetLeft + chip.offsetWidth + pad - tabsRow.clientWidth;
+		const target =
+			tabsRow.scrollLeft > left ? left : tabsRow.scrollLeft < right ? right : tabsRow.scrollLeft;
+		if (target === tabsRow.scrollLeft) return;
+		const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+		tabsRow.scrollTo({ left: target, behavior: smooth && !reduce ? 'smooth' : 'auto' });
+	}
+
+	$effect(() => {
+		measureTabs();
+		const observer = new ResizeObserver(measureTabs);
+		if (tabsRow) observer.observe(tabsRow);
+		return () => observer.disconnect();
+	});
+
+	afterNavigate(async ({ type, from, to }) => {
+		await tick();
+		const switched = type === 'link' && from?.url.pathname === to?.url.pathname;
+		revealSelectedTab(switched);
+		// Switching section while scrolled deep: start the new section right under the tabs.
+		if (!switched || !tabsAnchor || !tabsBar) return;
+		const stickyTop = parseFloat(getComputedStyle(tabsBar).top);
+		if (Number.isNaN(stickyTop)) return;
+		const stuckAt = tabsAnchor.getBoundingClientRect().top + window.scrollY - stickyTop;
+		if (window.scrollY > stuckAt) window.scrollTo({ top: stuckAt, behavior: 'auto' });
+	});
 </script>
 
 <svelte:head>
@@ -120,18 +171,43 @@
 			</p>
 		</div>
 		<div class="links">
-			<Button href="/my/lists" variant="secondary" size="sm">
-				<ListIcon size={16} aria-hidden="true" />
+			<Button href="/my/lists" variant="secondary">
+				<ListIcon size={18} aria-hidden="true" />
 				Lists
 			</Button>
-			<Button href="/my/settings" variant="ghost" size="sm">
-				<SettingsIcon size={16} aria-hidden="true" />
+			<Button href="/my/settings" variant="ghost">
+				<SettingsIcon size={18} aria-hidden="true" />
 				Settings
 			</Button>
 		</div>
 	</header>
 
-	{#if data.continueWatching.length > 0}
+	<div class="tabs-anchor" bind:this={tabsAnchor}></div>
+	<div class="tabs-bar" bind:this={tabsBar}>
+		<nav
+			class="tabs"
+			class:fade-start={edges.start}
+			class:fade-end={edges.end}
+			aria-label="Library sections"
+			data-sveltekit-noscroll
+			data-sveltekit-keepfocus
+			bind:this={tabsRow}
+			onscroll={measureTabs}
+		>
+			{#each tabs as tab (tab.key)}
+				<Chip href={`?tab=${tab.key}`} selected={data.tab === tab.key}>
+					{#if tab.key === 'local'}
+						<span class="label-long">{tab.label}</span><span class="label-short">This PC</span>
+					{:else}
+						{tab.label}
+					{/if}
+					{#if counts[tab.key] !== null}<span class="count">{counts[tab.key]}</span>{/if}
+				</Chip>
+			{/each}
+		</nav>
+	</div>
+
+	{#if showContinue}
 		<!-- Owner only: server progress, so it follows Alan from the phone to the PC. -->
 		<section class="continue" aria-labelledby="continue-heading">
 			<h2 id="continue-heading">Continue watching</h2>
@@ -142,15 +218,6 @@
 			</Rail>
 		</section>
 	{/if}
-
-	<nav class="tabs" aria-label="Library sections" data-sveltekit-noscroll data-sveltekit-keepfocus>
-		{#each tabs as tab (tab.key)}
-			<Chip href={`?tab=${tab.key}`} selected={data.tab === tab.key}>
-				{tab.label}
-				{#if counts[tab.key] !== null}<span class="count">{counts[tab.key]}</span>{/if}
-			</Chip>
-		{/each}
-	</nav>
 
 	<section class="panel" aria-label={tabs.find((tab) => tab.key === data.tab)?.label}>
 		{#if data.tab === 'local'}
@@ -267,14 +334,33 @@
 				{/if}
 			{/if}
 		{:else if data.tab === 'stats'}
-			<ul class="tiles">
-				{#each tiles as tile (tile.label)}
-					<li class="tile">
-						<span class="tile-label">{tile.label}</span>
-						<span class="tile-value">{tile.value}</span>
-					</li>
-				{/each}
-			</ul>
+			<div class="kpis">
+				<div class="hero-kpi">
+					<span class="tile-label">Time watched</span>
+					<p class="hero-value">
+						<span aria-hidden="true">
+							{#if time.hours > 0}
+								{time.hours.toLocaleString('en')}<span class="unit">h</span>
+								{#if time.minutes > 0}{time.minutes}<span class="unit">min</span>{/if}
+							{:else}
+								{time.minutes}<span class="unit">min</span>
+							{/if}</span
+						><span class="sr-only">{time.label}</span>
+					</p>
+					<span class="hero-caption">
+						across {data.stats.watchedCount.toLocaleString('en')}
+						{data.stats.watchedCount === 1 ? 'film' : 'films'} marked watched
+					</span>
+				</div>
+				<ul class="tiles">
+					{#each tiles as tile (tile.label)}
+						<li class="tile">
+							<span class="tile-label">{tile.label}</span>
+							<span class="tile-value">{tile.value}</span>
+						</li>
+					{/each}
+				</ul>
+			</div>
 
 			{#if data.stats.watchedCount === 0}
 				<EmptyState
@@ -283,14 +369,30 @@
 					compact
 				/>
 			{:else}
+				{#if data.recentWatched.length > 0}
+					<section class="recent" aria-labelledby="recent-heading">
+						<h2 id="recent-heading">Most recent</h2>
+						<Rail label="Most recently watched">
+							{#each data.recentWatched as item (item.id)}
+								<PosterCard {...item} />
+							{/each}
+						</Rail>
+					</section>
+				{/if}
+
 				<div class="charts">
 					<section aria-labelledby="genres-heading">
 						<h2 id="genres-heading">Top genres</h2>
 						<ol class="bars">
-							{#each data.stats.topGenres as genre (genre.name)}
+							{#each data.stats.topGenres as genre, index (genre.name)}
 								<li>
+									<span class="rank" aria-hidden="true">{index + 1}</span>
 									<span class="bar-label">{genre.name}</span>
-									<span class="bar-value">{genre.count}</span>
+									<span class="bar-value"
+										>{genre.count}<span class="sr-only">
+											{genre.count === 1 ? 'film' : 'films'}</span
+										></span
+									>
 									<span class="track" aria-hidden="true">
 										<span class="fill" style:width={`${(genre.count / maxGenre) * 100}%`}></span>
 									</span>
@@ -300,17 +402,23 @@
 					</section>
 					<section aria-labelledby="decades-heading">
 						<h2 id="decades-heading">Films by decade</h2>
-						<ol class="bars">
-							{#each data.stats.decades as decade (decade.decade)}
-								<li>
-									<span class="bar-label">{decade.decade}s</span>
-									<span class="bar-value">{decade.count}</span>
-									<span class="track" aria-hidden="true">
-										<span class="fill" style:width={`${(decade.count / maxDecade) * 100}%`}></span>
-									</span>
-								</li>
-							{/each}
-						</ol>
+						{#if decadeLine}
+							<p class="decade-line">{decadeLine}</p>
+						{:else}
+							<ol class="bars">
+								{#each data.stats.decades as decade (decade.decade)}
+									<li>
+										<span class="rank" aria-hidden="true"></span>
+										<span class="bar-label">{decade.decade}s</span>
+										<span class="bar-value">{decade.count}</span>
+										<span class="track" aria-hidden="true">
+											<span class="fill" style:width={`${(decade.count / maxDecade) * 100}%`}
+											></span>
+										</span>
+									</li>
+								{/each}
+							</ol>
+						{/if}
 					</section>
 				</div>
 			{/if}
@@ -355,6 +463,7 @@
 		font-size: var(--type-headline);
 		font-weight: 900;
 		letter-spacing: var(--tracking-tight);
+		line-height: var(--leading-tight);
 		overflow-wrap: anywhere;
 	}
 	.summary {
@@ -365,35 +474,87 @@
 		display: flex;
 		gap: var(--space-2);
 	}
+	.tabs-bar {
+		margin: var(--space-5) calc(-1 * var(--page-gutter)) 0;
+	}
 	.tabs {
 		display: flex;
 		gap: var(--space-2);
-		margin: var(--space-6) calc(-1 * var(--page-gutter)) 0;
-		padding: 0 var(--page-gutter) var(--space-2);
+		padding: var(--space-2) var(--page-gutter);
 		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scroll-padding-inline: var(--page-gutter);
 		scrollbar-width: none;
+		--fade-start: 0px;
+		--fade-end: 0px;
+		mask-image: linear-gradient(
+			to right,
+			transparent,
+			black var(--fade-start),
+			black calc(100% - var(--fade-end)),
+			transparent
+		);
+	}
+	.tabs.fade-start {
+		--fade-start: var(--space-7);
+	}
+	.tabs.fade-end {
+		--fade-end: var(--space-7);
 	}
 	.tabs::-webkit-scrollbar {
 		display: none;
+	}
+	.tabs :global(.chip) {
+		min-height: var(--touch-target);
+		flex: none;
+	}
+	.label-short {
+		display: none;
+	}
+	/* Phones and tablets: the tabs stay reachable under the top bar while the grid scrolls. */
+	@media (max-width: 1023px) {
+		.tabs-bar {
+			position: sticky;
+			top: calc(var(--top-bar-height) + var(--safe-top));
+			z-index: calc(var(--z-bar) - 1);
+			background: color-mix(in srgb, var(--surface-canvas) 82%, transparent);
+			backdrop-filter: blur(16px) saturate(140%);
+			-webkit-backdrop-filter: blur(16px) saturate(140%);
+		}
+	}
+	@media (max-width: 479px) {
+		.label-long {
+			display: none;
+		}
+		.label-short {
+			display: inline;
+		}
 	}
 	.count {
 		min-width: 1.5rem;
 		padding: 0 0.4rem;
 		border-radius: var(--radius-full);
-		background: rgba(255, 255, 255, 0.08);
+		background: var(--border-subtle);
 		color: var(--content-secondary);
 		font-size: var(--text-xs);
+		font-variant-numeric: tabular-nums;
 		text-align: center;
 	}
 	.panel {
 		margin-top: var(--space-5);
 	}
+	/* .library already pads by the page gutter: the shared grid must not add a second one. */
+	.panel > :global(ul.grid) {
+		padding-inline: 0;
+	}
 	.continue {
 		display: grid;
+		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-3);
-		margin: var(--space-6) calc(-1 * var(--page-gutter)) 0;
+		margin: var(--space-5) calc(-1 * var(--page-gutter)) 0;
 	}
-	.continue h2 {
+	.continue h2,
+	.recent h2 {
 		padding-inline: var(--page-gutter);
 		font-size: var(--type-title);
 		font-weight: 800;
@@ -525,14 +686,51 @@
 			--gap: var(--space-5);
 		}
 	}
+	.kpis {
+		display: grid;
+		gap: var(--space-3);
+	}
+	.hero-kpi {
+		display: grid;
+		align-content: end;
+		gap: var(--space-2);
+		padding: var(--space-5);
+		border: 1px solid var(--brand-border);
+		border-radius: var(--radius-xl);
+		background:
+			radial-gradient(120% 140% at 0% 0%, var(--brand-muted), transparent 65%),
+			var(--surface-raised);
+	}
+	.hero-value {
+		font-size: var(--type-display);
+		font-weight: 900;
+		font-variant-numeric: tabular-nums;
+		letter-spacing: var(--tracking-tight);
+		line-height: 1;
+	}
+	.unit {
+		margin: 0 0.35em 0 0.08em;
+		color: var(--content-secondary);
+		font-size: 0.42em;
+		font-weight: 700;
+		letter-spacing: 0;
+	}
+	.unit:last-child {
+		margin-right: 0;
+	}
+	.hero-caption {
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
+	}
 	.tiles {
 		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: var(--space-3);
 		list-style: none;
 	}
 	.tile {
 		display: grid;
+		align-content: space-between;
 		gap: var(--space-2);
 		padding: var(--space-4);
 		border: 1px solid var(--border-subtle);
@@ -546,12 +744,22 @@
 	}
 	.tile-value {
 		font-size: var(--type-headline);
-		font-weight: 700;
+		font-weight: 800;
+		font-variant-numeric: tabular-nums;
 		letter-spacing: var(--tracking-tight);
+		line-height: 1;
+	}
+	.recent {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-3);
+		margin: var(--space-6) calc(-1 * var(--page-gutter)) 0;
 	}
 	.charts {
 		display: grid;
-		gap: var(--space-6);
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+		gap: var(--space-6) var(--space-7);
+		max-width: var(--container-content);
 		margin-top: var(--space-6);
 	}
 	.charts h2 {
@@ -566,8 +774,15 @@
 	}
 	.bars li {
 		display: grid;
-		grid-template-columns: 1fr auto;
+		grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+		align-items: baseline;
 		gap: 0.35rem var(--space-3);
+	}
+	.rank {
+		color: var(--content-tertiary);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		font-variant-numeric: tabular-nums;
 	}
 	.bar-label {
 		font-size: var(--text-sm);
@@ -579,25 +794,39 @@
 		font-variant-numeric: tabular-nums;
 	}
 	.track {
-		grid-column: 1 / -1;
-		height: 8px;
+		grid-column: 2 / -1;
+		height: 6px;
 		border-radius: var(--radius-full);
 		background: var(--brand-muted);
 	}
 	.fill {
 		display: block;
 		height: 100%;
-		min-width: 8px;
+		min-width: 6px;
 		border-radius: var(--radius-full);
 		background: var(--brand-primary);
 	}
-	@media (min-width: 768px) {
-		.tiles {
-			grid-template-columns: repeat(4, minmax(0, 1fr));
+	.decade-line {
+		margin-top: var(--space-4);
+		color: var(--content-secondary);
+	}
+	@media (max-width: 479px) {
+		.tile {
+			padding: var(--space-3);
 		}
-		.charts {
-			grid-template-columns: 1fr 1fr;
-			gap: var(--space-7);
+		.tile-label {
+			font-size: var(--text-xs);
+		}
+	}
+	@media (min-width: 768px) {
+		.kpis {
+			grid-template-columns: minmax(0, 1.4fr) minmax(0, 2fr);
+		}
+		.hero-kpi {
+			padding: var(--space-6);
+		}
+		.tile {
+			padding: var(--space-5);
 		}
 	}
 </style>

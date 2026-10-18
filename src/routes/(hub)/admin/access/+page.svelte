@@ -22,7 +22,7 @@
 </script>
 
 <svelte:head>
-	<title>Access Control | Alan Database</title>
+	<title>Access Control | Alan's Database</title>
 	<meta name="description" content="Owner-only role, invitation, and account access management." />
 	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>

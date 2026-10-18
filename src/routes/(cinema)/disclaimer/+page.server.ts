@@ -7,11 +7,13 @@ import { validateReturnTo } from '$lib/server/auth/cinema-access';
 // The notice interrupts whatever page the person asked for; accepting it goes back there.
 // validateReturnTo keeps the destination on this site and on a cinema page.
 export async function load({ locals, url }) {
+	const returnTo = validateReturnTo(url.searchParams.get('returnTo'));
 	if (!locals.user) {
-		throw redirect(302, '/auth/login');
+		// Sign in, then come back to this notice with the same destination.
+		const resume = `/disclaimer?returnTo=${encodeURIComponent(returnTo)}`;
+		throw redirect(302, `/auth/login?returnTo=${encodeURIComponent(resume)}`);
 	}
 
-	const returnTo = validateReturnTo(url.searchParams.get('returnTo'));
 	const settings = locals.user.settings || {};
 	if (settings.hasAcceptedAdultGate) {
 		throw redirect(302, returnTo);

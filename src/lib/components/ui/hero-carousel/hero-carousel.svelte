@@ -38,7 +38,8 @@
 					formatRating(current.rating) ? `★ ${formatRating(current.rating)}` : null,
 					formatYear(current.releaseDate),
 					formatRuntime(current.runtime),
-					...(current.genres ?? []).slice(0, 3)
+					// Two genres keep the line to one row on a phone, the way TV apps show it.
+					...(current.genres ?? []).slice(0, 2)
 				]
 			: []
 	);
@@ -213,8 +214,18 @@
 		position: absolute;
 		inset: 0;
 		background:
-			linear-gradient(to top, var(--surface-canvas) 0%, rgba(8, 9, 11, 0.55) 40%, transparent 75%),
-			linear-gradient(to right, rgba(8, 9, 11, 0.9) 0%, rgba(8, 9, 11, 0.35) 55%, transparent 100%);
+			linear-gradient(
+				to top,
+				var(--surface-canvas) 0%,
+				color-mix(in srgb, var(--surface-canvas) 55%, transparent) 40%,
+				transparent 75%
+			),
+			linear-gradient(
+				to right,
+				color-mix(in srgb, var(--surface-canvas) 90%, transparent) 0%,
+				color-mix(in srgb, var(--surface-canvas) 35%, transparent) 55%,
+				transparent 100%
+			);
 	}
 	.content {
 		position: relative;
@@ -241,18 +252,19 @@
 		max-width: 44rem;
 		animation: rise var(--duration-slow) var(--ease-out) both;
 	}
-	/* A soft local vignette keeps the copy readable over bright artwork. */
+	/* A soft local vignette keeps the copy readable over bright artwork. It reaches zero at its
+	   own edges (closest-side), so it never shows as a box over the backdrop. */
 	.text::before {
 		content: '';
 		position: absolute;
-		inset: -1.5rem -3rem -1.5rem -3rem;
+		inset: -4rem -6rem;
 		z-index: -1;
-		border-radius: var(--radius-xl);
+		pointer-events: none;
 		background: radial-gradient(
-			ellipse at 25% 65%,
-			rgba(8, 9, 11, 0.8),
-			rgba(8, 9, 11, 0.5) 55%,
-			transparent 100%
+			closest-side ellipse at 40% 55%,
+			color-mix(in srgb, var(--surface-canvas) 72%, transparent),
+			color-mix(in srgb, var(--surface-canvas) 45%, transparent) 55%,
+			transparent
 		);
 	}
 	@keyframes rise {
@@ -277,14 +289,14 @@
 		max-width: min(70vw, 420px);
 		object-fit: contain;
 		object-position: left bottom;
-		filter: drop-shadow(0 6px 24px rgba(0, 0, 0, 0.6));
+		filter: drop-shadow(0 6px 24px color-mix(in srgb, black 60%, transparent));
 	}
 	.title {
 		font-size: var(--type-display);
 		font-weight: 900;
 		letter-spacing: var(--tracking-tight);
 		line-height: var(--leading-tight);
-		text-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+		text-shadow: 0 4px 30px color-mix(in srgb, black 60%, transparent);
 	}
 	.text :global(.meta) {
 		margin-top: var(--space-3);
@@ -293,6 +305,7 @@
 	.overview {
 		display: -webkit-box;
 		-webkit-line-clamp: 3;
+		line-clamp: 3;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 		max-width: 36rem;
@@ -305,6 +318,7 @@
 	@media (max-width: 639px) {
 		.overview {
 			-webkit-line-clamp: 2;
+			line-clamp: 2;
 		}
 	}
 	.actions {
@@ -321,29 +335,30 @@
 		height: var(--touch-target);
 		border-radius: 50%;
 		border: 1px solid var(--border-subtle);
-		background: rgba(8, 9, 11, 0.6);
+		background: color-mix(in srgb, var(--surface-canvas) 60%, transparent);
 		color: var(--content-primary);
 		transition: background-color var(--duration-base) var(--ease-out);
 	}
 	.pause:hover {
-		background: rgba(255, 255, 255, 0.12);
+		background: color-mix(in srgb, var(--content-primary) 12%, transparent);
 	}
 	.dots {
 		display: flex;
-		gap: 0.4rem;
 	}
+	/* A full 44px target around a calm 2rem bar; the targets touch, the bars keep their gap. */
 	.dot {
-		width: 2rem;
+		width: var(--touch-target);
 		height: var(--touch-target);
 		display: flex;
 		align-items: center;
+		justify-content: center;
 	}
 	.dot-fill {
 		display: block;
-		width: 100%;
+		width: 2rem;
 		height: 3px;
 		border-radius: var(--radius-full);
-		background: rgba(255, 255, 255, 0.25);
+		background: color-mix(in srgb, var(--content-primary) 25%, transparent);
 		overflow: hidden;
 		position: relative;
 	}
@@ -358,6 +373,55 @@
 	}
 	.hero.paused .dot.active .dot-fill::after {
 		animation-play-state: paused;
+	}
+	/* The first section after the hero keeps the page rhythm instead of a dead band. */
+	.hero + :global(.section) {
+		margin-top: var(--space-5);
+	}
+	@media (max-width: 639px) {
+		.content {
+			padding-bottom: var(--space-4);
+		}
+	}
+	/* Landscape phones: the whole slide, actions and controls included, fits above the tab bar. */
+	@media (max-height: 500px) and (orientation: landscape) {
+		.hero {
+			min-height: calc(100svh - var(--bottom-bar-height) - var(--tab-bar-inset));
+		}
+		.content {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			align-items: end;
+			column-gap: var(--space-4);
+			padding-top: calc(var(--top-bar-height) + var(--safe-top) + var(--space-3));
+			padding-bottom: var(--space-4);
+		}
+		.slides {
+			grid-column: 1;
+			grid-row: 1;
+		}
+		.controls {
+			grid-column: 2;
+			grid-row: 1;
+			margin-top: 0;
+		}
+		.title-box {
+			min-height: 4rem;
+		}
+		.logo {
+			height: 4rem;
+		}
+		.title {
+			font-size: var(--type-headline);
+		}
+		.overview {
+			-webkit-line-clamp: 2;
+			line-clamp: 2;
+			max-width: 32rem;
+		}
+		.actions {
+			margin-top: var(--space-3);
+		}
 	}
 	@keyframes progress {
 		from {

@@ -208,7 +208,7 @@
 	}
 	/* Portrait sheet: the picture glides up to the band edge (section 7.2). */
 	.hqp-frame[data-glide] {
-		transform: translateY(calc(max(var(--hqp-sa-t), 12px) - var(--frame-top)));
+		transform: translateY(calc(var(--hqp-glide-top) - var(--frame-top)));
 	}
 	/* Credits shrink (section 7.4): landscape 0.6 / radius 22, large 0.7 / radius 26, near the top. */
 	:global(.hqp[data-layout='phone-landscape']) .hqp-frame[data-credits] {

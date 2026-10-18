@@ -38,15 +38,15 @@
 		pointer-events: none;
 		-webkit-mask-image: linear-gradient(
 			to bottom,
-			transparent var(--hqp-sa-t),
-			black calc(var(--hqp-sa-t) + 78px),
+			transparent var(--hqp-edge-top),
+			black calc(var(--hqp-edge-top) + 78px),
 			black calc(100% - 120px),
 			transparent
 		);
 		mask-image: linear-gradient(
 			to bottom,
-			transparent var(--hqp-sa-t),
-			black calc(var(--hqp-sa-t) + 78px),
+			transparent var(--hqp-edge-top),
+			black calc(var(--hqp-edge-top) + 78px),
 			black calc(100% - 120px),
 			transparent
 		);
@@ -65,7 +65,7 @@
 		transition: transform var(--hqp-dur-panel) var(--hqp-spring);
 	}
 	.glow[data-glide] {
-		transform: translateY(calc(max(var(--hqp-sa-t), 12px) - var(--frame-top)));
+		transform: translateY(calc(var(--hqp-glide-top) - var(--frame-top)));
 	}
 	img {
 		position: absolute;

@@ -82,6 +82,23 @@ test.describe('Sign-in page', () => {
 		await gotoHydrated(page, '/auth/login');
 		await expectNoHorizontalOverflow(page);
 	});
+
+	test('phone landscape: both fields and Sign in fit above the tab bar', async ({ page }) => {
+		await page.setViewportSize({ width: 956, height: 440 });
+		await gotoHydrated(page, '/auth/login');
+		const visibleLimit = 440 - 56; // the fixed tab bar
+		for (const target of [
+			page.getByLabel('Username or email'),
+			page.getByLabel('Password', { exact: true }),
+			page.getByRole('button', { name: 'Sign in' })
+		]) {
+			const box = await target.boundingBox();
+			expect(box).not.toBeNull();
+			expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(visibleLimit);
+		}
+		await expect(page.getByRole('heading', { level: 1 })).toHaveText('Sign in');
+		await expectNoHorizontalOverflow(page);
+	});
 });
 
 test.describe('Registration page', () => {

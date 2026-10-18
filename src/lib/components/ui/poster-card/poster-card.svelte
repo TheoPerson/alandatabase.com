@@ -23,7 +23,8 @@
 		ratingSource = 'TMDB',
 		rank = null,
 		eager = false,
-		sizes = '(min-width: 1024px) 180px, (min-width: 640px) 160px, 140px',
+		// The rail card width below, clamp(140px, 42vw, 180px), as media conditions.
+		sizes = '(min-width: 429px) 180px, (min-width: 334px) 42vw, 140px',
 		class: className = ''
 	}: Props = $props();
 
@@ -172,7 +173,11 @@
 		position: absolute;
 		inset: auto 0 0 0;
 		padding: 2.5rem 0.75rem 0.75rem;
-		background: linear-gradient(to top, rgba(8, 9, 11, 0.92), transparent);
+		background: linear-gradient(
+			to top,
+			color-mix(in srgb, var(--surface-canvas) 92%, transparent),
+			transparent
+		);
 		opacity: 0;
 		transform: translateY(8px);
 		transition:

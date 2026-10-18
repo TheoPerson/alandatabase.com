@@ -42,7 +42,7 @@
 			<PosterCard
 				{...item}
 				eager={index < 6}
-				sizes="(min-width: 1024px) 200px, (min-width: 640px) 22vw, 46vw"
+				sizes="(min-width: 1024px) 200px, (min-width: 640px) 20vw, 31vw"
 			/>
 		</div>
 	{/each}

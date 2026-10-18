@@ -131,11 +131,7 @@
 	const logo = $derived(logoSrcSet(data.hero.logoPath));
 	const score = $derived(formatRating(data.hero.rating));
 	const votes = $derived(formatVotes(data.voteCount));
-	const meta = $derived([
-		score ? `★ ${score}${votes ? ` (${votes})` : ''}` : null,
-		formatYear(data.hero.releaseDate),
-		formatRuntime(data.hero.runtime)
-	]);
+	const meta = $derived([formatYear(data.hero.releaseDate), formatRuntime(data.hero.runtime)]);
 	const loginHref = $derived(
 		`/auth/login?returnTo=${encodeURIComponent(`/movies/${data.hero.id}`)}`
 	);
@@ -194,7 +190,8 @@
 	function toggleLabel(type: ToggleType, on: boolean): string {
 		if (type === 'watchlist') return on ? 'In watchlist' : 'Watchlist';
 		if (type === 'favorite') return on ? 'Favourited' : 'Favourite';
-		return on ? 'Watched' : 'Mark watched';
+		// One word on one line in the phone grid; aria-pressed carries the state.
+		return 'Watched';
 	}
 
 	// Toast copy comes from the saved state the server returned, never from the click.
@@ -333,10 +330,11 @@
 					title={data.hero.title}
 					posterPath={data.posterPath}
 					eager
-					sizes="(min-width: 768px) 220px, 112px"
+					sizes="(min-width: 1440px) 280px, (min-width: 1024px) 220px, (min-width: 768px) 180px, (orientation: landscape) and (max-height: 500px) 140px, 112px"
 				/>
 			</div>
 			<div class="text">
+				<p class="eyebrow-pill">Film</p>
 				<div class="title-box">
 					{#if logo}
 						<img
@@ -356,7 +354,19 @@
 					{/if}
 				</div>
 				{#if data.tagline}<p class="tagline">{data.tagline}</p>{/if}
-				<MetaChips items={meta} class="meta" />
+				<div class="rating-line">
+					{#if score}
+						<span class="score">
+							<span class="sr-only"
+								>TMDB rating {score} out of 10{votes ? `, ${votes} votes` : ''}</span
+							>
+							<span class="score-value" aria-hidden="true">{score}</span>
+							<span class="score-source" aria-hidden="true">TMDB</span>
+							{#if votes}<span class="score-votes" aria-hidden="true">{votes}</span>{/if}
+						</span>
+					{/if}
+					<MetaChips items={meta} class="meta" />
+				</div>
 				{#if data.genres.length}
 					<div class="genres">
 						{#each data.genres as genre (genre.id)}
@@ -406,7 +416,7 @@
 							{/if}
 							{#if firstTrailer}
 								<Button
-									variant="ghost"
+									variant="secondary"
 									class="local-more"
 									onclick={() => openTrailer(firstTrailer.key)}
 								>
@@ -499,7 +509,7 @@
 							<span>Rate</span>
 						</Button>
 					{/if}
-					<Button variant="ghost" class="toggle share" onclick={share}>
+					<Button variant="secondary" class="toggle share" onclick={share}>
 						<Share2Icon size={18} aria-hidden="true" />
 						<span>Share</span>
 					</Button>
@@ -525,7 +535,9 @@
 									{#each data.keyCrew as entry (entry.role)}
 										<div>
 											<dt>{entry.role}</dt>
-											<dd><a href={`/people/${entry.personId}`}>{entry.name}</a></dd>
+											<dd>
+												<a class="crew-link" href={`/people/${entry.personId}`}>{entry.name}</a>
+											</dd>
 										</div>
 									{/each}
 								</dl>
@@ -569,7 +581,10 @@
 							{/if}
 							<p class="attribution">
 								Data by JustWatch{#if groups.link}
-									· <a href={groups.link} target="_blank" rel="noopener"
+									<span aria-hidden="true">&nbsp;·&nbsp;</span><a
+										href={groups.link}
+										target="_blank"
+										rel="noopener"
 										>See all options on TMDB <ExternalLinkIcon size={12} aria-hidden="true" /></a
 									>{/if}
 							</p>
@@ -716,7 +731,7 @@
 			<div class="reviews-head">
 				<h2 class="h" id="reviews-h">Reviews</h2>
 				{#if data.user}
-					<Button href={`/movies/catalog/${data.hero.id}/review`} variant="outline" size="sm">
+					<Button href={`/movies/catalog/${data.hero.id}/review`} variant="outline">
 						Write a review
 					</Button>
 				{/if}
@@ -804,12 +819,26 @@
 		overflow: hidden;
 		background: var(--surface-canvas);
 	}
+	/* Bottom-weighted: the title block sits on at least 62% canvas, so every hero text keeps AA
+	   over the brightest backdrop; the top of the artwork stays untouched. */
 	.scrim {
 		position: absolute;
 		inset: 0;
 		background:
-			linear-gradient(to top, var(--surface-canvas) 0%, rgba(8, 9, 11, 0.55) 40%, transparent 75%),
-			linear-gradient(to right, rgba(8, 9, 11, 0.9) 0%, rgba(8, 9, 11, 0.35) 55%, transparent 100%);
+			linear-gradient(
+				to top,
+				var(--surface-canvas) 0%,
+				color-mix(in srgb, var(--surface-canvas) 92%, transparent) 36%,
+				color-mix(in srgb, var(--surface-canvas) 72%, transparent) 56%,
+				color-mix(in srgb, var(--surface-canvas) 24%, transparent) 76%,
+				transparent 92%
+			),
+			linear-gradient(
+				to right,
+				color-mix(in srgb, var(--surface-canvas) 88%, transparent) 0%,
+				color-mix(in srgb, var(--surface-canvas) 35%, transparent) 55%,
+				transparent 100%
+			);
 	}
 	.header-content {
 		position: relative;
@@ -826,22 +855,90 @@
 		width: 96px;
 	}
 	.text {
+		position: relative;
+		isolation: isolate;
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-3);
 		min-width: 0;
 	}
+	/* A soft wash behind the meta cluster only: no box, just calmer pixels under small text. */
+	.text::before {
+		content: '';
+		position: absolute;
+		inset: -1.5rem -2.5rem -1rem;
+		z-index: -1;
+		background: radial-gradient(
+			closest-side,
+			color-mix(in srgb, var(--surface-canvas) 66%, transparent),
+			transparent
+		);
+		pointer-events: none;
+	}
+	.tagline,
+	.rating-line,
+	.quality {
+		text-shadow: 0 1px 2px color-mix(in srgb, var(--surface-canvas) 85%, transparent);
+	}
+	/* The kind of title, on its own surface so the emerald never sits on raw artwork. */
+	.eyebrow-pill {
+		align-self: flex-start;
+		padding: 0.2rem 0.6rem;
+		border: 1px solid var(--brand-border);
+		border-radius: var(--radius-full);
+		background: color-mix(in srgb, var(--surface-canvas) 90%, transparent);
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+	}
+	.rating-line {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2) var(--space-4);
+	}
+	.score {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.35rem;
+		padding: 0.3rem 0.7rem;
+		border: 1px solid var(--brand-border);
+		border-radius: var(--radius-full);
+		background: color-mix(in srgb, var(--surface-canvas) 70%, var(--brand-active) 12%);
+		text-shadow: none;
+	}
+	.score-value {
+		color: var(--content-primary);
+		font-size: var(--text-md);
+		font-weight: 800;
+		font-variant-numeric: tabular-nums;
+	}
+	.score-source {
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		letter-spacing: var(--tracking-wide);
+	}
+	.score-votes {
+		color: var(--content-secondary);
+		font-size: var(--text-xs);
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+	}
 	.title-box {
 		min-height: 2.5rem;
 	}
 	.title {
-		font-size: clamp(2rem, 9vw, 2.75rem);
-		font-weight: 900;
+		font-size: clamp(2.25rem, 9vw, 2.75rem);
+		font-weight: 700;
 		letter-spacing: var(--tracking-tight);
 		line-height: var(--leading-tight);
 		overflow-wrap: anywhere;
 		display: -webkit-box;
 		-webkit-line-clamp: 3;
+		line-clamp: 3;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 	}
@@ -883,23 +980,27 @@
 		overflow: hidden;
 		min-height: 3rem;
 	}
+	/* Phones: five equal tonal tiles, icon over a one-line 12 px caption. */
 	.actions :global(.toggle) {
 		flex-direction: column;
 		justify-content: center;
 		gap: 0.3rem;
-		min-height: 3.5rem;
+		min-width: 0;
+		min-height: 3.75rem;
 		padding: 0.4rem 0.2rem;
-		font-size: 0.6875rem;
+		border-radius: var(--radius-lg);
+		font-size: var(--text-xs);
 		letter-spacing: -0.01em;
 		line-height: 1.1;
 		text-align: center;
-		white-space: normal;
 	}
 	.actions :global(.toggle span) {
 		max-width: 100%;
-		overflow-wrap: normal;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
-	/* Five 44 px targets in 288 px: captions shrink a notch instead of breaking mid-word. */
+	/* Five 44 px targets in 288 px: captions shrink a notch instead of clipping. */
 	@media (max-width: 359px) {
 		.actions :global(.toggle) {
 			padding-inline: 0;
@@ -1088,7 +1189,10 @@
 		color: var(--content-secondary);
 		font-size: var(--text-md);
 		line-height: var(--leading-body);
-		max-width: 65ch;
+		max-inline-size: 62ch;
+	}
+	.tagline {
+		max-inline-size: 62ch;
 	}
 	.crew-key {
 		display: grid;
@@ -1104,7 +1208,13 @@
 		text-transform: uppercase;
 	}
 	.crew-key dd a {
+		display: flex;
+		align-items: center;
+		min-height: var(--touch-target);
 		font-weight: 700;
+	}
+	.crew-key {
+		row-gap: var(--space-2);
 	}
 	.crew-key dd a:hover {
 		color: var(--brand-primary);
@@ -1162,6 +1272,7 @@
 	.attribution a {
 		display: inline-flex;
 		align-items: center;
+		min-height: var(--touch-target);
 		gap: 0.2rem;
 		color: var(--content-secondary);
 		text-decoration: underline;
@@ -1271,9 +1382,6 @@
 		line-height: var(--leading-body);
 		white-space: pre-wrap;
 	}
-	.reviews + .muted {
-		margin-top: var(--space-3);
-	}
 	.rate-form {
 		display: grid;
 		gap: var(--space-4);
@@ -1311,7 +1419,20 @@
 			letter-spacing: normal;
 			text-align: left;
 		}
-		.actions :global(.toggle span) {
+		.actions :global(.toggle) {
+			border-radius: var(--radius-full);
+		}
+		/* Share closes the row as a 44 px tonal icon, so it never wraps alone. */
+		.actions :global(.share) {
+			width: var(--touch-target);
+			padding: 0;
+		}
+		.actions :global(.share span) {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
 			white-space: nowrap;
 		}
 		.no-trailer {
@@ -1377,6 +1498,11 @@
 			grid-template-columns: 7fr 5fr;
 			gap: var(--space-8);
 		}
+		/* One body-lead size with the series Story. */
+		.synopsis {
+			font-size: var(--text-lg);
+			line-height: 1.7;
+		}
 	}
 	@media (min-width: 1440px) {
 		.header-content {
@@ -1385,6 +1511,83 @@
 		.videos {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 		}
+	}
+	/* Phone landscape (440 px tall): the whole hero, CTA row included, fits above the tab bar. */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.header {
+			min-height: 0;
+		}
+		.header-content {
+			grid-template-columns: 140px minmax(0, 1fr);
+			align-items: end;
+			gap: var(--space-5);
+			padding-top: calc(var(--top-bar-height) + var(--safe-top) + var(--space-4));
+			padding-bottom: var(--space-4);
+		}
+		.poster {
+			width: 140px;
+		}
+		.text {
+			gap: var(--space-2);
+			max-width: none;
+		}
+		.title-box {
+			min-height: 0;
+		}
+		.logo {
+			max-height: 4rem;
+		}
+		.title {
+			font-size: 2rem;
+			-webkit-line-clamp: 2;
+			line-clamp: 2;
+		}
+		.tagline,
+		.genres {
+			display: none;
+		}
+		.local {
+			margin-top: 0;
+			gap: var(--space-1);
+		}
+		.local-row {
+			flex-wrap: nowrap;
+		}
+		.local-row :global(.local-play),
+		.actions :global(.play) {
+			flex: 0 0 auto;
+			min-width: 12rem;
+			min-height: var(--touch-target);
+		}
+		.local-row :global(.local-more) {
+			flex: 0 0 auto;
+			padding-inline: var(--space-4);
+		}
+		.actions {
+			flex-wrap: nowrap;
+			margin-top: 0;
+		}
+		.actions :global(.toggle) {
+			width: var(--touch-target);
+			padding: 0;
+		}
+		.actions :global(.toggle span) {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+		}
+	}
+	/* The section tabs stay reachable under the top bar while the panel scrolls. */
+	.body :global(.kit-tabs-list) {
+		position: sticky;
+		top: calc(var(--top-bar-height) + var(--safe-top));
+		z-index: 5;
+		margin-inline: calc(-1 * var(--page-gutter));
+		padding-inline: var(--page-gutter);
+		background: var(--surface-canvas);
 	}
 	@media (prefers-reduced-motion: no-preference) {
 		.saga-banner {

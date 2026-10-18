@@ -228,7 +228,7 @@
 		left: 8px;
 		right: 8px;
 		bottom: 8px;
-		top: calc(max(var(--hqp-sa-t), 12px) + var(--frame-h) + 12px);
+		top: calc(var(--hqp-glide-top) + var(--frame-h) + 12px);
 		border-radius: var(--hqp-r-panel) var(--hqp-r-panel) var(--hqp-r-sheet-bottom)
 			var(--hqp-r-sheet-bottom);
 		animation: hqp-sheet-up var(--hqp-dur-panel) var(--hqp-spring) both;
@@ -268,7 +268,7 @@
 		width: min(760px, 100cqw - 32px);
 	}
 	:global(.hqp[data-layout^='phone-portrait']) .hqp-panel[data-kind='center'] {
-		max-height: calc(100cqh - var(--hqp-sa-t) - var(--hqp-sa-b) - 32px);
+		max-height: calc(100cqh - var(--hqp-edge-top) - var(--hqp-sa-b) - 32px);
 	}
 
 	.grab-area {

@@ -84,3 +84,15 @@ export function filterSummary(filters: BrowseFilters): string {
 	const rating = filters.minRating === null ? 'Any rating' : `${filters.minRating}+ rating`;
 	return [sort, decade, rating].join(' · ');
 }
+
+/** The sheet's Reset: back to the default sort, decade and rating, keeping the chosen genre. */
+export function resetFiltersHref(filters: BrowseFilters): string {
+	return browseHref({ ...filters, sortBy: DEFAULT_SORT, decade: null, minRating: null });
+}
+
+/** The sheet's primary action, e.g. "Show 296 films"; "Done" when the count is unknown. */
+export function showResultsLabel(total: number | null): string {
+	if (total === null) return 'Done';
+	if (total === 0) return 'No films match';
+	return `Show ${total.toLocaleString('en-US')} ${total === 1 ? 'film' : 'films'}`;
+}

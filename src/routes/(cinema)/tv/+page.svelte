@@ -59,9 +59,7 @@
 			{/each}
 		</nav>
 		<p class="count" aria-live="polite">{countLine}</p>
-		<div class="grid-wrap">
-			<PosterGrid items={data.shows} label={countLine} eagerCount={0} />
-		</div>
+		<PosterGrid items={data.shows} label={countLine} eagerCount={0} />
 	</Section>
 {:else}
 	<div class="empty">
@@ -77,8 +75,7 @@
 	.genres {
 		display: flex;
 		gap: var(--space-2);
-		padding-inline: var(--page-gutter);
-		padding-bottom: var(--space-2);
+		padding: 0.4rem var(--page-inset) var(--space-2);
 		overflow-x: auto;
 		scrollbar-width: none;
 		overscroll-behavior-x: contain;
@@ -87,13 +84,12 @@
 		display: none;
 	}
 	.count {
+		max-width: var(--container-wide);
+		margin-inline: auto;
 		padding: var(--space-3) var(--page-gutter) var(--space-4);
 		color: var(--content-secondary);
 		font-size: var(--text-sm);
 		font-weight: 600;
-	}
-	.grid-wrap {
-		padding-inline: var(--page-gutter);
 	}
 	.empty {
 		padding: calc(var(--top-bar-height) + var(--space-8)) var(--page-gutter) var(--space-7);

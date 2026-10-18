@@ -19,7 +19,7 @@
 		<h1>What to watch tonight</h1>
 	</header>
 
-	<MoviePicker initialGenres={data.genres} />
+	<MoviePicker initialGenres={data.genres} backdrops={data.backdrops} />
 </div>
 
 <style>
@@ -29,7 +29,7 @@
 		width: 100%;
 		max-width: var(--container-wide);
 		margin: 0 auto;
-		padding: var(--space-5) var(--page-gutter) var(--space-6);
+		padding: var(--space-6) var(--page-gutter) var(--space-6);
 	}
 	.eyebrow {
 		color: var(--brand-primary);
@@ -39,17 +39,23 @@
 		text-transform: uppercase;
 	}
 	h1 {
-		margin-top: var(--space-1);
+		margin-top: var(--space-2);
 		font-size: var(--type-headline);
 		font-weight: 900;
 		letter-spacing: var(--tracking-tight);
-		line-height: 1.1;
+		line-height: var(--leading-tight);
 		overflow-wrap: anywhere;
 	}
 	@media (min-width: 1024px) {
 		.page {
 			gap: var(--space-5);
-			padding-top: var(--space-6);
+		}
+	}
+	/* Phone landscape: every pixel of height counts; the moods and the stage come first. */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.page {
+			gap: var(--space-3);
+			padding-top: var(--space-4);
 		}
 	}
 </style>

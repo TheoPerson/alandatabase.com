@@ -1,6 +1,11 @@
+import { existsSync } from 'node:fs';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { gotoHydrated } from './helpers';
 
+// Signed-in specs reuse E2E_OWNER_STATE (a saved owner session) when it is set, so repeated
+// runs never hit the rate-limited sign-in; otherwise they sign in once with the credentials.
+const STATE = process.env.E2E_OWNER_STATE;
+const HAS_STATE = Boolean(STATE && existsSync(STATE));
 const username = process.env.E2E_OWNER_USERNAME;
 const password = process.env.E2E_OWNER_PASSWORD;
 const ACTION = /\/movies\/[^/?]+\?\/logInteraction$/;
@@ -26,17 +31,23 @@ async function firstPick(page: Page) {
 }
 
 test('the picker is private: signed-out visitors are sent to sign in', async ({ page }) => {
+	test.skip(HAS_STATE, 'runs signed out only');
 	await page.goto('/cinema/picker');
 	await expect(page).toHaveURL(/\/auth\/login/);
 });
 
 test.describe('Movie picker (signed in)', () => {
-	test.skip(!username || !password, 'needs E2E_OWNER_USERNAME and E2E_OWNER_PASSWORD');
+	test.skip(
+		!HAS_STATE && (!username || !password),
+		'needs E2E_OWNER_STATE, or E2E_OWNER_USERNAME and E2E_OWNER_PASSWORD'
+	);
+	if (HAS_STATE) test.use({ storageState: STATE });
 
 	// One sign-in for the whole file: the login form is rate limited per account.
 	let cookies: Awaited<ReturnType<BrowserContext['cookies']>> = [];
 
 	test.beforeAll(async ({ browser }, testInfo) => {
+		if (HAS_STATE) return;
 		const context = await browser.newContext({ baseURL: testInfo.project.use.baseURL });
 		await signIn(await context.newPage());
 		cookies = await context.cookies();
@@ -44,7 +55,27 @@ test.describe('Movie picker (signed in)', () => {
 	});
 
 	test.beforeEach(async ({ context }) => {
-		await context.addCookies(cookies);
+		if (cookies.length > 0) await context.addCookies(cookies);
+	});
+
+	test('phone landscape: the title and Pick a film fit above the tab bar', async ({ page }) => {
+		await page.setViewportSize({ width: 956, height: 440 });
+		await gotoHydrated(page, '/cinema/picker');
+		const cta = page.getByRole('button', { name: 'Pick a film' });
+		await expect(cta).toBeInViewport({ ratio: 1 });
+		const ctaBox = await cta.boundingBox();
+		const titleBox = await page.locator('#picker-start-title').boundingBox();
+		// The fixed tab bar covers the bottom 56px of the screen.
+		expect((ctaBox?.y ?? 0) + (ctaBox?.height ?? 0)).toBeLessThanOrEqual(440 - 56);
+		expect((titleBox?.y ?? 0) + (titleBox?.height ?? 0)).toBeLessThanOrEqual(440 - 56);
+	});
+
+	test('the idle stage is compact on a phone, not a screen-tall void', async ({ page }) => {
+		await page.setViewportSize({ width: 440, height: 956 });
+		await gotoHydrated(page, '/cinema/picker');
+		const stage = await page.locator('.start').boundingBox();
+		expect(stage?.height ?? 0).toBeLessThanOrEqual(448);
+		await expect(page.getByRole('button', { name: 'Pick a film' })).toBeInViewport();
 	});
 
 	test('one h1, moods as chips, and a card with an honest rating', async ({ page }) => {

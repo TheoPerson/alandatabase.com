@@ -60,3 +60,29 @@ describe('content notice', () => {
 		expect(result.location).toBe('/my/lists');
 	});
 });
+
+describe('content notice for a visitor without a session', () => {
+	it('sends them to sign in and resumes the notice, with its own destination, afterwards', async () => {
+		const result = await redirectOf(() =>
+			(load as (event: unknown) => unknown)({
+				locals: { user: null },
+				url: new URL('https://alandatabase.com/disclaimer?returnTo=%2Fmy%2Flists')
+			})
+		);
+		expect(result.status).toBe(302);
+		const login = new URL(result.location, 'https://alandatabase.com');
+		expect(login.pathname).toBe('/auth/login');
+		expect(login.searchParams.get('returnTo')).toBe('/disclaimer?returnTo=%2Fmy%2Flists');
+	});
+
+	it('drops a foreign destination before it reaches the sign-in link', async () => {
+		const result = await redirectOf(() =>
+			(load as (event: unknown) => unknown)({
+				locals: { user: null },
+				url: new URL('https://alandatabase.com/disclaimer?returnTo=https%3A%2F%2Fevil.example')
+			})
+		);
+		const login = new URL(result.location, 'https://alandatabase.com');
+		expect(login.searchParams.get('returnTo')).toBe('/disclaimer?returnTo=%2Fmovies');
+	});
+});

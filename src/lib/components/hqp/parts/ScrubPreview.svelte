@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { formatTime } from '$lib/player/format-time';
+	import { tmdbImageUrl } from '$lib/tmdb/images';
 	import { getHqpContext } from '../context';
 	import { meaningfulChapterTitle } from '../logic/format';
 	import { deltaLabel } from '../logic/panel-labels';
@@ -24,6 +25,13 @@
 	const manifest = $derived($snapshot.trickplay);
 	const tile = $derived(manifest && seconds !== null ? tileAt(manifest, seconds) : null);
 	const width = $derived(ui.large ? 272 : 216);
+	// No sprites yet (still being built, or none for this file): a blurred still of the title in the
+	// picture's shape, so the preview keeps its footprint and never collapses to a bare time pill.
+	const still = $derived.by(() => {
+		const art = $snapshot.item?.artwork;
+		return tmdbImageUrl(art?.stillPath ?? art?.backdropPath ?? null, 'w300');
+	});
+	const pictureAr = $derived($snapshot.aspect && $snapshot.aspect > 0 ? $snapshot.aspect : 16 / 9);
 	const centre = $derived.by(() => {
 		if (seconds === null) return 0;
 		const x = ui.track.left + fraction(seconds, $clock.duration) * ui.track.width;
@@ -80,6 +88,10 @@
 					style:background-size={bgSize}
 					style:background-position={bgPos}
 				></div>
+			{:else}
+				<div class="tile placeholder" style:--tile-ar={pictureAr}>
+					{#if still}<img src={still} alt="" decoding="async" />{/if}
+				</div>
 			{/if}
 			<p class="pill hqp-glass hqp-tnum">
 				<span class="t">{formatTime(seconds)}</span>{#if delta !== null}<span class="delta"
@@ -159,6 +171,19 @@
 		box-shadow:
 			0 0 0 var(--hqp-hairline) var(--hqp-glass-rim),
 			0 18px 40px -12px var(--hqp-scrim-a);
+	}
+	.placeholder {
+		position: relative;
+		overflow: hidden;
+		background: var(--hqp-fill-row);
+	}
+	.placeholder img {
+		position: absolute;
+		inset: -12px;
+		width: calc(100% + 24px);
+		height: calc(100% + 24px);
+		object-fit: cover;
+		filter: blur(10px) saturate(1.1) brightness(0.7);
 	}
 	.pill {
 		display: inline-flex;

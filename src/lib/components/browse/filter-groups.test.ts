@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { browseHref, type BrowseFilters } from '$lib/catalogue/browse';
-import { activeFilterCount, filterGroups, filterSummary } from './filter-groups';
+import {
+	activeFilterCount,
+	filterGroups,
+	filterSummary,
+	resetFiltersHref,
+	showResultsLabel
+} from './filter-groups';
 
 const none: BrowseFilters = { genreId: null, decade: null, minRating: null, sortBy: 'popularity' };
 
@@ -54,5 +60,21 @@ describe('activeFilterCount and filterSummary', () => {
 		expect(activeFilterCount(filters)).toBe(3);
 		expect(activeFilterCount({ ...none, genreId: 12 })).toBe(0);
 		expect(filterSummary(filters)).toBe('Newest · 1990s · 8+ rating');
+	});
+});
+
+describe('the sheet actions', () => {
+	it('Reset clears sort, decade and rating but keeps the chosen genre', () => {
+		const filters: BrowseFilters = { genreId: 28, decade: 1990, minRating: 7, sortBy: 'rating' };
+		expect(resetFiltersHref(filters)).toBe('/movies?genre=28');
+		expect(resetFiltersHref(none)).toBe('/movies');
+	});
+
+	it('the primary action names how many films the filters show', () => {
+		expect(showResultsLabel(296)).toBe('Show 296 films');
+		expect(showResultsLabel(1)).toBe('Show 1 film');
+		expect(showResultsLabel(12345)).toBe('Show 12,345 films');
+		expect(showResultsLabel(0)).toBe('No films match');
+		expect(showResultsLabel(null)).toBe('Done');
 	});
 });

@@ -15,8 +15,8 @@
 </script>
 
 <svelte:head>
-	<title>Private Sign In | Alan Database</title>
-	<meta name="description" content="Secure private access for Alan Database." />
+	<title>Sign in | Alan's Database</title>
+	<meta name="description" content="Private access to Alan's Database." />
 	<meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 

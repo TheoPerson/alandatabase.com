@@ -131,3 +131,20 @@ export function swipeDecision(
 	if (Math.abs(dy) * 1.5 > Math.abs(dx)) return 'cancel';
 	return 'another';
 }
+
+const TMDB_PATH = /^\/[\w-]+\.(?:jpe?g|png|webp)$/u;
+
+/** Distinct TMDB backdrop paths, in order, for the idle picker's ambient strip. */
+export function pickerBackdrops(
+	films: ReadonlyArray<{ backdropPath?: string | null; [key: string]: unknown }>,
+	limit = 7
+): string[] {
+	const paths: string[] = [];
+	for (const film of films) {
+		const path = film.backdropPath;
+		if (!path || !TMDB_PATH.test(path) || paths.includes(path)) continue;
+		paths.push(path);
+		if (paths.length >= limit) break;
+	}
+	return paths;
+}

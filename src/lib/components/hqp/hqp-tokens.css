@@ -6,6 +6,8 @@
 	--hqp-ink-2: rgb(245 247 250 / 0.74);
 	--hqp-ink-3: rgb(245 247 250 / 0.52);
 	--hqp-ink-on-light: rgb(6 8 10);
+	/* Tracks drawn on the white CTA (countdown ring). */
+	--hqp-ink-on-light-faint: rgb(6 8 10 / 0.18);
 	--hqp-cta: rgb(245 247 250);
 
 	/* Accents */
@@ -126,6 +128,8 @@
 	--hqp-sa-b: env(safe-area-inset-bottom, 0px);
 	--hqp-sa-l: env(safe-area-inset-left, 0px);
 	--hqp-edge-top: min(var(--hqp-sa-t), 47px);
+	/* Glided portrait picture and the panels under it: island-free, never above 12 px. */
+	--hqp-glide-top: max(var(--hqp-edge-top), 12px);
 	--hqp-edge-x: clamp(16px, max(var(--hqp-sa-l), var(--hqp-sa-r)) - 14px, 48px);
 	--hqp-edge-bottom: calc(max(var(--hqp-sa-b), 14px) + 4px);
 }

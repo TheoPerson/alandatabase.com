@@ -87,7 +87,7 @@ test.describe('Search page', () => {
 		await expect(
 			page.getByRole('heading', { level: 1, name: `Results for “${title}”` })
 		).toBeVisible();
-		await expect(page.getByText(/^\d+ films?$/u)).toBeVisible();
+		await expect(page.getByText(/^\d+ films? · \d+ series$/u)).toBeVisible();
 		await expect(resultCards(page).first()).toBeVisible();
 		await expect(field(page)).toHaveValue(title as string);
 		await expect(page).toHaveTitle(`Results for ${title} | Alan's Database`);
@@ -134,7 +134,8 @@ test.describe('Search page', () => {
 		page
 	}) => {
 		await gotoHydrated(page, '/search?q=a');
-		const cards = resultCards(page);
+		// The sort applies to the film grid; matching series sit in their own row above it.
+		const cards = results(page).getByRole('region', { name: 'Films' }).locator('a.card');
 		test.skip((await cards.count()) < 2, 'needs at least two results');
 
 		const hrefs = () =>
