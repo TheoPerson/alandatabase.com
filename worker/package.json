@@ -15,6 +15,8 @@
 		"ingest:genres": "tsx src/cli.ts sync-genres",
 		"ingest:popular": "tsx src/cli.ts sync-popular",
 		"ingest:top-rated": "tsx src/cli.ts sync-top-rated",
+		"library:scan": "tsx src/cli.ts scan-library",
+		"library:index": "tsx src/cli.ts scan-library --roots-from-env",
 		"monitor": "tsx ../scripts/monitor.ts"
 	},
 	"dependencies": {

@@ -11,12 +11,14 @@ import {
 	timestamp,
 	smallint,
 	jsonb,
+	real,
 	primaryKey,
 	index,
 	uniqueIndex,
 	check
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
+import type { AudioTrack, ParsedName, SubtitleTrack, VideoInfo } from '../../media/types.js';
 
 // -----------------------------------------------------------------------------
 // 1. MOVIES & COLLECTIONS
@@ -480,6 +482,176 @@ export const aiChatSessions = pgTable(
 );
 
 // -----------------------------------------------------------------------------
+// 6. TV CATALOGUE (TMDB-backed, same standard-content policy as movies)
+// -----------------------------------------------------------------------------
+
+export const tvShows = pgTable('tv_shows', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	tmdbId: integer('tmdb_id').notNull().unique(),
+	name: text('name').notNull(),
+	originalName: text('original_name'),
+	overview: text('overview'),
+	tagline: text('tagline'),
+	posterPath: text('poster_path'),
+	backdropPath: text('backdrop_path'),
+	// Unknown stays null: never synthesise a date or a count TMDB does not provide.
+	firstAirDate: date('first_air_date'),
+	lastAirDate: date('last_air_date'),
+	status: text('status'),
+	numberOfSeasons: integer('number_of_seasons'),
+	numberOfEpisodes: integer('number_of_episodes'),
+	voteAverage: decimal('vote_average', { precision: 3, scale: 1 }),
+	voteCount: integer('vote_count'),
+	popularity: real('popularity'),
+	originalLanguage: varchar('original_language', { length: 10 }),
+	imdbId: varchar('imdb_id', { length: 20 }),
+	adult: boolean('adult').default(false).notNull(),
+	localOverrides: jsonb('local_overrides'),
+	isLocked: boolean('is_locked').default(false).notNull(),
+	syncedAt: timestamp('synced_at'),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export const tvGenres = pgTable(
+	'tv_genres',
+	{
+		showId: uuid('show_id')
+			.notNull()
+			.references(() => tvShows.id, { onDelete: 'cascade' }),
+		genreId: integer('genre_id')
+			.notNull()
+			.references(() => genres.id)
+	},
+	(table) => [primaryKey({ columns: [table.showId, table.genreId] })]
+);
+
+export const tvKeywords = pgTable(
+	'tv_keywords',
+	{
+		showId: uuid('show_id')
+			.notNull()
+			.references(() => tvShows.id, { onDelete: 'cascade' }),
+		keywordId: integer('keyword_id')
+			.notNull()
+			.references(() => keywords.id)
+	},
+	(table) => [primaryKey({ columns: [table.showId, table.keywordId] })]
+);
+
+export const tvSeasons = pgTable(
+	'tv_seasons',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		showId: uuid('show_id')
+			.notNull()
+			.references(() => tvShows.id, { onDelete: 'cascade' }),
+		seasonNumber: integer('season_number').notNull(),
+		name: text('name'),
+		overview: text('overview'),
+		posterPath: text('poster_path'),
+		airDate: date('air_date'),
+		episodeCount: integer('episode_count')
+	},
+	(table) => [uniqueIndex('idx_tv_seasons_show_season').on(table.showId, table.seasonNumber)]
+);
+
+export const tvEpisodes = pgTable(
+	'tv_episodes',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		showId: uuid('show_id')
+			.notNull()
+			.references(() => tvShows.id, { onDelete: 'cascade' }),
+		seasonId: uuid('season_id')
+			.notNull()
+			.references(() => tvSeasons.id, { onDelete: 'cascade' }),
+		seasonNumber: integer('season_number').notNull(),
+		episodeNumber: integer('episode_number').notNull(),
+		name: text('name'),
+		overview: text('overview'),
+		stillPath: text('still_path'),
+		airDate: date('air_date'),
+		runtime: integer('runtime'),
+		voteAverage: decimal('vote_average', { precision: 3, scale: 1 })
+	},
+	(table) => [
+		uniqueIndex('idx_tv_episodes_show_season_episode').on(
+			table.showId,
+			table.seasonNumber,
+			table.episodeNumber
+		)
+	]
+);
+
+// -----------------------------------------------------------------------------
+// 7. OWNER MEDIA LIBRARY (local files; paths never leave the server)
+// -----------------------------------------------------------------------------
+
+/** Server-only reference to a sidecar subtitle file (never sent to a client). */
+export interface ExternalSubtitleRef {
+	ordinal: number;
+	path: string;
+	language: string | null;
+}
+
+export const mediaFiles = pgTable(
+	'media_files',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		path: text('path').notNull().unique(),
+		sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull(),
+		mtimeMs: bigint('mtime_ms', { mode: 'number' }).notNull(),
+		durationSeconds: real('duration_seconds'),
+		video: jsonb('video').$type<VideoInfo | null>(),
+		audioTracks: jsonb('audio_tracks').$type<AudioTrack[]>().default([]).notNull(),
+		subtitleTracks: jsonb('subtitle_tracks').$type<SubtitleTrack[]>().default([]).notNull(),
+		externalSubtitles: jsonb('external_subtitles')
+			.$type<ExternalSubtitleRef[]>()
+			.default([])
+			.notNull(),
+		movieId: uuid('movie_id').references(() => movies.id, { onDelete: 'set null' }),
+		episodeId: uuid('episode_id').references(() => tvEpisodes.id, { onDelete: 'set null' }),
+		matchStatus: varchar('match_status', { length: 20 }).default('unmatched').notNull(),
+		matchNote: text('match_note'),
+		parsed: jsonb('parsed').$type<ParsedName | null>(),
+		scannedAt: timestamp('scanned_at').defaultNow().notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		index('idx_media_files_movie').on(table.movieId),
+		index('idx_media_files_episode').on(table.episodeId),
+		index('idx_media_files_match_status').on(table.matchStatus),
+		check(
+			'media_files_single_link_check',
+			sql`${table.movieId} is null or ${table.episodeId} is null`
+		)
+	]
+);
+
+/** Saved playback position per user and file (the owner today), synced across devices. */
+export const mediaProgress = pgTable(
+	'media_progress',
+	{
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		fileId: uuid('file_id')
+			.notNull()
+			.references(() => mediaFiles.id, { onDelete: 'cascade' }),
+		positionSeconds: real('position_seconds').notNull(),
+		durationSeconds: real('duration_seconds'),
+		completed: boolean('completed').default(false).notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		primaryKey({ columns: [table.userId, table.fileId] }),
+		index('idx_media_progress_user_updated').on(table.userId, table.updatedAt)
+	]
+);
+
+// -----------------------------------------------------------------------------
 // RELATIONS
 // -----------------------------------------------------------------------------
 
@@ -577,4 +749,43 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
 
 export const aiChatSessionsRelations = relations(aiChatSessions, ({ one }) => ({
 	user: one(users, { fields: [aiChatSessions.userId], references: [users.id] })
+}));
+
+export const tvShowsRelations = relations(tvShows, ({ many }) => ({
+	genres: many(tvGenres),
+	keywords: many(tvKeywords),
+	seasons: many(tvSeasons),
+	episodes: many(tvEpisodes)
+}));
+
+export const tvGenresRelations = relations(tvGenres, ({ one }) => ({
+	show: one(tvShows, { fields: [tvGenres.showId], references: [tvShows.id] }),
+	genre: one(genres, { fields: [tvGenres.genreId], references: [genres.id] })
+}));
+
+export const tvKeywordsRelations = relations(tvKeywords, ({ one }) => ({
+	show: one(tvShows, { fields: [tvKeywords.showId], references: [tvShows.id] }),
+	keyword: one(keywords, { fields: [tvKeywords.keywordId], references: [keywords.id] })
+}));
+
+export const tvSeasonsRelations = relations(tvSeasons, ({ one, many }) => ({
+	show: one(tvShows, { fields: [tvSeasons.showId], references: [tvShows.id] }),
+	episodes: many(tvEpisodes)
+}));
+
+export const tvEpisodesRelations = relations(tvEpisodes, ({ one, many }) => ({
+	show: one(tvShows, { fields: [tvEpisodes.showId], references: [tvShows.id] }),
+	season: one(tvSeasons, { fields: [tvEpisodes.seasonId], references: [tvSeasons.id] }),
+	mediaFiles: many(mediaFiles)
+}));
+
+export const mediaFilesRelations = relations(mediaFiles, ({ one, many }) => ({
+	movie: one(movies, { fields: [mediaFiles.movieId], references: [movies.id] }),
+	episode: one(tvEpisodes, { fields: [mediaFiles.episodeId], references: [tvEpisodes.id] }),
+	progress: many(mediaProgress)
+}));
+
+export const mediaProgressRelations = relations(mediaProgress, ({ one }) => ({
+	user: one(users, { fields: [mediaProgress.userId], references: [users.id] }),
+	file: one(mediaFiles, { fields: [mediaProgress.fileId], references: [mediaFiles.id] })
 }));

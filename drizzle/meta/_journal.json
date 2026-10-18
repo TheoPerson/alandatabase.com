@@ -43,6 +43,20 @@
       "when": 1791774046337,
       "tag": "0005_movie_watch_providers",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792178513220,
+      "tag": "0006_owner_media_library",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792179022177,
+      "tag": "0007_media_progress",
+      "breakpoints": true
     }
   ]
 }

@@ -16,7 +16,8 @@ const validCommands = new Set([
 	'setup-search',
 	'sync-popular',
 	'sync-top-rated',
-	'ingest-id'
+	'ingest-id',
+	'scan-library'
 ]);
 
 function printHelp() {
@@ -29,6 +30,9 @@ Commands:
   sync-popular    Fetch top 5 pages of popular movies from TMDB
   sync-top-rated  Fetch top 5 pages of top-rated movies from TMDB
   ingest-id <id>  Ingest a specific movie by TMDB ID
+  scan-library [root ...] [--dry-run]
+                  Index the owner's media library (files are only read): probe,
+                  match on TMDB, ingest missing films/shows, sync media_files
 `);
 }
 
@@ -45,6 +49,12 @@ async function main() {
 			console.error('Usage: tsx src/cli.ts ingest-id <positiveTmdbId>');
 			process.exit(1);
 		}
+	}
+
+	if (command === 'scan-library') {
+		const { runScanLibraryCommand } = await import('./library/cli-scan.js');
+		process.exitCode = await runScanLibraryCommand(process.argv.slice(3));
+		return;
 	}
 
 	if (command === 'sync-genres') {
