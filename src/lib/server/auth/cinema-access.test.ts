@@ -99,3 +99,19 @@ describe('movie picker access', () => {
 		expect(requiresCinemaSession('/picker')).toBe(false);
 	});
 });
+
+describe('owner media streaming access', () => {
+	it('keeps every /api/media endpoint owner-only', () => {
+		expect(getCinemaAccessRequirement('/api/media')).toBe('owner');
+		expect(getCinemaAccessRequirement('/api/media/sessions')).toBe('owner');
+		expect(getCinemaAccessRequirement('/api/media/sessions/abc/index.m3u8')).toBe('owner');
+		expect(getCinemaAccessRequirement('/api/media/files/abc/subtitles/0.vtt')).toBe('owner');
+		expect(getCinemaAccessRequirement('/api/media/progress')).toBe('owner');
+		expect(getCinemaAccessRequirement('/api/media/continue')).toBe('owner');
+	});
+
+	it('does not overmatch similarly named API paths', () => {
+		expect(getCinemaAccessRequirement('/api/mediaplayer')).toBe('authenticated');
+		expect(getCinemaAccessRequirement('/api/movies/catalog')).toBe('catalog');
+	});
+});

@@ -22,7 +22,8 @@ export const SESSION_EXEMPT_ROUTES = ['/api/telegram/webhook'];
 // data-changing and catalog endpoints remain session-protected.
 export const PUBLIC_API_ROUTES = ['/api', '/api/health', '/api/search'];
 
-export const OWNER_ONLY_ROUTES = ['/admin', '/setup', '/api/telemetry/events'];
+// The owner's own media library (streaming, subtitles, progress) never leaves the owner account.
+export const OWNER_ONLY_ROUTES = ['/admin', '/setup', '/api/telemetry/events', '/api/media'];
 
 export const CATALOG_MANAGER_ROUTES = ['/movies/custom', '/api/movies/catalog'];
 

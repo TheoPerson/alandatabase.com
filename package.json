@@ -29,8 +29,11 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
 		"auth:bootstrap-owner": "tsx scripts/bootstrap-owner-role.ts",
+		"library:scan": "pnpm --dir worker library:scan",
+		"library:index": "pnpm --dir worker library:index",
 		"monitor": "tsx scripts/monitor.ts",
-		"sync": "tsx scripts/sync-repos.ts"
+		"sync": "tsx scripts/sync-repos.ts",
+		"media:index": "tsx src/lib/server/media/index-cli.ts"
 	},
 	"devDependencies": {
 		"@axe-core/playwright": "^4.13.0",
@@ -64,6 +67,7 @@
 		"clsx": "^2.1.1",
 		"dotenv": "^17.4.2",
 		"drizzle-orm": "^0.45.2",
+		"hls.js": "1.7.3",
 		"lucide-svelte": "^1.0.1",
 		"postgres": "^3.4.9",
 		"tailwind-merge": "^3.6.0",
