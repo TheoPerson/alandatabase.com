@@ -82,7 +82,7 @@ export function frameRect(
 	const height = Math.min(vh, vw / ar);
 	const x = (vw - width) / 2;
 	if (isPortrait(layout)) {
-		const centre = (layout === 'phone-portrait-short' ? 0.36 : 0.39) * vh;
+		const centre = (layout === 'phone-portrait-short' ? 0.36 : 0.35) * vh;
 		const y = Math.min(Math.max(PORTRAIT_FRAME_MIN_TOP, centre - height / 2), vh - height);
 		return { x, y: Math.max(0, y), width, height };
 	}

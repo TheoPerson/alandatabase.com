@@ -86,10 +86,11 @@ describe('quality line', () => {
 });
 
 describe('remaining time', () => {
-	it('rounds up to whole minutes and switches to hours', () => {
+	it('rounds to the nearest minute and switches to hours', () => {
 		expect(remainingLabel(600, 3060)).toBe('41 min left');
 		expect(remainingLabel(0, 6720)).toBe('1 h 52 min left');
 		expect(remainingLabel(0, 7200)).toBe('2 h left');
+		expect(remainingLabel(0, 107 * 60 + 25)).toBe('1 h 47 min left');
 		expect(remainingLabel(3599, 3600)).toBe('1 min left');
 		expect(remainingLabel(100, null)).toBeNull();
 	});

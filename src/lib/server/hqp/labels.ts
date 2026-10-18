@@ -95,7 +95,8 @@ function remainingMinutes(positionSeconds: number, durationSeconds: number | nul
 	if (durationSeconds === null || !Number.isFinite(durationSeconds) || durationSeconds <= 0)
 		return null;
 	const position = Number.isFinite(positionSeconds) ? Math.max(0, positionSeconds) : 0;
-	return Math.max(1, Math.ceil((durationSeconds - Math.min(position, durationSeconds)) / 60));
+	// Nearest minute, so a file a few seconds longer than its runtime still reads "1 h 47 min".
+	return Math.max(1, Math.round((durationSeconds - Math.min(position, durationSeconds)) / 60));
 }
 
 /** "41 min left", "1 h 52 min left"; null when the duration is unknown. */

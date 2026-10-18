@@ -91,13 +91,13 @@ describe('glideTop', () => {
 });
 
 describe('frameRect', () => {
-	it('places a 16:9 picture full width centred at 39% in portrait (less dead band above)', () => {
+	it('places a 16:9 picture full width centred at 35% in portrait (less dead band above)', () => {
 		const r = frameRect('phone-portrait', PORTRAIT, 16 / 9, 'fit');
 		expect(r.x).toBe(0);
 		expect(r.width).toBe(440);
 		expect(r.height).toBeCloseTo(247.5, 1);
-		expect(Math.round(r.y)).toBe(249);
-		expect(Math.round(r.y + r.height)).toBe(497);
+		expect(Math.round(r.y)).toBe(211);
+		expect(Math.round(r.y + r.height)).toBe(458);
 	});
 
 	it('keeps the portrait picture top at 118 px or lower', () => {

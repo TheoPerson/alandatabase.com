@@ -103,6 +103,9 @@
 		margin: 0;
 	}
 	.eyebrow {
+		/* "2024 · 1h 47m" and show titles read in their own case, not "1H 47M". */
+		text-transform: none;
+		letter-spacing: 0.02em;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
