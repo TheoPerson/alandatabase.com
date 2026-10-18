@@ -1,6 +1,7 @@
 import { sequence } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
 import { dev } from '$app/environment';
+import { env } from '$env/dynamic/private';
 import { sessionCookieDeleteOptions, validateSessionToken } from '$lib/server/auth';
 import {
 	getCinemaAccessRequirement,
@@ -91,6 +92,17 @@ function canAccessCinemaRequirement(
 	return hasPermission(user, 'system:manage');
 }
 
+// A local preview behind a private tunnel (Tailscale Serve) sees its requests as 127.0.0.1;
+// PREVIEW_TRUSTED_ORIGINS (comma-separated https origins, never set in production) admits it.
+function previewTrustedOrigins(): Set<string> {
+	return new Set(
+		(env.PREVIEW_TRUSTED_ORIGINS ?? '')
+			.split(',')
+			.map((origin) => origin.trim())
+			.filter((origin) => /^https:\/\/[a-z0-9.-]+$/u.test(origin))
+	);
+}
+
 function isCrossOriginFormMutation(event: Parameters<Handle>[0]['event']): boolean {
 	if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(event.request.method)) return false;
 
@@ -103,7 +115,9 @@ function isCrossOriginFormMutation(event: Parameters<Handle>[0]['event']): boole
 		return false;
 	}
 
-	return event.request.headers.get('origin') !== event.url.origin;
+	const origin = event.request.headers.get('origin');
+	if (origin && previewTrustedOrigins().has(origin)) return false;
+	return origin !== event.url.origin;
 }
 
 export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {

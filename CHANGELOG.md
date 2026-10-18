@@ -68,6 +68,7 @@ its launch gates are explicitly verified.
 
 ### Fixed
 
+- Signing in through the private Tailscale preview did nothing (the form was refused as cross-site, since the tunnel reaches the server as 127.0.0.1). A local build can now trust that one https origin through PREVIEW_TRUSTED_ORIGINS; without it, as in production, every cross-site form is still refused.
 - Accessibility pass from an independent audit: the skip link is visible when focused; focused controls are no longer hidden under the sticky top bar, the Browse filter bar or the phone tab bar (scroll padding); the film tab panel shows a focus ring; rail arrows respect reduced motion; filter-bar labels and tab-bar labels meet AA contrast; the palette result list is keyboard-reachable when it scrolls.
 - TV posters labelled IMDb ratings as TMDB; coming back from a cast member reopened the wrong film tab; the person page Back link always went to the catalogue; going back to Browse after Load more landed about 3,000px too low; the Load more announcement repeated the count; a filler biography showed for people without one; the 404 text spoke of a film on every page.
 - The Picker showed saved and watched states it had not saved and posted to a legacy route; it now saves through the film page action and shows only server-confirmed state. It labels ratings IMDb or TMDB truthfully, has one h1 and a placeholder for films without artwork.
