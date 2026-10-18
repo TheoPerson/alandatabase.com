@@ -43,6 +43,9 @@
 	import Share2Icon from 'lucide-svelte/icons/share-2';
 	import ExternalLinkIcon from 'lucide-svelte/icons/external-link';
 	import LayersIcon from 'lucide-svelte/icons/layers';
+	import RotateCcwIcon from 'lucide-svelte/icons/rotate-ccw';
+	import ClapperboardIcon from 'lucide-svelte/icons/clapperboard';
+	import CheckIcon from 'lucide-svelte/icons/check';
 	import { jsonLdScript } from '$lib/seo/json-ld';
 
 	let { data } = $props();
@@ -276,6 +279,9 @@
 		}
 	}
 
+	// Alan's HQP (owner only): the version picker for films with more than one local copy.
+	let versionsOpen = $state(false);
+
 	let playerOpen = $state(false);
 	let playerKey = $state('');
 
@@ -366,8 +372,63 @@
 					</div>
 				{/if}
 
+				{#if data.local}
+					{@const play = data.local.play}
+					<!-- The owner's own copy: plays in Alan's HQP (/watch). Nobody else gets this data. -->
+					<div class="local" role="group" aria-label="On this PC">
+						<div class="local-row">
+							<Button href={play.href} size="lg" class="local-play">
+								<PlayIcon size={20} fill="currentColor" aria-hidden="true" />
+								<span>{play.label}</span>
+								{#if play.progress > 0}
+									<span class="local-progress" aria-hidden="true">
+										<span style:transform={`scaleX(${play.progress})`}></span>
+									</span>
+								{/if}
+							</Button>
+							{#if play.startOverHref}
+								<Button href={play.startOverHref} variant="secondary" class="local-more">
+									<RotateCcwIcon size={18} aria-hidden="true" />
+									<span>Start over</span>
+								</Button>
+							{/if}
+							{#if data.local.versions.length > 1}
+								<Button
+									variant="secondary"
+									class="local-more"
+									aria-haspopup="dialog"
+									onclick={() => (versionsOpen = true)}
+								>
+									<LayersIcon size={18} aria-hidden="true" />
+									<span>Versions</span>
+									<span class="local-count">{data.local.versions.length}</span>
+								</Button>
+							{/if}
+							{#if firstTrailer}
+								<Button
+									variant="ghost"
+									class="local-more"
+									onclick={() => openTrailer(firstTrailer.key)}
+								>
+									<ClapperboardIcon size={18} aria-hidden="true" />
+									<span>Trailer</span>
+								</Button>
+							{/if}
+						</div>
+						{#if data.local.quality}
+							<p class="quality">
+								<span class="quality-dot" aria-hidden="true"></span>
+								<span class="sr-only">On this PC:</span>
+								{data.local.quality}
+							</p>
+						{/if}
+					</div>
+				{/if}
+
 				<div class="actions" role="group" aria-label="Actions">
-					{#if firstTrailer}
+					{#if data.local}
+						<!-- Play and the trailer live in the On this PC group above. -->
+					{:else if firstTrailer}
 						<Button size="lg" class="play" onclick={() => openTrailer(firstTrailer.key)}>
 							<PlayIcon size={20} aria-hidden="true" />
 							{#if resume}
@@ -691,6 +752,27 @@
 	/>
 {/if}
 
+{#if data.local && data.local.versions.length > 1}
+	<Sheet bind:open={versionsOpen} label="Versions" side={wide ? 'right' : 'bottom'}>
+		<p class="muted">{data.hero.title} · {data.local.versions.length} copies on this PC</p>
+		<ul class="versions">
+			{#each data.local.versions as version (version.fileId)}
+				{@const current = version.fileId === data.local.play.fileId}
+				<li>
+					<a class="version" href={version.href} aria-current={current ? 'true' : undefined}>
+						<span class="version-label">{version.label}</span>
+						{#if version.best}<span class="version-tag">Best</span>{/if}
+						{#if current}
+							<CheckIcon size={18} aria-hidden="true" />
+							<span class="sr-only">(Play opens this copy)</span>
+						{/if}
+					</a>
+				</li>
+			{/each}
+		</ul>
+	</Sheet>
+{/if}
+
 {#if data.user}
 	<Sheet bind:open={rateOpen} label="Your rating" side={wide ? 'right' : 'bottom'}>
 		<form method="POST" action="?/logInteraction" class="rate-form" use:enhance={submitRating}>
@@ -827,6 +909,123 @@
 	}
 	.actions form {
 		display: contents;
+	}
+	/* ── On this PC (owner only) ──────────────────────────────────────── */
+	.local {
+		display: grid;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
+	}
+	.local-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+	/* White like a cinema "Play": the emerald is kept for the watched part. */
+	.local-row :global(.local-play) {
+		--btn-bg: var(--content-primary);
+		--btn-fg: var(--content-inverse);
+		position: relative;
+		flex: 1 1 100%;
+		overflow: hidden;
+		min-height: 3.25rem;
+		font-variant-numeric: tabular-nums;
+	}
+	.local-row :global(.local-play:hover) {
+		--btn-bg: var(--accent-titanium);
+	}
+	.local-progress {
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		height: 3px;
+		background: var(--brand-muted);
+	}
+	.local-progress span {
+		display: block;
+		height: 100%;
+		background: var(--brand-active);
+		transform-origin: left;
+	}
+	.local-row :global(.local-more) {
+		flex: 1 1 0;
+		min-width: 0;
+		padding-inline: var(--space-3);
+	}
+	.local-count {
+		min-width: 1.25rem;
+		padding: 0 0.35rem;
+		border-radius: var(--radius-full);
+		background: var(--brand-muted);
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
+		font-variant-numeric: tabular-nums;
+	}
+	.quality {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+	}
+	.quality-dot {
+		flex: none;
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: var(--radius-full);
+		background: var(--brand-primary);
+		box-shadow: var(--shadow-glow-emerald);
+	}
+	.versions {
+		display: grid;
+		gap: var(--space-2);
+		margin-top: var(--space-3);
+		list-style: none;
+	}
+	.version {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		min-height: 3rem;
+		padding: var(--space-2) var(--space-4);
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-lg);
+		background: var(--surface-raised);
+		font-weight: 600;
+	}
+	.version[aria-current='true'] {
+		border-color: var(--brand-border);
+	}
+	.version:hover {
+		border-color: var(--border-strong);
+	}
+	.version-label {
+		flex: 1;
+		min-width: 0;
+		font-variant-numeric: tabular-nums;
+	}
+	.version-tag {
+		padding: 0.15rem 0.5rem;
+		border-radius: var(--radius-full);
+		background: var(--brand-muted);
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+	}
+	.version :global(svg) {
+		flex: none;
+		color: var(--brand-primary);
+	}
+	/* Three secondary buttons in 288 px: the words stay, the icons go. */
+	@media (max-width: 359px) {
+		.local-row :global(.local-more svg) {
+			display: none;
+		}
 	}
 	.no-trailer {
 		grid-column: 1 / -1;
@@ -1135,6 +1334,14 @@
 		.actions :global(.play) {
 			flex: 0 0 auto;
 			min-width: 12rem;
+		}
+		.local-row :global(.local-play) {
+			flex: 0 0 auto;
+			min-width: 14rem;
+		}
+		.local-row :global(.local-more) {
+			flex: 0 0 auto;
+			padding-inline: var(--space-5);
 		}
 		.overview {
 			grid-template-columns: 1.2fr 1fr;

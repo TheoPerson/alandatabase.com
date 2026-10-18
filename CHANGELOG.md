@@ -11,6 +11,8 @@ its launch gates are explicitly verified.
 
 ### Major Updates
 
+- Alan's HQP (HighQualityPlayer): the owner can watch his own films and series from his PC's library, on the PC or on his phone through the private Tailscale address. Original-quality direct stream (untouched HEVC 10-bit/HDR, H.264 and AV1 video) whenever the device decodes it, otherwise a GPU (NVENC) conversion that keeps HDR; Dolby audio kept on Apple devices, AAC elsewhere; audio language, subtitles (with style), quality levels with Auto, chapters, scrub thumbnails, resume synced across devices, up next for series, Picture in Picture, AirPlay and lock-screen controls. Interface "Projection": immersive, island-free on the iPhone 18 Pro Max, Liquid-Glass-style controls with solid fallbacks, gestures (double-tap seek, long-press 2x, swipe down to close), keyboard shortcuts on desktop.
+- Local library: a scanner (pnpm library:scan) identified 359 of 368 files on F:/MOVIES with TMDB, added 118 films to the catalogue and 23 series with their seasons and episodes (database-backed series pages, migrations 0006 and 0007, local database only). The library is only ever read.
 - Browse: /movies is now a filterable catalogue (genre, decade, minimum rating, sort) with a sticky bar of link chips, a live result count, a poster grid with Load more that keeps ?page= in the address, skeletons, and honest empty and unavailable states. /movies/catalog redirects permanently (308) to it with the same filters.
 - Search palette: Ctrl+K, Cmd+K or "/" opens instant film results from the local catalogue with keyboard navigation and recent searches; it replaces the legacy command palette.
 - Movie detail page rebuilt on the kit: cinematic header (backdrop, poster, TMDB title logo, tagline, meta, genre chips), Play trailer / Watchlist / Favourite / Watched / Rate / Share with the real saved state and toasts worded from the server result, five tabs (Overview with key crew and Where to watch FR/US from JustWatch data, Cast & crew, Videos, Details with keyword chips, Saga & similar), a reviews list, and shareable `#tab` links.
@@ -29,6 +31,7 @@ its launch gates are explicitly verified.
 
 ### Minor Updates
 
+- Film pages show Play / Resume with the copy's quality (for example 4K · HDR10 · VF · VO) and a version chooser for the owner; series pages list seasons and episodes with Play; the Library has "On this PC" and "Continue watching"; Home has a Continue watching rail for the owner; the site can be added to the iPhone Home Screen as a full-screen web app.
 - Browse on phones: a Filters button with the number of active filters opens a sheet with Sort, Decade and Rating (Decade and Rating used to sit off-screen); the desktop strip is unchanged and the links still work without JavaScript.
 - Search finds series too: the palette shows a Series group next to Movies and /search lists matching series from the TV chart; the empty state covers both and offers Browse movies and Browse series.
 - Picker rebuilt on the kit: mood chips, filters in a sheet that sends one request, a backdrop result card with reason and signals, a pinned Another button and swipe on phones, ArrowRight for another film; skeleton, empty and error states.
@@ -142,6 +145,7 @@ its launch gates are explicitly verified.
 
 ### Security
 
+- Media routes (/api/media/*, /watch) are owner-only on the server (hooks and every handler), resolve files only from the database by id inside MEDIA_LIBRARY_ROOTS (real-path checked, Windows junctions and drive tricks rejected), spawn ffmpeg with argument arrays only, limit sessions and caches, require same-origin for JSON mutations, and answer 503 on hosts without a library (e.g. Netlify).
 - pnpm audit reports no known vulnerabilities after pinning patched transitive versions (devalue, cookie, source-map-js, brace-expansion, postcss-selector-parser, esbuild).
 - Personal list input is bounded and validated on the server; malformed list and film identifiers are rejected before any database read.
 - The cinema CSP `frame-src` now allows exactly `https://www.youtube-nocookie.com` (previously `'none'`); any incoming `frame-src` is replaced, never merged. `player-safety.test.ts` still scans every source file for iframes and mirrors, allows the embed host string only in the IFrame API adapter and the CSP module, and requires the adapter to build the player through `new YT.Player`.
@@ -210,6 +214,7 @@ its launch gates are explicitly verified.
 
 ### Known Issues
 
+- Alan's HQP is verified in Chrome 152 on Windows and in iPhone-sized emulation only; it has not been tried on a real iPhone (Safari native HLS, HDR on the XDR display, Home Screen mode, glass blur over HDR). Streaming needs the PC running with MEDIA_LIBRARY_ROOTS, FFMPEG_PATH and FFPROBE_PATH set. Three TV-only genres now appear in the /movies genre filter. Nine library files stay unmatched (sports recordings and items TMDB does not list).
 - The browser Sentry DSN is rejected by the ingest endpoint (HTTP 403 on every page); owner configuration.
 - The top bar ⌘K hint sits below 4.5:1 contrast once the bar is in its scrolled state (pre-existing; deferred).
 - The committed TV snapshot carries poster paths that no longer resolve on the TMDB CDN; those cards show the titled fallback until TV becomes database-backed.

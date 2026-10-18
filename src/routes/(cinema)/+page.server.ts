@@ -1,5 +1,8 @@
 import { fail } from '@sveltejs/kit';
 import { hasPermission } from '$lib/server/auth/permissions';
+import { isOwnerUser } from '$lib/server/auth/owner';
+import { toContinueCardItem } from '$lib/server/hqp/launch';
+import { listContinueWatching } from '$lib/server/media/repository';
 import { logServerError } from '$lib/server/security/logging';
 import { toggleWatchlist, getUserWatchlist } from '$lib/server/services/interaction.service';
 import {
@@ -15,6 +18,7 @@ import { getTop50IMDbTVShows } from '$lib/server/services/tv.service';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 // Rails stay short; the library page shows everything.
 const WATCHLIST_RAIL_LIMIT = 20;
+const CONTINUE_RAIL_LIMIT = 12;
 
 function settled<T>(result: PromiseSettledResult<T>, fallback: T, context: string): T {
 	if (result.status === 'fulfilled') return result.value;
@@ -24,17 +28,21 @@ function settled<T>(result: PromiseSettledResult<T>, fallback: T, context: strin
 
 export async function load({ locals }) {
 	const user = hasPermission(locals.user, 'account:access') ? locals.user : null;
+	// The owner's own files: never queried for anyone else.
+	const owner = user && isOwnerUser(user) ? user : null;
 
 	// Every rail is independent: one failing query must not blank the page.
-	const [featured, top10, trending, topRated, genres, tv, watchlist] = await Promise.allSettled([
-		getFeaturedMovies(5),
-		getTrendingMovies(10, 0),
-		getTrendingMovies(12, 10),
-		getTopRatedMovies(12, 0),
-		getGenres(),
-		getTop50IMDbTVShows(),
-		user ? getUserWatchlist(user.id) : Promise.resolve([])
-	]);
+	const [featured, top10, trending, topRated, genres, tv, watchlist, continueRows] =
+		await Promise.allSettled([
+			getFeaturedMovies(5),
+			getTrendingMovies(10, 0),
+			getTrendingMovies(12, 10),
+			getTopRatedMovies(12, 0),
+			getGenres(),
+			getTop50IMDbTVShows(),
+			user ? getUserWatchlist(user.id) : Promise.resolve([]),
+			owner ? listContinueWatching(owner.id, CONTINUE_RAIL_LIMIT) : Promise.resolve([])
+		]);
 
 	const tvItems = settled(tv, [], 'Home TV rail failed')
 		.slice(0, 10)
@@ -63,6 +71,9 @@ export async function load({ locals }) {
 		tv: tvItems,
 		watchlist: watchlistMovies.slice(0, WATCHLIST_RAIL_LIMIT).map(toPosterItem),
 		watchlistIds: watchlistMovies.map((movie) => String(movie.id)),
+		continueWatching: settled(continueRows, [], 'Home continue watching failed').map(
+			toContinueCardItem
+		),
 		catalogueEmpty:
 			featured.status === 'fulfilled' &&
 			featured.value.length === 0 &&

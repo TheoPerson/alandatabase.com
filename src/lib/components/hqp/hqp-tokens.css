@@ -1,0 +1,241 @@
+/* Alan's HQP tokens and materials. Imported once by HqpPlayer.svelte. */
+:where(.hqp) {
+	/* Ink */
+	--hqp-black: rgb(0 0 0);
+	--hqp-ink: var(--content-primary);
+	--hqp-ink-2: rgb(245 247 250 / 0.74);
+	--hqp-ink-3: rgb(245 247 250 / 0.52);
+	--hqp-ink-on-light: rgb(6 8 10);
+	--hqp-cta: rgb(245 247 250);
+
+	/* Accents */
+	--hqp-accent: var(--brand-primary);
+	--hqp-accent-ink: var(--content-inverse);
+	--hqp-accent-soft: rgb(52 211 153 / 0.16);
+	--hqp-accent-rim: rgb(52 211 153 / 0.45);
+	--hqp-warn: var(--color-warning);
+	--hqp-warn-soft: rgb(251 191 36 / 0.16);
+	--hqp-error: var(--color-error);
+	--hqp-error-soft: rgb(251 113 133 / 0.16);
+
+	/* Flat fills (inside glass, never glass on glass) */
+	--hqp-fill-row: rgb(255 255 255 / 0.07);
+	--hqp-fill-selected: rgb(255 255 255 / 0.12);
+	--hqp-fill-press: rgb(255 255 255 / 0.16);
+
+	/* Liquid Glass material */
+	--hqp-glass-tint: rgb(20 22 27 / 0.4);
+	--hqp-glass-tint-thick: rgb(14 16 20 / 0.62);
+	--hqp-glass-tint-clear: rgb(255 255 255 / 0.06);
+	--hqp-glass-sheen: rgb(255 255 255 / 0.11);
+	--hqp-glass-sheen-end: rgb(255 255 255 / 0);
+	--hqp-glass-sheen-clear: rgb(255 255 255 / 0.16);
+	--hqp-glass-sheen-clear-end: rgb(255 255 255 / 0.04);
+	--hqp-glass-rim: rgb(255 255 255 / 0.18);
+	--hqp-glass-spec: rgb(255 255 255 / 0.42);
+	--hqp-glass-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.55);
+	--hqp-glass-shadow-thick: 0 24px 64px -20px rgb(0 0 0 / 0.6);
+	--hqp-glass-filter: blur(22px) saturate(1.35) brightness(0.74);
+	--hqp-glass-filter-thick: blur(34px) saturate(1.5) brightness(0.62);
+	--hqp-glass-filter-clear: blur(14px) saturate(1.15) brightness(0.86);
+	--hqp-glass-solid: rgb(14 16 20 / 0.86);
+	--hqp-glyph-shadow: drop-shadow(0 1px 3px rgb(0 0 0 / 0.35));
+
+	/* Scrims (eased stops, no OLED banding); --hqp-scrim-k boosts them over HDR */
+	--hqp-scrim-k: 1;
+	--hqp-scrim-a: rgb(0 0 0 / calc(0.72 * var(--hqp-scrim-k)));
+	--hqp-scrim-b: rgb(0 0 0 / calc(0.46 * var(--hqp-scrim-k)));
+	--hqp-scrim-c: rgb(0 0 0 / calc(0.2 * var(--hqp-scrim-k)));
+	--hqp-scrim-d: rgb(0 0 0 / calc(0.06 * var(--hqp-scrim-k)));
+	--hqp-scrim-0: rgb(0 0 0 / 0);
+	--hqp-scrim-centre: rgb(0 0 0 / 0.3);
+	--hqp-scrim-centre-mid: rgb(0 0 0 / 0.12);
+	--hqp-dim: rgb(0 0 0 / 0.5);
+	--hqp-ripple: rgb(255 255 255 / 0.13);
+
+	/* Timeline */
+	--hqp-track: rgb(255 255 255 / 0.24);
+	--hqp-buffered: rgb(255 255 255 / 0.46);
+	--hqp-played: var(--hqp-accent);
+	--hqp-thumb: var(--hqp-ink);
+	--hqp-thumb-shadow: 0 1px 6px rgb(0 0 0 / 0.5);
+
+	/* Subtitles */
+	--hqp-sub-white: rgb(245 247 250);
+	--hqp-sub-yellow: rgb(255 226 92);
+	--hqp-sub-shadow:
+		0 0 2px rgb(0 0 0 / 0.9), 0 1px 3px rgb(0 0 0 / 0.75), 0 0 14px rgb(0 0 0 / 0.45);
+	--hqp-sub-outline:
+		-1px -1px 0 rgb(0 0 0 / 0.9), 1px -1px 0 rgb(0 0 0 / 0.9), -1px 1px 0 rgb(0 0 0 / 0.9),
+		1px 1px 0 rgb(0 0 0 / 0.9), 0 0 8px rgb(0 0 0 / 0.5);
+	--hqp-sub-box: rgb(0 0 0 / 0.6);
+	--hqp-sub-lift: 0px;
+
+	/* Hairline: exactly one physical pixel */
+	--hqp-hairline: 1px;
+
+	/* Type */
+	--hqp-font: var(--font-sans);
+	--hqp-caption-font: -apple-system, 'SF Pro Text', var(--font-sans);
+
+	/* Radii (concentric with the ~62pt display corner) */
+	--hqp-r-capsule: 999px;
+	--hqp-r-tag: 6px;
+	--hqp-r-tile: 14px;
+	--hqp-r-card: 24px;
+	--hqp-r-panel: 34px;
+	--hqp-r-sheet-bottom: 54px;
+
+	/* Motion */
+	--hqp-ease-out: cubic-bezier(0.2, 0, 0, 1);
+	--hqp-ease-in: cubic-bezier(0.4, 0, 1, 1);
+	--hqp-spring: linear(
+		0,
+		0.063 2.3%,
+		0.237 5%,
+		0.512 8.7%,
+		0.758 12.8%,
+		0.897 16.6%,
+		0.968 20.6%,
+		1.006 25.3%,
+		1.019 30.6%,
+		1.012 39.4%,
+		1.001 52%,
+		1
+	);
+	--hqp-dur-press: 90ms;
+	--hqp-dur-in: 180ms;
+	--hqp-dur-out: 280ms;
+	--hqp-dur-panel: 460ms;
+	--hqp-dur-fade: 120ms;
+
+	/* Stacking inside the player (the root is isolation: isolate) */
+	--hqp-z-frame: 0;
+	--hqp-z-subs: 1;
+	--hqp-z-dim: 2;
+	--hqp-z-scrim: 3;
+	--hqp-z-transport: 4;
+	--hqp-z-chrome: 5;
+	--hqp-z-panel: 6;
+	--hqp-z-toast: 7;
+	--hqp-z-alert: 8;
+
+	/* Safe areas and island-free edges (section 3) */
+	--hqp-sa-t: env(safe-area-inset-top, 0px);
+	--hqp-sa-r: env(safe-area-inset-right, 0px);
+	--hqp-sa-b: env(safe-area-inset-bottom, 0px);
+	--hqp-sa-l: env(safe-area-inset-left, 0px);
+	--hqp-edge-top: min(var(--hqp-sa-t), 47px);
+	--hqp-edge-x: clamp(16px, max(var(--hqp-sa-l), var(--hqp-sa-r)) - 14px, 48px);
+	--hqp-edge-bottom: calc(max(var(--hqp-sa-b), 14px) + 4px);
+}
+@media (min-resolution: 2dppx) {
+	:where(.hqp) {
+		--hqp-hairline: 0.5px;
+	}
+}
+@media (min-resolution: 3dppx) {
+	:where(.hqp) {
+		--hqp-hairline: 0.34px;
+	}
+}
+@media (orientation: landscape) and (max-height: 499px) {
+	:where(.hqp) {
+		--hqp-sub-lift: 88px;
+	}
+}
+/* "large": the exact complement of phone-portrait and phone-landscape */
+@media (orientation: portrait) and (min-width: 600px),
+	(orientation: landscape) and (min-height: 500px) {
+	:where(.hqp) {
+		--hqp-edge-x: 48px;
+		--hqp-sub-lift: 112px;
+	}
+}
+:where(.hqp[data-hdr='on']) {
+	--hqp-scrim-k: 1.25;
+}
+
+/* Materials */
+:where(.hqp) .hqp-glass {
+	background:
+		linear-gradient(180deg, var(--hqp-glass-sheen), var(--hqp-glass-sheen-end) 55%),
+		var(--hqp-glass-tint);
+	-webkit-backdrop-filter: var(--hqp-glass-filter);
+	backdrop-filter: var(--hqp-glass-filter);
+	box-shadow:
+		inset 0 var(--hqp-hairline) 0 var(--hqp-glass-spec),
+		inset 0 0 0 var(--hqp-hairline) var(--hqp-glass-rim),
+		var(--hqp-glass-shadow);
+}
+:where(.hqp) .hqp-glass--thick {
+	background:
+		linear-gradient(180deg, var(--hqp-glass-sheen), var(--hqp-glass-sheen-end) 40%),
+		var(--hqp-glass-tint-thick);
+	-webkit-backdrop-filter: var(--hqp-glass-filter-thick);
+	backdrop-filter: var(--hqp-glass-filter-thick);
+	box-shadow:
+		inset 0 var(--hqp-hairline) 0 var(--hqp-glass-spec),
+		inset 0 0 0 var(--hqp-hairline) var(--hqp-glass-rim),
+		var(--hqp-glass-shadow-thick);
+}
+:where(.hqp) .hqp-glass--clear {
+	background:
+		linear-gradient(180deg, var(--hqp-glass-sheen-clear), var(--hqp-glass-sheen-clear-end)),
+		var(--hqp-glass-tint-clear);
+	-webkit-backdrop-filter: var(--hqp-glass-filter-clear);
+	backdrop-filter: var(--hqp-glass-filter-clear);
+	box-shadow:
+		inset 0 var(--hqp-hairline) 0 var(--hqp-glass-spec),
+		inset 0 0 0 var(--hqp-hairline) var(--hqp-glass-rim);
+}
+:where(.hqp) .hqp-glass--clear :is(svg) {
+	filter: var(--hqp-glyph-shadow);
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	:where(.hqp) :is(.hqp-glass, .hqp-glass--thick, .hqp-glass--clear) {
+		background: var(--hqp-glass-solid);
+	}
+}
+@media (prefers-reduced-transparency: reduce) {
+	:where(.hqp) :is(.hqp-glass, .hqp-glass--thick, .hqp-glass--clear) {
+		background: var(--hqp-glass-solid);
+		-webkit-backdrop-filter: none;
+		backdrop-filter: none;
+	}
+}
+:where(.hqp[data-lite-glass]) :is(.hqp-glass, .hqp-glass--thick, .hqp-glass--clear) {
+	background: var(--hqp-glass-solid);
+	-webkit-backdrop-filter: none;
+	backdrop-filter: none;
+}
+
+/* Test and demo only: simulated iPhone 18 Pro Max insets (section 3.4) */
+@media (orientation: portrait) {
+	:where(html[data-hqp-sim='iphone18']) .hqp {
+		--hqp-sa-t: 62px;
+		--hqp-sa-r: 0px;
+		--hqp-sa-b: 34px;
+		--hqp-sa-l: 0px;
+	}
+	:where(html[data-hqp-sim='iphone13']) .hqp {
+		--hqp-sa-t: 47px;
+		--hqp-sa-r: 0px;
+		--hqp-sa-b: 34px;
+		--hqp-sa-l: 0px;
+	}
+}
+@media (orientation: landscape) {
+	:where(html[data-hqp-sim='iphone18']) .hqp {
+		--hqp-sa-t: 0px;
+		--hqp-sa-r: 62px;
+		--hqp-sa-b: 21px;
+		--hqp-sa-l: 62px;
+	}
+	:where(html[data-hqp-sim='iphone13']) .hqp {
+		--hqp-sa-t: 0px;
+		--hqp-sa-r: 47px;
+		--hqp-sa-b: 21px;
+		--hqp-sa-l: 47px;
+	}
+}

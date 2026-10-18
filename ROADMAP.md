@@ -227,6 +227,26 @@ Verified in this worktree on 2026-10-15, not merged, not deployed:
   the owner's tailnet address (tailnet only, not public; up only while the PC
   runs). Not a deployment.
 
+## `verified` — Alan's HQP and the owner's local library
+
+Verified in this worktree on 2026-10-18, not merged, not deployed. Spec:
+`docs/superpowers/specs/2026-10-16-alan-hqp-design.md` (direction "Projection",
+chosen by a design panel). Scanner, TV in the database (approved direction of
+2026-10-08), quality-first HLS streaming (direct stream or NVENC), the HQP
+engine and interface, and their integration in film, series, Library and Home.
+
+- Evidence: `pnpm check` 0 errors; ESLint 0 errors; vitest 1148/1148 in 134
+  files; worker tests 124/124; `pnpm build` passes (HQP chunk 23.5 kB gzip,
+  hls.js loaded only when needed); Playwright on the production preview with
+  the library: 136 passed, including the HQP owner journey (play, seek,
+  subtitles, audio and quality switch, progress saved, Continue watching); the
+  three other signed-in specs were blocked by the sign-in rate limit after
+  repeated runs (they passed earlier). Independent reviews (polish, real
+  playback, security and performance): 17 findings to fix, 15 fixed with
+  evidence, 2 partly (scrub layout cost, bundle at its budget).
+- Not verified on a real iPhone. Production database untouched; migrations
+  0006/0007 applied to the local demo database only.
+
 ## `in_progress` — premium experience, slices 6–8
 
 TV landing, Discover, Picker, Library and auth restyles, then the

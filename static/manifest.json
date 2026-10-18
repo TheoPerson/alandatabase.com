@@ -1,17 +1,32 @@
 {
-  "name": "Alan Database",
-  "short_name": "Alan DB",
-  "description": "A focused movie and television catalogue with a protected personal library.",
-  "start_url": "/",
-  "display": "standalone",
+	"id": "/",
+	"name": "Alan's Data Base",
+	"short_name": "Alan DB",
+	"description": "A focused movie and television catalogue with a protected personal library.",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"orientation": "any",
 	"background_color": "#08090b",
 	"theme_color": "#08090b",
-  "orientation": "any",
-  "icons": [
-    {
-      "src": "/favicon.png",
-		"sizes": "64x64",
-      "type": "image/png"
-    }
-  ]
+	"icons": [
+		{
+			"src": "/icons/icon-192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/icon-512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "/icons/icon-maskable-512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable"
+		}
+	]
 }

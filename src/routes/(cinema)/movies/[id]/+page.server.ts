@@ -13,6 +13,8 @@ import {
 	parseInteractionUpdate
 } from '$lib/server/services/interaction.service';
 import { hasPermission } from '$lib/server/auth/permissions';
+import { isOwnerUser } from '$lib/server/auth/owner';
+import { getLocalFilm } from '$lib/server/hqp/local';
 import { groupProviders, keyCrew, pickTrailers } from '$lib/catalogue/detail';
 import { logServerError } from '$lib/server/security/logging';
 import type { Actions, PageServerLoad } from './$types';
@@ -83,6 +85,8 @@ function toNumberOrNull(value: unknown): number | null {
 
 export const load = (async ({ params, locals }) => {
 	const user = hasPermission(locals.user, 'account:access') ? locals.user : null;
+	// The owner's own copies (Alan's HQP): never read for anyone else.
+	const owner = user && isOwnerUser(user) ? user : null;
 
 	let movie: Movie | null;
 	try {
@@ -98,11 +102,12 @@ export const load = (async ({ params, locals }) => {
 		.filter((genre): genre is { id: number; name: string } => Boolean(genre));
 	const primaryGenreId = genres[0]?.id ?? null;
 
-	const [similar, saga, interaction, reviews] = await Promise.allSettled([
+	const [similar, saga, interaction, reviews, local] = await Promise.allSettled([
 		similarMovies(movie.id, primaryGenreId),
 		collectionMovies(movie.collectionId ?? null, movie.id),
 		user ? getUserInteraction(user.id, movie.id) : Promise.resolve(null),
-		getUserMovieReviews(movie.id)
+		getUserMovieReviews(movie.id),
+		owner ? getLocalFilm(owner.id, movie.id) : Promise.resolve(null)
 	]);
 
 	const personal = settled(interaction, null, 'Detail interaction read failed');
@@ -159,7 +164,9 @@ export const load = (async ({ params, locals }) => {
 					rating: toNumberOrNull(personal.rating)
 				}
 			: null,
-		reviews: settled(reviews, [], 'Detail reviews read failed').map(toReviewItem)
+		reviews: settled(reviews, [], 'Detail reviews read failed').map(toReviewItem),
+		// Owner only: Play / Resume, the quality line and the Versions menu. Ids, never paths.
+		local: settled(local, null, 'Detail local files read failed')
 	};
 }) satisfies PageServerLoad;
 

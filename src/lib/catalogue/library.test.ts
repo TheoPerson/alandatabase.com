@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { LIBRARY_TABS, libraryStats, parseLibraryTab } from './library';
+import {
+	LIBRARY_TABS,
+	MAX_LOCAL_PAGES,
+	libraryStats,
+	libraryTabsFor,
+	parseLibraryTab,
+	parseLocalPages
+} from './library';
 
 const film = (runtime: number | null, genres: string[], releaseDate: string | null) => ({
 	runtime,
@@ -52,9 +59,39 @@ describe('libraryStats', () => {
 });
 
 describe('parseLibraryTab', () => {
-	it('accepts the known tabs and falls back to the watchlist', () => {
-		for (const tab of LIBRARY_TABS) expect(parseLibraryTab(tab.key)).toBe(tab.key);
-		expect(parseLibraryTab(null)).toBe('watchlist');
-		expect(parseLibraryTab('admin')).toBe('watchlist');
+	it('accepts the known tabs for the owner and falls back to the watchlist', () => {
+		for (const tab of LIBRARY_TABS) expect(parseLibraryTab(tab.key, true)).toBe(tab.key);
+		expect(parseLibraryTab(null, true)).toBe('watchlist');
+		expect(parseLibraryTab('admin', true)).toBe('watchlist');
+	});
+
+	it('never opens On this PC for anyone but the owner', () => {
+		expect(parseLibraryTab('local')).toBe('watchlist');
+		expect(parseLibraryTab('local', false)).toBe('watchlist');
+		expect(parseLibraryTab('stats', false)).toBe('stats');
+	});
+});
+
+describe('libraryTabsFor', () => {
+	it('hides the local tab from non-owners and shows it first to the owner', () => {
+		expect(libraryTabsFor(false).map((tab) => tab.key)).toEqual([
+			'watchlist',
+			'favorites',
+			'watched',
+			'stats'
+		]);
+		expect(libraryTabsFor(true)[0]).toMatchObject({ key: 'local', label: 'On this PC' });
+	});
+});
+
+describe('parseLocalPages', () => {
+	it('reads 1..max pages and falls back to 1', () => {
+		expect(parseLocalPages(null)).toBe(1);
+		expect(parseLocalPages('3')).toBe(3);
+		expect(parseLocalPages('0')).toBe(1);
+		expect(parseLocalPages('999')).toBe(MAX_LOCAL_PAGES);
+		expect(parseLocalPages('2.5')).toBe(1);
+		expect(parseLocalPages('-1')).toBe(1);
+		expect(parseLocalPages('abc')).toBe(1);
 	});
 });

@@ -1,50 +1,162 @@
 import { error } from '@sveltejs/kit';
 import type { PosterItem } from '$lib/catalogue/items';
-import { getTop50IMDbTVShows } from '$lib/server/services/tv.service';
+import { isOwnerUser } from '$lib/server/auth/owner';
+import { hasPermission } from '$lib/server/auth/permissions';
+import { getLocalShow, type LocalShow } from '$lib/server/hqp/local';
+import { logServerError } from '$lib/server/security/logging';
+import { getTop50IMDbTVShows, type TVShowSummary } from '$lib/server/services/tv.service';
+import { getTvShowByTmdbId, type TvShowDetailView } from '$lib/server/services/tv-db.service';
 import type { PageServerLoad } from './$types';
 
 const SIMILAR_LIMIT = 12;
 
-// Series come from the committed IMDb Top TV snapshot: only the fields it really has are shown.
-export const load = (async ({ params }) => {
-	if (!/^\d{1,9}$/u.test(params.id)) throw error(404, 'Series not found');
-	const shows = await getTop50IMDbTVShows();
-	const show = shows.find((candidate) => candidate.tmdbId === Number(params.id));
-	if (!show) throw error(404, 'Series not found');
+export interface SeriesEpisode {
+	seasonNumber: number;
+	episodeNumber: number;
+	name: string | null;
+	overview: string | null;
+	stillPath: string | null;
+	airDate: string | null;
+	runtime: number | null;
+}
 
-	const genres = new Set(show.genres);
+export interface SeriesSeason {
+	seasonNumber: number;
+	name: string | null;
+	airDate: string | null;
+	episodeCount: number | null;
+	episodes: SeriesEpisode[];
+}
+
+function yearOf(date: string | null | undefined): string | null {
+	return /^(\d{4})/u.exec(date ?? '')?.[1] ?? null;
+}
+
+// "2016–2025" for an ended show, "2016–" while it runs, "2016" for a single year.
+function yearsLabel(show: TvShowDetailView): string | null {
+	const first = yearOf(show.firstAirDate);
+	if (!first) return null;
+	const last = yearOf(show.lastAirDate);
+	const running = show.status === 'Returning Series' || show.status === 'In Production';
+	if (running) return `${first}–`;
+	return last && last !== first ? `${first}–${last}` : first;
+}
+
+// Regular seasons in order, specials last; seasons the catalogue has no episode of are left out.
+function toSeasons(show: TvShowDetailView | null): SeriesSeason[] {
+	if (!show) return [];
+	return show.seasons
+		.filter((season) => season.episodes.length > 0)
+		.sort(
+			(a, b) =>
+				Number(a.seasonNumber === 0) - Number(b.seasonNumber === 0) ||
+				a.seasonNumber - b.seasonNumber
+		)
+		.map((season) => ({
+			seasonNumber: season.seasonNumber,
+			name: season.name,
+			airDate: season.airDate,
+			episodeCount: season.episodeCount,
+			episodes: season.episodes.map((episode) => ({
+				seasonNumber: episode.seasonNumber,
+				episodeNumber: episode.episodeNumber,
+				name: episode.name,
+				overview: episode.overview,
+				stillPath: episode.stillPath,
+				airDate: episode.airDate,
+				runtime: episode.runtime
+			}))
+		}));
+}
+
+function toChartPoster(show: TVShowSummary): PosterItem {
+	return {
+		id: `tv-${show.tmdbId}`,
+		href: `/tv/${show.tmdbId}`,
+		title: show.title,
+		posterPath: show.posterPath,
+		releaseDate: show.firstAirDate,
+		rating: show.imdbRating,
+		genre: show.genres[0] ?? null,
+		ratingSource: 'IMDb'
+	};
+}
+
+/**
+ * A series page reads the catalogue database first (seasons and episodes, kept by the TV ingest)
+ * and the committed IMDb Top TV snapshot (chart rank and IMDb rating). Either one is enough to
+ * show the page. The owner also gets the episodes that are on this PC (Alan's HQP); nobody else's
+ * load touches the media library.
+ */
+export const load = (async ({ params, locals }) => {
+	if (!/^\d{1,9}$/u.test(params.id)) throw error(404, 'Series not found');
+	const tmdbId = Number(params.id);
+	const user = hasPermission(locals.user, 'account:access') ? locals.user : null;
+	const owner = user && isOwnerUser(user) ? user : null;
+
+	const shows = await getTop50IMDbTVShows();
+	const chart = shows.find((candidate) => candidate.tmdbId === tmdbId) ?? null;
+
+	let stored: TvShowDetailView | null = null;
+	try {
+		stored = await getTvShowByTmdbId(tmdbId);
+	} catch (err) {
+		logServerError('Series detail read failed', err);
+		// The chart alone still makes a page; without it there is nothing honest to show.
+		if (!chart) throw error(500, 'Failed to load series details');
+	}
+	if (!chart && !stored) throw error(404, 'Series not found');
+
+	const seasons = toSeasons(stored);
+	let local: LocalShow | null = null;
+	if (owner && seasons.length > 0) {
+		try {
+			local = await getLocalShow(
+				owner.id,
+				(stored?.seasons ?? []).flatMap((season) => season.episodes)
+			);
+		} catch (err) {
+			logServerError('Series local files read failed', err);
+		}
+	}
+
+	const genres = chart?.genres ?? stored?.genres ?? [];
+	const genreSet = new Set(genres);
 	const similar: PosterItem[] = shows
-		.filter((other) => other.tmdbId !== show.tmdbId)
-		.map((other) => ({ other, shared: other.genres.filter((genre) => genres.has(genre)).length }))
+		.filter((other) => other.tmdbId !== tmdbId)
+		.map((other) => ({ other, shared: other.genres.filter((genre) => genreSet.has(genre)).length }))
 		.filter(({ shared }) => shared > 0)
 		.sort((a, b) => b.shared - a.shared || a.other.rank - b.other.rank)
 		.slice(0, SIMILAR_LIMIT)
-		.map(({ other }) => ({
-			id: `tv-${other.tmdbId}`,
-			href: `/tv/${other.tmdbId}`,
-			title: other.title,
-			posterPath: other.posterPath,
-			releaseDate: other.firstAirDate,
-			rating: other.imdbRating,
-			genre: other.genres[0] ?? null,
-			ratingSource: 'IMDb'
-		}));
+		.map(({ other }) => toChartPoster(other));
+
+	const tmdbRating =
+		stored?.voteAverage && stored.voteAverage > 0 && (stored.voteCount ?? 0) > 0
+			? stored.voteAverage
+			: null;
 
 	return {
 		show: {
-			tmdbId: show.tmdbId,
-			imdbId: show.imdbId ?? null,
-			title: show.title,
-			rank: show.rank,
-			rating: show.imdbRating,
-			years: show.year,
-			firstYear: show.firstAirDate,
-			seasons: show.seasonsCount ?? null,
-			posterPath: show.posterPath,
-			backdropPath: show.backdropPath,
-			overview: show.overview,
-			genres: show.genres
+			tmdbId,
+			imdbId: chart?.imdbId ?? stored?.imdbId ?? null,
+			title: chart?.title ?? stored?.name ?? 'Series',
+			rank: chart?.rank ?? null,
+			rating: chart?.imdbRating ?? tmdbRating,
+			ratingSource: chart ? 'IMDb' : tmdbRating !== null ? 'TMDB' : null,
+			years: chart?.year ?? (stored ? yearsLabel(stored) : null),
+			firstYear: yearOf(chart?.firstAirDate) ?? yearOf(stored?.firstAirDate),
+			firstAirDate: stored?.firstAirDate ?? chart?.firstAirDate ?? null,
+			seasons: stored?.numberOfSeasons ?? chart?.seasonsCount ?? null,
+			episodes: stored?.numberOfEpisodes ?? chart?.episodesCount ?? null,
+			status: stored?.status ?? chart?.status ?? null,
+			posterPath: chart?.posterPath ?? stored?.posterPath ?? null,
+			backdropPath: chart?.backdropPath ?? stored?.backdropPath ?? null,
+			overview: chart?.overview || stored?.overview || null,
+			tagline: stored?.tagline ?? null,
+			genres
 		},
+		seasons,
+		local,
 		similar
 	};
 }) satisfies PageServerLoad;

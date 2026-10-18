@@ -10,6 +10,7 @@
 	import PosterCard from '$lib/components/ui/poster-card';
 	import RankedRail from '$lib/components/ui/ranked-rail';
 	import HeroCarousel from '$lib/components/ui/hero-carousel';
+	import ContinueCard from '$lib/components/ui/continue-card';
 	import EmptyState from '$lib/components/ui/EmptyState.svelte';
 	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 	import InfoIcon from 'lucide-svelte/icons/info';
@@ -115,6 +116,17 @@
 			/>
 		{/if}
 	</div>
+{/if}
+
+<!-- Owner only: the loader never reads the library for anyone else, so this stays empty. -->
+{#if data.continueWatching.length > 0}
+	<Section title="Continue watching" eyebrow="On this PC" seeAllHref="/my/films?tab=local">
+		<Rail label="Continue watching">
+			{#each data.continueWatching as item, index (item.fileId)}
+				<ContinueCard {item} eager={index < 2} />
+			{/each}
+		</Rail>
+	</Section>
 {/if}
 
 {#if data.top10.length > 0}
