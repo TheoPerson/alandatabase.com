@@ -31,6 +31,7 @@ its launch gates are explicitly verified.
 
 ### Minor Updates
 
+- Series can be added to the Watchlist and Favourites from their page (the same buttons and confirmations as films; Share becomes an icon on phones so the three stay on one row). Saved series appear after the films in the Library tabs and in their counts.
 - Site-wide responsive and UI/UX polish from a three-critic audit (53 findings across discovery, title and account pages at 440x956 and 956x440 phone, iPad, 1440 and 1920): island-free safe areas in portrait and landscape (gutters honour the side insets, capped at a 13 Pro Max-like 47px), slimmer phone chrome, landscape layouts for hero, Browse (Filters sheet) and the player, a seamless hero vignette, AA contrast over bright artwork, consistent page headers and paddings, film-only genres in film filters, and a tighter HQP portrait layout.
 - Film pages show Play / Resume with the copy's quality (for example 4K · HDR10 · VF · VO) and a version chooser for the owner; series pages list seasons and episodes with Play; the Library has "On this PC" and "Continue watching"; Home has a Continue watching rail for the owner; the site can be added to the iPhone Home Screen as a full-screen web app.
 - Browse on phones: a Filters button with the number of active filters opens a sheet with Sort, Decade and Rating (Decade and Rating used to sit off-screen); the desktop strip is unchanged and the links still work without JavaScript.
@@ -175,6 +176,7 @@ its launch gates are explicitly verified.
 
 ### Technical Improvements
 
+- Additive migration 0008 adds user_show_interactions (watchlist and favourite flags per user and series TMDB id, re-runnable, rollback: drop the table); applied to the local demo database only. A series can be saved only while a standard page shows it (IMDb Top TV snapshot or a standard tv_shows row), so quarantined shows stay unreachable.
 - One tested catalogue service feeds the Browse page and /api/movies/catalog; the decade filter is a sargable date range.
 - Eager code preloading is limited to the primary navigation: first-load JavaScript on Home fell from 665 KB to 374 KB (lab, local preview).
 - Dev and preview servers accept extra hostnames from PREVIEW_ALLOWED_HOSTS, used for a private Tailscale Serve preview.

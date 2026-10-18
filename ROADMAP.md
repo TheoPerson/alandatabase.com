@@ -245,7 +245,7 @@ engine and interface, and their integration in film, series, Library and Home.
   playback, security and performance): 17 findings to fix, 15 fixed with
   evidence, 2 partly (scrub layout cost, bundle at its budget).
 - Not verified on a real iPhone. Production database untouched; migrations
-  0006/0007 applied to the local demo database only.
+  0006/0007/0008 applied to the local demo database only.
 
 ## `in_progress` — premium experience, slices 6–8
 
