@@ -35,28 +35,39 @@ function sourceFiles(directory: string): string[] {
 	});
 }
 
+// The two whole-tree scans read every source file; under a parallel full run they can pass 5 s.
+const SCAN_TIMEOUT_MS = 30_000;
+
 describe('playback source quarantine', () => {
-	it('contains no blocked mirror anywhere in application source', () => {
-		for (const file of sourceFiles(sourceRoot)) {
-			if (file.endsWith('player-safety.test.ts')) continue;
-			const source = readFileSync(file, 'utf8');
-			for (const pattern of blockedPatterns) {
-				expect(source, file).not.toMatch(pattern);
+	it(
+		'contains no blocked mirror anywhere in application source',
+		() => {
+			for (const file of sourceFiles(sourceRoot)) {
+				if (file.endsWith('player-safety.test.ts')) continue;
+				const source = readFileSync(file, 'utf8');
+				for (const pattern of blockedPatterns) {
+					expect(source, file).not.toMatch(pattern);
+				}
 			}
-		}
-	});
+		},
+		SCAN_TIMEOUT_MS
+	);
 
-	it('names the trailer embed host only in the YouTube IFrame API adapter', () => {
-		const allowed = new Set(youtubeHostFiles.map((path) => resolve(sourceRoot, path)));
-		for (const path of allowed) {
-			expect(readFileSync(path, 'utf8'), path).toMatch(youtubeHostPattern);
-		}
+	it(
+		'names the trailer embed host only in the YouTube IFrame API adapter',
+		() => {
+			const allowed = new Set(youtubeHostFiles.map((path) => resolve(sourceRoot, path)));
+			for (const path of allowed) {
+				expect(readFileSync(path, 'utf8'), path).toMatch(youtubeHostPattern);
+			}
 
-		for (const file of sourceFiles(sourceRoot)) {
-			if (allowed.has(file) || /\.test\.ts$/u.test(file)) continue;
-			expect(readFileSync(file, 'utf8'), file).not.toMatch(youtubeHostPattern);
-		}
-	});
+			for (const file of sourceFiles(sourceRoot)) {
+				if (allowed.has(file) || /\.test\.ts$/u.test(file)) continue;
+				expect(readFileSync(file, 'utf8'), file).not.toMatch(youtubeHostPattern);
+			}
+		},
+		SCAN_TIMEOUT_MS
+	);
 
 	it('builds the embed through the official API, never a literal iframe', () => {
 		const adapter = readFileSync(resolve(sourceRoot, youtubeAdapter), 'utf8');
