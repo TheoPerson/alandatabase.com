@@ -148,6 +148,7 @@ its launch gates are explicitly verified.
 
 ### Security
 
+- New operator command `pnpm auth:set-password`: sets a new password for one account at a hidden prompt (never an argument), needs an explicit confirmation variable, revokes every session of that account and writes an audit event. The app and the script share one hashing module.
 - Media routes (/api/media/*, /watch) are owner-only on the server (hooks and every handler), resolve files only from the database by id inside MEDIA_LIBRARY_ROOTS (real-path checked, Windows junctions and drive tricks rejected), spawn ffmpeg with argument arrays only, limit sessions and caches, require same-origin for JSON mutations, and answer 503 on hosts without a library (e.g. Netlify).
 - pnpm audit reports no known vulnerabilities after pinning patched transitive versions (devalue, cookie, source-map-js, brace-expansion, postcss-selector-parser, esbuild).
 - Personal list input is bounded and validated on the server; malformed list and film identifiers are rejected before any database read.
@@ -177,6 +178,7 @@ its launch gates are explicitly verified.
 
 ### Technical Improvements
 
+- docs/RUNBOOK_PRODUCTION_V5.md: the ordered production procedure in French (secret rotation, verified backup, migration state check, migrations 0002 to 0008 with or without Drizzle history, count-only checks, optional library scan, restore).
 - The accessibility suite covers every page type: Discover, Picker, register, disclaimer, the 404 page, a series and a person page, and (with E2E_OWNER_STATE) the Library tabs and lists. A WCAG 2.2 AA sweep of 26 page types on phone and desktop, signed out and as the owner, found 0 violations.
 - Additive migration 0008 adds user_show_interactions (watchlist and favourite flags per user and series TMDB id, re-runnable, rollback: drop the table); applied to the local demo database only. A series can be saved only while a standard page shows it (IMDb Top TV snapshot or a standard tv_shows row), so quarantined shows stay unreachable.
 - One tested catalogue service feeds the Browse page and /api/movies/catalog; the decade filter is a sargable date range.

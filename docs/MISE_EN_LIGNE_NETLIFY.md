@@ -1,5 +1,7 @@
 # Remettre le site en ligne sur Netlify (guide simple)
 
+> **V5 (2026-10-19)** : les migrations vont maintenant jusqu’à `0008`, et l’ordre complet (secrets, sauvegarde, migrations, vérifications) est dans `docs/RUNBOOK_PRODUCTION_V5.md`. Commencez par celui-là.
+
 Mis à jour le 2026-10-12. Ce guide est pour le propriétaire du site. Rien de ce qui suit n'a été fait
 automatiquement : le code est prêt, mais la mise en ligne, la base de données et le DNS sont à vous.
 

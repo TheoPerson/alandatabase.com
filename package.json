@@ -29,6 +29,7 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:studio": "drizzle-kit studio",
 		"auth:bootstrap-owner": "tsx scripts/bootstrap-owner-role.ts",
+		"auth:set-password": "tsx scripts/set-user-password.ts",
 		"library:scan": "pnpm --dir worker library:scan",
 		"library:index": "pnpm --dir worker library:index",
 		"monitor": "tsx scripts/monitor.ts",

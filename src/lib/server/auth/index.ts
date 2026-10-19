@@ -1,12 +1,10 @@
-import { createHash, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
-import { promisify } from 'node:util';
+import { createHash, randomBytes } from 'node:crypto';
 import { db } from '../db/index.js';
 import { users, sessions } from '../db/schema.js';
 import { and, desc, eq, gt, isNull, ne } from 'drizzle-orm';
 import { parseUserRole } from './permissions';
 import { CANONICAL_HOST, isProductionHostname, normalizeHostname } from '$lib/host-routing';
-
-const scryptAsync = promisify(scrypt);
+export { hashPassword, verifyPassword } from './password-hash';
 
 const SESSION_EXPIRY_DAYS = 30;
 function isSharedCookieHost(hostname: string): boolean {
@@ -40,24 +38,6 @@ export function sessionCookieOptions(url: URL) {
 export function sessionCookieDeleteOptions(url: URL) {
 	const { path, domain, httpOnly, sameSite, secure } = sessionCookieOptions(url);
 	return { path, domain, httpOnly, sameSite, secure };
-}
-
-// Password Hashing with Scrypt (Salt + Hash)
-export async function hashPassword(password: string): Promise<string> {
-	const salt = randomBytes(16).toString('hex');
-	const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-	return `${salt}:${buf.toString('hex')}`;
-}
-
-export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
-	const [salt, keyHex] = storedHash.split(':');
-	if (!salt || !keyHex || !/^[a-f0-9]{128}$/i.test(keyHex)) return false;
-
-	const keyBuf = Buffer.from(keyHex, 'hex');
-	const derivedBuf = (await scryptAsync(password, salt, 64)) as Buffer;
-
-	if (keyBuf.length !== derivedBuf.length) return false;
-	return timingSafeEqual(keyBuf, derivedBuf);
 }
 
 // Session Token Management
