@@ -304,6 +304,7 @@ Implementation may proceed autonomously only within the approved item and accept
 2. **Operational abuse and privacy controls**
    - Verify rotation of previously exposed credentials and invalidate affected sessions where required.
    - Disable or owner-gate/redact the global telemetry event stream.
+     Done locally (2026-10-19): GET /api/telemetry/events answers 410 and the route is owner-only (401 for visitors).
    - Keep Gemini unavailable until explicit enablement, timeout,
      quota/rate/concurrency, consent, retention, and deletion controls exist.
    - Complete production cookie/CSRF verification and session-revocation operations across supported hosts.
@@ -316,6 +317,7 @@ Implementation may proceed autonomously only within the approved item and accept
 
 4. **Trustworthy quality baseline**
    - Add authenticated-owner Playwright fixtures without committing credentials.
+     Done: E2E_OWNER_STATE (a storage state file outside the repository) drives the owner HQP, Library, lists and accessibility specs.
    - Expand mobile, keyboard, accessibility, and clean-checkout release coverage.
 
 ## `proposed` — P1 usable private cinema loop
