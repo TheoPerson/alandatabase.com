@@ -177,6 +177,7 @@ its launch gates are explicitly verified.
 
 ### Technical Improvements
 
+- The accessibility suite covers every page type: Discover, Picker, register, disclaimer, the 404 page, a series and a person page, and (with E2E_OWNER_STATE) the Library tabs and lists. A WCAG 2.2 AA sweep of 26 page types on phone and desktop, signed out and as the owner, found 0 violations.
 - Additive migration 0008 adds user_show_interactions (watchlist and favourite flags per user and series TMDB id, re-runnable, rollback: drop the table); applied to the local demo database only. A series can be saved only while a standard page shows it (IMDb Top TV snapshot or a standard tv_shows row), so quarantined shows stay unreachable.
 - One tested catalogue service feeds the Browse page and /api/movies/catalog; the decade filter is a sargable date range.
 - Eager code preloading is limited to the primary navigation: first-load JavaScript on Home fell from 665 KB to 374 KB (lab, local preview).

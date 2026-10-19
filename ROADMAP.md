@@ -247,18 +247,23 @@ engine and interface, and their integration in film, series, Library and Home.
 - Not verified on a real iPhone. Production database untouched; migrations
   0006/0007/0008 applied to the local demo database only.
 
-## `in_progress` — premium experience, slices 6–8
+## `verified` — premium experience, slices 6–8
 
 TV landing, Discover, Picker, Library and auth restyles, then the
-performance/accessibility/visual pass. Audit dimensions still to run:
-accessibility, real-browser sweep and product journeys.
+performance/accessibility/visual pass. Evidence (2026-10-19, local preview with
+the media library): an axe WCAG 2.2 AA sweep of 26 page types (public, detail,
+owner Library, lists and the HQP player) at 440x956 and 1440x900, signed out
+and as the owner, found 0 violations; tests/accessibility.e2e.ts now pins 22
+of them (owner pages with E2E_OWNER_STATE). The real-browser sweep was the
+three-critic responsive pass (53 findings fixed); the owner journeys (play,
+resume, subtitles, audio, quality, watchlist for films and series) pass in
+tests/hqp.e2e.ts and in scripted browser runs. Not verified on a real iPhone.
 
-## `proposed` — owner media streaming
+## `verified` — owner media streaming
 
-The Product Lead's own films streamed through the slice 4 player (a new source
-adapter next to YouTube): progress, resume and subtitles. Needs the storage
-location of the films (folder, NAS, or a Jellyfin/Plex server) and approval.
-Third-party streaming mirrors stay out of scope.
+Delivered as Alan’s HQP (see the section above): the owner’s F:/MOVIES films
+and series stream privately with progress, resume, subtitles, audio and quality
+choice. Third-party streaming mirrors stay out of scope.
 
 ## `proposed` — picker follow-ups
 
