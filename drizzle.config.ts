@@ -7,5 +7,6 @@ export default defineConfig({
 	dialect: 'postgresql',
 	dbCredentials: { url: process.env.DATABASE_URL },
 	verbose: true,
-	strict: true
+	// Interactive confirmation locally; CI has no TTY to answer it
+	strict: !process.env.CI
 });
