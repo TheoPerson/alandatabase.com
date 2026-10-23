@@ -284,7 +284,7 @@
 					<span class="metric-value green">{dbLatency}ms <span class="unit">latency</span></span>
 				</div>
 				<div class="metric-item">
-					<span class="metric-label">Vercel SSR Function</span>
+					<span class="metric-label">Netlify SSR Function</span>
 					<span class="metric-value green">200 OK <span class="unit">healthy</span></span>
 				</div>
 				<div class="metric-item">
@@ -595,7 +595,7 @@
 	.version-tag {
 		font-size: 0.7rem;
 		font-weight: 700;
-		color: #71717a;
+		color: #8e8e99;
 		padding: 0.15rem 0.5rem;
 		background: rgba(255, 255, 255, 0.05);
 		border-radius: 6px;
@@ -711,7 +711,7 @@
 		font-size: 0.75rem;
 		font-weight: 800;
 		letter-spacing: 0.08em;
-		color: #71717a;
+		color: #8e8e99;
 	}
 
 	.status-live {
@@ -737,7 +737,7 @@
 
 	.metric-label {
 		font-size: 0.75rem;
-		color: #71717a;
+		color: #8e8e99;
 	}
 
 	.metric-value {
@@ -758,7 +758,7 @@
 	.unit {
 		font-size: 0.7rem;
 		font-weight: 500;
-		color: #71717a;
+		color: #8e8e99;
 	}
 
 	.telemetry-actions {
@@ -853,7 +853,7 @@
 	}
 
 	.clear-btn {
-		color: #71717a;
+		color: #8e8e99;
 		font-size: 0.8rem;
 	}
 
@@ -887,7 +887,7 @@
 		font-size: 0.75rem;
 		font-weight: 800;
 		letter-spacing: 0.08em;
-		color: #71717a;
+		color: #8e8e99;
 	}
 
 	.engines-grid {
@@ -941,12 +941,12 @@
 
 	.engine-desc {
 		font-size: 0.8rem;
-		color: #71717a;
+		color: #8e8e99;
 	}
 
 	.engine-arrow {
 		font-size: 1.1rem;
-		color: #71717a;
+		color: #8e8e99;
 		transition: transform 120ms ease;
 	}
 
@@ -996,7 +996,7 @@
 
 	.tool-desc {
 		font-size: 0.75rem;
-		color: #71717a;
+		color: #8e8e99;
 	}
 
 	/* LIVE SEARCH SIDE-PANEL DRAWER */
@@ -1050,7 +1050,7 @@
 
 	.drawer-close-btn {
 		font-size: 1.1rem;
-		color: #71717a;
+		color: #8e8e99;
 		transition: color 120ms ease;
 	}
 
@@ -1076,7 +1076,7 @@
 	.count-tag {
 		font-size: 0.7rem;
 		font-weight: 700;
-		color: #71717a;
+		color: #8e8e99;
 		background: rgba(255, 255, 255, 0.06);
 		padding: 0.15rem 0.45rem;
 		border-radius: 4px;
@@ -1126,7 +1126,7 @@
 
 	.item-desc {
 		font-size: 0.75rem;
-		color: #71717a;
+		color: #8e8e99;
 	}
 
 	.item-category {
@@ -1145,7 +1145,7 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 0.75rem;
-		color: #71717a;
+		color: #8e8e99;
 		font-size: 0.85rem;
 	}
 

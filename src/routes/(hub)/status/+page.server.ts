@@ -13,8 +13,9 @@ export const load: PageServerLoad = async () => {
 		await db.execute(sql`SELECT 1`);
 		dbLatencyMs = Date.now() - dbStart;
 		dbStatus = 'ONLINE';
-	} catch (err: any) {
-		dbStatus = `ERROR: ${err.message || 'Connection failed'}`;
+	} catch (err) {
+		console.error('Status check: database ping failed', err);
+		dbStatus = 'ERROR: Connection failed';
 	}
 
 	// 2. TMDB API Ping
@@ -32,8 +33,9 @@ export const load: PageServerLoad = async () => {
 				tmdbStatus = 'ONLINE';
 			}
 		}
-	} catch (err: any) {
-		tmdbStatus = `ERROR: ${err.message || 'API request failed'}`;
+	} catch (err) {
+		console.error('Status check: TMDB ping failed', err);
+		tmdbStatus = 'ERROR: API request failed';
 	}
 
 	const totalServerLatencyMs = Date.now() - startTime;
