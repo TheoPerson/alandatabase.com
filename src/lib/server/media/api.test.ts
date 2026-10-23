@@ -191,8 +191,7 @@ describe('owner-only access', () => {
 	it('refuses a cache folder inside the library, equal to it or above it', async () => {
 		// Case and trailing-dot spellings only alias the library on Windows' case-insensitive file
 		// system; on POSIX they name a different folder, which is not a conflict.
-		const aliases =
-			process.platform === 'win32' ? [library.toUpperCase(), `${library}.`] : [];
+		const aliases = process.platform === 'win32' ? [library.toUpperCase(), `${library}.`] : [];
 		for (const dir of [
 			join(library, 'cache'),
 			library,
