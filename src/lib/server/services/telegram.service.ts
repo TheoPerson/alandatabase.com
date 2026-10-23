@@ -9,6 +9,13 @@ interface TelegramSendOptions {
 	disableWebPagePreview?: boolean;
 }
 
+// Values interpolated into parse_mode=HTML cards must be escaped, otherwise Telegram rejects (or mis-renders) the message
+const esc = (value: unknown) =>
+	String(value ?? '')
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;');
+
 const sentDedupeCache = new Map<string, number>();
 const DEDUPE_TTL_MS = 15 * 60 * 1000; // 15 minutes TTL
 
@@ -16,9 +23,8 @@ export async function sendTelegramCard(
 	text: string,
 	options: TelegramSendOptions = {}
 ): Promise<boolean> {
-	const botToken =
-		process.env.TELEGRAM_BOT_TOKEN || '8811353440:AAEzLAMSAVKEz6i9mYX6nfV--NrPAnVxGqE';
-	let chatId = process.env.TELEGRAM_CHAT_ID || '1147966448';
+	const botToken = process.env.TELEGRAM_BOT_TOKEN;
+	let chatId = process.env.TELEGRAM_CHAT_ID;
 	let topicId: number | undefined = undefined;
 
 	if (!botToken || !chatId || botToken === 'YOUR_TELEGRAM_BOT_TOKEN') {
@@ -115,17 +121,16 @@ export async function notifyCriticalError(context: string, error: any) {
 	telemetryBus.emit({
 		level: 'ERROR',
 		source: 'SERVER_EXCEPTION',
-		message: `${context} -> ${errorMsg.slice(0, 150)}`,
-		metadata: { context, error: errorMsg }
+		message: `${context} -> server exception (details sent to the admin channel)`
 	});
 
 	const text =
 		`🔴 <b>[CORE ENGINE] CRITICAL RUNTIME EXCEPTION</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`⚡ <b>Context Scope:</b> <code>${context}</code>\n` +
-		`💥 <b>Stack / Trace:</b>\n<code>${errorMsg.slice(0, 350)}</code>\n` +
+		`⚡ <b>Context Scope:</b> <code>${esc(context)}</code>\n` +
+		`💥 <b>Stack / Trace:</b>\n<code>${esc(errorMsg.slice(0, 350))}</code>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🛠️ <b>Runtime Node:</b> <code>Vercel Serverless (Node.js / ESM)</code>\n` +
+		`🛠️ <b>Runtime Node:</b> <code>Netlify Functions (Node.js / ESM)</code>\n` +
 		`⏱️ <b>UTC Timestamp:</b> <code>${timestamp}</code>`;
 
 	return sendTelegramCard(text, {
@@ -185,7 +190,7 @@ export async function notifyMovieIngested(
 	const text =
 		`🟣 <b>[INGESTION PIPELINE] TMDB ASSET INGEST COMPLETE</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🎬 <b>Entity:</b> <b>${title}</b> ${year ? `(${year})` : ''}\n` +
+		`🎬 <b>Entity:</b> <b>${esc(title)}</b> ${year ? `(${year})` : ''}\n` +
 		`🆔 <b>TMDB UID:</b> <code>#${tmdbId || 'N/A'}</code>\n` +
 		`📦 <b>Pipeline Sync:</b> <code>Cast, Crew, Trailers & HD Streams</code>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
@@ -215,15 +220,15 @@ export async function notifyUserRegistered(username: string, email?: string) {
 	telemetryBus.emit({
 		level: 'SUCCESS',
 		source: 'AUTH_RADAR',
-		message: `User Registered: @${username} (${email || 'no-email'})`
+		message: `User Registered: @${username}`
 	});
 
 	const text =
 		`👤 <b>[AUTH RADAR] IDENTITY PROVISIONED</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🏷️ <b>Username:</b> <code>${username}</code>\n` +
-		`${email ? `📧 <b>Email Identity:</b> <code>${email}</code>\n` : ''}` +
-		`🛡️ <b>Auth Protocol:</b> <code>Argon2id Hash + Secure Session Vault</code>\n` +
+		`🏷️ <b>Username:</b> <code>${esc(username)}</code>\n` +
+		`${email ? `📧 <b>Email Identity:</b> <code>${esc(email)}</code>\n` : ''}` +
+		`🛡️ <b>Auth Protocol:</b> <code>scrypt Hash + Secure Session Vault</code>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
 		`⚡ <b>Session Status:</b> <code>Active / Authenticated</code>\n` +
 		`⏱️ <b>UTC Timestamp:</b> <code>${timestamp}</code>`;
@@ -240,14 +245,14 @@ export async function notifyUserLogin(username: string, ip?: string) {
 	telemetryBus.emit({
 		level: 'INFO',
 		source: 'AUTH_RADAR',
-		message: `User Session Started: @${username} [${ip || 'unknown-ip'}]`
+		message: `User Session Started: @${username}`
 	});
 
 	const text =
 		`🔑 <b>[AUTH RADAR] SESSION ESTABLISHED</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🏷️ <b>Username:</b> <code>${username}</code>\n` +
-		`${ip ? `🌐 <b>Client Origin:</b> <code>${ip}</code>\n` : ''}` +
+		`🏷️ <b>Username:</b> <code>${esc(username)}</code>\n` +
+		`${ip ? `🌐 <b>Client Origin:</b> <code>${esc(ip)}</code>\n` : ''}` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
 		`⏱️ <b>UTC Timestamp:</b> <code>${timestamp}</code>`;
 
@@ -279,9 +284,9 @@ export async function notifyMovieStreamed(
 	const text =
 		`🟢 <b>[STREAM PIPELINE] PLAYBACK SESSION INITIALIZED</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🎬 <b>Entity:</b> <b>${movieTitle}</b>\n` +
-		`📡 <b>Mirror Gateway:</b> <code>${serverName || 'Vidzy HD (HLS / m3u8)'}</code>\n` +
-		`👤 <b>Viewer:</b> <code>${user || 'Anonymous / Guest'}</code>\n` +
+		`🎬 <b>Entity:</b> <b>${esc(movieTitle)}</b>\n` +
+		`📡 <b>Mirror Gateway:</b> <code>${esc(serverName || 'Vidzy HD (HLS / m3u8)')}</code>\n` +
+		`👤 <b>Viewer:</b> <code>${esc(user || 'Anonymous / Guest')}</code>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
 		`⚡ <b>Protocol:</b> <code>Multi-Server Embed Sandbox (1080p Ultra HD)</code>\n` +
 		`⏱️ <b>UTC Timestamp:</b> <code>${timestamp}</code>`;
@@ -305,7 +310,7 @@ export async function notifySearchPerformed(query: string, resultCount: number) 
 	const text =
 		`🔍 <b>[TELEMETRY] SEARCH QUERY VECTOR DISPATCHED</b>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-		`🔎 <b>Query String:</b> <code>"${query}"</code>\n` +
+		`🔎 <b>Query String:</b> <code>"${esc(query)}"</code>\n` +
 		`📊 <b>Relevance Matches:</b> <code>${resultCount} titles resolved</code>\n` +
 		`⚡ <b>Engine:</b> <code>Dual-Source Hybrid (PostgreSQL + TMDB v3 API)</code>\n` +
 		`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +

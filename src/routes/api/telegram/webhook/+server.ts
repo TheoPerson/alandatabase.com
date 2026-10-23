@@ -2,13 +2,15 @@ import { json } from '@sveltejs/kit';
 import { TMDBClient } from '$lib/server/tmdb';
 import { ingestMovie } from '$lib/server/tmdb';
 
+const escapeHtml = (value: string) =>
+	value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 export async function POST({ request }) {
+	// Fail closed: without a configured secret anyone could drive the bot and trigger ingestion
 	const secretToken = process.env.TELEGRAM_WEBHOOK_SECRET;
-	if (secretToken) {
-		const incomingSecret = request.headers.get('x-telegram-bot-api-secret-token');
-		if (incomingSecret !== secretToken) {
-			return json({ error: 'Unauthorized webhook request' }, { status: 401 });
-		}
+	const incomingSecret = request.headers.get('x-telegram-bot-api-secret-token');
+	if (!secretToken || incomingSecret !== secretToken) {
+		return json({ error: 'Unauthorized webhook request' }, { status: 401 });
 	}
 
 	const body = await request.json().catch(() => null);
@@ -24,8 +26,10 @@ export async function POST({ request }) {
 		return json({ ok: true });
 	}
 
-	const botToken =
-		process.env.TELEGRAM_BOT_TOKEN || '8811353440:AAEzLAMSAVKEz6i9mYX6nfV--NrPAnVxGqE';
+	const botToken = process.env.TELEGRAM_BOT_TOKEN;
+	if (!botToken) {
+		return json({ ok: true });
+	}
 	const sendReply = async (
 		replyText: string,
 		options: { photoUrl?: string | null; buttons?: any[] } = {}
@@ -84,7 +88,7 @@ export async function POST({ request }) {
 
 		if (!topMovie) {
 			await sendReply(
-				`🔍 <b>No matching film found for:</b> "<code>${query}</code>"\n\n` +
+				`🔍 <b>No matching film found for:</b> "<code>${escapeHtml(query)}</code>"\n\n` +
 					`Try checking spelling or type another movie title.`
 			);
 			return json({ ok: true });
@@ -103,9 +107,9 @@ export async function POST({ request }) {
 		const replyCard =
 			`🎬 <b>MOVIE READY TO STREAM!</b>\n` +
 			`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-			`🍿 <b>${topMovie.title}</b> (${releaseYear})\n` +
+			`🍿 <b>${escapeHtml(topMovie.title)}</b> (${releaseYear})\n` +
 			`⭐ <b>IMDb / TMDB:</b> <code>★ ${rating}/10</code>\n` +
-			`📝 <i>${(topMovie.overview || 'No overview available.').slice(0, 220)}...</i>\n` +
+			`📝 <i>${escapeHtml((topMovie.overview || 'No overview available.').slice(0, 220))}...</i>\n` +
 			`━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
 			`⚡ <b>Status:</b> Ingested & Stream Ready (Vidzy HD / 1080p)`;
 
@@ -118,7 +122,8 @@ export async function POST({ request }) {
 
 		await sendReply(replyCard, { photoUrl: posterUrl, buttons });
 	} catch (err) {
-		await sendReply(`⚠️ <b>Error processing movie request:</b> <code>${String(err)}</code>`);
+		console.error('Telegram webhook error:', err);
+		await sendReply(`⚠️ <b>Error processing movie request.</b> Please try again later.`);
 	}
 
 	return json({ ok: true });
