@@ -46,7 +46,7 @@
 
 ### Prerequisites
 
-- Node.js (v20+)
+- Node.js (v22, as on Netlify) and pnpm
 - PostgreSQL Database URL (e.g., Neon or local pg)
 - TMDB API Key
 
@@ -55,33 +55,36 @@
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/TheoPerson/the-alans-data-base.git
-   cd the-alans-data-base
+   git clone https://github.com/TheoPerson/alandatabase.com.git
+   cd alandatabase.com
    ```
 
 2. **Install dependencies**
 
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. **Environment Setup**
-   Create a `.env` file at the root of the project:
+   Copy `.env.example` to `.env` and fill in at least:
 
    ```env
    DATABASE_URL="postgres://user:password@host:port/db"
-   VITE_TMDB_API_KEY="your_tmdb_api_key"
+   TMDB_API_KEY="your_tmdb_api_key"
+   ADMIN_EMAILS="you@example.com" # who may edit/merge catalog entries
    ```
+
+   The same variables must be set in the Netlify site settings for production.
 
 4. **Initialize Database**
 
    ```bash
-   npm run db:push
+   pnpm db:push
    ```
 
 5. **Start Development Server**
    ```bash
-   npm run dev
+   pnpm dev
    ```
    _Your personal cinema OS will be running on `http://localhost:5173`._
 
@@ -90,7 +93,7 @@
 Run the critical unit testing suite:
 
 ```bash
-npm run test:unit
+pnpm test:unit -- --run
 ```
 
 ## 🗺️ Roadmap (V3)
