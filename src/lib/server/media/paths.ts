@@ -26,6 +26,9 @@ export function comparablePath(path: string, platform: NodeJS.Platform): string 
 	let value = path;
 	if (platform === 'win32') {
 		value = value.replace(/^\\\\\?\\(?!UNC\\)/u, '').replace(/^\\\\\?\\UNC\\/u, '\\\\');
+		// A bare drive ("F:") means the current folder on that drive, which cannot be resolved
+		// off Windows. Treat it as the drive root: the widest folder it can stand for.
+		if (/^[a-zA-Z]:$/u.test(value)) value += '\\';
 	}
 	let resolved = p.resolve(value);
 	if (resolved.length > p.parse(resolved).root.length) {
