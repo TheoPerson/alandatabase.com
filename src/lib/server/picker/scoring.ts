@@ -5,7 +5,7 @@ import type {
 	RecommendationMode,
 	ScoredCandidate,
 	UserTasteProfile
-} from './types';
+} from '$lib/picker/types';
 
 interface ScoringContext {
 	tasteProfile: UserTasteProfile;

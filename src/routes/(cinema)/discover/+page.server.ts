@@ -1,77 +1,137 @@
 import { db } from '$lib/server/db';
 import { movies, movieGenres } from '$lib/server/db/schema';
-import { desc, eq, and, sql, inArray } from 'drizzle-orm';
-import { applyLocalOverrides } from '$lib/server/services/movie.service';
+import { and, desc, eq, exists, inArray, sql } from 'drizzle-orm';
+import type { HeroItem, PosterItem } from '$lib/catalogue/items';
+import { browseHref, DEFAULT_SORT } from '$lib/catalogue/browse';
+import { prepareStandardMovies } from '$lib/server/queries/local-movie-search';
+import { standardMovieVisibilityWhere } from '$lib/server/policies/movie-visibility';
+import { listCatalogue } from '$lib/server/services/catalogue.service';
+import { toHeroItem, toPosterItem } from '$lib/server/services/movie.service';
+import { logServerError } from '$lib/server/security/logging';
+import type { PageServerLoad } from './$types';
 
-// Helper to fetch movies by vibe (genre IDs)
-async function getVibeMovies(genreIds: number[], limit = 12) {
-	// First get movie IDs that match these genres
-	const genreMovieIds = await db
-		.select({ movieId: movieGenres.movieId })
-		.from(movieGenres)
-		.where(inArray(movieGenres.genreId, genreIds))
-		.limit(100); // Get a pool to sort
+const RAIL_LIMIT = 12;
 
-	if (genreMovieIds.length === 0) return [];
+// Moods are fixed genre blends; the first genre is where "See all" leads in Browse.
+const MOODS = [
+	{
+		key: 'mind-bending',
+		title: 'Mind-bending',
+		subtitle: 'Science fiction, thrillers and mysteries',
+		genres: [878, 53, 9648]
+	},
+	{
+		key: 'late-night',
+		title: 'Late-night comfort',
+		subtitle: 'Comedy, romance and music',
+		genres: [35, 10749, 10402]
+	},
+	{
+		key: 'adrenaline',
+		title: 'Adrenaline',
+		subtitle: 'Action, crime and war',
+		genres: [28, 80, 10752]
+	},
+	{
+		key: 'family',
+		title: 'Family night',
+		subtitle: 'Animation, family and adventure',
+		genres: [16, 10751, 12]
+	}
+] as const;
 
-	const ids = genreMovieIds.map((g) => g.movieId);
+const DECADES = [2010, 2000, 1990, 1980] as const;
 
-	const vibeMovies = await db.query.movies.findMany({
-		where: and(inArray(movies.id, ids), eq(movies.adult, false)),
-		orderBy: [desc(movies.popularity)], // Sort by popularity for discovery
-		limit,
-		with: { genres: { with: { genre: true } } }
+async function moodMovies(genreIds: readonly number[]) {
+	const rows = await db.query.movies.findMany({
+		where: and(
+			standardMovieVisibilityWhere(),
+			exists(
+				db
+					.select({ movieId: movieGenres.movieId })
+					.from(movieGenres)
+					.where(
+						and(eq(movieGenres.movieId, movies.id), inArray(movieGenres.genreId, [...genreIds]))
+					)
+			)
+		),
+		orderBy: [desc(movies.popularity), desc(movies.id)],
+		limit: RAIL_LIMIT,
+		with: { keywords: true, genres: { with: { genre: true } } }
 	});
-
-	return vibeMovies.map(applyLocalOverrides);
+	return prepareStandardMovies(rows);
 }
 
-export async function load({ locals }) {
-	// 1. Daily Masterpiece (Random top rated movie)
-	// For now, we take one of the highest rated movies with high vote count
-	const masterpieces = await db.query.movies.findMany({
-		where: and(sql`${movies.voteCount} > 1000`, eq(movies.adult, false)),
-		orderBy: [desc(movies.voteAverage)],
+async function wellRated() {
+	const rows = await db.query.movies.findMany({
+		where: and(sql`${movies.voteCount} > 1000`, standardMovieVisibilityWhere()),
+		orderBy: [desc(movies.voteAverage), desc(movies.id)],
 		limit: 10,
-		with: { genres: { with: { genre: true } } }
+		with: { keywords: true, genres: { with: { genre: true } } }
 	});
-	// Pick a random one for the daily masterpiece
-	const dailyMasterpiece =
-		masterpieces.length > 0
-			? applyLocalOverrides(masterpieces[Math.floor(Math.random() * masterpieces.length)])
-			: null;
+	return prepareStandardMovies(rows);
+}
 
-	// 2. Vibes Clusters
-	// Sci-Fi (878), Thriller (53), Mystery (964)
-	const mindBending = await getVibeMovies([878, 53, 964]);
+function settled<T>(result: PromiseSettledResult<T>, fallback: T, context: string): T {
+	if (result.status === 'fulfilled') return result.value;
+	logServerError(context, result.reason);
+	return fallback;
+}
 
-	// Comedy (35), Romance (10749), Music (10402)
-	const lateNightChill = await getVibeMovies([35, 10749, 10402]);
+// Every rail is independent: one failing query empties that rail, never the page.
+export const load = (async () => {
+	const [pickResult, ...rest] = await Promise.allSettled([
+		wellRated(),
+		...MOODS.map((mood) => moodMovies(mood.genres)),
+		...DECADES.map((decade) =>
+			listCatalogue({
+				page: 1,
+				limit: RAIL_LIMIT,
+				genreId: null,
+				decade,
+				minRating: null,
+				sortBy: 'rating'
+			}).then((result) => result.movies)
+		)
+	]);
+	const moodResults = rest.slice(0, MOODS.length);
+	const decadeResults = rest.slice(MOODS.length);
 
-	// Action (28), Crime (80), War (10752)
-	const adrenalineRush = await getVibeMovies([28, 80, 10752]);
+	// Stable for the whole UTC day so the pick does not change on refresh.
+	const candidates = settled(pickResult, [], 'Discover pick failed');
+	const utcDay = Math.floor(Date.now() / 86_400_000);
+	const pick: HeroItem | null = candidates.length
+		? toHeroItem(candidates[utcDay % candidates.length])
+		: null;
 
-	// 3. Custom Private Cinema (Hidden Gems & Adult)
-	let customCinema: any[] = [];
-	const isAdultEnabled = locals?.user?.settings?.adultEnabled === true;
+	const moods = MOODS.map((mood, index) => ({
+		key: mood.key,
+		title: mood.title,
+		subtitle: mood.subtitle,
+		seeAllHref: browseHref({
+			genreId: mood.genres[0],
+			decade: null,
+			minRating: null,
+			sortBy: DEFAULT_SORT
+		}),
+		items: settled(moodResults[index], [], `Discover ${mood.key} rail failed`).map(
+			toPosterItem
+		) as PosterItem[]
+	})).filter((rail) => rail.items.length > 0);
 
-	if (isAdultEnabled) {
-		const rawCustom = await db.query.movies.findMany({
-			where: sql`${movies.tmdbId} < 0 OR ${movies.adult} = true`,
-			orderBy: [desc(movies.createdAt)],
-			limit: 12,
-			with: { genres: { with: { genre: true } } }
-		});
-		customCinema = rawCustom.map(applyLocalOverrides);
-	}
+	const decades = DECADES.map((decade, index) => ({
+		decade,
+		title: `Best of the ${decade}s`,
+		seeAllHref: browseHref({ genreId: null, decade, minRating: null, sortBy: 'rating' }),
+		items: settled(decadeResults[index], [], `Discover ${decade}s rail failed`).map(
+			toPosterItem
+		) as PosterItem[]
+	})).filter((rail) => rail.items.length > 0);
 
 	return {
-		dailyMasterpiece,
-		vibes: [
-			{ title: '🧠 Mind-Bending & Psychological', movies: mindBending },
-			{ title: '🍷 Late Night Chill', movies: lateNightChill },
-			{ title: '⚡ Adrenaline Rush', movies: adrenalineRush }
-		],
-		customCinema
+		pick,
+		moods,
+		decades,
+		degraded: [pickResult, ...rest].some((result) => result.status === 'rejected')
 	};
-}
+}) satisfies PageServerLoad;

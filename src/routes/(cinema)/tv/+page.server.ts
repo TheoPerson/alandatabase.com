@@ -1,29 +1,46 @@
-import { getTop50IMDbTVShows } from '$lib/server/services/tv.service';
+import type { HeroItem, PosterItem } from '$lib/catalogue/items';
+import { getTop50IMDbTVShows, type TVShowSummary } from '$lib/server/services/tv.service';
+import type { PageServerLoad } from './$types';
 
-const REACHER_HERO = {
-	id: 'reacher',
-	tmdbId: 108978,
-	title: 'REACHER',
-	originalTitle: 'Reacher',
-	voteAverage: 8.1,
-	releaseDate: '2022-02-04',
-	genres: [{ name: 'Action & Adventure' }, { name: 'Drama' }, { name: 'Crime' }],
-	overview:
-		'Jack Reacher, a veteran military police investigator, has just recently entered civilian life. Reacher is a drifter, carrying no phone and the barest of essentials as he travels the country and explores the nation he once served.',
-	backdropPath: 'https://image.tmdb.org/t/p/original/pF0qkRsrHkdYadPWY9AMeFZfcwk.jpg',
-	posterPath: 'https://image.tmdb.org/t/p/w500/f1VCQIG2iCyOookdgOzwtUpwWC0.jpg',
-	isTV: true
-};
+const FEATURED_COUNT = 5;
 
-export async function load({ setHeaders }) {
-	setHeaders({
-		'cache-control': 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800'
-	});
-
-	const shows = await getTop50IMDbTVShows();
-
+function toPoster(show: TVShowSummary): PosterItem {
 	return {
-		featuredHero: REACHER_HERO,
-		shows
+		id: `tv-${show.tmdbId}`,
+		href: `/tv/${show.tmdbId}`,
+		title: show.title,
+		posterPath: show.posterPath,
+		releaseDate: show.firstAirDate,
+		rating: show.imdbRating,
+		genre: show.genres[0] ?? null,
+		ratingSource: 'IMDb'
 	};
 }
+
+// The landing reads the committed IMDb Top TV snapshot; the genre filter is a plain link (?genre=).
+export const load = (async ({ url }) => {
+	const shows = [...(await getTop50IMDbTVShows())].sort((a, b) => a.rank - b.rank);
+	const genres = [...new Set(shows.flatMap((show) => show.genres))].sort((a, b) =>
+		a.localeCompare(b)
+	);
+	const requested = url.searchParams.get('genre');
+	const genre = requested && genres.includes(requested) ? requested : null;
+
+	const featured: HeroItem[] = shows.slice(0, FEATURED_COUNT).map((show) => ({
+		...toPoster(show),
+		backdropPath: show.backdropPath,
+		overview: show.overview,
+		genres: show.genres.slice(0, 3)
+	}));
+
+	return {
+		featured,
+		top10: shows.slice(0, 10).map(toPoster),
+		shows: shows
+			.filter((show) => !genre || show.genres.includes(genre))
+			.map((show) => ({ ...toPoster(show), genres: show.genres })),
+		genres,
+		genre,
+		total: shows.length
+	};
+}) satisfies PageServerLoad;

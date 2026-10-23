@@ -1,188 +1,277 @@
 <script lang="ts">
-	import Button from '$lib/components/ui/Button.svelte';
-	import Card from '$lib/components/ui/Card.svelte';
-	import Input from '$lib/components/ui/Input.svelte';
 	import { enhance } from '$app/forms';
+	import { goto } from '$app/navigation';
+	import { tick } from 'svelte';
+	import Button from '$lib/components/ui/button';
+	import { Switch } from '$lib/components/ui/switch';
+	import BackLink from '$lib/components/lists/back-link.svelte';
+	import ListField from '$lib/components/lists/list-field.svelte';
+	import {
+		LIST_DESCRIPTION_MAX,
+		LIST_NAME_MAX,
+		validateListForm,
+		type ListFormProblem
+	} from '$lib/components/lists/list-form';
+	import { addToast } from '$lib/stores/toast';
 
-	let { form } = $props();
-	let isSubmitting = $state(false);
+	let { data, form } = $props();
+
+	// svelte-ignore state_referenced_locally
+	let name = $state(data.prefill?.name ?? '');
+	// svelte-ignore state_referenced_locally
+	let description = $state(data.prefill?.description ?? '');
+	let isPublic = $state(false);
+	let submitting = $state(false);
+	let problem = $state<ListFormProblem | null>(null);
+	let nameInput = $state<HTMLInputElement | HTMLTextAreaElement | null>(null);
+	let descriptionInput = $state<HTMLInputElement | HTMLTextAreaElement | null>(null);
+
+	// Editing a field clears the previous verdict; submitting asks for a new one.
+	let edited = $state(false);
+	$effect(() => {
+		void name;
+		void description;
+		problem = null;
+		edited = true;
+	});
+
+	// Server wording names the field it rejects; anything else is a form-level error.
+	const serverError = $derived(
+		form && 'error' in form && typeof form.error === 'string' && !edited && !problem
+			? form.error
+			: null
+	);
+	const serverField = $derived(
+		serverError?.startsWith('List name')
+			? 'name'
+			: serverError?.startsWith('Description')
+				? 'description'
+				: null
+	);
+	const nameError = $derived(
+		problem?.field === 'name' ? problem.message : serverField === 'name' ? serverError : null
+	);
+	const descriptionError = $derived(
+		problem?.field === 'description'
+			? problem.message
+			: serverField === 'description'
+				? serverError
+				: null
+	);
+	const formError = $derived(serverError && !serverField ? serverError : null);
+	// Without JavaScript the action answers in place: offer the new list as a link.
+	const createdId = $derived(
+		form && 'listId' in form && typeof form.listId === 'string' ? form.listId : null
+	);
 </script>
 
-<div class="container create-page">
-	<header class="page-header">
-		<div>
-			<h1 class="title">Create New List</h1>
-			<p class="subtitle">Organize movies your way.</p>
-		</div>
-		<Button href="/my/lists" variant="ghost">← Cancel</Button>
+<svelte:head>
+	<title>New list | Alan's Database</title>
+	<meta name="robots" content="noindex,nofollow" />
+</svelte:head>
+
+<div class="create">
+	<header class="head">
+		<BackLink href="/my/lists" label="Lists" />
+		<h1>New list</h1>
+		<p class="summary">Name it, describe it if you like, then add films from their pages.</p>
 	</header>
 
-	{#if form?.error}
-		<div class="error-banner">{form.error}</div>
+	{#if createdId}
+		<p class="notice" role="status">
+			List created. <a href={`/my/lists/${createdId}`}>Open your new list</a>
+		</p>
 	{/if}
 
-	<Card padding="lg">
-		<form
-			method="POST"
-			use:enhance={() => {
-				isSubmitting = true;
-				return async ({ update, result }) => {
-					isSubmitting = false;
-					if (result.type === 'success' && result.data?.listId) {
-						window.location.href = `/my/lists/${result.data.listId}`;
-					} else {
-						update();
-					}
-				};
-			}}
-		>
-			<div class="input-group">
-				<Input
-					label="List Name"
-					type="text"
-					id="name"
-					name="name"
-					placeholder="e.g. Best Sci-Fi of the 90s"
-					required
-				/>
-			</div>
+	<form
+		method="POST"
+		class="panel"
+		novalidate
+		aria-describedby={formError ? 'form-error' : undefined}
+		use:enhance={({ cancel }) => {
+			edited = false;
+			const found = validateListForm(name, description);
+			if (found) {
+				problem = found;
+				cancel();
+				(found.field === 'name' ? nameInput : descriptionInput)?.focus();
+				return;
+			}
+			problem = null;
+			submitting = true;
+			return async ({ result, update }) => {
+				if (result.type === 'success' && typeof result.data?.listId === 'string') {
+					addToast('List created', 'success');
+					await goto(`/my/lists/${result.data.listId}`);
+				} else {
+					await update({ reset: false });
+					await tick();
+					if (nameError) nameInput?.focus();
+					else if (descriptionError) descriptionInput?.focus();
+				}
+				submitting = false;
+			};
+		}}
+	>
+		{#if formError}
+			<p class="form-error" id="form-error" role="alert">{formError}</p>
+		{/if}
 
-			<div class="input-group mt-4">
-				<label for="description" class="input-label">Description (Optional)</label>
-				<textarea
-					id="description"
-					name="description"
-					rows="3"
-					placeholder="What is this list about?"
-					class="textarea-field"></textarea>
-			</div>
+		<ListField
+			id="list-name"
+			name="name"
+			label="Name"
+			max={LIST_NAME_MAX}
+			placeholder="Late-night noir"
+			required
+			bind:value={name}
+			bind:ref={nameInput}
+			error={nameError}
+		/>
 
-			<div class="settings-group mt-6">
-				<label class="checkbox-label">
-					<input type="checkbox" name="isPublic" />
-					<div class="checkbox-text">
-						<span class="label-title">Public List</span>
-						<span class="label-desc">Allow anyone to view this list.</span>
-					</div>
-				</label>
-			</div>
+		<ListField
+			id="list-description"
+			name="description"
+			label="Description"
+			max={LIST_DESCRIPTION_MAX}
+			multiline
+			placeholder="What ties these films together?"
+			bind:value={description}
+			bind:ref={descriptionInput}
+			error={descriptionError}
+		/>
 
-			<div class="actions mt-8 text-right">
-				<Button type="submit" variant="primary" disabled={isSubmitting}>
-					{isSubmitting ? 'Creating...' : 'Create List'}
-				</Button>
-			</div>
-		</form>
-	</Card>
+		<label class="toggle" for="list-public">
+			<span class="toggle-text">
+				<span class="toggle-title" id="list-public-label">Share publicly</span>
+				<span class="toggle-hint" id="list-public-hint">
+					{isPublic
+						? 'Public: anyone with the link can view it. Only you can change it.'
+						: 'Private: only you can see it.'}
+				</span>
+			</span>
+			<Switch
+				id="list-public"
+				name="isPublic"
+				bind:checked={isPublic}
+				aria-labelledby="list-public-label"
+				aria-describedby="list-public-hint"
+			/>
+		</label>
+
+		<div class="actions">
+			<Button href="/my/lists" variant="secondary">Cancel</Button>
+			<Button type="submit" variant="primary" loading={submitting}>
+				{submitting ? 'Creating' : 'Create list'}
+			</Button>
+		</div>
+		<p class="sr-only" aria-live="polite">{submitting ? 'Creating your list' : ''}</p>
+	</form>
 </div>
 
 <style>
-	.create-page {
-		padding-top: 3rem;
-		padding-bottom: 5rem;
-		max-width: 600px;
+	/* Same container edge as Library and Lists; the form keeps a reading width, left-aligned. */
+	.create {
+		width: 100%;
+		max-width: var(--container-wide);
+		margin: 0 auto;
+		padding: var(--space-6) var(--page-gutter) var(--space-8);
 	}
-
-	.page-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		margin-bottom: 2rem;
+	.create > :global(*) {
+		max-width: var(--container-reading);
 	}
-
-	.title {
-		font-size: 2rem;
-		font-weight: 800;
-		color: var(--text-primary);
+	.head {
+		margin-bottom: var(--space-6);
 	}
-
-	.subtitle {
-		color: var(--text-secondary);
+	h1 {
+		margin-top: var(--space-2);
+		font-size: var(--type-headline);
+		font-weight: 900;
+		letter-spacing: var(--tracking-tight);
+		line-height: var(--leading-tight);
 	}
-
-	.input-group {
-		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
+	.summary {
+		margin-top: var(--space-2);
+		color: var(--content-secondary);
 	}
-
-	.mt-4 {
-		margin-top: 1rem;
-	}
-	.mt-6 {
-		margin-top: 1.5rem;
-	}
-	.mt-8 {
-		margin-top: 2rem;
-	}
-	.text-right {
-		text-align: right;
-	}
-
-	.input-label {
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--text-secondary);
-	}
-
-	.textarea-field {
-		padding: 0.75rem 1rem;
-		background: var(--bg-surface-2);
+	.panel {
+		display: grid;
+		gap: var(--space-5);
+		padding: var(--space-5);
 		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-lg);
+		background: var(--surface-raised);
+	}
+	.form-error,
+	.notice {
+		padding: var(--space-3) var(--space-4);
 		border-radius: var(--radius-md);
-		color: var(--text-primary);
-		font-family: inherit;
-		font-size: 0.95rem;
-		resize: vertical;
+		font-size: var(--text-sm);
+		font-weight: 600;
 	}
-
-	.textarea-field:focus {
-		outline: none;
-		border-color: var(--accent-emerald);
-		box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.2);
+	.form-error {
+		border: 1px solid var(--color-error);
+		color: var(--color-error);
 	}
-
-	.settings-group {
-		border-top: 1px solid var(--border-subtle);
-		padding-top: 1.5rem;
+	.notice {
+		margin-bottom: var(--space-4);
+		border: 1px solid var(--brand-border);
+		color: var(--content-primary);
 	}
-
-	.checkbox-label {
+	.notice a {
+		color: var(--brand-primary);
+	}
+	/* One flat row (no card in the card): the whole row toggles the switch. */
+	.toggle {
 		display: flex;
-		align-items: flex-start;
-		gap: 1rem;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+		min-height: var(--touch-target);
+		padding-top: var(--space-4);
+		border-top: 1px solid var(--border-subtle);
 		cursor: pointer;
 	}
-
-	.checkbox-label input[type='checkbox'] {
-		margin-top: 0.25rem;
-		width: 1.25rem;
-		height: 1.25rem;
-		accent-color: var(--accent-emerald);
+	.toggle-text {
+		display: grid;
+		gap: 0.15rem;
 	}
-
-	.checkbox-text {
+	.toggle-title {
+		font-size: var(--text-sm);
+		font-weight: 700;
+	}
+	.toggle-hint {
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
+	}
+	.actions {
 		display: flex;
-		flex-direction: column;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: var(--space-3);
 	}
-
-	.label-title {
-		font-weight: 600;
-		color: var(--text-primary);
+	/* Phone landscape: a tighter rhythm so the actions arrive after one scroll. */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.create {
+			padding-top: var(--space-4);
+		}
+		.head {
+			margin-bottom: var(--space-4);
+		}
+		.summary {
+			display: none;
+		}
+		.panel {
+			gap: var(--space-4);
+			padding: var(--space-4);
+		}
 	}
-
-	.label-desc {
-		font-size: 0.85rem;
-		color: var(--text-tertiary);
-		margin-top: 0.25rem;
-	}
-
-	.error-banner {
-		background: rgba(239, 68, 68, 0.15);
-		color: #fca5a5;
-		padding: 1rem;
-		border-radius: var(--radius-sm);
-		border: 1px solid rgba(239, 68, 68, 0.3);
-		margin-bottom: 2rem;
+	@media (max-width: 479px) {
+		.panel {
+			padding: var(--space-4);
+		}
+		.actions :global(.btn) {
+			flex: 1 1 0;
+		}
 	}
 </style>

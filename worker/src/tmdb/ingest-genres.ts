@@ -1,5 +1,5 @@
-import { db, schema } from '../db.js';
-import { TMDBClient } from './client.ts';
+import { getWorkerDatabase, schema } from '../db.js';
+import { TMDBClient } from './client.js';
 
 export async function syncGenres() {
 	console.log('🔄 Syncing genres from TMDB...');
@@ -7,6 +7,7 @@ export async function syncGenres() {
 
 	try {
 		const genresList = await client.getGenres();
+		const db = getWorkerDatabase();
 		for (const genre of genresList) {
 			await db
 				.insert(schema.genres)

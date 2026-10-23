@@ -1,221 +1,202 @@
 <script lang="ts">
-	import type { PickerRecommendationResponse } from '$lib/server/picker/types';
+	import { MediaQuery } from 'svelte/reactivity';
+	import BackdropImage from '$lib/components/ui/backdrop-image';
+	import Button from '$lib/components/ui/button';
+	import MetaChips from '$lib/components/ui/meta-chips';
+	import PosterCard from '$lib/components/ui/poster-card';
+	import { formatRuntime, formatYear } from '$lib/format';
+	import type { PickerRecommendationResponse } from '$lib/picker/types';
+	import BookmarkIcon from 'lucide-svelte/icons/bookmark';
+	import BookmarkCheckIcon from 'lucide-svelte/icons/bookmark-check';
+	import CheckIcon from 'lucide-svelte/icons/check';
+	import EyeIcon from 'lucide-svelte/icons/eye';
+	import HeartIcon from 'lucide-svelte/icons/heart';
+	import {
+		pickerRating,
+		pickerSignals,
+		swipeDecision,
+		type InteractionState,
+		type InteractionType
+	} from './picker-view';
 
 	interface Props {
 		recommendation: PickerRecommendationResponse;
-		isFavorited: boolean;
-		isWatchlisted: boolean;
-		isWatched: boolean;
-		loading: boolean;
+		/** Server-confirmed state for this film; null until the server has answered once. */
+		interaction: InteractionState | null;
+		pending: InteractionType | null;
+		busy: boolean;
 		onAnother: () => void;
-		onNotTonight: () => void;
-		onToggleFavorite: () => void;
-		onToggleWatchlist: () => void;
-		onToggleWatched: () => void;
+		onToggle: (type: InteractionType) => void;
 	}
 
-	let {
-		recommendation,
-		isFavorited,
-		isWatchlisted,
-		isWatched,
-		loading,
-		onAnother,
-		onNotTonight,
-		onToggleFavorite,
-		onToggleWatchlist,
-		onToggleWatched
-	}: Props = $props();
+	let { recommendation, interaction, pending, busy, onAnother, onToggle }: Props = $props();
 
 	const movie = $derived(recommendation.movie);
-	const signals = $derived(recommendation.signals);
+	const rating = $derived(pickerRating(movie));
+	const signals = $derived(pickerSignals(recommendation.signals));
+	const meta = $derived([
+		formatYear(movie.releaseDate),
+		formatRuntime(movie.runtime),
+		movie.genres[0] ?? null
+	]);
 
-	const year = $derived(movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : null);
+	const reducedMotion = new MediaQuery('(prefers-reduced-motion: reduce)');
 
-	const formattedRuntime = $derived(
-		movie.runtime
-			? `${Math.floor(movie.runtime / 60)}h ${movie.runtime % 60 ? `${movie.runtime % 60}m` : ''}`.trim()
-			: null
+	// Swipe left for another film. With reduced motion the card only fades.
+	let start: { x: number; y: number; id: number } | null = null;
+	let dragX = $state(0);
+	let swiped = false;
+	const dragStyle = $derived(
+		dragX === 0
+			? undefined
+			: `${reducedMotion.current ? '' : `transform: translateX(${dragX}px);`} opacity: ${Math.max(0.4, 1 - Math.abs(dragX) / 320)}`
 	);
 
-	const posterUrl = $derived(
-		movie.posterPath
-			? movie.posterPath.startsWith('http')
-				? movie.posterPath
-				: `https://image.tmdb.org/t/p/w780${movie.posterPath}`
-			: '/placeholder-poster.jpg'
-	);
-
-	const backdropUrl = $derived(
-		movie.backdropPath
-			? movie.backdropPath.startsWith('http')
-				? movie.backdropPath
-				: `https://image.tmdb.org/t/p/w1280${movie.backdropPath}`
-			: null
-	);
-
-	function formatVoteCount(count: number | null): string {
-		if (!count) return '';
-		if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
-		if (count >= 1000) return `${Math.round(count / 1000)}k`;
-		return String(count);
+	function onpointerdown(event: PointerEvent) {
+		swiped = false;
+		if (event.pointerType === 'mouse' || busy) return;
+		start = { x: event.clientX, y: event.clientY, id: event.pointerId };
 	}
+
+	function onpointermove(event: PointerEvent) {
+		if (!start || event.pointerId !== start.id) return;
+		const dx = event.clientX - start.x;
+		const dy = event.clientY - start.y;
+		// A vertical gesture is a scroll: let it go.
+		if (Math.abs(dy) > Math.abs(dx) * 1.5 && Math.abs(dy) > 12) {
+			start = null;
+			dragX = 0;
+			return;
+		}
+		dragX = Math.min(0, dx);
+	}
+
+	function onpointerup(event: PointerEvent) {
+		if (!start || event.pointerId !== start.id) return;
+		const decision = swipeDecision(event.clientX - start.x, event.clientY - start.y);
+		start = null;
+		dragX = 0;
+		if (decision === 'another') {
+			// A swipe that starts and ends on a link or button must not also click it.
+			swiped = true;
+			onAnother();
+		}
+	}
+
+	function onclickcapture(event: MouseEvent) {
+		if (!swiped) return;
+		swiped = false;
+		event.preventDefault();
+		event.stopPropagation();
+	}
+
+	function onpointercancel() {
+		start = null;
+		dragX = 0;
+	}
+
+	const TOGGLES: Array<{ type: InteractionType; label: string; doneLabel: string }> = [
+		{ type: 'watchlist', label: 'Watchlist', doneLabel: 'In watchlist' },
+		{ type: 'favorite', label: 'Favourite', doneLabel: 'Favourite' },
+		{ type: 'watched', label: 'Watched', doneLabel: 'Watched' }
+	];
 </script>
 
-<article class="picker-card" class:loading>
-	{#if backdropUrl}
-		<div class="backdrop-glow" style="background-image: url('{backdropUrl}');"></div>
-	{/if}
+<article
+	class="card"
+	class:busy
+	class:dragging={dragX !== 0}
+	aria-labelledby="picker-title"
+	aria-busy={busy}
+	style={dragStyle}
+	{onpointerdown}
+	{onpointermove}
+	{onpointerup}
+	{onpointercancel}
+	{onclickcapture}
+>
+	<div class="art" aria-hidden="true">
+		<BackdropImage path={movie.backdropPath} eager sizes="(min-width: 1024px) 90rem, 100vw" />
+	</div>
+	<div class="scrim" aria-hidden="true"></div>
 
-	<div class="card-inner">
-		<!-- Left: Movie Poster -->
-		<div class="poster-container">
-			<img src={posterUrl} alt={movie.title} class="movie-poster" loading="eager" />
+	<div class="content">
+		<div class="poster">
+			<PosterCard
+				id={movie.id}
+				title={movie.title}
+				posterPath={movie.posterPath}
+				eager
+				sizes="(min-width: 1024px) 220px, (min-width: 640px) 150px, 88px"
+			/>
+		</div>
 
-			<!-- Quick-Action floating buttons -->
-			<div class="quick-actions-overlay">
-				<button
-					type="button"
-					class="quick-action-btn"
-					class:active={isFavorited}
-					onclick={onToggleFavorite}
-					title={isFavorited ? 'Remove from Favorites' : 'Add to Favorites'}
-					aria-label="Toggle Favorite"
-				>
-					{isFavorited ? '❤️' : '🤍'}
-				</button>
-				<button
-					type="button"
-					class="quick-action-btn"
-					class:active={isWatchlisted}
-					onclick={onToggleWatchlist}
-					title={isWatchlisted ? 'In Watchlist' : 'Add to Watchlist'}
-					aria-label="Toggle Watchlist"
-				>
-					{isWatchlisted ? '🔖' : '📑'}
-				</button>
-				<button
-					type="button"
-					class="quick-action-btn"
-					class:active={isWatched}
-					onclick={onToggleWatched}
-					title={isWatched ? 'Watched' : 'Mark as Watched'}
-					aria-label="Toggle Watched"
-				>
-					{isWatched ? '✔️' : '👁️'}
-				</button>
+		<div class="head">
+			<p class="eyebrow">
+				{recommendation.mode === 'discovery' ? 'Discovery pick' : 'Curated match'}
+			</p>
+			<h2 id="picker-title" class="title">{movie.title}</h2>
+			{#if movie.originalTitle && movie.originalTitle !== movie.title}
+				<p class="original">{movie.originalTitle}</p>
+			{/if}
+			<div class="facts">
+				{#if rating}
+					<span class="score">
+						<span class="score-value">{rating.value}</span>
+						<span class="score-source">{rating.source}</span>
+						{#if rating.votes}<span class="score-votes">{rating.votes} votes</span>{/if}
+					</span>
+				{/if}
+				<MetaChips items={meta} />
 			</div>
 		</div>
 
-		<!-- Right: Details & Decision Area -->
-		<div class="details-container">
-			<!-- Header: Title & Meta -->
-			<div class="movie-header">
-				<div class="badge-row">
-					{#if recommendation.mode === 'discovery'}
-						<span class="mode-badge discovery">✨ DISCOVERY PICK</span>
-					{:else}
-						<span class="mode-badge safe">🎯 CURATED MATCH</span>
-					{/if}
-
-					{#if year}
-						<span class="meta-pill">{year}</span>
-					{/if}
-					{#if formattedRuntime}
-						<span class="meta-pill">{formattedRuntime}</span>
-					{/if}
-				</div>
-
-				<h2 class="movie-title">{movie.title}</h2>
-
-				{#if movie.originalTitle && movie.originalTitle !== movie.title}
-					<p class="movie-original-title">{movie.originalTitle}</p>
-				{/if}
-
-				{#if movie.genres && movie.genres.length > 0}
-					<div class="genres-row">
-						{#each movie.genres as g}
-							<span class="genre-tag">{g}</span>
-						{/each}
-					</div>
-				{/if}
+		<div class="body">
+			<div class="why">
+				<p class="why-label">Why this film</p>
+				<p class="reason">{recommendation.reason}</p>
+				<ul class="signals" aria-label="Picker signals">
+					{#each signals as signal (signal.label)}
+						<li><span>{signal.label}</span> <strong>{signal.value}</strong></li>
+					{/each}
+				</ul>
 			</div>
 
-			<!-- Ratings Bar -->
-			<div class="ratings-row">
-				{#if signals.imdbRating}
-					<div class="rating-box imdb-box" title="Authentic IMDb Rating">
-						<span class="imdb-logo">IMDb</span>
-						<span class="rating-score">★ {signals.imdbRating.toFixed(1)}</span>
-						{#if movie.imdbVoteCount}
-							<span class="vote-volume">({formatVoteCount(movie.imdbVoteCount)})</span>
-						{/if}
-					</div>
-				{/if}
+			{#if movie.overview}
+				<p class="overview">{movie.overview}</p>
+			{/if}
+			{#if movie.director}
+				<p class="credit">Directed by <span>{movie.director}</span></p>
+			{/if}
 
-				{#if signals.tmdbRating && signals.tmdbRating > 0}
-					<div class="rating-box tmdb-box" title="TMDB Community Rating">
-						<span class="tmdb-label">TMDB</span>
-						<span class="rating-score">{signals.tmdbRating.toFixed(1)}</span>
-						{#if movie.tmdbVoteCount}
-							<span class="vote-volume">({formatVoteCount(movie.tmdbVoteCount)})</span>
-						{/if}
-					</div>
-				{/if}
-			</div>
-
-			<!-- Synopsis -->
-			<p class="movie-overview">{movie.overview}</p>
-
-			<!-- Cast & Crew -->
-			<div class="crew-meta">
-				{#if movie.director}
-					<div class="crew-item">
-						<span class="crew-label">Director:</span>
-						<span class="crew-value">{movie.director}</span>
-					</div>
-				{/if}
-				{#if movie.topCast && movie.topCast.length > 0}
-					<div class="crew-item">
-						<span class="crew-label">Cast:</span>
-						<span class="crew-value">{movie.topCast.join(', ')}</span>
-					</div>
-				{/if}
-			</div>
-
-			<!-- "WHY THIS PICK" Card -->
-			<div class="why-card">
-				<div class="why-header">
-					<span class="why-spark">💡</span>
-					<span class="why-title">WHY THIS PICK</span>
-				</div>
-				<p class="why-body">{recommendation.reason}</p>
-			</div>
-
-			<!-- Primary Actions -->
-			<div class="actions-group">
-				<a href="/movies/{movie.id}" class="btn-primary-watch">
-					<span>🎬 OPEN / WATCH MOVIE</span>
-				</a>
-
-				<div class="secondary-actions">
-					<button
-						type="button"
-						class="btn-decision btn-skip"
-						onclick={onNotTonight}
-						disabled={loading}
-					>
-						<span>✕ Not Tonight</span>
-					</button>
-
-					<button
-						type="button"
-						class="btn-decision btn-another"
-						onclick={onAnother}
-						disabled={loading}
-					>
-						<span>↻ Another</span>
-					</button>
+			<div class="actions">
+				<Button href={`/movies/${movie.id}`} variant="primary" class="open">Open film</Button>
+				<div class="toggles" role="group" aria-label="Save this film">
+					{#each TOGGLES as toggle (toggle.type)}
+						{@const on = interaction ? interaction[toggle.type] : false}
+						<Button
+							variant="secondary"
+							class={on ? 'toggle on' : 'toggle'}
+							aria-pressed={interaction ? on : undefined}
+							aria-busy={pending === toggle.type ? 'true' : undefined}
+							onclick={() => onToggle(toggle.type)}
+						>
+							{#if toggle.type === 'watchlist'}
+								{#if on}
+									<BookmarkCheckIcon size={18} aria-hidden="true" />
+								{:else}
+									<BookmarkIcon size={18} aria-hidden="true" />
+								{/if}
+							{:else if toggle.type === 'favorite'}
+								<HeartIcon size={18} aria-hidden="true" fill={on ? 'currentColor' : 'none'} />
+							{:else if on}
+								<CheckIcon size={18} aria-hidden="true" />
+							{:else}
+								<EyeIcon size={18} aria-hidden="true" />
+							{/if}
+							{on ? toggle.doneLabel : toggle.label}
+						</Button>
+					{/each}
 				</div>
 			</div>
 		</div>
@@ -223,367 +204,223 @@
 </article>
 
 <style>
-	.picker-card {
+	.card {
 		position: relative;
-		width: 100%;
-		max-width: 960px;
-		background: var(--bg-surface-1);
-		border: 1px solid var(--border-strong);
-		border-radius: var(--radius-xl);
-		overflow: hidden;
-		box-shadow: var(--shadow-lg);
-		transition:
-			opacity var(--transition-fast),
-			transform var(--transition-fast);
-	}
-
-	.picker-card.loading {
-		opacity: 0.6;
-		pointer-events: none;
-	}
-
-	.backdrop-glow {
-		position: absolute;
-		top: -20%;
-		right: -10%;
-		width: 80%;
-		height: 80%;
-		background-size: cover;
-		background-position: center;
-		filter: blur(80px);
-		opacity: 0.18;
-		pointer-events: none;
-		z-index: 0;
-	}
-
-	.card-inner {
-		position: relative;
-		z-index: 1;
 		display: flex;
 		flex-direction: column;
-		padding: 1.5rem;
-		gap: 2rem;
-	}
-
-	@media (min-width: 768px) {
-		.card-inner {
-			flex-direction: row;
-			padding: 2.5rem;
-			gap: 3rem;
-		}
-	}
-
-	/* Poster */
-	.poster-container {
-		position: relative;
-		width: 100%;
-		max-width: 320px;
-		margin: 0 auto;
-		flex-shrink: 0;
-		border-radius: var(--radius-lg);
-		overflow: hidden;
-		box-shadow: var(--shadow-md);
-		border: 1px solid var(--border-subtle);
-		background: var(--bg-surface-2);
-		aspect-ratio: 2 / 3;
-	}
-
-	.movie-poster {
+		justify-content: flex-end;
 		width: 100%;
 		height: 100%;
-		object-fit: cover;
-		display: block;
-		transition: transform var(--transition-normal);
-	}
-
-	.poster-container:hover .movie-poster {
-		transform: scale(1.02);
-	}
-
-	.quick-actions-overlay {
-		position: absolute;
-		top: 0.75rem;
-		right: 0.75rem;
-		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
-	}
-
-	.quick-action-btn {
-		width: 36px;
-		height: 36px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: rgba(10, 14, 23, 0.85);
-		backdrop-filter: blur(10px);
+		overflow: hidden;
 		border: 1px solid var(--border-subtle);
-		border-radius: var(--radius-full);
-		font-size: 0.95rem;
-		cursor: pointer;
-		transition: all var(--transition-fast);
+		border-radius: var(--radius-xl);
+		background: var(--surface-raised);
+		touch-action: pan-y;
+		transition:
+			opacity var(--duration-base) var(--ease-out),
+			transform var(--duration-base) var(--ease-out);
 	}
-
-	.quick-action-btn:hover {
-		background: rgba(22, 30, 48, 0.95);
-		transform: scale(1.1);
+	.card.dragging {
+		transition: none;
 	}
-
-	/* Details */
-	.details-container {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
+	.card.busy {
+		opacity: 0.55;
 	}
-
-	.badge-row {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-		flex-wrap: wrap;
-		margin-bottom: 0.5rem;
+	.art {
+		position: absolute;
+		inset: 0;
 	}
-
-	.mode-badge {
-		font-size: 0.75rem;
+	/* Same wash as the detail headers: the artwork stays visible, the text keeps AA contrast. */
+	.scrim {
+		position: absolute;
+		inset: 0;
+		background:
+			linear-gradient(to top, var(--surface-canvas) 45%, var(--surface-scrim) 72%, transparent 96%),
+			linear-gradient(to right, var(--surface-scrim), transparent 70%);
+	}
+	.content {
+		position: relative;
+		display: grid;
+		grid-template-columns: 88px minmax(0, 1fr);
+		grid-template-areas:
+			'poster head'
+			'body body';
+		align-items: end;
+		gap: var(--space-4);
+		padding: var(--space-6) var(--space-4) var(--space-4);
+	}
+	.poster {
+		grid-area: poster;
+	}
+	.head {
+		grid-area: head;
+		display: grid;
+		gap: var(--space-2);
+		min-width: 0;
+	}
+	.body {
+		grid-area: body;
+		display: grid;
+		gap: var(--space-3);
+		min-width: 0;
+	}
+	.eyebrow,
+	.why-label {
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
 		font-weight: 800;
-		letter-spacing: 0.05em;
-		padding: 0.25rem 0.6rem;
-		border-radius: var(--radius-sm);
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
 	}
-
-	.mode-badge.safe {
-		background: var(--accent-emerald-subtle);
-		border: 1px solid var(--accent-emerald);
-		color: var(--accent-emerald);
+	.title {
+		font-size: var(--type-headline);
+		font-weight: 900;
+		letter-spacing: var(--tracking-tight);
+		line-height: 1.05;
+		overflow-wrap: anywhere;
 	}
-
-	.mode-badge.discovery {
-		background: rgba(139, 92, 246, 0.15);
-		border: 1px solid #8b5cf6;
-		color: #a78bfa;
+	.original {
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
 	}
-
-	.meta-pill {
-		font-size: 0.8rem;
-		color: var(--text-tertiary);
+	.facts {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1) var(--space-3);
+	}
+	.score {
+		display: inline-flex;
+		align-items: baseline;
+		gap: var(--space-2);
+	}
+	.score-value {
+		font-size: var(--text-lg);
+		font-weight: 900;
+	}
+	.score-source {
+		color: var(--rating-star);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		letter-spacing: var(--tracking-wide);
+	}
+	.score-votes {
+		color: var(--content-tertiary);
+		font-size: var(--text-xs);
+	}
+	.why {
+		display: grid;
+		gap: var(--space-2);
+		padding: var(--space-3) var(--space-4);
+		border-left: 2px solid var(--brand-primary);
+		border-radius: 0 var(--radius-md) var(--radius-md) 0;
+		background: var(--brand-muted);
+	}
+	.reason {
+		color: var(--content-primary);
+		font-size: var(--text-sm);
+		line-height: 1.5;
+	}
+	.signals {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-4);
+		list-style: none;
+		color: var(--content-secondary);
+		font-size: var(--text-xs);
+	}
+	.signals strong {
+		color: var(--content-primary);
+		font-weight: 800;
+	}
+	.overview {
+		display: -webkit-box;
+		overflow: hidden;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		max-width: 62ch;
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
+		line-height: 1.55;
+	}
+	.credit {
+		color: var(--content-tertiary);
+		font-size: var(--text-sm);
+	}
+	.credit span {
+		color: var(--content-secondary);
 		font-weight: 600;
 	}
-
-	.movie-title {
-		font-size: 1.85rem;
-		font-weight: 800;
-		color: var(--text-primary);
-		line-height: 1.2;
-		letter-spacing: -0.02em;
+	.actions {
+		display: grid;
+		gap: var(--space-2);
+		margin-top: var(--space-1);
+	}
+	.toggles {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--space-2);
+	}
+	.toggles :global(.toggle) {
+		min-width: 0;
+		padding-inline: var(--space-2);
+		font-size: var(--text-sm);
+	}
+	.toggles :global(.toggle.on) {
+		border-color: var(--brand-border);
+		color: var(--brand-primary);
+	}
+	.toggles :global(.toggle[aria-busy='true']) {
+		opacity: 0.6;
 	}
 
-	@media (min-width: 768px) {
-		.movie-title {
-			font-size: 2.2rem;
+	/* On a phone the card keeps to what decides: the reason, the signals, the actions. */
+	@media (max-width: 639px) {
+		.overview,
+		.credit {
+			display: none;
+		}
+		/* Year, length and genre stay on one line beside the poster. */
+		.facts :global(.meta) {
+			font-size: var(--text-xs);
 		}
 	}
 
-	.movie-original-title {
-		font-size: 0.9rem;
-		color: var(--text-tertiary);
-		font-style: italic;
+	@media (min-width: 640px) {
+		.content {
+			grid-template-columns: 150px minmax(0, 1fr);
+			grid-template-areas:
+				'poster head'
+				'poster body';
+			column-gap: var(--space-5);
+			padding: var(--space-7) var(--space-6) var(--space-6);
+		}
+		.actions {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+		}
+		.toggles {
+			display: flex;
+		}
 	}
 
-	.genres-row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.4rem;
-		margin-top: 0.5rem;
-	}
-
-	.genre-tag {
-		padding: 0.2rem 0.6rem;
-		background: var(--bg-surface-2);
-		border: 1px solid var(--border-subtle);
-		border-radius: var(--radius-sm);
-		font-size: 0.75rem;
-		color: var(--text-secondary);
-		font-weight: 600;
-	}
-
-	/* Ratings */
-	.ratings-row {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		flex-wrap: wrap;
-	}
-
-	.rating-box {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		padding: 0.35rem 0.75rem;
-		border-radius: var(--radius-sm);
-		font-size: 0.9rem;
-		font-weight: 700;
-	}
-
-	.imdb-box {
-		background: rgba(245, 197, 24, 0.12);
-		border: 1px solid rgba(245, 197, 24, 0.4);
-		color: #f5c518;
-	}
-
-	.imdb-logo {
-		background: #f5c518;
-		color: #000;
-		font-size: 0.65rem;
-		font-weight: 900;
-		padding: 1px 4px;
-		border-radius: 3px;
-	}
-
-	.tmdb-box {
-		background: rgba(16, 185, 129, 0.1);
-		border: 1px solid var(--border-subtle);
-		color: var(--text-secondary);
-	}
-
-	.tmdb-label {
-		color: var(--text-tertiary);
-		font-size: 0.7rem;
-		font-weight: 800;
-	}
-
-	.vote-volume {
-		font-size: 0.75rem;
-		color: var(--text-tertiary);
-		font-weight: 500;
-	}
-
-	/* Synopsis */
-	.movie-overview {
-		font-size: 0.95rem;
-		line-height: 1.6;
-		color: var(--text-secondary);
-		display: -webkit-box;
-		-webkit-line-clamp: 4;
-		line-clamp: 4;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
-
-	.crew-meta {
-		display: flex;
-		flex-direction: column;
-		gap: 0.3rem;
-		font-size: 0.85rem;
-	}
-
-	.crew-label {
-		color: var(--text-tertiary);
-		font-weight: 600;
-		margin-right: 0.4rem;
-	}
-
-	.crew-value {
-		color: var(--text-primary);
-	}
-
-	/* Why Card */
-	.why-card {
-		background: rgba(16, 22, 35, 0.9);
-		border: 1px solid rgba(16, 185, 129, 0.25);
-		border-radius: var(--radius-md);
-		padding: 1rem 1.25rem;
-	}
-
-	.why-header {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		margin-bottom: 0.35rem;
-	}
-
-	.why-title {
-		font-size: 0.75rem;
-		font-weight: 800;
-		letter-spacing: 0.05em;
-		color: var(--accent-emerald);
-	}
-
-	.why-body {
-		font-size: 0.88rem;
-		color: var(--text-primary);
-		line-height: 1.45;
-	}
-
-	/* Actions */
-	.actions-group {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-		margin-top: auto;
-		padding-top: 0.5rem;
-	}
-
-	.btn-primary-watch {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 100%;
-		padding: 0.95rem 1.5rem;
-		background: var(--accent-emerald);
-		border-radius: var(--radius-md);
-		color: #000;
-		font-weight: 800;
-		font-size: 1rem;
-		letter-spacing: -0.01em;
-		text-decoration: none;
-		box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
-		transition: all var(--transition-fast);
-	}
-
-	.btn-primary-watch:hover {
-		background: var(--accent-emerald-hover);
-		transform: translateY(-2px);
-		box-shadow: 0 6px 25px rgba(16, 185, 129, 0.45);
-	}
-
-	.secondary-actions {
-		display: flex;
-		gap: 0.75rem;
-	}
-
-	.btn-decision {
-		flex: 1;
-		padding: 0.75rem 1rem;
-		border-radius: var(--radius-md);
-		font-weight: 700;
-		font-size: 0.9rem;
-		cursor: pointer;
-		transition: all var(--transition-fast);
-	}
-
-	.btn-skip {
-		background: var(--bg-surface-2);
-		border: 1px solid var(--border-subtle);
-		color: var(--text-secondary);
-	}
-
-	.btn-skip:hover {
-		background: rgba(239, 68, 68, 0.15);
-		border-color: rgba(239, 68, 68, 0.4);
-		color: #f87171;
-	}
-
-	.btn-another {
-		background: var(--bg-surface-2);
-		border: 1px solid var(--border-subtle);
-		color: var(--text-primary);
-	}
-
-	.btn-another:hover {
-		background: var(--bg-surface-3);
-		border-color: var(--border-strong);
-		color: var(--accent-emerald);
+	@media (min-width: 1024px) {
+		.content {
+			grid-template-columns: 220px minmax(0, 46rem);
+			column-gap: var(--space-6);
+			padding: var(--space-8) var(--space-7) var(--space-7);
+		}
+		.scrim {
+			background:
+				linear-gradient(to top, var(--surface-canvas) 2%, transparent 55%),
+				linear-gradient(
+					to right,
+					var(--surface-canvas) 18%,
+					var(--surface-scrim) 50%,
+					transparent 85%
+				);
+		}
 	}
 </style>

@@ -3,7 +3,18 @@
   publish = "build"
 
 [build.environment]
-  NODE_VERSION = "22"
+  NODE_VERSION = "24"
+
+# Baseline security headers for static assets, matching those src/hooks.server.ts adds to dynamic responses.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), geolocation=(), microphone=(), payment=(), usb=()"
+    X-Permitted-Cross-Domain-Policies = "none"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
 
 [[headers]]
   for = "/_app/immutable/*"

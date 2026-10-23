@@ -9,41 +9,45 @@ import {
 } from '$lib/server/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { error, fail } from '@sveltejs/kit';
-import { logActivity } from '$lib/server/services/interaction.service';
-import { ingestMovie } from '$lib/server/tmdb';
+import { standardMovieVisibilityWhere } from '$lib/server/policies/movie-visibility';
+import { applyInteraction, parseInteractionUpdate } from '$lib/server/services/interaction.service';
+import { logServerError } from '$lib/server/security/logging';
+import { hasPermission } from '$lib/server/auth/permissions';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Kept for the existing validation test; the validator now lives in the service.
+export const _parseInteractionUpdate = parseInteractionUpdate;
+
 async function resolveMovieUuid(movieIdOrTmdb: string): Promise<string | null> {
 	if (UUID_REGEX.test(movieIdOrTmdb)) {
-		return movieIdOrTmdb;
+		const existing = await db.query.movies
+			.findFirst({
+				where: and(eq(movies.id, movieIdOrTmdb), standardMovieVisibilityWhere()),
+				columns: { id: true }
+			})
+			.catch(() => null);
+		return existing?.id ?? null;
 	}
 
 	if (/^\d+$/.test(movieIdOrTmdb)) {
 		const tmdbId = parseInt(movieIdOrTmdb, 10);
 		const existing = await db.query.movies
 			.findFirst({
-				where: eq(movies.tmdbId, tmdbId)
+				where: and(eq(movies.tmdbId, tmdbId), standardMovieVisibilityWhere()),
+				columns: { id: true }
 			})
 			.catch(() => null);
 
-		if (existing) {
-			return existing.id;
-		}
-
-		try {
-			const newUuid = await ingestMovie(tmdbId, { notifyTelegram: false });
-			if (newUuid) return newUuid;
-		} catch (err) {
-			console.warn('Auto-ingest on resolveMovieUuid failed:', err);
-		}
+		return existing?.id ?? null;
 	}
 
 	return null;
 }
 
-export async function load({ params, locals, setHeaders }) {
+export async function load({ params, locals }) {
 	const movie = await getMovieById(params.id);
+	const user = hasPermission(locals.user, 'account:access') ? locals.user : null;
 
 	if (!movie) {
 		throw error(404, {
@@ -51,17 +55,11 @@ export async function load({ params, locals, setHeaders }) {
 		});
 	}
 
-	if (!locals.user) {
-		setHeaders({
-			'cache-control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600'
-		});
-	}
-
 	let interaction = null;
 	let review = null;
 	let userCustomLists: any[] = [];
 
-	if (locals.user) {
+	if (user) {
 		const dbUuid = await resolveMovieUuid(movie.id);
 
 		if (dbUuid) {
@@ -69,19 +67,19 @@ export async function load({ params, locals, setHeaders }) {
 				db.query.userMovieInteractions
 					.findFirst({
 						where: and(
-							eq(userMovieInteractions.userId, locals.user.id),
+							eq(userMovieInteractions.userId, user.id),
 							eq(userMovieInteractions.movieId, dbUuid)
 						)
 					})
 					.catch(() => null),
 				db.query.userReviews
 					.findFirst({
-						where: and(eq(userReviews.userId, locals.user.id), eq(userReviews.movieId, dbUuid))
+						where: and(eq(userReviews.userId, user.id), eq(userReviews.movieId, dbUuid))
 					})
 					.catch(() => null),
 				db.query.userLists
 					.findMany({
-						where: eq(userLists.userId, locals.user.id),
+						where: eq(userLists.userId, user.id),
 						with: {
 							items: {
 								where: eq(userListItems.movieId, dbUuid)
@@ -98,7 +96,7 @@ export async function load({ params, locals, setHeaders }) {
 		userInteraction: interaction,
 		userReview: review,
 		userCustomLists,
-		user: locals.user
+		user
 	};
 }
 
@@ -107,68 +105,29 @@ export const actions = {
 		if (!locals.user) {
 			return fail(401, { error: 'You must be logged in to log films.' });
 		}
+		if (!hasPermission(locals.user, 'account:access')) {
+			return fail(403, { error: 'Personal film activity needs a signed-in account.' });
+		}
 
 		const formData = await request.formData();
 		const rawMovieId = formData.get('movieId')?.toString();
-		const type = formData.get('type')?.toString(); // 'watched' | 'watchlist' | 'favorite' | 'rating'
+		const type = formData.get('type')?.toString();
 		const value = formData.get('value')?.toString();
 
 		if (!rawMovieId || !type) {
 			return fail(400, { error: 'Invalid payload.' });
 		}
-
-		const movieId = await resolveMovieUuid(rawMovieId);
-		if (!movieId) {
-			return fail(404, { error: 'Could not resolve movie record.' });
-		}
+		const parsedUpdate = parseInteractionUpdate(type, value);
+		if (!parsedUpdate.ok) return fail(400, { error: parsedUpdate.error });
 
 		try {
-			// Find existing interaction
-			let interaction = await db.query.userMovieInteractions.findFirst({
-				where: and(
-					eq(userMovieInteractions.userId, locals.user.id),
-					eq(userMovieInteractions.movieId, movieId)
-				)
-			});
-
-			// Prepare update payload
-			const payload: any = {
-				updatedAt: new Date()
-			};
-
-			if (type === 'watched') payload.watched = value === 'true';
-			if (type === 'watchlist') payload.watchlist = value === 'true';
-			if (type === 'favorite') payload.favorite = value === 'true';
-			if (type === 'rating') payload.rating = value ? parseFloat(value) : null;
-			if (type === 'watched' && value === 'true' && (!interaction || !interaction.watchDate)) {
-				payload.watchDate = new Date().toISOString().split('T')[0];
+			const interaction = await applyInteraction(locals.user.id, rawMovieId, parsedUpdate);
+			if (!interaction) {
+				return fail(404, { error: 'Could not resolve movie record.' });
 			}
-
-			if (interaction) {
-				await db
-					.update(userMovieInteractions)
-					.set(payload)
-					.where(eq(userMovieInteractions.id, interaction.id));
-			} else {
-				payload.userId = locals.user.id;
-				payload.movieId = movieId;
-				await db.insert(userMovieInteractions).values(payload);
-			}
-
-			// Log activity (non-blocking)
-			if (type === 'rating' && value) {
-				logActivity(locals.user.id, 'rated', movieId, undefined, { rating: parseFloat(value) });
-			} else if (type === 'watched' && value === 'true') {
-				logActivity(locals.user.id, 'watched', movieId);
-			} else if (type === 'favorite' && value === 'true') {
-				logActivity(locals.user.id, 'favorited', movieId);
-			} else if (type === 'watchlist' && value === 'true') {
-				logActivity(locals.user.id, 'watchlisted', movieId);
-			}
-
-			return { success: true };
+			return { success: true, interaction };
 		} catch (err) {
-			console.error('Interaction error:', err);
+			logServerError('Movie interaction update failed', err);
 			return fail(500, { error: 'Failed to update interaction.' });
 		}
 	},
@@ -176,6 +135,9 @@ export const actions = {
 	toggleList: async ({ request, locals }) => {
 		if (!locals.user) {
 			return fail(401, { error: 'You must be logged in to modify lists.' });
+		}
+		if (!hasPermission(locals.user, 'account:access')) {
+			return fail(403, { error: 'Personal lists need a signed-in account.' });
 		}
 
 		const formData = await request.formData();
@@ -226,7 +188,7 @@ export const actions = {
 
 			return { success: true };
 		} catch (err) {
-			console.error('Toggle list error:', err);
+			logServerError('Movie list update failed', err);
 			return fail(500, { error: 'Failed to update list.' });
 		}
 	}

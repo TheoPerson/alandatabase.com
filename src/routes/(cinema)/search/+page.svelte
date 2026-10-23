@@ -1,299 +1,288 @@
 <script lang="ts">
-	import MovieCard from '$lib/components/movie/MovieCard.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
-	import { goto } from '$app/navigation';
+	import { invalidateAll } from '$app/navigation';
+	import { navigating, page } from '$app/state';
+	import { browseHref, DEFAULT_SORT } from '$lib/catalogue/browse';
+	import Button from '$lib/components/ui/button';
+	import Chip from '$lib/components/ui/chip';
+	import Section from '$lib/components/ui/section';
+	import PosterCard from '$lib/components/ui/poster-card';
+	import Rail from '$lib/components/ui/rail';
+	import SearchIcon from 'lucide-svelte/icons/search';
+	import SearchInput from '$lib/components/ui/search-input';
+	import { ResultsGrid, ResultsSkeleton, SearchResults } from '$lib/components/ui/search-results';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
 
 	let { data } = $props();
-	let searchInput = $state('');
-	let sortBy = $state<'relevance' | 'rating' | 'recent'>('relevance');
 
+	// Follows the loaded query (the header search and the palette navigate here too), and
+	// lets the visitor type freely in between.
+	let value = $derived(data.query);
+
+	const searching = $derived(navigating.to?.url.pathname === '/search');
+	// A search that answers within a blink should not flash a skeleton.
+	let showPending = $state(false);
 	$effect(() => {
-		searchInput = data.query || '';
+		if (!searching) {
+			showPending = false;
+			return;
+		}
+		const timer = setTimeout(() => (showPending = true), 150);
+		return () => clearTimeout(timer);
 	});
 
-	const sortedResults = $derived.by(() => {
-		const list = [...(data.results || [])];
-		if (sortBy === 'rating') {
-			return list.sort((a, b) => Number(b.voteAverage || 0) - Number(a.voteAverage || 0));
-		}
-		if (sortBy === 'recent') {
-			return list.sort((a, b) => {
-				const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
-				const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;
-				return dateB - dateA;
-			});
-		}
-		return list;
+	const resultCount = $derived(data.results.length);
+	const status = $derived.by(() => {
+		if (searching) return 'Searching…';
+		if (!data.query) return 'Find a film or a series by its title.';
+		if (data.searchError) return '';
+		const films = `${resultCount} ${resultCount === 1 ? 'film' : 'films'}`;
+		// Search covers films and series, so the count always names both.
+		return `${films} · ${data.series.length} series`;
 	});
+	const heading = $derived(data.query ? `Results for “${data.query}”` : 'Search');
+	const pageTitle = $derived(
+		data.query ? `Results for ${data.query} | Alan's Database` : "Search | Alan's Database"
+	);
 
-	function handleSubmit(e: SubmitEvent) {
-		e.preventDefault();
-		if (searchInput.trim()) {
-			goto(`/search?q=${encodeURIComponent(searchInput.trim())}`);
+	const matches = (count: number) => `${count} ${count === 1 ? 'match' : 'matches'}`;
+
+	function genreHref(genreId: number): string {
+		return browseHref({ genreId, decade: null, minRating: null, sortBy: DEFAULT_SORT });
+	}
+
+	let retrying = $state(false);
+	async function retry(event: MouseEvent) {
+		// Re-runs the loader in place; the plain link (same address) covers a missing script.
+		event.preventDefault();
+		retrying = true;
+		try {
+			await invalidateAll();
+		} finally {
+			retrying = false;
 		}
 	}
 </script>
 
 <svelte:head>
-	<title>{data.query ? `Search: ${data.query} | CinemaDB` : 'Discover Cinema | CinemaDB'}</title>
-	<meta name="description" content="Search by title, director, actor, or genre keywords" />
-	<meta
-		property="og:title"
-		content={data.query ? `Search: ${data.query} | CinemaDB` : 'Discover Cinema | CinemaDB'}
-	/>
-	<meta property="og:description" content="Search by title, director, actor, or genre keywords" />
+	<title>{pageTitle}</title>
+	<meta name="description" content="Search the Alan's Database catalogue by film title." />
+	<meta name="robots" content="noindex,follow" />
+	<link rel="canonical" href="https://alandatabase.com/search" />
+	<meta property="og:title" content={pageTitle} />
 	<meta property="og:type" content="website" />
 </svelte:head>
 
-<div class="container search-page">
-	<div class="search-hero">
-		<h1 class="page-title">Discover Cinema</h1>
-		<p class="subtitle">Search by title, director, actor, or genre keywords</p>
+<div class="page">
+	<header class="head">
+		<h1 class="title">{heading}</h1>
+		<p class="status" aria-live="polite" aria-atomic="true">{status}</p>
 
-		<form onsubmit={handleSubmit} class="main-search-form">
-			<input
-				type="search"
-				placeholder="Type a movie title (e.g. Inception, Godfather, Parasite)..."
-				bind:value={searchInput}
-				class="hero-search-input"
-			/>
-			<Button type="submit" variant="primary" size="lg">Search</Button>
+		<form
+			class="main-search-form"
+			action="/search"
+			method="get"
+			role="search"
+			aria-label="Search films"
+			data-sveltekit-keepfocus
+		>
+			<div class="field">
+				<SearchInput
+					name="q"
+					label="Movie title"
+					placeholder="Search films"
+					maxlength={120}
+					autofocus={!data.query}
+					bind:value
+				/>
+			</div>
+			<!-- On a phone the keyboard's Go key submits, so the button shrinks to its icon. -->
+			<Button type="submit" size="lg" class="submit" aria-label="Search">
+				<SearchIcon size={20} aria-hidden="true" />
+				<span class="submit-label">Search</span>
+			</Button>
 		</form>
-	</div>
+	</header>
 
-	{#if data.query}
-		<div class="results-header">
-			<div class="results-title-group">
-				<h2>Results for <span class="query-text">"{data.query}"</span></h2>
-				<span class="count">{data.results.length} movies found</span>
-			</div>
-
-			{#if data.results.length > 0}
-				<div class="sort-controls">
-					<span class="sort-label">Sort:</span>
-					<div class="sort-pills">
-						<button
-							type="button"
-							class="sort-pill"
-							class:active={sortBy === 'relevance'}
-							onclick={() => (sortBy = 'relevance')}
-							title="Tri par pertinence"
+	{#if data.query || showPending}
+		<section class="results" aria-labelledby="results-heading" aria-busy={searching}>
+			<h2 id="results-heading" class="sr-only">Search results</h2>
+			{#if showPending}
+				<ResultsSkeleton />
+			{:else if data.searchError}
+				<ErrorState
+					title="Search is temporarily unavailable"
+					description="The catalogue could not be searched just now. Nothing was changed, so you can safely try again."
+				>
+					{#snippet action()}
+						<Button
+							href={`${page.url.pathname}${page.url.search}`}
+							variant="outline"
+							loading={retrying}
+							onclick={retry}>Try again</Button
 						>
-							🔥 Relevance
-						</button>
-						<button
-							type="button"
-							class="sort-pill"
-							class:active={sortBy === 'rating'}
-							onclick={() => (sortBy = 'rating')}
-							title="Tri par note IMDb"
-						>
-							⭐ IMDb Rating
-						</button>
-						<button
-							type="button"
-							class="sort-pill"
-							class:active={sortBy === 'recent'}
-							onclick={() => (sortBy = 'recent')}
-							title="Tri par date de sortie"
-						>
-							📅 Release Date
-						</button>
-					</div>
-				</div>
+					{/snippet}
+				</ErrorState>
+			{:else if data.results.length === 0 && data.series.length === 0}
+				<EmptyState
+					title={`Nothing matches “${data.query}”`}
+					description="Search covers film titles and the TV chart. Try a shorter or more general title, or browse."
+				>
+					{#snippet action()}
+						<div class="empty-actions">
+							<Button href="/movies" variant="outline">Browse movies</Button>
+							<Button href="/tv" variant="outline">Browse series</Button>
+						</div>
+					{/snippet}
+				</EmptyState>
+			{:else}
+				<!-- Series first, as one short row: a long film grid would otherwise bury them. -->
+				{#if data.series.length > 0}
+					<Section
+						title="Series"
+						eyebrow={matches(data.series.length)}
+						id="search-series"
+						class="result-group"
+					>
+						<Rail label="Series results">
+							{#each data.series as item, index (item.id)}
+								<PosterCard {...item} eager={index < 3} />
+							{/each}
+						</Rail>
+					</Section>
+				{/if}
+				{#if data.results.length > 0}
+					<Section
+						title="Films"
+						eyebrow={matches(resultCount)}
+						id="search-films"
+						class="result-group"
+					>
+						<div class="films">
+							{#key data.query}
+								<SearchResults items={data.results} limit={data.limit} />
+							{/key}
+						</div>
+					</Section>
+				{/if}
 			{/if}
-		</div>
+		</section>
+	{:else}
+		{#if data.trending.length > 0}
+			<Section title="Popular right now" eyebrow="Trending" seeAllHref="/movies">
+				<div class="grid-pad">
+					<ResultsGrid>
+						{#each data.trending as item, index (item.id)}
+							<div class="cell">
+								<PosterCard
+									{...item}
+									eager={index < 6}
+									sizes="(min-width: 1024px) 200px, (min-width: 640px) 20vw, 31vw"
+								/>
+							</div>
+						{/each}
+					</ResultsGrid>
+				</div>
+			</Section>
+		{/if}
 
-		{#if sortedResults.length > 0}
-			<div class="grid-movies">
-				{#each sortedResults as movie (movie.id || movie.tmdbId)}
-					<MovieCard
-						id={movie.id || movie.tmdbId}
-						title={movie.title}
-						posterPath={movie.posterPath}
-						releaseDate={movie.releaseDate}
-						voteAverage={movie.voteAverage}
-						genres={movie.genres?.map(
-							(g: any) => g?.genre?.name || g?.name || (typeof g === 'string' ? g : '')
-						)}
-					/>
-				{/each}
-			</div>
-		{:else}
-			<div class="no-results">
-				<p class="emoji">🔍</p>
-				<h3>No movies found for "{data.query}"</h3>
-				<p class="hint">
-					Try searching for another movie title or populate more films via the worker CLI.
-				</p>
-			</div>
+		{#if data.genres.length > 0}
+			<Section title="Browse by genre" eyebrow="Discover">
+				<div class="genres">
+					{#each data.genres as genre (genre.id)}
+						<Chip href={genreHref(genre.id)}>{genre.name}</Chip>
+					{/each}
+				</div>
+			</Section>
 		{/if}
 	{/if}
 </div>
 
 <style>
-	.search-page {
-		padding-top: 3rem;
-		padding-bottom: 5rem;
+	.page {
+		max-width: var(--container-wide);
+		margin-inline: auto;
+		padding-bottom: var(--space-8);
 	}
-
-	.search-hero {
-		text-align: center;
-		max-width: 700px;
-		margin: 0 auto 4rem auto;
+	.head {
+		display: grid;
+		/* A bare column would grow to the form's intrinsic width and push the page sideways. */
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-2);
+		padding: var(--space-6) var(--page-gutter) var(--space-2);
 	}
-
-	.page-title {
-		font-size: 2.75rem;
+	.title {
+		font-size: var(--type-headline);
 		font-weight: 800;
-		color: #ffffff;
-		letter-spacing: -0.02em;
+		letter-spacing: var(--tracking-tight);
+		line-height: 1.15;
+		overflow-wrap: anywhere;
 	}
-
-	.subtitle {
-		font-size: 1.05rem;
-		color: var(--text-secondary);
-		margin-top: 0.5rem;
-		margin-bottom: 2rem;
+	.status {
+		min-height: 1.5em;
+		color: var(--content-secondary);
+		font-size: var(--text-md);
 	}
-
 	.main-search-form {
 		display: flex;
-		gap: 0.75rem;
+		align-items: stretch;
+		gap: var(--space-2);
+		max-width: 44rem;
+		margin-top: var(--space-3);
 	}
-
-	.hero-search-input {
+	.field {
 		flex: 1;
-		padding: 0.85rem 1.25rem;
-		background: var(--bg-surface-1);
-		border: 1px solid var(--border-subtle);
-		border-radius: var(--radius-md);
-		color: var(--text-primary);
-		font-size: 1rem;
-		transition: all var(--transition-fast);
+		min-width: 0;
 	}
-
-	.hero-search-input:focus {
-		outline: none;
-		border-color: #10b981;
-		box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+	.results {
+		padding-top: var(--space-3);
 	}
-
-	.results-header {
+	.empty-actions {
 		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		margin-bottom: 2rem;
-		padding-bottom: 1rem;
-		border-bottom: 1px solid var(--border-subtle);
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: var(--space-2);
 	}
-
-	@media (min-width: 768px) {
-		.results-header {
-			flex-direction: row;
-			align-items: center;
-			justify-content: space-between;
+	/* States and the film grid keep the gutter; the series rail bleeds to the edges. */
+	.results > :global(:not(.section)),
+	.films,
+	.grid-pad {
+		padding-inline: var(--page-gutter);
+	}
+	.results :global(.result-group) {
+		margin-block: var(--space-4) var(--space-6);
+	}
+	.main-search-form :global(.submit) {
+		gap: var(--space-2);
+	}
+	@media (max-width: 639px) {
+		.main-search-form :global(.submit) {
+			width: 3.25rem;
+			padding-inline: 0;
+		}
+		.submit-label {
+			display: none;
 		}
 	}
-
-	.results-title-group {
+	.cell {
+		min-width: 0;
+	}
+	.genres {
 		display: flex;
-		align-items: baseline;
-		gap: 1rem;
+		gap: var(--space-2);
+		/* Room for the focus ring, which a scrolling row would otherwise clip. */
+		margin-block: -0.4rem;
+		padding: 0.4rem var(--page-gutter);
+		overflow-x: auto;
+		scrollbar-width: none;
 	}
-
-	.results-header h2 {
-		font-size: 1.5rem;
-		font-weight: 700;
+	.genres::-webkit-scrollbar {
+		display: none;
 	}
-
-	.query-text {
-		color: #10b981;
-	}
-
-	.count {
-		font-size: 0.9rem;
-		color: var(--text-tertiary);
-	}
-
-	.sort-controls {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-	}
-
-	.sort-label {
-		font-size: 0.75rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-		color: var(--text-tertiary);
-	}
-
-	.sort-pills {
-		display: flex;
-		align-items: center;
-		background: var(--bg-surface-1);
-		border: 1px solid var(--border-subtle);
-		border-radius: 9999px;
-		padding: 3px;
-		gap: 2px;
-	}
-
-	.sort-pill {
-		border: 1px solid transparent;
-		background: transparent;
-		color: var(--text-secondary);
-		font-size: 0.78rem;
-		font-weight: 600;
-		padding: 0.35rem 0.75rem;
-		border-radius: 9999px;
-		cursor: pointer;
-		transition: all 150ms ease;
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-		user-select: none;
-	}
-
-	.sort-pill:hover {
-		color: var(--text-primary);
-		background: rgba(255, 255, 255, 0.05);
-	}
-
-	.sort-pill.active {
-		background: rgba(16, 185, 129, 0.15);
-		color: var(--accent-emerald);
-		border-color: rgba(16, 185, 129, 0.4);
-		font-weight: 700;
-	}
-
-	.grid-movies {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-		gap: 1.5rem;
-	}
-
-	.no-results {
-		text-align: center;
-		padding: 4rem 2rem;
-		background: var(--bg-surface-1);
-		border-radius: var(--radius-lg);
-		border: 1px solid var(--border-subtle);
-	}
-
-	.emoji {
-		font-size: 3rem;
-		margin-bottom: 1rem;
-	}
-
-	.no-results h3 {
-		font-size: 1.25rem;
-		margin-bottom: 0.5rem;
-	}
-
-	.hint {
-		color: var(--text-tertiary);
-		font-size: 0.95rem;
+	@media (min-width: 768px) {
+		.genres {
+			flex-wrap: wrap;
+			overflow: visible;
+		}
 	}
 </style>

@@ -87,7 +87,7 @@
 
 <div class="linear-grid-bg"></div>
 
-<main class="tool-container">
+<div class="tool-container">
 	<div class="tool-header">
 		<a href="/" class="back-link">← Back to Vault Hub</a>
 		<div class="title-row">
@@ -222,7 +222,7 @@
 			</div>
 		{/if}
 	{/if}
-</main>
+</div>
 
 <style>
 	.linear-grid-bg {

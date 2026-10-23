@@ -1,43 +1,37 @@
 import { json, error } from '@sveltejs/kit';
 import { getPickerRecommendation } from '$lib/server/picker';
+import { parseRecommendRequest, type RecommendRequest } from '$lib/server/picker/request';
+import type { ParseResult } from '$lib/server/security/request-bounds';
 import type { RequestHandler } from './$types';
 
+async function recommend(userId: string | null, parsed: ParseResult<RecommendRequest>) {
+	if (!parsed.ok) return json({ error: parsed.error }, { status: 400 });
+
+	const result = await getPickerRecommendation({ userId, ...parsed.value });
+	if (!result) {
+		return json(
+			{
+				movie: null,
+				reason: 'No movie candidates match your current filter criteria.',
+				sessionId: parsed.value.sessionId
+			},
+			{ status: 200 }
+		);
+	}
+
+	return json(result);
+}
+
 export const POST: RequestHandler = async ({ request, locals }) => {
+	let body: unknown;
 	try {
-		const body = await request.json().catch(() => ({}));
-		const sessionId = String(body.sessionId || crypto.randomUUID());
-		const shownMovieIds = Array.isArray(body.shownMovieIds) ? body.shownMovieIds.map(String) : [];
-		const position = typeof body.position === 'number' ? body.position : 1;
-		const filters = typeof body.filters === 'object' && body.filters !== null ? body.filters : {};
-		const recentDirectorsShown = Array.isArray(body.recentDirectorsShown)
-			? body.recentDirectorsShown.map(String)
-			: [];
-		const recentPrimaryGenresShown = Array.isArray(body.recentPrimaryGenresShown)
-			? body.recentPrimaryGenresShown.map(String)
-			: [];
+		body = await request.json();
+	} catch {
+		return json({ error: 'Request body must be valid JSON.' }, { status: 400 });
+	}
 
-		const result = await getPickerRecommendation({
-			userId: locals.user?.id ?? null,
-			sessionId,
-			filters,
-			shownMovieIds,
-			position,
-			recentDirectorsShown,
-			recentPrimaryGenresShown
-		});
-
-		if (!result) {
-			return json(
-				{
-					movie: null,
-					reason: 'No movie candidates match your current filter criteria.',
-					sessionId
-				},
-				{ status: 200 }
-			);
-		}
-
-		return json(result);
+	try {
+		return await recommend(locals.user?.id ?? null, parseRecommendRequest(body));
 	} catch (err) {
 		console.error('Error in /api/picker/recommend:', err);
 		throw error(500, { message: 'Internal server error while generating movie recommendation.' });
@@ -45,23 +39,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 };
 
 export const GET: RequestHandler = async ({ url, locals }) => {
+	const parsed = parseRecommendRequest({
+		sessionId: url.searchParams.get('sessionId') ?? undefined,
+		filters: url.searchParams.has('preset') ? { preset: url.searchParams.get('preset') } : undefined
+	});
+
 	try {
-		const sessionId = url.searchParams.get('sessionId') || crypto.randomUUID();
-		const preset = url.searchParams.get('preset') || undefined;
-
-		const result = await getPickerRecommendation({
-			userId: locals.user?.id ?? null,
-			sessionId,
-			filters: preset ? { preset: preset as any } : {},
-			shownMovieIds: [],
-			position: 1
-		});
-
-		if (!result) {
-			return json({ movie: null, sessionId });
-		}
-
-		return json(result);
+		return await recommend(locals.user?.id ?? null, parsed);
 	} catch (err) {
 		console.error('Error in GET /api/picker/recommend:', err);
 		throw error(500, { message: 'Internal server error' });

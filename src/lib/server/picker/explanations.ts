@@ -1,4 +1,4 @@
-import type { ScoredCandidate, UserTasteProfile } from './types';
+import type { ScoredCandidate, UserTasteProfile } from '$lib/picker/types';
 
 export function generateRecommendationExplanation(
 	scored: ScoredCandidate,

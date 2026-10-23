@@ -49,7 +49,7 @@
 				logs = [...logs.slice(-100), log];
 				scrollToBottom();
 			} catch {
-				/* ignore malformed telemetry message */
+				// Ignore malformed stream messages and keep the live HUD connected.
 			}
 		};
 

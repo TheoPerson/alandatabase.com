@@ -9,7 +9,11 @@
 	let { message, type }: Props = $props();
 </script>
 
-<div class="toast toast-{type}">
+<div
+	class="toast toast-{type}"
+	role={type === 'error' ? 'alert' : 'status'}
+	aria-live={type === 'error' ? 'assertive' : 'polite'}
+>
 	{message}
 </div>
 
@@ -25,7 +29,8 @@
 		font-weight: 500;
 		animation: slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		pointer-events: auto;
-		min-width: 250px;
+		min-width: min(250px, 100%);
+		max-width: 100%;
 	}
 
 	.toast-success {
@@ -37,7 +42,13 @@
 	}
 
 	.toast-info {
-		border-left: 4px solid var(--accent-blue);
+		border-left: 4px solid var(--color-info);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.toast {
+			animation: none;
+		}
 	}
 
 	@keyframes slide-in {

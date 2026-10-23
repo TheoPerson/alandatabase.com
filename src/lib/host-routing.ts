@@ -1,0 +1,95 @@
+export const CANONICAL_HOST = 'alandatabase.com';
+export const WWW_HOST = `www.${CANONICAL_HOST}`;
+export const API_HOST = `api.${CANONICAL_HOST}`;
+export const AUTH_HOST = `auth.${CANONICAL_HOST}`;
+export const STATUS_HOST = `status.${CANONICAL_HOST}`;
+export const VERCEL_PRODUCTION_HOST = 'alans-database.vercel.app';
+// Default host of the Netlify site. Preview deploys use other hosts
+// (deploy-preview-N--site.netlify.app) and are deliberately not redirected.
+export const NETLIFY_PRODUCTION_HOST = 'the-alans-data-base.netlify.app';
+
+export const PRODUCTION_HOSTS = new Set([
+	CANONICAL_HOST,
+	WWW_HOST,
+	API_HOST,
+	AUTH_HOST,
+	STATUS_HOST,
+	VERCEL_PRODUCTION_HOST,
+	NETLIFY_PRODUCTION_HOST
+]);
+
+export function normalizeHostname(hostname: string): string {
+	return hostname.trim().toLowerCase().replace(/\.$/, '');
+}
+
+export function isProductionHostname(hostname: string): boolean {
+	return PRODUCTION_HOSTS.has(normalizeHostname(hostname));
+}
+
+/**
+ * Returns the application route that should serve a hostname-specific request.
+ * Static assets and API requests intentionally pass through unchanged.
+ */
+export function getHostnameRoute(url: URL): string | undefined {
+	const host = normalizeHostname(url.hostname);
+	const pathname = url.pathname || '/';
+
+	if (host === STATUS_HOST && pathname === '/') {
+		return '/status';
+	}
+
+	if (host === API_HOST) {
+		if (pathname === '/') return '/api';
+		if (pathname === '/health') return '/api/health';
+		if (pathname === '/api') return '/api';
+		if (pathname.startsWith('/api/')) return pathname;
+		return `/api${pathname}`;
+	}
+
+	if (host === AUTH_HOST && (pathname === '/' || pathname === '/auth')) {
+		return '/auth/login';
+	}
+
+	return undefined;
+}
+
+/**
+ * Resolve a request to the canonical public URL when it is an alias or is
+ * arriving over plain HTTP behind a proxy.
+ */
+export function getCanonicalRedirect(url: URL, forwardedProto?: string | null): URL | null {
+	const host = normalizeHostname(url.hostname);
+	const pathname = url.pathname || '/';
+	const firstForwardedProto = forwardedProto?.split(',')[0]?.trim().toLowerCase();
+	const effectiveProto = firstForwardedProto || url.protocol.replace(':', '').toLowerCase();
+
+	const isAuthPortalPath =
+		pathname === '/' || pathname === '/auth' || pathname.startsWith('/auth/');
+	const shouldUseCanonicalHost =
+		host === WWW_HOST ||
+		host === VERCEL_PRODUCTION_HOST ||
+		host === NETLIFY_PRODUCTION_HOST ||
+		(host === AUTH_HOST && !isAuthPortalPath);
+	const shouldUseHttps = isProductionHostname(host) && effectiveProto === 'http';
+
+	if (!shouldUseCanonicalHost && !shouldUseHttps) return null;
+
+	const target = new URL(url);
+	target.protocol = 'https:';
+	target.port = '';
+
+	if (shouldUseCanonicalHost) {
+		target.hostname = CANONICAL_HOST;
+	}
+
+	return target;
+}
+
+export function getAuthPortalUrl(url: URL, returnTo: string): string {
+	const query = `?returnTo=${encodeURIComponent(returnTo)}`;
+	if (isProductionHostname(url.hostname)) {
+		return `https://${AUTH_HOST}/auth/login${query}`;
+	}
+
+	return `/auth/login${query}`;
+}

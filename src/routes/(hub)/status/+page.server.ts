@@ -1,58 +1,70 @@
 import type { PageServerLoad } from './$types';
 import { db } from '$lib/server/db';
 import { sql } from 'drizzle-orm';
+import { getExternalUptime, type ServiceState } from '$lib/server/services/uptime.service';
+import { parseReleaseNotes } from '$lib/release-notes';
+import changelog from '../../../../CHANGELOG.md?raw';
 
-export const load: PageServerLoad = async () => {
-	const startTime = Date.now();
+export const load: PageServerLoad = async ({ setHeaders }) => {
+	const startedAt = performance.now();
+	let dbOnline = false;
+	let dbLatencyMs: number | null = null;
 
-	// 1. Postgres Ping
-	let dbStatus = 'OFFLINE';
-	let dbLatencyMs = -1;
 	try {
-		const dbStart = Date.now();
 		await db.execute(sql`SELECT 1`);
-		dbLatencyMs = Date.now() - dbStart;
-		dbStatus = 'ONLINE';
-	} catch (err: any) {
-		dbStatus = `ERROR: ${err.message || 'Connection failed'}`;
+		dbOnline = true;
+		dbLatencyMs = Math.max(0, Math.round(performance.now() - startedAt));
+	} catch {
+		// The public status page reports availability without exposing
+		// connection details or database error messages.
 	}
 
-	// 2. TMDB API Ping
-	let tmdbStatus = 'OFFLINE';
-	let tmdbLatencyMs = -1;
-	try {
-		const tmdbStart = Date.now();
-		const apiKey = process.env.TMDB_API_KEY;
-		if (apiKey) {
-			const res = await fetch(
-				`https://api.themoviedb.org/3/movie/popular?api_key=${apiKey}&page=1`
-			);
-			if (res.ok) {
-				tmdbLatencyMs = Date.now() - tmdbStart;
-				tmdbStatus = 'ONLINE';
-			}
-		}
-	} catch (err: any) {
-		tmdbStatus = `ERROR: ${err.message || 'API request failed'}`;
-	}
+	const externalUptime = await getExternalUptime();
+	const serverLatencyMs = Math.max(0, Math.round(performance.now() - startedAt));
+	const databaseState: ServiceState = dbOnline ? 'operational' : 'outage';
+	const overallState: ServiceState =
+		externalUptime.state === 'outage'
+			? 'outage'
+			: !dbOnline || externalUptime.state === 'degraded'
+				? 'degraded'
+				: 'operational';
 
-	const totalServerLatencyMs = Date.now() - startTime;
+	setHeaders({
+		'cache-control': 'public, max-age=0, s-maxage=60, stale-while-revalidate=300'
+	});
 
 	return {
-		telemetry: {
-			timestamp: new Date().toISOString(),
-			serverLatencyMs: totalServerLatencyMs,
-			nodeEnv: process.env.NODE_ENV || 'production',
-			db: {
-				status: dbStatus,
-				latencyMs: dbLatencyMs,
-				provider: 'Neon Postgres (Serverless Pooler)'
-			},
-			tmdb: {
-				status: tmdbStatus,
-				latencyMs: tmdbLatencyMs,
-				endpoint: 'https://api.themoviedb.org/3'
-			}
-		}
+		status: {
+			overallState,
+			checkedAt: new Date().toISOString(),
+			externalUptime,
+			services: [
+				{
+					name: 'Web application',
+					description: 'alandatabase.com',
+					state: 'operational' as const,
+					latencyMs: serverLatencyMs
+				},
+				{
+					name: 'API',
+					description: 'Catalogue API (database probe)',
+					state: databaseState,
+					latencyMs: dbLatencyMs
+				},
+				{
+					name: 'Authentication',
+					description: 'Sessions (database probe)',
+					state: databaseState,
+					latencyMs: dbLatencyMs
+				},
+				{
+					name: 'PostgreSQL',
+					description: 'Primary data store',
+					state: databaseState,
+					latencyMs: dbLatencyMs
+				}
+			]
+		},
+		releases: parseReleaseNotes(changelog)
 	};
 };

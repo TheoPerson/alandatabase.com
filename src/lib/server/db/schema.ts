@@ -11,11 +11,14 @@ import {
 	timestamp,
 	smallint,
 	jsonb,
+	real,
 	primaryKey,
 	index,
-	uniqueIndex
+	uniqueIndex,
+	check
 } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
+import type { AudioTrack, ParsedName, SubtitleTrack, VideoInfo } from '../../media/types.js';
 
 // -----------------------------------------------------------------------------
 // 1. MOVIES & COLLECTIONS
@@ -177,6 +180,37 @@ export const movieVideos = pgTable(
 	(table) => [uniqueIndex('idx_movie_videos_unique').on(table.movieId, table.key)]
 );
 
+export const WATCH_PROVIDER_KINDS = ['flatrate', 'free', 'ads', 'rent', 'buy'] as const;
+export type WatchProviderKind = (typeof WATCH_PROVIDER_KINDS)[number];
+
+// Where a title can be watched legally, per region, from TMDB's JustWatch feed.
+export const movieWatchProviders = pgTable(
+	'movie_watch_providers',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		movieId: uuid('movie_id')
+			.notNull()
+			.references(() => movies.id, { onDelete: 'cascade' }),
+		region: varchar('region', { length: 2 }).notNull(),
+		kind: varchar('kind', { length: 10 }).notNull(),
+		providerId: integer('provider_id').notNull(),
+		providerName: varchar('provider_name', { length: 200 }).notNull(),
+		logoPath: varchar('logo_path', { length: 255 }),
+		displayPriority: integer('display_priority').default(0).notNull(),
+		link: text('link'),
+		syncedAt: timestamp('synced_at').defaultNow().notNull()
+	},
+	(table) => [
+		index('idx_movie_watch_providers_movie').on(table.movieId),
+		uniqueIndex('idx_movie_watch_providers_unique').on(
+			table.movieId,
+			table.region,
+			table.kind,
+			table.providerId
+		)
+	]
+);
+
 // -----------------------------------------------------------------------------
 // 4. CAST & CREW JUNCTIONS
 // -----------------------------------------------------------------------------
@@ -236,13 +270,21 @@ export const users = pgTable(
 		passwordHash: varchar('password_hash', { length: 255 }).notNull(),
 		displayName: varchar('display_name', { length: 100 }),
 		avatarPath: varchar('avatar_path', { length: 255 }),
+		role: varchar('role', { length: 20 }).default('member').notNull(),
+		disabledAt: timestamp('disabled_at'),
 		settings: jsonb('settings').default('{}'),
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').defaultNow().notNull()
 	},
 	(table) => [
 		index('idx_users_email').on(table.email),
-		index('idx_users_username').on(table.username)
+		uniqueIndex('idx_users_email_normalized').on(sql`lower(${table.email})`),
+		index('idx_users_username').on(table.username),
+		index('idx_users_role').on(table.role),
+		uniqueIndex('idx_users_single_owner')
+			.on(table.role)
+			.where(sql`${table.role} = 'owner'`),
+		check('users_role_check', sql`${table.role} in ('owner', 'admin', 'member')`)
 	]
 );
 
@@ -254,9 +296,72 @@ export const sessions = pgTable(
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
 		expiresAt: timestamp('expires_at').notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		lastSeenAt: timestamp('last_seen_at').defaultNow().notNull(),
+		revokedAt: timestamp('revoked_at')
+	},
+	(table) => [
+		index('idx_sessions_user').on(table.userId),
+		index('idx_sessions_active').on(table.userId, table.revokedAt, table.expiresAt)
+	]
+);
+
+export const authInvites = pgTable(
+	'auth_invites',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		email: varchar('email', { length: 255 }).notNull(),
+		tokenHash: varchar('token_hash', { length: 64 }).notNull().unique(),
+		role: varchar('role', { length: 20 }).default('member').notNull(),
+		invitedBy: uuid('invited_by')
+			.notNull()
+			.references(() => users.id, { onDelete: 'restrict' }),
+		acceptedBy: uuid('accepted_by').references(() => users.id, { onDelete: 'set null' }),
+		expiresAt: timestamp('expires_at').notNull(),
+		acceptedAt: timestamp('accepted_at'),
+		revokedAt: timestamp('revoked_at'),
 		createdAt: timestamp('created_at').defaultNow().notNull()
 	},
-	(table) => [index('idx_sessions_user').on(table.userId)]
+	(table) => [
+		index('idx_auth_invites_email').on(table.email),
+		index('idx_auth_invites_pending').on(table.email, table.expiresAt),
+		check('auth_invites_role_check', sql`${table.role} in ('admin', 'member')`)
+	]
+);
+
+export const authAuditEvents = pgTable(
+	'auth_audit_events',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		actorUserId: uuid('actor_user_id').references(() => users.id, { onDelete: 'set null' }),
+		targetUserId: uuid('target_user_id').references(() => users.id, { onDelete: 'set null' }),
+		inviteId: uuid('invite_id').references(() => authInvites.id, { onDelete: 'set null' }),
+		action: varchar('action', { length: 80 }).notNull(),
+		metadata: jsonb('metadata'),
+		createdAt: timestamp('created_at').defaultNow().notNull()
+	},
+	(table) => [
+		index('idx_auth_audit_actor').on(table.actorUserId),
+		index('idx_auth_audit_target').on(table.targetUserId),
+		index('idx_auth_audit_created').on(table.createdAt)
+	]
+);
+
+export const rateLimits = pgTable(
+	'rate_limits',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		// The deployed table historically called this column `ip`. Runtime code
+		// stores only a keyed digest of the request subject in it.
+		subjectHash: varchar('ip', { length: 255 }).notNull(),
+		endpoint: varchar('endpoint', { length: 255 }).notNull(),
+		hits: integer('hits').default(1).notNull(),
+		expiresAt: timestamp('expires_at').notNull()
+	},
+	(table) => [
+		uniqueIndex('idx_rate_limits_subject_endpoint').on(table.subjectHash, table.endpoint),
+		index('idx_rate_limits_expires').on(table.expiresAt)
+	]
 );
 
 export const userMovieInteractions = pgTable(
@@ -365,7 +470,7 @@ export const aiChatSessions = pgTable(
 		userId: uuid('user_id')
 			.notNull()
 			.references(() => users.id, { onDelete: 'cascade' }),
-		sessionKey: varchar('session_key', { length: 100 }).notNull().unique(), // cookie value
+		sessionKey: varchar('session_key', { length: 100 }).notNull(), // cookie value
 		messages: jsonb('messages').notNull().default('[]'), // Gemini-format message array
 		createdAt: timestamp('created_at').defaultNow().notNull(),
 		updatedAt: timestamp('updated_at').defaultNow().notNull()
@@ -373,6 +478,196 @@ export const aiChatSessions = pgTable(
 	(table) => [
 		index('idx_ai_sessions_user').on(table.userId),
 		uniqueIndex('idx_ai_sessions_key').on(table.sessionKey)
+	]
+);
+
+// -----------------------------------------------------------------------------
+// 6. TV CATALOGUE (TMDB-backed, same standard-content policy as movies)
+// -----------------------------------------------------------------------------
+
+export const tvShows = pgTable('tv_shows', {
+	id: uuid('id').defaultRandom().primaryKey(),
+	tmdbId: integer('tmdb_id').notNull().unique(),
+	name: text('name').notNull(),
+	originalName: text('original_name'),
+	overview: text('overview'),
+	tagline: text('tagline'),
+	posterPath: text('poster_path'),
+	backdropPath: text('backdrop_path'),
+	// Unknown stays null: never synthesise a date or a count TMDB does not provide.
+	firstAirDate: date('first_air_date'),
+	lastAirDate: date('last_air_date'),
+	status: text('status'),
+	numberOfSeasons: integer('number_of_seasons'),
+	numberOfEpisodes: integer('number_of_episodes'),
+	voteAverage: decimal('vote_average', { precision: 3, scale: 1 }),
+	voteCount: integer('vote_count'),
+	popularity: real('popularity'),
+	originalLanguage: varchar('original_language', { length: 10 }),
+	imdbId: varchar('imdb_id', { length: 20 }),
+	adult: boolean('adult').default(false).notNull(),
+	localOverrides: jsonb('local_overrides'),
+	isLocked: boolean('is_locked').default(false).notNull(),
+	syncedAt: timestamp('synced_at'),
+	createdAt: timestamp('created_at').defaultNow().notNull(),
+	updatedAt: timestamp('updated_at').defaultNow().notNull()
+});
+
+export const tvGenres = pgTable(
+	'tv_genres',
+	{
+		showId: uuid('show_id')
+			.notNull()
+			.references(() => tvShows.id, { onDelete: 'cascade' }),
+		genreId: integer('genre_id')
+			.notNull()
+			.references(() => genres.id)
+	},
+	(table) => [primaryKey({ columns: [table.showId, table.genreId] })]
+);
+
+export const tvKeywords = pgTable(
+	'tv_keywords',
+	{
+		showId: uuid('show_id')
+			.notNull()
+			.references(() => tvShows.id, { onDelete: 'cascade' }),
+		keywordId: integer('keyword_id')
+			.notNull()
+			.references(() => keywords.id)
+	},
+	(table) => [primaryKey({ columns: [table.showId, table.keywordId] })]
+);
+
+export const tvSeasons = pgTable(
+	'tv_seasons',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		showId: uuid('show_id')
+			.notNull()
+			.references(() => tvShows.id, { onDelete: 'cascade' }),
+		seasonNumber: integer('season_number').notNull(),
+		name: text('name'),
+		overview: text('overview'),
+		posterPath: text('poster_path'),
+		airDate: date('air_date'),
+		episodeCount: integer('episode_count')
+	},
+	(table) => [uniqueIndex('idx_tv_seasons_show_season').on(table.showId, table.seasonNumber)]
+);
+
+export const tvEpisodes = pgTable(
+	'tv_episodes',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		showId: uuid('show_id')
+			.notNull()
+			.references(() => tvShows.id, { onDelete: 'cascade' }),
+		seasonId: uuid('season_id')
+			.notNull()
+			.references(() => tvSeasons.id, { onDelete: 'cascade' }),
+		seasonNumber: integer('season_number').notNull(),
+		episodeNumber: integer('episode_number').notNull(),
+		name: text('name'),
+		overview: text('overview'),
+		stillPath: text('still_path'),
+		airDate: date('air_date'),
+		runtime: integer('runtime'),
+		voteAverage: decimal('vote_average', { precision: 3, scale: 1 })
+	},
+	(table) => [
+		uniqueIndex('idx_tv_episodes_show_season_episode').on(
+			table.showId,
+			table.seasonNumber,
+			table.episodeNumber
+		)
+	]
+);
+
+// -----------------------------------------------------------------------------
+// 7. OWNER MEDIA LIBRARY (local files; paths never leave the server)
+// -----------------------------------------------------------------------------
+
+/** Server-only reference to a sidecar subtitle file (never sent to a client). */
+export interface ExternalSubtitleRef {
+	ordinal: number;
+	path: string;
+	language: string | null;
+}
+
+export const mediaFiles = pgTable(
+	'media_files',
+	{
+		id: uuid('id').defaultRandom().primaryKey(),
+		path: text('path').notNull().unique(),
+		sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull(),
+		mtimeMs: bigint('mtime_ms', { mode: 'number' }).notNull(),
+		durationSeconds: real('duration_seconds'),
+		video: jsonb('video').$type<VideoInfo | null>(),
+		audioTracks: jsonb('audio_tracks').$type<AudioTrack[]>().default([]).notNull(),
+		subtitleTracks: jsonb('subtitle_tracks').$type<SubtitleTrack[]>().default([]).notNull(),
+		externalSubtitles: jsonb('external_subtitles')
+			.$type<ExternalSubtitleRef[]>()
+			.default([])
+			.notNull(),
+		movieId: uuid('movie_id').references(() => movies.id, { onDelete: 'set null' }),
+		episodeId: uuid('episode_id').references(() => tvEpisodes.id, { onDelete: 'set null' }),
+		matchStatus: varchar('match_status', { length: 20 }).default('unmatched').notNull(),
+		matchNote: text('match_note'),
+		parsed: jsonb('parsed').$type<ParsedName | null>(),
+		scannedAt: timestamp('scanned_at').defaultNow().notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		index('idx_media_files_movie').on(table.movieId),
+		index('idx_media_files_episode').on(table.episodeId),
+		index('idx_media_files_match_status').on(table.matchStatus),
+		check(
+			'media_files_single_link_check',
+			sql`${table.movieId} is null or ${table.episodeId} is null`
+		)
+	]
+);
+
+/** Saved playback position per user and file (the owner today), synced across devices. */
+export const mediaProgress = pgTable(
+	'media_progress',
+	{
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		fileId: uuid('file_id')
+			.notNull()
+			.references(() => mediaFiles.id, { onDelete: 'cascade' }),
+		positionSeconds: real('position_seconds').notNull(),
+		durationSeconds: real('duration_seconds'),
+		completed: boolean('completed').default(false).notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		primaryKey({ columns: [table.userId, table.fileId] }),
+		index('idx_media_progress_user_updated').on(table.userId, table.updatedAt)
+	]
+);
+
+// A user's watchlist and favourite flags for a series, keyed by its TMDB id: a series page can
+// come from the IMDb Top TV snapshot alone, without a tv_shows row.
+export const userShowInteractions = pgTable(
+	'user_show_interactions',
+	{
+		userId: uuid('user_id')
+			.notNull()
+			.references(() => users.id, { onDelete: 'cascade' }),
+		tmdbId: integer('tmdb_id').notNull(),
+		watchlist: boolean('watchlist').default(false).notNull(),
+		favorite: boolean('favorite').default(false).notNull(),
+		createdAt: timestamp('created_at').defaultNow().notNull(),
+		updatedAt: timestamp('updated_at').defaultNow().notNull()
+	},
+	(table) => [
+		primaryKey({ columns: [table.userId, table.tmdbId] }),
+		index('idx_usi_user_updated').on(table.userId, table.updatedAt)
 	]
 );
 
@@ -391,6 +686,7 @@ export const moviesRelations = relations(movies, ({ one, many }) => ({
 	cast: many(movieCast),
 	crew: many(movieCrew),
 	videos: many(movieVideos),
+	watchProviders: many(movieWatchProviders),
 	interactions: many(userMovieInteractions),
 	reviews: many(userReviews)
 }));
@@ -422,6 +718,10 @@ export const movieVideosRelations = relations(movieVideos, ({ one }) => ({
 	movie: one(movies, { fields: [movieVideos.movieId], references: [movies.id] })
 }));
 
+export const movieWatchProvidersRelations = relations(movieWatchProviders, ({ one }) => ({
+	movie: one(movies, { fields: [movieWatchProviders.movieId], references: [movies.id] })
+}));
+
 export const userMovieInteractionsRelations = relations(userMovieInteractions, ({ one }) => ({
 	user: one(users, { fields: [userMovieInteractions.userId], references: [users.id] }),
 	movie: one(movies, { fields: [userMovieInteractions.movieId], references: [movies.id] })
@@ -433,6 +733,7 @@ export const userReviewsRelations = relations(userReviews, ({ one }) => ({
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
+	sessions: many(sessions),
 	interactions: many(userMovieInteractions),
 	reviews: many(userReviews),
 	lists: many(userLists),
@@ -468,4 +769,43 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
 
 export const aiChatSessionsRelations = relations(aiChatSessions, ({ one }) => ({
 	user: one(users, { fields: [aiChatSessions.userId], references: [users.id] })
+}));
+
+export const tvShowsRelations = relations(tvShows, ({ many }) => ({
+	genres: many(tvGenres),
+	keywords: many(tvKeywords),
+	seasons: many(tvSeasons),
+	episodes: many(tvEpisodes)
+}));
+
+export const tvGenresRelations = relations(tvGenres, ({ one }) => ({
+	show: one(tvShows, { fields: [tvGenres.showId], references: [tvShows.id] }),
+	genre: one(genres, { fields: [tvGenres.genreId], references: [genres.id] })
+}));
+
+export const tvKeywordsRelations = relations(tvKeywords, ({ one }) => ({
+	show: one(tvShows, { fields: [tvKeywords.showId], references: [tvShows.id] }),
+	keyword: one(keywords, { fields: [tvKeywords.keywordId], references: [keywords.id] })
+}));
+
+export const tvSeasonsRelations = relations(tvSeasons, ({ one, many }) => ({
+	show: one(tvShows, { fields: [tvSeasons.showId], references: [tvShows.id] }),
+	episodes: many(tvEpisodes)
+}));
+
+export const tvEpisodesRelations = relations(tvEpisodes, ({ one, many }) => ({
+	show: one(tvShows, { fields: [tvEpisodes.showId], references: [tvShows.id] }),
+	season: one(tvSeasons, { fields: [tvEpisodes.seasonId], references: [tvSeasons.id] }),
+	mediaFiles: many(mediaFiles)
+}));
+
+export const mediaFilesRelations = relations(mediaFiles, ({ one, many }) => ({
+	movie: one(movies, { fields: [mediaFiles.movieId], references: [movies.id] }),
+	episode: one(tvEpisodes, { fields: [mediaFiles.episodeId], references: [tvEpisodes.id] }),
+	progress: many(mediaProgress)
+}));
+
+export const mediaProgressRelations = relations(mediaProgress, ({ one }) => ({
+	user: one(users, { fields: [mediaProgress.userId], references: [users.id] }),
+	file: one(mediaFiles, { fields: [mediaProgress.fileId], references: [mediaFiles.id] })
 }));

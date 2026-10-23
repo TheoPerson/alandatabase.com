@@ -78,7 +78,7 @@ async function startMonitor() {
 							`\x1b[90m[${time}]\x1b[0m ${color}[${event.level}]\x1b[0m \x1b[1m[${event.source}]\x1b[0m ${event.message}`
 						);
 					} catch {
-						/* ignore malformed log payload */
+						// Ignore malformed telemetry events and keep monitoring.
 					}
 				}
 			}

@@ -1,20 +1,42 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import PickerCard from './PickerCard.svelte';
-	import PickerFiltersComponent from './PickerFilters.svelte';
+	import { onMount, tick } from 'svelte';
+	import { deserialize } from '$app/forms';
+	import Button from '$lib/components/ui/button';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import ErrorState from '$lib/components/ui/ErrorState.svelte';
+	import Skeleton from '$lib/components/ui/Skeleton.svelte';
+	import { addToast } from '$lib/stores/toast';
+	import { QUICK_PRESETS } from '$lib/picker/presets';
 	import type {
 		PickerFilters,
 		PickerPreset,
 		PickerRecommendationResponse
-	} from '$lib/server/picker/types';
-	import { QUICK_PRESETS } from '$lib/server/picker/config';
+	} from '$lib/picker/types';
+	import ArrowRightIcon from 'lucide-svelte/icons/arrow-right';
+	import RefreshIcon from 'lucide-svelte/icons/refresh-cw';
+	import SparklesIcon from 'lucide-svelte/icons/sparkles';
+	import { tmdbImageUrl } from '$lib/tmdb/images';
+	import PickerCard from './PickerCard.svelte';
+	import PickerFiltersComponent from './PickerFilters.svelte';
+	import {
+		interactionOutcome,
+		interactionToast,
+		isAnotherShortcut,
+		type InteractionState,
+		type InteractionType
+	} from './picker-view';
 
 	interface Props {
 		initialGenres: string[];
 		initialPick?: PickerRecommendationResponse | null;
+		/** TMDB backdrop paths from the viewer's watchlist, for the idle stage's ambient strip. */
+		backdrops?: string[];
 	}
 
-	let { initialGenres, initialPick = null }: Props = $props();
+	let { initialGenres, initialPick = null, backdrops = [] }: Props = $props();
+	const ambient = $derived(
+		backdrops.map((path) => tmdbImageUrl(path, 'w780')).filter((src): src is string => !!src)
+	);
 
 	// Session State
 	let sessionId = $state('');
@@ -32,72 +54,51 @@
 		mode: 'balanced'
 	});
 
+	// svelte-ignore state_referenced_locally
 	let recommendation = $state<PickerRecommendationResponse | null>(initialPick);
 	let loading = $state(false);
+	// svelte-ignore state_referenced_locally
 	let hasStarted = $state(initialPick !== null);
-	let errorMessage = $state<string | null>(null);
+	let outcome = $state<'idle' | 'ready' | 'empty' | 'error'>('idle');
+	let announcement = $state('');
+	let stage = $state<HTMLDivElement>();
 
-	// Quick interaction states for current movie
-	let isFavorited = $state(false);
-	let isWatchlisted = $state(false);
-	let isWatched = $state(false);
+	// Only what the server confirmed for the film on screen; null means unknown.
+	let interaction = $state<InteractionState | null>(null);
+	let pending = $state<InteractionType | null>(null);
 
 	onMount(() => {
 		sessionId = crypto.randomUUID();
 		if (initialPick) {
+			outcome = 'ready';
 			shownMovieIds.push(initialPick.movie.id);
 			if (initialPick.movie.director) recentDirectors.push(initialPick.movie.director);
 			if (initialPick.movie.genres[0]) recentGenres.push(initialPick.movie.genres[0]);
 			logEvent('impression', initialPick.movie.id);
 		}
-
-		window.addEventListener('keydown', handleKeydown);
 	});
 
-	onDestroy(() => {
-		if (typeof window !== 'undefined') {
-			window.removeEventListener('keydown', handleKeydown);
-		}
-	});
+	function handleKeydown(event: KeyboardEvent) {
+		if (!hasStarted || !recommendation || loading) return;
+		if (!isAnotherShortcut(event)) return;
+		event.preventDefault();
+		handleAnother();
+	}
 
-	function handleKeydown(e: KeyboardEvent) {
-		const target = e.target as HTMLElement;
-		if (
-			target &&
-			(target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
-		) {
-			return;
-		}
-
-		if (e.key === ' ' || e.key === 'Enter') {
-			e.preventDefault();
-			if (!hasStarted) {
-				findMovie();
-			} else {
-				handleAnother();
-			}
-		} else if (e.key === 'n' || e.key === 'N') {
-			if (hasStarted && recommendation) {
-				e.preventDefault();
-				handleAnother();
-			}
-		} else if (e.key === 'x' || e.key === 'X') {
-			if (hasStarted && recommendation) {
-				e.preventDefault();
-				handleNotTonight();
-			}
-		} else if (e.key === 'w' || e.key === 'W') {
-			if (hasStarted && recommendation) {
-				e.preventDefault();
-				window.location.href = `/movies/${recommendation.movie.id}`;
-			}
-		}
+	// On a phone the first pick scrolls the card up to fill the screen between the bars.
+	async function revealStage() {
+		if (!stage || !window.matchMedia('(max-width: 1023px)').matches) return;
+		const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		await tick();
+		stage?.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
 	}
 
 	async function findMovie(forceNewFilters?: PickerFilters) {
+		const first = !hasStarted;
 		loading = true;
-		errorMessage = null;
 		hasStarted = true;
+		if (first) revealStage();
+		announcement = 'Finding a film';
 
 		const currentFilters = forceNewFilters || activeFilters;
 
@@ -123,9 +124,11 @@
 
 			if (!data.movie) {
 				recommendation = null;
-				errorMessage = 'No movies matched your strict filters. Try relaxing era or rating.';
+				outcome = 'empty';
+				announcement = 'No film matches these filters';
 			} else {
 				recommendation = data;
+				outcome = 'ready';
 				shownMovieIds.push(data.movie.id);
 				position++;
 
@@ -136,22 +139,30 @@
 					recentGenres.push(data.movie.genres[0]);
 				}
 
-				// Reset interaction toggles for new movie
-				isFavorited = false;
-				isWatchlisted = false;
-				isWatched = false;
+				// A new film: nothing is known about it until the server answers.
+				interaction = null;
+				pending = null;
+				announcement = `Now showing ${data.movie.title}`;
 
 				logEvent('impression', data.movie.id);
 			}
-		} catch (err: any) {
+		} catch (err) {
 			console.error('Picker error:', err);
-			errorMessage = 'Unable to generate recommendation. Please try again.';
+			if (recommendation) {
+				// Keep the film on screen; say the next one did not arrive.
+				addToast('Could not load another film. Please try again.', 'error');
+				announcement = 'Could not load another film';
+			} else {
+				outcome = 'error';
+				announcement = 'Could not load a film';
+			}
 		} finally {
 			loading = false;
 		}
 	}
 
 	async function handleAnother() {
+		if (loading) return;
 		if (recommendation) {
 			logEvent('another', recommendation.movie.id);
 		}
@@ -159,6 +170,7 @@
 	}
 
 	async function handleNotTonight() {
+		if (loading) return;
 		if (recommendation) {
 			logEvent('not_tonight', recommendation.movie.id);
 		}
@@ -183,41 +195,44 @@
 		}
 	}
 
-	async function toggleFavorite() {
-		if (!recommendation) return;
-		isFavorited = !isFavorited;
-		logEvent('favorite', recommendation.movie.id);
-		await submitInteraction('favorite', isFavorited);
-	}
+	const EVENT_FOR: Record<InteractionType, string> = {
+		favorite: 'favorite',
+		watchlist: 'watchlist',
+		watched: 'watch'
+	};
 
-	async function toggleWatchlist() {
-		if (!recommendation) return;
-		isWatchlisted = !isWatchlisted;
-		logEvent('watchlist', recommendation.movie.id);
-		await submitInteraction('watchlist', isWatchlisted);
-	}
+	async function toggleInteraction(type: InteractionType) {
+		if (!recommendation || pending) return;
+		const movie = recommendation.movie;
+		// Unknown state asks to add; a confirmed state flips.
+		const value = interaction ? !interaction[type] : true;
+		pending = type;
+		logEvent(EVENT_FOR[type], movie.id);
 
-	async function toggleWatched() {
-		if (!recommendation) return;
-		isWatched = !isWatched;
-		logEvent('watch', recommendation.movie.id);
-		await submitInteraction('watched', isWatched);
-	}
-
-	async function submitInteraction(type: string, value: boolean) {
-		if (!recommendation) return;
+		let result: Parameters<typeof interactionOutcome>[0];
 		try {
 			const form = new FormData();
-			form.set('movieId', recommendation.movie.id);
 			form.set('type', type);
 			form.set('value', String(value));
-
-			await fetch(`/movies/catalog/${recommendation.movie.id}?/logInteraction`, {
+			const res = await fetch(`/movies/${encodeURIComponent(movie.id)}?/logInteraction`, {
 				method: 'POST',
+				headers: { accept: 'application/json', 'x-sveltekit-action': 'true' },
 				body: form
 			});
+			result = deserialize(await res.text()) as Parameters<typeof interactionOutcome>[0];
 		} catch {
-			// Non-blocking
+			result = { type: 'error', error: new Error('network') };
+		}
+
+		// The answer is for this film only; a newer pick has its own state.
+		if (recommendation?.movie.id !== movie.id) return;
+		pending = null;
+		const next = interactionOutcome(result);
+		if (next.ok) {
+			interaction = next.interaction;
+			addToast(interactionToast(type, movie.title, next.interaction), 'success');
+		} else {
+			addToast(next.message, 'error');
 		}
 	}
 
@@ -251,8 +266,9 @@
 	}
 </script>
 
-<div class="picker-container">
-	<!-- Top Controls: Presets and Filters -->
+<svelte:window onkeydown={handleKeydown} />
+
+<div class="picker">
 	<PickerFiltersComponent
 		{activeFilters}
 		{activePreset}
@@ -261,355 +277,384 @@
 		onPresetSelect={handlePresetSelect}
 	/>
 
-	<!-- Main Interaction Area -->
-	<main class="picker-stage">
-		{#if !hasStarted}
-			<!-- Initial Zero-Thinking Hero Screen -->
-			<section class="hero-start-box">
-				<div class="radar-pulse-disc">
-					<span class="cinema-clapper">🎬</span>
-				</div>
-				<h1 class="hero-prompt">What should I watch tonight?</h1>
-				<p class="hero-subtext">
-					High-confidence cinema curation powered by authentic IMDb quality and your personal taste
-					profile.
-				</p>
+	<p class="sr-only" role="status" aria-live="polite">{announcement}</p>
 
-				<button type="button" class="btn-hero-launch" onclick={() => findMovie()}>
-					<span>🎬 FIND A MOVIE</span>
-				</button>
-
-				<div class="keyboard-hint">
-					<span>Tip: Press</span> <kbd>Space</kbd> <span>or</span> <kbd>Enter</kbd>
-				</div>
-			</section>
+	<div class="stage" class:idle={!hasStarted} bind:this={stage}>
+		{#if recommendation && outcome === 'ready'}
+			<PickerCard
+				{recommendation}
+				{interaction}
+				{pending}
+				busy={loading}
+				onAnother={handleAnother}
+				onToggle={toggleInteraction}
+			/>
 		{:else if loading}
-			<!-- Loading Skeleton State -->
-			<div class="loading-box" aria-live="polite">
-				<div class="skeleton-card">
-					<div class="skeleton-poster shimmer"></div>
-					<div class="skeleton-content">
-						<div class="skeleton-line shimmer title-line"></div>
-						<div class="skeleton-line shimmer subtitle-line"></div>
-						<div class="skeleton-line shimmer desc-line"></div>
-						<div class="skeleton-line shimmer desc-line short"></div>
+			<div class="frame skeleton" aria-hidden="true">
+				<div class="skeleton-content">
+					<div class="poster-skeleton"><Skeleton height="100%" /></div>
+					<div class="skeleton-lines">
+						<Skeleton width="40%" height="0.75rem" />
+						<Skeleton width="75%" height="2rem" />
+						<Skeleton width="55%" height="0.875rem" />
+					</div>
+					<div class="skeleton-body">
+						<Skeleton height="4.5rem" />
+						<Skeleton width="90%" height="0.875rem" />
+						<Skeleton width="70%" height="0.875rem" />
+						<Skeleton height="var(--touch-target)" />
 					</div>
 				</div>
-				<p class="loading-label">Curating the highest-confidence pick...</p>
 			</div>
-		{:else if recommendation}
-			<!-- Recommendation Result Card -->
-			<div class="card-display-wrap">
-				<PickerCard
-					{recommendation}
-					{isFavorited}
-					{isWatchlisted}
-					{isWatched}
-					{loading}
-					onAnother={handleAnother}
-					onNotTonight={handleNotTonight}
-					onToggleFavorite={toggleFavorite}
-					onToggleWatchlist={toggleWatchlist}
-					onToggleWatched={toggleWatched}
-				/>
-
-				<div class="keyboard-legend">
-					<span>Keyboard:</span>
-					<span class="legend-item"><kbd>Space</kbd> Another</span>
-					<span class="legend-item"><kbd>X</kbd> Not Tonight</span>
-					<span class="legend-item"><kbd>W</kbd> Open Movie</span>
+		{:else if !hasStarted}
+			<section class="frame start" aria-labelledby="picker-start-title">
+				{#if ambient.length >= 3}
+					<div class="ambient" aria-hidden="true">
+						{#each ambient as src, index (src)}
+							<img {src} alt="" loading={index < 4 ? 'eager' : 'lazy'} decoding="async" />
+						{/each}
+					</div>
+				{/if}
+				<div class="start-copy">
+					<span class="mark" aria-hidden="true"><SparklesIcon size={26} /></span>
+					<div class="start-text">
+						<h2 id="picker-start-title">One film, chosen for tonight</h2>
+						<p>
+							Pick a mood above, or let the picker choose a well-rated film that suits what you
+							usually watch.
+						</p>
+					</div>
 				</div>
-			</div>
-		{:else if errorMessage}
-			<!-- Empty State / Fallback -->
-			<section class="empty-state-box">
-				<div class="empty-icon">🔍</div>
-				<h3 class="empty-title">No Perfect Matches Found</h3>
-				<p class="empty-desc">{errorMessage}</p>
-
-				<div class="empty-actions">
-					<button type="button" class="btn-reset-filters" onclick={handleReset}>
-						↻ Reset Filters to Defaults
-					</button>
-				</div>
+				<Button size="lg" class="start-cta" onclick={() => findMovie()}>
+					<SparklesIcon size={18} aria-hidden="true" />
+					Pick a film
+				</Button>
 			</section>
+		{:else if outcome === 'empty'}
+			<div class="frame state">
+				<EmptyState
+					title="No film matches these filters"
+					description="Try a wider era, a lower minimum score or fewer genres."
+				>
+					{#snippet action()}
+						<Button variant="secondary" onclick={handleReset}>Reset filters</Button>
+					{/snippet}
+				</EmptyState>
+			</div>
+		{:else}
+			<div class="frame state">
+				<ErrorState
+					title="The picker could not load a film"
+					description="Check your connection and try again."
+				>
+					{#snippet action()}
+						<Button variant="secondary" onclick={() => findMovie()}>Try again</Button>
+					{/snippet}
+				</ErrorState>
+			</div>
 		{/if}
-	</main>
+	</div>
+
+	{#if recommendation && outcome === 'ready'}
+		<div class="decision">
+			<p class="hint">
+				Press <kbd aria-label="Right arrow"><ArrowRightIcon size={14} aria-hidden="true" /></kbd>
+				for another film
+			</p>
+			<div class="decision-buttons">
+				<Button variant="ghost" size="lg" class="not-tonight" onclick={handleNotTonight}>
+					Not tonight
+				</Button>
+				<Button
+					variant="primary"
+					size="lg"
+					class="another"
+					aria-busy={loading ? 'true' : undefined}
+					onclick={handleAnother}
+				>
+					<span class="another-icon" class:spinning={loading}>
+						<RefreshIcon size={18} aria-hidden="true" />
+					</span>
+					Another
+				</Button>
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style>
-	.picker-container {
+	.picker {
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		width: 100%;
-		max-width: 1080px;
-		margin: 0 auto;
-		padding: 1rem 1rem 4rem;
+		gap: var(--space-4);
+		min-width: 0;
 	}
-
-	.picker-stage {
-		width: 100%;
+	/* The card fills what the bars leave on a phone; the header scrolls away above it. */
+	.stage {
 		display: flex;
+		scroll-margin-top: calc(var(--top-bar-height) + var(--safe-top) + var(--space-2));
+		min-height: max(
+			28rem,
+			calc(
+				100dvh - var(--top-bar-height) - var(--safe-top) - var(--bottom-bar-height) -
+					var(--safe-bottom) - 6.5rem
+			)
+		);
+	}
+	.stage > :global(*) {
+		flex: 1;
+		min-width: 0;
+	}
+	.frame {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-xl);
+		background: var(--surface-raised);
+	}
+	.skeleton {
+		justify-content: flex-end;
+	}
+	.skeleton-content {
+		display: grid;
+		grid-template-columns: 88px minmax(0, 1fr);
+		align-items: end;
+		gap: var(--space-4);
+		padding: var(--space-4);
+	}
+	.poster-skeleton {
+		aspect-ratio: 2 / 3;
+	}
+	.skeleton-lines,
+	.skeleton-body {
+		display: grid;
+		gap: var(--space-3);
+	}
+	.skeleton-body {
+		grid-column: 1 / -1;
+	}
+	/* Idle: a calm, compact invitation (not a screen-tall void). */
+	.stage.idle {
+		min-height: 0;
+	}
+	.start {
+		position: relative;
+		isolation: isolate;
+		align-items: center;
 		justify-content: center;
-		align-items: center;
-		min-height: 480px;
-	}
-
-	/* Initial Hero View */
-	.hero-start-box {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
+		gap: var(--space-5);
+		min-height: min(26rem, 60svh);
+		padding: var(--space-7) var(--space-5);
+		overflow: hidden;
 		text-align: center;
-		max-width: 580px;
-		padding: 3rem 1.5rem;
-		background: var(--bg-surface-1);
-		border: 1px solid var(--border-subtle);
-		border-radius: var(--radius-xl);
-		box-shadow: var(--shadow-md);
 	}
-
-	.radar-pulse-disc {
-		width: 80px;
-		height: 80px;
-		border-radius: var(--radius-full);
-		background: var(--accent-emerald-subtle);
-		border: 2px solid var(--accent-emerald);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		margin-bottom: 1.5rem;
-		animation: pulseRing 3s infinite ease-in-out;
+	.start-copy {
+		display: grid;
+		justify-items: center;
+		gap: var(--space-4);
 	}
-
-	.cinema-clapper {
-		font-size: 2.2rem;
+	.start-text {
+		display: grid;
+		gap: var(--space-3);
+		justify-items: center;
 	}
-
-	.hero-prompt {
-		font-size: 2rem;
-		font-weight: 800;
-		color: var(--text-primary);
-		letter-spacing: -0.02em;
-		margin-bottom: 0.75rem;
+	/* A soft strip of the viewer's own watchlist, far behind the copy. */
+	.ambient {
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		display: grid;
+		grid-auto-flow: column;
+		grid-auto-columns: minmax(12rem, 1fr);
+		gap: var(--space-2);
+		opacity: 0.32;
+		filter: blur(6px) saturate(1.1);
+		transform: scale(1.08);
+		mask-image: radial-gradient(75% 90% at 50% 50%, transparent 15%, black 85%);
 	}
-
-	.hero-subtext {
-		font-size: 0.95rem;
-		color: var(--text-secondary);
-		line-height: 1.6;
-		margin-bottom: 2rem;
-	}
-
-	.btn-hero-launch {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.6rem;
-		padding: 1rem 2.5rem;
-		background: var(--accent-emerald);
-		border-radius: var(--radius-md);
-		color: #000;
-		font-size: 1.1rem;
-		font-weight: 800;
-		cursor: pointer;
-		box-shadow: 0 4px 25px rgba(16, 185, 129, 0.4);
-		transition: all var(--transition-fast);
-	}
-
-	.btn-hero-launch:hover {
-		background: var(--accent-emerald-hover);
-		transform: scale(1.03) translateY(-2px);
-		box-shadow: 0 6px 30px rgba(16, 185, 129, 0.5);
-	}
-
-	.keyboard-hint {
-		margin-top: 1.5rem;
-		font-size: 0.8rem;
-		color: var(--text-tertiary);
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-	}
-
-	kbd {
-		background: var(--bg-surface-2);
-		border: 1px solid var(--border-subtle);
-		border-radius: 4px;
-		padding: 2px 6px;
-		font-family: var(--font-mono);
-		font-size: 0.75rem;
-		color: var(--text-secondary);
-	}
-
-	/* Loading Skeleton */
-	.loading-box {
+	.ambient img {
 		width: 100%;
-		max-width: 960px;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1.5rem;
+		height: 100%;
+		object-fit: cover;
 	}
-
-	.skeleton-card {
-		width: 100%;
-		background: var(--bg-surface-1);
-		border: 1px solid var(--border-subtle);
-		border-radius: var(--radius-xl);
-		padding: 2rem;
-		display: flex;
-		flex-direction: column;
-		gap: 2rem;
+	.ambient::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(
+			to bottom,
+			var(--surface-raised),
+			transparent 35%,
+			transparent 65%,
+			var(--surface-raised)
+		);
 	}
-
-	@media (min-width: 768px) {
-		.skeleton-card {
-			flex-direction: row;
+	@media (prefers-reduced-motion: no-preference) {
+		.ambient {
+			animation:
+				ambient-in var(--duration-slow) var(--ease-out) both,
+				ambient-drift 60s linear infinite alternate;
 		}
 	}
-
-	.skeleton-poster {
-		width: 280px;
-		height: 400px;
-		border-radius: var(--radius-md);
-		background: var(--bg-surface-2);
-		flex-shrink: 0;
+	@keyframes ambient-in {
+		from {
+			opacity: 0;
+		}
 	}
-
-	.skeleton-content {
-		flex: 1;
+	@keyframes ambient-drift {
+		to {
+			transform: scale(1.08) translateX(-4%);
+		}
+	}
+	.mark {
+		display: grid;
+		place-items: center;
+		width: 3.5rem;
+		height: 3.5rem;
+		border: 1px solid var(--brand-border);
+		border-radius: var(--radius-full);
+		background: var(--brand-muted);
+		color: var(--brand-primary);
+	}
+	.start h2 {
+		font-size: var(--type-headline);
+		font-weight: 900;
+		letter-spacing: var(--tracking-tight);
+		line-height: 1.1;
+	}
+	.start p {
+		max-width: 34rem;
+		color: var(--content-secondary);
+		line-height: 1.55;
+	}
+	.state {
+		justify-content: center;
+		padding: var(--space-5);
+	}
+	/* Big thumb-reach buttons pinned above the tab bar on phones. */
+	.decision {
+		position: sticky;
+		bottom: calc(var(--bottom-bar-height) + var(--safe-bottom) + var(--space-2));
+		z-index: 2;
 		display: flex;
-		flex-direction: column;
-		gap: 1.2rem;
-		padding-top: 1rem;
-	}
-
-	.skeleton-line {
-		height: 20px;
-		background: var(--bg-surface-2);
-		border-radius: var(--radius-sm);
-	}
-
-	.title-line {
-		width: 60%;
-		height: 36px;
-	}
-
-	.subtitle-line {
-		width: 40%;
-	}
-
-	.desc-line {
-		width: 100%;
-		height: 14px;
-	}
-
-	.desc-line.short {
-		width: 75%;
-	}
-
-	.shimmer {
-		animation: shimmer 1.5s infinite linear;
-		background: linear-gradient(
-			to right,
-			var(--bg-surface-2) 0%,
-			var(--bg-surface-3) 50%,
-			var(--bg-surface-2) 100%
-		);
-		background-size: 800px 100%;
-	}
-
-	.loading-label {
-		font-size: 0.9rem;
-		color: var(--text-secondary);
-		font-weight: 600;
-	}
-
-	/* Card Display Wrap */
-	.card-display-wrap {
-		width: 100%;
-		display: flex;
-		flex-direction: column;
 		align-items: center;
-		gap: 1.25rem;
+		justify-content: space-between;
+		gap: var(--space-4);
 	}
-
-	.keyboard-legend {
+	.decision-buttons {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+		gap: var(--space-2);
+		width: 100%;
+		padding: var(--space-2);
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-xl);
+		background: var(--surface-scrim);
+		backdrop-filter: blur(16px);
+	}
+	.decision-buttons :global(.another) {
+		width: 100%;
+	}
+	.another-icon {
+		display: inline-flex;
+	}
+	.another-icon.spinning {
+		animation: spin 0.9s linear infinite;
+	}
+	.hint {
 		display: none;
 		align-items: center;
-		gap: 1rem;
-		font-size: 0.8rem;
-		color: var(--text-tertiary);
+		gap: var(--space-2);
+		color: var(--content-tertiary);
+		font-size: var(--text-sm);
 	}
-
-	@media (min-width: 768px) {
-		.keyboard-legend {
+	kbd {
+		display: inline-grid;
+		place-items: center;
+		min-width: 1.75rem;
+		height: 1.5rem;
+		border: 1px solid var(--border-strong);
+		border-radius: var(--radius-xs);
+		background: var(--surface-interactive);
+		color: var(--content-secondary);
+	}
+	@media (min-width: 640px) {
+		.skeleton-content {
+			grid-template-columns: 150px minmax(0, 1fr);
+			padding: var(--space-6);
+		}
+	}
+	@media (min-width: 1024px) {
+		.stage {
+			min-height: min(36rem, calc(100dvh - var(--top-bar-height) - 14rem));
+		}
+		.stage.idle {
+			min-height: 0;
+		}
+		.start {
+			min-height: 24rem;
+		}
+		.decision {
+			position: static;
+		}
+		.decision-buttons {
 			display: flex;
+			width: auto;
+			padding: 0;
+			border: 0;
+			background: none;
+			backdrop-filter: none;
+		}
+		.hint {
+			display: inline-flex;
 		}
 	}
-
-	.legend-item {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-	}
-
-	/* Empty State */
-	.empty-state-box {
-		text-align: center;
-		padding: 3rem 2rem;
-		background: var(--bg-surface-1);
-		border: 1px solid var(--border-subtle);
-		border-radius: var(--radius-xl);
-		max-width: 480px;
-	}
-
-	.empty-icon {
-		font-size: 2.5rem;
-		margin-bottom: 1rem;
-	}
-
-	.empty-title {
-		font-size: 1.3rem;
-		font-weight: 700;
-		color: var(--text-primary);
-		margin-bottom: 0.5rem;
-	}
-
-	.empty-desc {
-		font-size: 0.9rem;
-		color: var(--text-secondary);
-		margin-bottom: 1.5rem;
-		line-height: 1.5;
-	}
-
-	.btn-reset-filters {
-		padding: 0.75rem 1.5rem;
-		background: var(--accent-emerald);
-		border: none;
-		border-radius: var(--radius-md);
-		color: #000;
-		font-weight: 700;
-		cursor: pointer;
-	}
-
-	@keyframes pulseRing {
-		0%,
-		100% {
-			box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+	/* Phone landscape: the stage never outgrows the screen; the idle state is one row with the
+	   call to action on the right, above the fold next to the moods. */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.stage {
+			min-height: 0;
 		}
-		50% {
-			box-shadow: 0 0 0 15px rgba(16, 185, 129, 0);
+		.start {
+			flex-direction: row;
+			justify-content: space-between;
+			gap: var(--space-5);
+			min-height: 0;
+			padding: var(--space-4) var(--space-5);
+			text-align: start;
+		}
+		.start-copy {
+			grid-template-columns: auto minmax(0, 1fr);
+			align-items: center;
+			justify-items: start;
+		}
+		.start-text {
+			justify-items: start;
+			gap: var(--space-1);
+		}
+		.start h2 {
+			font-size: var(--type-title);
+		}
+		.start p {
+			font-size: var(--text-sm);
+		}
+		.mark {
+			width: 2.75rem;
+			height: 2.75rem;
+		}
+		.start :global(.start-cta) {
+			flex: none;
 		}
 	}
-
-	@keyframes shimmer {
-		0% {
-			background-position: -400px 0;
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
 		}
-		100% {
-			background-position: 400px 0;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.another-icon.spinning {
+			animation: none;
 		}
 	}
 </style>

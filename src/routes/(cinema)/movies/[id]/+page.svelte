@@ -1,504 +1,1600 @@
 <script lang="ts">
-	import MoviePoster from '$lib/components/movie/MoviePoster.svelte';
-	import StreamPlayerContainer from '$lib/components/player/StreamPlayerContainer.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
-	import Badge from '$lib/components/ui/Badge.svelte';
-	import { addToast } from '$lib/stores/toast';
 	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import { replaceState } from '$app/navigation';
+	import type { Snapshot } from '@sveltejs/kit';
+	import { addToast } from '$lib/stores/toast';
+	import {
+		formatDate,
+		formatLanguage,
+		formatMoney,
+		formatRating,
+		formatRuntime,
+		formatVotes,
+		formatYear
+	} from '$lib/format';
+	import { DEFAULT_SORT, browseHref } from '$lib/catalogue/browse';
+	import { logoSrcSet, tmdbImageUrl } from '$lib/tmdb/images';
+	import { formatTime } from '$lib/player/format-time';
+	import { readResume, type ResumePoint } from '$lib/player/resume';
+	import Button from '$lib/components/ui/button';
+	import Chip from '$lib/components/ui/chip';
+	import Section from '$lib/components/ui/section';
+	import Rail from '$lib/components/ui/rail';
+	import PosterCard from '$lib/components/ui/poster-card';
+	import BackdropImage from '$lib/components/ui/backdrop-image';
+	import MetaChips from '$lib/components/ui/meta-chips';
+	import Tabs from '$lib/components/ui/tabs';
+	import Sheet from '$lib/components/ui/sheet';
+	import PersonCard from '$lib/components/ui/person-card';
+	import TrailerFacade from '$lib/components/ui/trailer-facade';
+	import ProviderLogo from '$lib/components/ui/provider-logo';
+	import StarRating from '$lib/components/ui/star-rating';
+	import ResumeBar from '$lib/components/ui/resume-bar';
+	import PlayerShell from '$lib/components/ui/player';
+	import EmptyState from '$lib/components/ui/EmptyState.svelte';
+	import PlayIcon from 'lucide-svelte/icons/play';
+	import BookmarkIcon from 'lucide-svelte/icons/bookmark';
+	import BookmarkCheckIcon from 'lucide-svelte/icons/bookmark-check';
+	import HeartIcon from 'lucide-svelte/icons/heart';
+	import EyeIcon from 'lucide-svelte/icons/eye';
+	import CircleCheckIcon from 'lucide-svelte/icons/circle-check';
+	import StarIcon from 'lucide-svelte/icons/star';
+	import Share2Icon from 'lucide-svelte/icons/share-2';
+	import ExternalLinkIcon from 'lucide-svelte/icons/external-link';
+	import LayersIcon from 'lucide-svelte/icons/layers';
+	import RotateCcwIcon from 'lucide-svelte/icons/rotate-ccw';
+	import ClapperboardIcon from 'lucide-svelte/icons/clapperboard';
+	import CheckIcon from 'lucide-svelte/icons/check';
+	import { jsonLdScript } from '$lib/seo/json-ld';
 
-	let { data, form } = $props();
-	const movie = $derived(data.movie);
-	const user = $derived(data.user);
-	const userInteraction = $derived(data.userInteraction);
+	let { data } = $props();
+	const language = $derived(formatLanguage(data.details.originalLanguage));
 
-	const directors = $derived(
-		movie?.crew ? movie.crew.filter((c: any) => c.job === 'Director') : []
-	);
+	type ToggleType = 'watchlist' | 'favorite' | 'watched';
+	type Interaction = NonNullable<typeof data.interaction>;
+	const EMPTY_INTERACTION: Interaction = {
+		watched: false,
+		watchlist: false,
+		favorite: false,
+		rating: null
+	};
 
-	const trailer = $derived(
-		movie?.videos
-			? movie.videos.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube') ||
-					movie.videos[0]
-			: null
-	);
+	const TAB_ITEMS = $derived([
+		{ value: 'overview', label: 'Overview' },
+		{ value: 'cast', label: 'Cast & crew' },
+		{ value: 'videos', label: 'Videos' },
+		{ value: 'details', label: 'Details' },
+		...(data.saga || data.similar.length ? [{ value: 'more', label: 'Saga & similar' }] : [])
+	]);
 
-	const releaseYear = $derived(
-		movie?.releaseDate ? new Date(movie.releaseDate).getFullYear() : 'N/A'
-	);
+	let tab = $state('overview');
+	// Back and forward restore the open tab, for example after visiting a cast member.
+	export const snapshot: Snapshot<string> = {
+		capture: () => tab,
+		restore: (value) => {
+			if (TAB_ITEMS.some((item) => item.value === value)) tab = value;
+		}
+	};
+	let region = $state<'FR' | 'US'>('FR');
+	let rateOpen = $state(false);
+	let wide = $state(false);
+	let pending = $state<string | null>(null);
+	let interaction = $state<Interaction | null>(null);
+	let draftRating = $state<number | null>(null);
+	let resume = $state<ResumePoint | null>(null);
 
-	let watched = $state(false);
-	let watchlist = $state(false);
-	let rating = $state<number | null>(null);
+	// The server state is the truth; optimistic flips are reverted when the save fails.
+	$effect(() => {
+		interaction = data.interaction;
+	});
+
+	// Hash, region and resume are client-only facts read once the page is on screen.
+	$effect(() => {
+		const hash = page.url.hash.replace('#', '');
+		if (TAB_ITEMS.some((item) => item.value === hash)) tab = hash;
+	});
 
 	$effect(() => {
-		watched = data.userInteraction?.watched || false;
-		watchlist = data.userInteraction?.watchlist || false;
-		rating = data.userInteraction?.rating ? Number(data.userInteraction.rating) : null;
+		try {
+			const stored = localStorage.getItem('ui:region');
+			if (stored === 'US' || stored === 'FR') region = stored;
+		} catch {
+			// Storage can be unavailable; the default region stands.
+		}
+		const media = window.matchMedia('(min-width: 768px)');
+		const apply = () => (wide = media.matches);
+		apply();
+		media.addEventListener('change', apply);
+		return () => media.removeEventListener('change', apply);
 	});
-</script>
 
-<svelte:head>
-	<title>{movie ? `${movie.title} (${releaseYear}) | CinemaDB` : 'Movie Details | CinemaDB'}</title>
-</svelte:head>
+	$effect(() => {
+		const key = data.trailers[0]?.key;
+		resume = key ? readResume(localStorage, key, Date.now()) : null;
+	});
 
-{#if movie}
-	<!-- Backdrop Banner -->
-	<div class="movie-backdrop-hero">
-		{#if movie.backdropPath && movie.backdropPath !== 'null'}
-			<img
-				src="https://image.tmdb.org/t/p/w1280{movie.backdropPath.startsWith('/')
-					? ''
-					: '/'}{movie.backdropPath}"
-				alt="{movie.title} Backdrop"
-				class="backdrop-img"
-			/>
-		{/if}
-		<div class="backdrop-gradient"></div>
-	</div>
-
-	<div class="container movie-detail-content">
-		<div class="movie-layout">
-			<!-- Left Sidebar (Poster & Actions) -->
-			<aside class="poster-column">
-				<div class="sticky-poster">
-					<MoviePoster path={movie.posterPath} title={movie.title} size="w500" />
-
-					<div class="action-buttons">
-						{#if user}
-							<!-- Watched Button -->
-							<form
-								method="POST"
-								action="?/logInteraction"
-								use:enhance={() => {
-									const previous = watched;
-									watched = !watched;
-									return async ({ result, update }) => {
-										if (result.type === 'error' || result.type === 'failure') {
-											watched = previous;
-										}
-										await update({ reset: false });
-									};
-								}}
-							>
-								<input type="hidden" name="movieId" value={movie.id} />
-								<input type="hidden" name="type" value="watched" />
-								<input type="hidden" name="value" value={(!watched).toString()} />
-								<Button type="submit" variant={watched ? 'success' : 'outline'} class="w-full">
-									{watched ? '✔ Watched' : 'Mark as Watched'}
-								</Button>
-							</form>
-
-							<!-- Watchlist Button -->
-							<form
-								method="POST"
-								action="?/logInteraction"
-								use:enhance={() => {
-									const previous = watchlist;
-									watchlist = !watchlist;
-									return async ({ result, update }) => {
-										if (result.type === 'error' || result.type === 'failure') {
-											watchlist = previous;
-										}
-										await update({ reset: false });
-									};
-								}}
-							>
-								<input type="hidden" name="movieId" value={movie.id} />
-								<input type="hidden" name="type" value="watchlist" />
-								<input type="hidden" name="value" value={(!watchlist).toString()} />
-								<Button type="submit" variant={watchlist ? 'success' : 'outline'} class="w-full">
-									{watchlist ? '✔ On Watchlist' : '+ Add to Watchlist'}
-								</Button>
-							</form>
-
-							<!-- Share Movie Button -->
-							<Button
-								variant="ghost"
-								class="w-full"
-								onclick={() => {
-									if (typeof navigator !== 'undefined') {
-										navigator.clipboard.writeText(window.location.href);
-										addToast('🔗 Movie link copied to clipboard!', 'success');
-									}
-								}}
-							>
-								🔗 Share Film
-							</Button>
-
-							<!-- Rate Button -->
-							<div class="rate-container glass-card">
-								<span class="rate-label">Your Rating</span>
-								<form
-									method="POST"
-									action="?/logInteraction"
-									use:enhance={({ formData }) => {
-										const previous = rating;
-										rating = Number(formData.get('value'));
-										return async ({ result, update }) => {
-											if (result.type === 'error' || result.type === 'failure') {
-												rating = previous;
-											}
-											await update({ reset: false });
-										};
-									}}
-									class="stars-form"
-								>
-									<input type="hidden" name="movieId" value={movie.id} />
-									<input type="hidden" name="type" value="rating" />
-									<div class="star-rating">
-										{#each [1, 2, 3, 4, 5] as star}
-											<button
-												type="submit"
-												name="value"
-												value={star}
-												class="star-btn"
-												class:active={rating !== null && rating >= star}
-											>
-												★
-											</button>
-										{/each}
-									</div>
-								</form>
-							</div>
-						{:else}
-							<div class="auth-prompt glass-card">
-								<p>Log in to track this film.</p>
-								<Button href="/auth/login" variant="primary" class="w-full">Sign In</Button>
-							</div>
-						{/if}
-					</div>
-				</div>
-			</aside>
-
-			<!-- Main Movie Info -->
-			<main class="info-column">
-				<!-- Header Title & Tagline -->
-				<div class="header-group">
-					<h1 class="movie-title">
-						{movie.title}
-						<span class="year">({releaseYear})</span>
-					</h1>
-
-					{#if movie.tagline}
-						<p class="tagline">"{movie.tagline}"</p>
-					{/if}
-
-					<!-- Key Specs & Badges -->
-					<div class="meta-pills">
-						{#if movie.voteAverage}
-							<Badge variant="gold">★ {Number(movie.voteAverage).toFixed(1)} / 10</Badge>
-						{/if}
-
-						{#if movie.runtime}
-							<Badge variant="surface">⏱ {movie.runtime} min</Badge>
-						{/if}
-
-						{#if movie.originalLanguage}
-							<Badge variant="outline">{movie.originalLanguage.toUpperCase()}</Badge>
-						{/if}
-
-						{#if movie.genres}
-							{#each movie.genres as g}
-								<Badge variant="surface">{(g as any).genre?.name || ''}</Badge>
-							{/each}
-						{/if}
-					</div>
-				</div>
-
-				<!-- Directors & Creators -->
-				{#if directors.length > 0}
-					<div class="director-block">
-						<span class="label">Directed by</span>
-						<div class="names">
-							{#each directors as d}
-								<span class="director-name">{d.person?.name}</span>
-							{/each}
-						</div>
-					</div>
-				{/if}
-
-				<!-- Synopsis / Overview -->
-				<section class="info-section">
-					<h2 class="section-heading">Overview</h2>
-					<p class="overview-text">{movie.overview || 'No overview available.'}</p>
-				</section>
-
-				<!-- Top Cast -->
-				{#if movie.cast && movie.cast.length > 0}
-					<section class="info-section">
-						<h2 class="section-heading">Top Cast</h2>
-						<div class="cast-grid">
-							{#each movie.cast as actor}
-								<a
-									href="/search?q={encodeURIComponent(actor.person?.name || '')}"
-									class="cast-card clickable-cast"
-								>
-									{#if actor.person?.profilePath}
-										<img
-											src="https://image.tmdb.org/t/p/w185{actor.person.profilePath}"
-											alt={actor.person.name}
-											class="cast-img"
-										/>
-									{:else}
-										<div class="cast-img-placeholder">👤</div>
-									{/if}
-									<div class="cast-info">
-										<p class="actor-name">{actor.person?.name}</p>
-										<p class="character-name">{actor.character || ''}</p>
-									</div>
-								</a>
-							{/each}
-						</div>
-					</section>
-				{/if}
-
-				<!-- Multi-Server HD Cinema Player -->
-				<section class="info-section">
-					<h2 class="section-heading">🎬 Watch Cinema Stream & Official Trailer</h2>
-					<StreamPlayerContainer
-						tmdbId={movie.tmdbId || movie.id}
-						imdbId={movie.imdbId}
-						title={movie.title}
-						trailerKey={trailer?.key}
-						customVideoUrl={movie.localOverrides?.customVideoUrl}
-					/>
-				</section>
-			</main>
-		</div>
-	</div>
-{/if}
-
-<style>
-	.movie-backdrop-hero {
-		position: relative;
-		height: 420px;
-		width: 100%;
-		overflow: hidden;
+	function selectTab(value: string) {
+		tab = value;
+		replaceState(`#${value}`, page.state);
 	}
 
-	.backdrop-img {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		filter: brightness(0.5) saturate(1.2);
-	}
-
-	.backdrop-gradient {
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(
-			to bottom,
-			rgba(7, 8, 11, 0.2) 0%,
-			rgba(7, 8, 11, 0.8) 70%,
-			var(--bg-primary) 100%
-		);
-	}
-
-	.movie-detail-content {
-		position: relative;
-		z-index: 10;
-		margin-top: -160px;
-		padding-bottom: 5rem;
-	}
-
-	.movie-layout {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: 2.5rem;
-	}
-
-	@media (min-width: 840px) {
-		.movie-layout {
-			grid-template-columns: 280px 1fr;
-			gap: 3.5rem;
+	function setRegion(next: 'FR' | 'US') {
+		region = next;
+		try {
+			localStorage.setItem('ui:region', next);
+		} catch {
+			// ignore
 		}
 	}
 
-	.sticky-poster {
-		position: sticky;
-		top: 90px;
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
+	const logo = $derived(logoSrcSet(data.hero.logoPath));
+	const score = $derived(formatRating(data.hero.rating));
+	const votes = $derived(formatVotes(data.voteCount));
+	const meta = $derived([formatYear(data.hero.releaseDate), formatRuntime(data.hero.runtime)]);
+	const loginHref = $derived(
+		`/auth/login?returnTo=${encodeURIComponent(`/movies/${data.hero.id}`)}`
+	);
+	const firstTrailer = $derived(data.trailers[0] ?? null);
+	const groups = $derived(data.providers[region]);
+	const providerRows = $derived(
+		[
+			['Stream', groups.stream],
+			['Free', groups.free],
+			['Rent', groups.rent],
+			['Buy', groups.buy]
+		].filter(([, rows]) => rows.length > 0) as Array<[string, typeof groups.stream]>
+	);
+	const canonicalUrl = $derived(`https://alandatabase.com/movies/${data.hero.id}`);
+	const metaDescription = $derived(
+		(data.overview || `Explore ${data.hero.title} on Alan Database.`).slice(0, 155)
+	);
+	const socialImage = $derived(
+		tmdbImageUrl(data.hero.backdropPath, 'w1280') ?? tmdbImageUrl(data.posterPath, 'w780')
+	);
+	const structuredMovieJson = $derived.by(() => {
+		const value: Record<string, unknown> = {
+			'@context': 'https://schema.org',
+			'@type': 'Movie',
+			name: data.hero.title,
+			url: canonicalUrl,
+			description: data.overview || undefined,
+			image: socialImage || undefined,
+			dateCreated: data.details.releaseDate || undefined,
+			actor: data.cast.slice(0, 10).map((person) => ({
+				'@type': 'Person',
+				name: person.name,
+				url: `https://alandatabase.com/people/${person.id}`
+			})),
+			director: data.keyCrew
+				.filter((entry) => entry.role === 'Director')
+				.map((entry) => ({
+					'@type': 'Person',
+					name: entry.name,
+					url: `https://alandatabase.com/people/${entry.personId}`
+				}))
+		};
+		if (data.details.runtime) value.duration = `PT${Math.trunc(data.details.runtime)}M`;
+		const rating = Number(data.hero.rating);
+		if (Number.isFinite(rating) && rating > 0 && data.voteCount) {
+			value.aggregateRating = {
+				'@type': 'AggregateRating',
+				ratingValue: rating,
+				bestRating: 10,
+				ratingCount: data.voteCount
+			};
+		}
+		return jsonLdScript(value);
+	});
+
+	function toggleLabel(type: ToggleType, on: boolean): string {
+		if (type === 'watchlist') return on ? 'In watchlist' : 'Watchlist';
+		if (type === 'favorite') return on ? 'Favourited' : 'Favourite';
+		// One word on one line in the phone grid; aria-pressed carries the state.
+		return 'Watched';
 	}
 
-	.action-buttons {
-		display: flex;
-		flex-direction: column;
-		gap: 0.65rem;
+	// Toast copy comes from the saved state the server returned, never from the click.
+	function toggleToast(type: ToggleType, saved: Interaction): string {
+		const title = data.hero.title;
+		if (type === 'watchlist') {
+			return saved.watchlist
+				? `${title} added to your watchlist`
+				: `${title} removed from your watchlist`;
+		}
+		if (type === 'favorite') {
+			return saved.favorite ? `${title} added to favourites` : `${title} removed from favourites`;
+		}
+		return saved.watched ? `${title} marked as watched` : `${title} marked as not watched`;
 	}
 
-	:global(.w-full) {
+	function submitToggle(type: ToggleType) {
+		return () => {
+			const previous = interaction;
+			const base = interaction ?? EMPTY_INTERACTION;
+			pending = type;
+			interaction = { ...base, [type]: !base[type] };
+			return async ({
+				result,
+				update
+			}: {
+				result: { type: string; data?: unknown };
+				update: (options?: { reset?: boolean }) => Promise<void>;
+			}) => {
+				pending = null;
+				const saved = (result.data as { interaction?: Interaction } | undefined)?.interaction;
+				if (result.type === 'success' && saved) {
+					interaction = saved;
+					addToast(toggleToast(type, saved), 'success');
+					await update({ reset: false });
+				} else {
+					interaction = previous;
+					addToast('That could not be saved. Please try again.', 'error');
+				}
+			};
+		};
+	}
+
+	function openRate() {
+		draftRating = interaction?.rating ?? null;
+		rateOpen = true;
+	}
+
+	function submitRating() {
+		pending = 'rating';
+		return async ({
+			result,
+			update
+		}: {
+			result: { type: string; data?: unknown };
+			update: (options?: { reset?: boolean }) => Promise<void>;
+		}) => {
+			pending = null;
+			const saved = (result.data as { interaction?: Interaction } | undefined)?.interaction;
+			if (result.type === 'success' && saved) {
+				interaction = saved;
+				rateOpen = false;
+				addToast(saved.rating === null ? 'Rating cleared' : `Rated ${saved.rating} / 5`, 'success');
+				await update({ reset: false });
+			} else {
+				addToast('The rating could not be saved. Please try again.', 'error');
+			}
+		};
+	}
+
+	async function share() {
+		try {
+			if (navigator.share) {
+				await navigator.share({ title: data.hero.title, url: canonicalUrl });
+				return;
+			}
+			await navigator.clipboard.writeText(canonicalUrl);
+			addToast('Link copied', 'success');
+		} catch (err) {
+			if ((err as { name?: string })?.name === 'AbortError') return;
+			addToast('Could not share this page.', 'error');
+		}
+	}
+
+	// Alan's HQP (owner only): the version picker for films with more than one local copy.
+	let versionsOpen = $state(false);
+
+	let playerOpen = $state(false);
+	let playerKey = $state('');
+
+	function openTrailer(key: string) {
+		playerKey = key;
+		playerOpen = true;
+	}
+
+	// Re-read the saved position once the player closes so the Play button stays truthful.
+	function onPlayerClose() {
+		const key = data.trailers[0]?.key;
+		try {
+			resume = key ? readResume(localStorage, key, Date.now()) : null;
+		} catch {
+			resume = null;
+		}
+	}
+</script>
+
+<svelte:head>
+	<title>{data.hero.title} | Alan Database</title>
+	<meta name="description" content={metaDescription} />
+	<link rel="canonical" href={canonicalUrl} />
+	<meta property="og:title" content={`${data.hero.title} | Alan Database`} />
+	<meta property="og:description" content={metaDescription} />
+	<meta property="og:type" content="video.movie" />
+	<meta property="og:url" content={canonicalUrl} />
+	{#if socialImage}<meta property="og:image" content={socialImage} />{/if}
+	<meta name="twitter:card" content={socialImage ? 'summary_large_image' : 'summary'} />
+	<!-- Safe: jsonLdScript escapes < > & and line separators; see src/lib/seo/json-ld.ts -->
+	<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+	{@html structuredMovieJson}
+</svelte:head>
+
+<article class="detail">
+	<header class="header">
+		<BackdropImage
+			path={data.hero.backdropPath}
+			eager
+			animate={false}
+			priority="low"
+			sizes="100vw"
+		/>
+		<div class="scrim" aria-hidden="true"></div>
+		<div class="header-content">
+			<div class="poster">
+				<PosterCard
+					id={data.hero.id}
+					title={data.hero.title}
+					posterPath={data.posterPath}
+					eager
+					sizes="(min-width: 1440px) 280px, (min-width: 1024px) 220px, (min-width: 768px) 180px, (orientation: landscape) and (max-height: 500px) 140px, 112px"
+				/>
+			</div>
+			<div class="text">
+				<p class="eyebrow-pill">Film</p>
+				<div class="title-box">
+					{#if logo}
+						<img
+							class="logo"
+							src={logo.src}
+							srcset={logo.srcset || undefined}
+							sizes="(min-width: 1024px) 420px, 70vw"
+							alt=""
+							width="500"
+							height="200"
+							loading="eager"
+							decoding="async"
+						/>
+						<h1 class="sr-only">{data.hero.title}</h1>
+					{:else}
+						<h1 class="title">{data.hero.title}</h1>
+					{/if}
+				</div>
+				{#if data.tagline}<p class="tagline">{data.tagline}</p>{/if}
+				<div class="rating-line">
+					{#if score}
+						<span class="score">
+							<span class="sr-only"
+								>TMDB rating {score} out of 10{votes ? `, ${votes} votes` : ''}</span
+							>
+							<span class="score-value" aria-hidden="true">{score}</span>
+							<span class="score-source" aria-hidden="true">TMDB</span>
+							{#if votes}<span class="score-votes" aria-hidden="true">{votes}</span>{/if}
+						</span>
+					{/if}
+					<MetaChips items={meta} class="meta" />
+				</div>
+				{#if data.genres.length}
+					<div class="genres">
+						{#each data.genres as genre (genre.id)}
+							<Chip
+								href={browseHref({
+									genreId: genre.id,
+									decade: null,
+									minRating: null,
+									sortBy: DEFAULT_SORT
+								})}>{genre.name}</Chip
+							>
+						{/each}
+					</div>
+				{/if}
+
+				{#if data.local}
+					{@const play = data.local.play}
+					<!-- The owner's own copy: plays in Alan's HQP (/watch). Nobody else gets this data. -->
+					<div class="local" role="group" aria-label="On this PC">
+						<div class="local-row">
+							<Button href={play.href} size="lg" class="local-play">
+								<PlayIcon size={20} fill="currentColor" aria-hidden="true" />
+								<span>{play.label}</span>
+								{#if play.progress > 0}
+									<span class="local-progress" aria-hidden="true">
+										<span style:transform={`scaleX(${play.progress})`}></span>
+									</span>
+								{/if}
+							</Button>
+							{#if play.startOverHref}
+								<Button href={play.startOverHref} variant="secondary" class="local-more">
+									<RotateCcwIcon size={18} aria-hidden="true" />
+									<span>Start over</span>
+								</Button>
+							{/if}
+							{#if data.local.versions.length > 1}
+								<Button
+									variant="secondary"
+									class="local-more"
+									aria-haspopup="dialog"
+									onclick={() => (versionsOpen = true)}
+								>
+									<LayersIcon size={18} aria-hidden="true" />
+									<span>Versions</span>
+									<span class="local-count">{data.local.versions.length}</span>
+								</Button>
+							{/if}
+							{#if firstTrailer}
+								<Button
+									variant="secondary"
+									class="local-more"
+									onclick={() => openTrailer(firstTrailer.key)}
+								>
+									<ClapperboardIcon size={18} aria-hidden="true" />
+									<span>Trailer</span>
+								</Button>
+							{/if}
+						</div>
+						{#if data.local.quality}
+							<p class="quality">
+								<span class="quality-dot" aria-hidden="true"></span>
+								<span class="sr-only">On this PC:</span>
+								{data.local.quality}
+							</p>
+						{/if}
+					</div>
+				{/if}
+
+				<div class="actions" role="group" aria-label="Actions">
+					{#if data.local}
+						<!-- Play and the trailer live in the On this PC group above. -->
+					{:else if firstTrailer}
+						<Button size="lg" class="play" onclick={() => openTrailer(firstTrailer.key)}>
+							<PlayIcon size={20} aria-hidden="true" />
+							{#if resume}
+								<span>Resume · {formatTime(resume.duration - resume.position)} left</span>
+								<ResumeBar position={resume.position} duration={resume.duration} />
+							{:else}
+								<span>Play trailer</span>
+							{/if}
+						</Button>
+					{:else}
+						<span class="no-trailer">No trailer yet</span>
+					{/if}
+
+					{#each ['watchlist', 'favorite', 'watched'] as const as type (type)}
+						{@const on = Boolean(interaction?.[type])}
+						{#if data.user}
+							<form method="POST" action="?/logInteraction" use:enhance={submitToggle(type)}>
+								<input type="hidden" name="type" value={type} />
+								<input type="hidden" name="value" value={String(!on)} />
+								<Button
+									type="submit"
+									variant="secondary"
+									class="toggle"
+									aria-pressed={on}
+									loading={pending === type}
+								>
+									{#if type === 'watchlist'}
+										{#if on}<BookmarkCheckIcon size={18} aria-hidden="true" />{:else}<BookmarkIcon
+												size={18}
+												aria-hidden="true"
+											/>{/if}
+									{:else if type === 'favorite'}
+										<HeartIcon size={18} aria-hidden="true" fill={on ? 'currentColor' : 'none'} />
+									{:else if on}
+										<CircleCheckIcon size={18} aria-hidden="true" />
+									{:else}
+										<EyeIcon size={18} aria-hidden="true" />
+									{/if}
+									<span>{toggleLabel(type, on)}</span>
+								</Button>
+							</form>
+						{:else}
+							<Button href={loginHref} variant="secondary" class="toggle">
+								{#if type === 'watchlist'}<BookmarkIcon
+										size={18}
+										aria-hidden="true"
+									/>{:else if type === 'favorite'}<HeartIcon
+										size={18}
+										aria-hidden="true"
+									/>{:else}<EyeIcon size={18} aria-hidden="true" />{/if}
+								<span>{toggleLabel(type, false)}</span>
+							</Button>
+						{/if}
+					{/each}
+
+					{#if data.user}
+						<Button variant="secondary" class="toggle" onclick={openRate} aria-haspopup="dialog">
+							<StarIcon
+								size={18}
+								aria-hidden="true"
+								fill={interaction?.rating ? 'currentColor' : 'none'}
+							/>
+							<span>{interaction?.rating ? `${interaction.rating} / 5` : 'Rate'}</span>
+						</Button>
+					{:else}
+						<Button href={loginHref} variant="secondary" class="toggle">
+							<StarIcon size={18} aria-hidden="true" />
+							<span>Rate</span>
+						</Button>
+					{/if}
+					<Button variant="secondary" class="toggle share" onclick={share}>
+						<Share2Icon size={18} aria-hidden="true" />
+						<span>Share</span>
+					</Button>
+				</div>
+			</div>
+		</div>
+	</header>
+
+	<div class="body">
+		<Tabs bind:value={tab} items={TAB_ITEMS} label="Film sections" onValueChange={selectTab}>
+			{#snippet children(value)}
+				{#if value === 'overview'}
+					<div class="overview">
+						<div class="synopsis-col">
+							<h2 class="h">Synopsis</h2>
+							{#if data.overview}
+								<p class="synopsis">{data.overview}</p>
+							{:else}
+								<p class="muted">No synopsis yet.</p>
+							{/if}
+							{#if data.keyCrew.length}
+								<dl class="crew-key">
+									{#each data.keyCrew as entry (entry.role)}
+										<div>
+											<dt>{entry.role}</dt>
+											<dd>
+												<a class="crew-link" href={`/people/${entry.personId}`}>{entry.name}</a>
+											</dd>
+										</div>
+									{/each}
+								</dl>
+							{/if}
+							{#if data.saga}
+								<a class="saga-banner" href="#more" onclick={() => selectTab('more')}>
+									<LayersIcon size={18} aria-hidden="true" />
+									<span>Part of <strong>{data.saga.name}</strong></span>
+								</a>
+							{/if}
+						</div>
+						<aside class="watch" aria-labelledby="watch-h">
+							<div class="watch-head">
+								<div>
+									<p class="eyebrow">{region === 'FR' ? 'France' : 'United States'}</p>
+									<h2 class="h" id="watch-h">Where to watch</h2>
+								</div>
+								<div class="region" role="group" aria-label="Region">
+									{#each ['FR', 'US'] as const as code (code)}
+										<Chip selected={region === code} onclick={() => setRegion(code)}>{code}</Chip>
+									{/each}
+								</div>
+							</div>
+							{#if groups.empty}
+								<p class="muted">
+									Not streaming in {region === 'FR' ? 'France' : 'the United States'} right now.
+								</p>
+							{:else}
+								{#each providerRows as [label, rows] (label)}
+									<h3 class="kind">{label}</h3>
+									<div class="providers">
+										{#each rows as row (row.providerId)}
+											<ProviderLogo
+												providerName={row.providerName}
+												logoPath={row.logoPath}
+												href={groups.link}
+											/>
+										{/each}
+									</div>
+								{/each}
+							{/if}
+							<p class="attribution">
+								Data by JustWatch{#if groups.link}
+									<span aria-hidden="true">&nbsp;·&nbsp;</span><a
+										href={groups.link}
+										target="_blank"
+										rel="noopener"
+										>See all options on TMDB <ExternalLinkIcon size={12} aria-hidden="true" /></a
+									>{/if}
+							</p>
+						</aside>
+					</div>
+				{:else if value === 'cast'}
+					{#if data.cast.length}
+						<h2 class="h">Cast</h2>
+						<div class="bleed">
+							<Rail label="Cast">
+								{#each data.cast as person (person.id)}
+									<PersonCard
+										href={`/people/${person.id}`}
+										name={person.name}
+										profilePath={person.profilePath}
+										subtitle={person.character}
+									/>
+								{/each}
+							</Rail>
+						</div>
+					{/if}
+					{#if data.crewByDepartment.length}
+						<h2 class="h crew-h">Crew</h2>
+						<div class="crew-grid">
+							{#each data.crewByDepartment as group (group.department)}
+								<section>
+									<h3>{group.department}</h3>
+									<ul>
+										{#each group.people as person (person.id + person.job)}
+											<li>
+												<a href={`/people/${person.id}`}>{person.name}</a>
+												{#if person.job}<span class="muted"> · {person.job}</span>{/if}
+											</li>
+										{/each}
+									</ul>
+								</section>
+							{/each}
+						</div>
+					{/if}
+					{#if !data.cast.length && !data.crewByDepartment.length}
+						<EmptyState title="No credits yet" compact />
+					{/if}
+				{:else if value === 'videos'}
+					{#if data.trailers.length}
+						<div class="videos">
+							{#each data.trailers as trailer (trailer.key)}
+								<TrailerFacade
+									videoKey={trailer.key}
+									name={trailer.name}
+									kind={trailer.type}
+									resume={resume && firstTrailer?.key === trailer.key ? resume : null}
+									onplay={openTrailer}
+								/>
+							{/each}
+						</div>
+					{:else}
+						<EmptyState title="No trailer yet" compact />
+					{/if}
+				{:else if value === 'details'}
+					<dl class="details">
+						{#if formatDate(data.details.releaseDate)}
+							<dt>Release date</dt>
+							<dd>{formatDate(data.details.releaseDate)}</dd>
+						{/if}
+						{#if formatRuntime(data.details.runtime)}
+							<dt>Runtime</dt>
+							<dd>{formatRuntime(data.details.runtime)}</dd>
+						{/if}
+						{#if data.details.originalTitle && data.details.originalTitle !== data.hero.title}
+							<dt>Original title</dt>
+							<dd>{data.details.originalTitle}</dd>
+						{/if}
+						{#if language}
+							<dt>Language</dt>
+							<dd class="language">
+								{#if language.flag}<span class="flag" aria-hidden="true">{language.flag}</span>{/if}
+								{language.name}
+							</dd>
+						{/if}
+						{#if data.details.status}
+							<dt>Status</dt>
+							<dd>{data.details.status}</dd>
+						{/if}
+						{#if formatMoney(data.details.budget)}
+							<dt>Budget</dt>
+							<dd>{formatMoney(data.details.budget)}</dd>
+						{/if}
+						{#if formatMoney(data.details.revenue)}
+							<dt>Revenue</dt>
+							<dd>{formatMoney(data.details.revenue)}</dd>
+						{/if}
+						<dt>Links</dt>
+						<dd class="links">
+							<a
+								href={`https://www.themoviedb.org/movie/${data.details.tmdbId}`}
+								target="_blank"
+								rel="noopener">TMDB <ExternalLinkIcon size={12} aria-hidden="true" /></a
+							>
+							{#if data.details.imdbId}
+								<a
+									href={`https://www.imdb.com/title/${data.details.imdbId}`}
+									target="_blank"
+									rel="noopener">IMDb <ExternalLinkIcon size={12} aria-hidden="true" /></a
+								>
+							{/if}
+						</dd>
+					</dl>
+					{#if data.details.keywords.length}
+						<h3 class="kind">Keywords</h3>
+						<div class="keywords">
+							{#each data.details.keywords as keyword (keyword)}
+								<Chip href={`/search?q=${encodeURIComponent(keyword)}`}>{keyword}</Chip>
+							{/each}
+						</div>
+					{/if}
+				{:else if value === 'more'}
+					{#if data.saga}
+						<div class="bleed">
+							<Section title={data.saga.name} eyebrow="Saga">
+								<Rail label={data.saga.name}>
+									{#each data.saga.items as item (item.id)}
+										<PosterCard {...item} />
+									{/each}
+								</Rail>
+							</Section>
+						</div>
+					{/if}
+					{#if data.similar.length}
+						<div class="bleed">
+							<Section title="More like this" eyebrow="Similar">
+								<Rail label="More like this">
+									{#each data.similar as item (item.id)}
+										<PosterCard {...item} />
+									{/each}
+								</Rail>
+							</Section>
+						</div>
+					{/if}
+				{/if}
+			{/snippet}
+		</Tabs>
+
+		<section class="reviews" aria-labelledby="reviews-h">
+			<div class="reviews-head">
+				<h2 class="h" id="reviews-h">Reviews</h2>
+				{#if data.user}
+					<Button href={`/movies/catalog/${data.hero.id}/review`} variant="outline">
+						Write a review
+					</Button>
+				{/if}
+			</div>
+			{#if data.reviews.length}
+				<ul class="review-list">
+					{#each data.reviews as review (review.id)}
+						<li class="review">
+							<p class="review-meta">
+								<strong>{review.author}</strong>
+								{#if formatDate(review.createdAt)}
+									<span class="muted"> · {formatDate(review.createdAt)}</span>
+								{/if}
+								{#if review.containsSpoilers}<span class="spoiler">Spoilers</span>{/if}
+							</p>
+							<p class="review-body">{review.content}</p>
+						</li>
+					{/each}
+				</ul>
+			{:else}
+				<p class="muted">No reviews yet.</p>
+			{/if}
+		</section>
+	</div>
+</article>
+
+{#if playerKey}
+	<PlayerShell
+		bind:open={playerOpen}
+		title={data.hero.title}
+		videoKey={playerKey}
+		onclose={onPlayerClose}
+	/>
+{/if}
+
+{#if data.local && data.local.versions.length > 1}
+	<Sheet bind:open={versionsOpen} label="Versions" side={wide ? 'right' : 'bottom'}>
+		<p class="muted">{data.hero.title} · {data.local.versions.length} copies on this PC</p>
+		<ul class="versions">
+			{#each data.local.versions as version (version.fileId)}
+				{@const current = version.fileId === data.local.play.fileId}
+				<li>
+					<a class="version" href={version.href} aria-current={current ? 'true' : undefined}>
+						<span class="version-label">{version.label}</span>
+						{#if version.best}<span class="version-tag">Best</span>{/if}
+						{#if current}
+							<CheckIcon size={18} aria-hidden="true" />
+							<span class="sr-only">(Play opens this copy)</span>
+						{/if}
+					</a>
+				</li>
+			{/each}
+		</ul>
+	</Sheet>
+{/if}
+
+{#if data.user}
+	<Sheet bind:open={rateOpen} label="Your rating" side={wide ? 'right' : 'bottom'}>
+		<form method="POST" action="?/logInteraction" class="rate-form" use:enhance={submitRating}>
+			<input type="hidden" name="type" value="rating" />
+			<input type="hidden" name="value" value={draftRating ?? ''} />
+			<p class="muted">{data.hero.title}</p>
+			<StarRating bind:value={draftRating} name="Your rating" />
+			<div class="rate-actions">
+				<Button type="submit" loading={pending === 'rating'}>Save rating</Button>
+				<Button variant="ghost" onclick={() => (rateOpen = false)}>Cancel</Button>
+			</div>
+		</form>
+	</Sheet>
+{/if}
+
+<style>
+	.detail {
+		padding-bottom: var(--space-8);
+	}
+
+	/* ── Header: the hero recipe frozen on one film ─────────────────────── */
+	.header {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+		min-height: min(56dvh, 400px);
+		margin-top: calc(-1 * (var(--top-bar-height) + var(--safe-top)));
+		overflow: hidden;
+		background: var(--surface-canvas);
+	}
+	/* Bottom-weighted: the title block sits on at least 62% canvas, so every hero text keeps AA
+	   over the brightest backdrop; the top of the artwork stays untouched. */
+	.scrim {
+		position: absolute;
+		inset: 0;
+		background:
+			linear-gradient(
+				to top,
+				var(--surface-canvas) 0%,
+				color-mix(in srgb, var(--surface-canvas) 92%, transparent) 36%,
+				color-mix(in srgb, var(--surface-canvas) 72%, transparent) 56%,
+				color-mix(in srgb, var(--surface-canvas) 24%, transparent) 76%,
+				transparent 92%
+			),
+			linear-gradient(
+				to right,
+				color-mix(in srgb, var(--surface-canvas) 88%, transparent) 0%,
+				color-mix(in srgb, var(--surface-canvas) 35%, transparent) 55%,
+				transparent 100%
+			);
+	}
+	.header-content {
+		position: relative;
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-4);
 		width: 100%;
+		max-width: var(--container-wide);
+		margin: 0 auto;
+		padding: calc(var(--top-bar-height) + var(--safe-top) + var(--space-5)) var(--page-gutter)
+			var(--space-6);
 	}
-
-	.rate-container {
+	.poster {
+		width: 96px;
+	}
+	.text {
+		position: relative;
+		isolation: isolate;
 		display: flex;
 		flex-direction: column;
-		align-items: center;
-		padding: 1rem;
-		border-radius: var(--radius-md);
-		gap: 0.5rem;
+		gap: var(--space-3);
+		min-width: 0;
 	}
-
-	.rate-label {
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--text-secondary);
+	/* A soft wash behind the meta cluster only: no box, just calmer pixels under small text. */
+	.text::before {
+		content: '';
+		position: absolute;
+		inset: -1.5rem -2.5rem -1rem;
+		z-index: -1;
+		background: radial-gradient(
+			closest-side,
+			color-mix(in srgb, var(--surface-canvas) 66%, transparent),
+			transparent
+		);
+		pointer-events: none;
 	}
-
-	.star-rating {
-		display: flex;
-		gap: 0.25rem;
+	.tagline,
+	.rating-line,
+	.quality {
+		text-shadow: 0 1px 2px color-mix(in srgb, var(--surface-canvas) 85%, transparent);
 	}
-
-	.star-btn {
-		font-size: 1.5rem;
-		color: var(--bg-surface-3);
-		transition: all var(--transition-fast);
-		cursor: pointer;
-	}
-
-	.star-btn.active,
-	.star-btn:hover {
-		color: var(--rating-star);
-		transform: scale(1.1);
-	}
-
-	.auth-prompt {
-		padding: 1.5rem;
-		border-radius: var(--radius-md);
-		text-align: center;
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-	}
-
-	.auth-prompt p {
-		font-size: 0.95rem;
-		color: var(--text-secondary);
-		font-weight: 600;
-	}
-
-	.movie-title {
-		font-size: 2.5rem;
+	/* The kind of title, on its own surface so the emerald never sits on raw artwork. */
+	.eyebrow-pill {
+		align-self: flex-start;
+		padding: 0.2rem 0.6rem;
+		border: 1px solid var(--brand-border);
+		border-radius: var(--radius-full);
+		background: color-mix(in srgb, var(--surface-canvas) 90%, transparent);
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
 		font-weight: 800;
-		color: #ffffff;
-		line-height: 1.15;
-		letter-spacing: -0.02em;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
 	}
-
-	.year {
-		color: var(--text-tertiary);
-		font-weight: 400;
-	}
-
-	.tagline {
-		font-size: 1.1rem;
-		font-style: italic;
-		color: var(--text-secondary);
-		margin-top: 0.5rem;
-	}
-
-	.meta-pills {
+	.rating-line {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
-		margin-top: 1.25rem;
+		align-items: center;
+		gap: var(--space-2) var(--space-4);
 	}
-
-	.director-block {
+	.score {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.35rem;
+		padding: 0.3rem 0.7rem;
+		border: 1px solid var(--brand-border);
+		border-radius: var(--radius-full);
+		background: color-mix(in srgb, var(--surface-canvas) 70%, var(--brand-active) 12%);
+		text-shadow: none;
+	}
+	.score-value {
+		color: var(--content-primary);
+		font-size: var(--text-md);
+		font-weight: 800;
+		font-variant-numeric: tabular-nums;
+	}
+	.score-source {
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		letter-spacing: var(--tracking-wide);
+	}
+	.score-votes {
+		color: var(--content-secondary);
+		font-size: var(--text-xs);
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+	}
+	.title-box {
+		min-height: 2.5rem;
+	}
+	.title {
+		font-size: clamp(2.25rem, 9vw, 2.75rem);
+		font-weight: 700;
+		letter-spacing: var(--tracking-tight);
+		line-height: var(--leading-tight);
+		overflow-wrap: anywhere;
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+	.logo {
+		display: block;
+		width: auto;
+		max-width: min(70vw, 420px);
+		height: auto;
+		max-height: 6rem;
+		object-fit: contain;
+		object-position: left bottom;
+	}
+	.tagline {
+		color: var(--content-secondary);
+		font-size: var(--text-md);
+		font-style: italic;
+	}
+	.genres {
+		display: flex;
+		gap: var(--space-2);
+		overflow-x: auto;
+		scrollbar-width: none;
+		margin-inline: calc(-1 * var(--page-gutter));
+		padding-inline: var(--page-gutter);
+		mask-image: linear-gradient(to right, black calc(100% - 2rem), transparent);
+	}
+	.genres::-webkit-scrollbar {
+		display: none;
+	}
+	.actions {
+		display: grid;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		gap: var(--space-2);
+		margin-top: var(--space-2);
+	}
+	.actions :global(.play) {
+		position: relative;
+		grid-column: 1 / -1;
+		overflow: hidden;
+		min-height: 3rem;
+	}
+	/* Phones: five equal tonal tiles, icon over a one-line 12 px caption. */
+	.actions :global(.toggle) {
+		flex-direction: column;
+		justify-content: center;
+		gap: 0.3rem;
+		min-width: 0;
+		min-height: 3.75rem;
+		padding: 0.4rem 0.2rem;
+		border-radius: var(--radius-lg);
+		font-size: var(--text-xs);
+		letter-spacing: -0.01em;
+		line-height: 1.1;
+		text-align: center;
+	}
+	.actions :global(.toggle span) {
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	/* Five 44 px targets in 288 px: captions shrink a notch instead of clipping. */
+	@media (max-width: 359px) {
+		.actions :global(.toggle) {
+			padding-inline: 0;
+			font-size: 0.625rem;
+			letter-spacing: -0.02em;
+		}
+	}
+	.actions form {
+		display: contents;
+	}
+	/* ── On this PC (owner only) ──────────────────────────────────────── */
+	.local {
+		display: grid;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
+	}
+	.local-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+	/* White like a cinema "Play": the emerald is kept for the watched part. */
+	.local-row :global(.local-play) {
+		--btn-bg: var(--content-primary);
+		--btn-fg: var(--content-inverse);
+		position: relative;
+		flex: 1 1 100%;
+		overflow: hidden;
+		min-height: 3.25rem;
+		font-variant-numeric: tabular-nums;
+	}
+	.local-row :global(.local-play:hover) {
+		--btn-bg: var(--accent-titanium);
+	}
+	.local-progress {
+		position: absolute;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		height: 3px;
+		background: var(--brand-muted);
+	}
+	.local-progress span {
+		display: block;
+		height: 100%;
+		background: var(--brand-active);
+		transform-origin: left;
+	}
+	.local-row :global(.local-more) {
+		flex: 1 1 0;
+		min-width: 0;
+		padding-inline: var(--space-3);
+	}
+	.local-count {
+		min-width: 1.25rem;
+		padding: 0 0.35rem;
+		border-radius: var(--radius-full);
+		background: var(--brand-muted);
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
+		font-variant-numeric: tabular-nums;
+	}
+	.quality {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
-		margin-top: 1.5rem;
-		padding-top: 1.5rem;
-		border-top: 1px solid var(--border-subtle);
+		gap: 0.5rem;
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
 	}
-
-	.director-block .label {
-		font-size: 0.85rem;
-		color: var(--text-tertiary);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
+	.quality-dot {
+		flex: none;
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: var(--radius-full);
+		background: var(--brand-primary);
+		box-shadow: var(--shadow-glow-emerald);
 	}
-
-	.director-name {
-		font-weight: 700;
-		color: var(--accent-gold);
-		font-size: 1.05rem;
-	}
-
-	.info-section {
-		margin-top: 2.5rem;
-	}
-
-	.section-heading {
-		font-size: 1.25rem;
-		font-weight: 700;
-		color: var(--text-primary);
-		margin-bottom: 0.85rem;
-	}
-
-	.overview-text {
-		font-size: 1.05rem;
-		line-height: 1.7;
-		color: var(--text-secondary);
-	}
-
-	.cast-grid {
+	.versions {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-		gap: 1rem;
+		gap: var(--space-2);
+		margin-top: var(--space-3);
+		list-style: none;
 	}
-
-	.cast-card {
-		background: var(--bg-surface-1);
-		border: 1px solid var(--border-subtle);
-		border-radius: var(--radius-md);
-		overflow: hidden;
-		transition:
-			transform 0.2s ease,
-			border-color 0.2s ease;
-		text-decoration: none;
-		color: inherit;
-		display: block; /* Since it's an <a> now */
-	}
-
-	.clickable-cast:hover {
-		transform: translateY(-4px);
-		border-color: var(--accent-emerald);
-		cursor: pointer;
-	}
-
-	.cast-img {
-		width: 100%;
-		height: 150px;
-		object-fit: cover;
-	}
-
-	.cast-img-placeholder {
-		width: 100%;
-		height: 150px;
+	.version {
 		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		min-height: 3rem;
+		padding: var(--space-2) var(--space-4);
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-lg);
+		background: var(--surface-raised);
+		font-weight: 600;
+	}
+	.version[aria-current='true'] {
+		border-color: var(--brand-border);
+	}
+	.version:hover {
+		border-color: var(--border-strong);
+	}
+	.version-label {
+		flex: 1;
+		min-width: 0;
+		font-variant-numeric: tabular-nums;
+	}
+	.version-tag {
+		padding: 0.15rem 0.5rem;
+		border-radius: var(--radius-full);
+		background: var(--brand-muted);
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+	}
+	.version :global(svg) {
+		flex: none;
+		color: var(--brand-primary);
+	}
+	/* Three secondary buttons in 288 px: the words stay, the icons go. */
+	@media (max-width: 359px) {
+		.local-row :global(.local-more svg) {
+			display: none;
+		}
+	}
+	.no-trailer {
+		grid-column: 1 / -1;
+		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		background: var(--bg-surface-2);
-		font-size: 2rem;
-	}
-
-	.cast-info {
-		padding: 0.5rem;
-	}
-
-	.actor-name {
-		font-size: 0.85rem;
+		min-height: 3rem;
+		border: 1px dashed var(--border-subtle);
+		border-radius: var(--radius-full);
+		color: var(--content-tertiary);
+		font-size: var(--text-sm);
 		font-weight: 600;
-		color: var(--text-primary);
 	}
 
-	.character-name {
-		font-size: 0.75rem;
-		color: var(--text-tertiary);
+	/* ── Body ───────────────────────────────────────────────────────────── */
+	.body {
+		max-width: var(--container-wide);
+		margin: 0 auto;
+		padding-inline: var(--page-gutter);
+	}
+	.h {
+		margin-bottom: var(--space-3);
+		font-size: var(--type-title);
+		font-weight: 800;
+		letter-spacing: var(--tracking-tight);
+	}
+	.crew-h {
+		margin-top: var(--space-6);
+	}
+	.eyebrow {
+		color: var(--brand-primary);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+	}
+	.muted {
+		color: var(--content-tertiary);
+	}
+	.language {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+	}
+	.flag {
+		font-size: 1.15em;
+		line-height: 1;
+	}
+	.bleed {
+		margin-inline: calc(-1 * var(--page-gutter));
+	}
+	.bleed :global(.section) {
+		margin-block: 0 var(--space-6);
+	}
+	.overview {
+		display: grid;
+		gap: var(--space-6);
+	}
+	.synopsis {
+		color: var(--content-secondary);
+		font-size: var(--text-md);
+		line-height: var(--leading-body);
+		max-inline-size: 62ch;
+	}
+	.tagline {
+		max-inline-size: 62ch;
+	}
+	.crew-key {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+		gap: var(--space-3) var(--space-5);
+		margin-top: var(--space-5);
+	}
+	.crew-key dt {
+		color: var(--content-tertiary);
+		font-size: var(--text-xs);
+		font-weight: 700;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+	}
+	.crew-key dd a {
+		display: flex;
+		align-items: center;
+		min-height: var(--touch-target);
+		font-weight: 700;
+	}
+	.crew-key {
+		row-gap: var(--space-2);
+	}
+	.crew-key dd a:hover {
+		color: var(--brand-primary);
+	}
+	.saga-banner {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin-top: var(--space-5);
+		padding: var(--space-3) var(--space-4);
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-lg);
+		background: var(--surface-raised);
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
+	}
+	.saga-banner strong {
+		color: var(--content-primary);
+	}
+	.watch {
+		min-height: 120px;
+		padding: var(--space-5);
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-lg);
+		background: var(--surface-raised);
+	}
+	.watch-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+	.region {
+		display: flex;
+		gap: var(--space-2);
+	}
+	.kind {
+		margin: var(--space-4) 0 var(--space-2);
+		color: var(--content-secondary);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+	}
+	.providers {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+	.attribution {
+		margin-top: var(--space-5);
+		color: var(--content-tertiary);
+		font-size: var(--text-xs);
+	}
+	.attribution a {
+		display: inline-flex;
+		align-items: center;
+		min-height: var(--touch-target);
+		gap: 0.2rem;
+		color: var(--content-secondary);
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+	.crew-grid {
+		display: grid;
+		gap: var(--space-5);
+	}
+	.crew-grid h3 {
+		margin-bottom: var(--space-2);
+		color: var(--content-secondary);
+		font-size: var(--text-xs);
+		font-weight: 800;
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+	}
+	.crew-grid li {
+		padding-block: 0.3rem;
+		font-size: var(--text-sm);
+	}
+	.crew-grid a {
+		font-weight: 700;
+	}
+	.crew-grid a:hover {
+		color: var(--brand-primary);
+	}
+	.videos {
+		display: grid;
+		gap: var(--space-5);
+	}
+	.details {
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		gap: var(--space-3) var(--space-5);
+		max-width: 48rem;
+	}
+	.details dt {
+		color: var(--content-tertiary);
+		font-size: var(--text-sm);
+		font-weight: 700;
+	}
+	.details dd {
+		min-width: 0;
+		font-size: var(--text-sm);
+		overflow-wrap: anywhere;
+	}
+	.links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-4);
+	}
+	.links a {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-weight: 700;
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+	.keywords {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+	.reviews {
+		margin-top: var(--space-7);
+		padding-top: var(--space-6);
+		border-top: 1px solid var(--border-subtle);
+	}
+	.reviews-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+	.reviews-head .h {
+		margin-bottom: 0;
+	}
+	.review-list {
+		display: grid;
+		gap: var(--space-4);
+		margin-top: var(--space-4);
+	}
+	.review {
+		padding: var(--space-4);
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-lg);
+		background: var(--surface-raised);
+	}
+	.review-meta {
+		margin-bottom: var(--space-2);
+		font-size: var(--text-sm);
+	}
+	.spoiler {
+		margin-left: var(--space-2);
+		padding: 0.1rem 0.5rem;
+		border-radius: var(--radius-full);
+		background: var(--surface-interactive);
+		color: var(--content-secondary);
+		font-size: var(--text-xs);
+		font-weight: 700;
+	}
+	.review-body {
+		color: var(--content-secondary);
+		font-size: var(--text-sm);
+		line-height: var(--leading-body);
+		white-space: pre-wrap;
+	}
+	.rate-form {
+		display: grid;
+		gap: var(--space-4);
+		padding-top: var(--space-2);
+	}
+	.rate-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+
+	/* ── Breakpoints (brief §2) ─────────────────────────────────────────── */
+	@media (min-width: 390px) {
+		.header {
+			min-height: min(60dvh, 460px);
+		}
+		.poster {
+			width: 112px;
+		}
+	}
+	@media (min-width: 560px) {
+		.actions {
+			display: flex;
+			flex-wrap: wrap;
+		}
+		.actions :global(.play) {
+			flex: 1 1 100%;
+		}
+		.actions :global(.toggle) {
+			flex-direction: row;
+			gap: 0.5rem;
+			min-height: var(--touch-target);
+			padding: 0 var(--space-4);
+			font-size: var(--text-sm);
+			letter-spacing: normal;
+			text-align: left;
+		}
+		.actions :global(.toggle) {
+			border-radius: var(--radius-full);
+		}
+		/* Share closes the row as a 44 px tonal icon, so it never wraps alone. */
+		.actions :global(.share) {
+			width: var(--touch-target);
+			padding: 0;
+		}
+		.actions :global(.share span) {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+		}
+		.no-trailer {
+			flex: 0 0 auto;
+			padding-inline: var(--space-4);
+		}
+	}
+	@media (min-width: 768px) {
+		.header {
+			min-height: min(60dvh, 520px);
+		}
+		.header-content {
+			grid-template-columns: clamp(160px, 22vw, 220px) 1fr;
+			align-items: end;
+			gap: var(--space-6);
+		}
+		.poster {
+			width: auto;
+		}
+		.actions :global(.play) {
+			flex: 0 0 auto;
+			min-width: 12rem;
+		}
+		.local-row :global(.local-play) {
+			flex: 0 0 auto;
+			min-width: 14rem;
+		}
+		.local-row :global(.local-more) {
+			flex: 0 0 auto;
+			padding-inline: var(--space-5);
+		}
+		.overview {
+			grid-template-columns: 1.2fr 1fr;
+		}
+		.videos {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.crew-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.genres {
+			flex-wrap: wrap;
+			overflow: visible;
+			margin-inline: 0;
+			padding-inline: 0;
+			mask-image: none;
+		}
+	}
+	@media (min-width: 1024px) {
+		.header {
+			min-height: min(80dvh, 720px);
+		}
+		.title {
+			font-size: var(--type-display);
+		}
+		.logo {
+			max-height: 8rem;
+		}
+		.text {
+			max-width: 60%;
+		}
+		.overview {
+			grid-template-columns: 7fr 5fr;
+			gap: var(--space-8);
+		}
+		/* One body-lead size with the series Story. */
+		.synopsis {
+			font-size: var(--text-lg);
+			line-height: 1.7;
+		}
+	}
+	@media (min-width: 1440px) {
+		.header-content {
+			grid-template-columns: 280px 1fr;
+		}
+		.videos {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+	/* Phone landscape (440 px tall): the whole hero, CTA row included, fits above the tab bar. */
+	@media (orientation: landscape) and (max-height: 500px) {
+		.header {
+			min-height: 0;
+		}
+		.header-content {
+			grid-template-columns: 140px minmax(0, 1fr);
+			align-items: end;
+			gap: var(--space-5);
+			padding-top: calc(var(--top-bar-height) + var(--safe-top) + var(--space-4));
+			padding-bottom: var(--space-4);
+		}
+		.poster {
+			width: 140px;
+		}
+		.text {
+			gap: var(--space-2);
+			max-width: none;
+		}
+		.title-box {
+			min-height: 0;
+		}
+		.logo {
+			max-height: 4rem;
+		}
+		.title {
+			font-size: 2rem;
+			-webkit-line-clamp: 2;
+			line-clamp: 2;
+		}
+		.tagline,
+		.genres {
+			display: none;
+		}
+		.local {
+			margin-top: 0;
+			gap: var(--space-1);
+		}
+		.local-row {
+			flex-wrap: nowrap;
+		}
+		.local-row :global(.local-play),
+		.actions :global(.play) {
+			flex: 0 0 auto;
+			min-width: 12rem;
+			min-height: var(--touch-target);
+		}
+		.local-row :global(.local-more) {
+			flex: 0 0 auto;
+			padding-inline: var(--space-4);
+		}
+		.actions {
+			flex-wrap: nowrap;
+			margin-top: 0;
+		}
+		.actions :global(.toggle) {
+			width: var(--touch-target);
+			padding: 0;
+		}
+		.actions :global(.toggle span) {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+		}
+	}
+	/* The section tabs stay reachable under the top bar while the panel scrolls. */
+	.body :global(.kit-tabs-list) {
+		position: sticky;
+		top: calc(var(--top-bar-height) + var(--safe-top));
+		z-index: 5;
+		margin-inline: calc(-1 * var(--page-gutter));
+		padding-inline: var(--page-gutter);
+		background: var(--surface-canvas);
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.saga-banner {
+			transition: border-color var(--duration-fast) var(--ease-out);
+		}
+		.saga-banner:hover {
+			border-color: var(--border-strong);
+		}
 	}
 </style>

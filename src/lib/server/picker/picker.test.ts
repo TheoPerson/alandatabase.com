@@ -7,7 +7,7 @@ import {
 } from './scoring';
 import { rankAndSelectCandidate } from './ranking';
 import { generateRecommendationExplanation } from './explanations';
-import type { PickerCandidate, UserTasteProfile } from './types';
+import type { PickerCandidate, UserTasteProfile } from '$lib/picker/types';
 
 function createMockCandidate(overrides: Partial<PickerCandidate> = {}): PickerCandidate {
 	return {

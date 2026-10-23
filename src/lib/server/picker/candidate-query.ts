@@ -1,22 +1,29 @@
-import { db } from '../db';
+import { db as appDb } from '../db';
+import type * as schema from '../db/schema';
+import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import { movies, movieGenres, genres, movieCrew, movieCast, people } from '../db/schema';
 import { eq, and, desc, sql, inArray, notInArray, gte, lte, or } from 'drizzle-orm';
 import { PICKER_DEFAULTS } from './config';
-import { getOrEnrichImdbRating } from './imdb';
-import type { PickerCandidate, PickerFilters, UserTasteProfile } from './types';
+import { standardMovieVisibilityWhere } from '../policies/movie-visibility';
+import type { PickerCandidate, PickerFilters, UserTasteProfile } from '$lib/picker/types';
+
+// Injectable so the quarantine rules can be tested against a real (PGlite) database.
+export type PickerDatabase = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 interface QueryOptions {
 	filters: PickerFilters;
 	tasteProfile: UserTasteProfile;
 	shownMovieIds?: string[];
 	limit?: number;
+	database?: PickerDatabase;
 }
 
 export async function fetchCandidateMovies({
 	filters,
 	tasteProfile,
 	shownMovieIds = [],
-	limit = PICKER_DEFAULTS.candidatePoolSize
+	limit = PICKER_DEFAULTS.candidatePoolSize,
+	database = appDb
 }: QueryOptions): Promise<PickerCandidate[]> {
 	// 1. Compile hard exclusion IDs
 	const excludeIds = new Set<string>(shownMovieIds);
@@ -37,7 +44,8 @@ export async function fetchCandidateMovies({
 	let candidates = await executeCandidateQuery({
 		filters,
 		excludeIds: Array.from(excludeIds),
-		limit
+		limit,
+		database
 	});
 
 	// 3. Fallback relaxation if candidate pool is too small (< 12 items)
@@ -52,7 +60,8 @@ export async function fetchCandidateMovies({
 		const fallbackCandidates = await executeCandidateQuery({
 			filters: relaxedFilters,
 			excludeIds: Array.from(excludeIds),
-			limit: limit - candidates.length
+			limit: limit - candidates.length,
+			database
 		});
 
 		const seenTmdbIds = new Set(candidates.map((c) => c.tmdbId));
@@ -64,39 +73,26 @@ export async function fetchCandidateMovies({
 		}
 	}
 
-	// 4. Enrich authentic IMDb ratings in background / runtime cache
-	const enrichedCandidates = await Promise.all(
-		candidates.map(async (c) => {
-			const { imdbRating, imdbVoteCount } = await getOrEnrichImdbRating(
-				c.id,
-				c.imdbId,
-				c.imdbRating,
-				c.imdbVoteCount
-			);
-
-			return {
-				...c,
-				imdbRating,
-				imdbVoteCount
-			};
-		})
-	);
-
-	return enrichedCandidates;
+	// Ratings come from the stored columns only. Reads stay side-effect free:
+	// populating IMDb data is an explicit operator job, never a request-time call.
+	return candidates;
 }
 
 async function executeCandidateQuery({
+	database,
 	filters,
 	excludeIds,
 	limit
 }: {
+	database: PickerDatabase;
 	filters: PickerFilters;
 	excludeIds: string[];
 	limit: number;
 }): Promise<PickerCandidate[]> {
 	try {
 		const conditions = [
-			eq(movies.adult, false),
+			// Central quarantine: adult, custom (non-TMDB) and explicit-keyword rows never qualify.
+			standardMovieVisibilityWhere(),
 			sql`${movies.posterPath} IS NOT NULL`,
 			sql`${movies.overview} IS NOT NULL`,
 			sql`LENGTH(${movies.overview}) > 20`,
@@ -136,7 +132,7 @@ async function executeCandidateQuery({
 		}
 
 		// Query movies with relations
-		const results = await db.query.movies.findMany({
+		const results = await database.query.movies.findMany({
 			where: and(...conditions),
 			orderBy: [desc(movies.voteAverage), desc(movies.popularity)],
 			limit: limit * 2,
@@ -147,7 +143,9 @@ async function executeCandidateQuery({
 					}
 				},
 				crew: {
-					limit: 5,
+					// Filter in SQL: an unordered "first N crew rows" often omits the director.
+					where: eq(movieCrew.job, 'Director'),
+					limit: 1,
 					with: {
 						person: true
 					}

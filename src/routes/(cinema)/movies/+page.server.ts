@@ -1,48 +1,47 @@
-import { getTrendingMovies, getTopRatedMovies } from '$lib/server/services/movie.service';
-import { toggleWatchlist } from '$lib/server/services/interaction.service';
+import { error, redirect } from '@sveltejs/kit';
+import { browseHref } from '$lib/catalogue/browse';
+import type { PosterItem } from '$lib/catalogue/items';
+import { logServerError } from '$lib/server/security/logging';
+import { parseCatalogParameters } from '$lib/server/security/request-bounds';
+import { listCatalogue } from '$lib/server/services/catalogue.service';
+import { getGenres, toPosterItem } from '$lib/server/services/movie.service';
 
-export async function load({ setHeaders }) {
-	setHeaders({
-		'cache-control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=600'
-	});
+const PAGE_SIZE = 24;
 
-	try {
-		// Zero duplicate guarantee:
-		// top10 = #1 to #10
-		// trending = #11 to #22
-		// topRated = top 12 by vote average
-		const [top10, trending, topRated] = await Promise.all([
-			getTrendingMovies(10, 0),
-			getTrendingMovies(12, 10),
-			getTopRatedMovies(12, 0)
-		]);
+// Browse is public and personal-state free: no session, no writes, only bounded local reads.
+export async function load({ url }) {
+	const parsed = parseCatalogParameters(url);
+	if (!parsed.ok) error(400, parsed.error);
 
-		return {
-			top10,
-			trending,
-			topRated
-		};
-	} catch (err: any) {
-		console.error('LOAD ERROR:', err);
-		return {
-			top10: [],
-			trending: [],
-			topRated: [],
-			error: err?.message || String(err)
-		};
+	const { page, ...filters } = parsed.value;
+
+	const [catalogue, genres] = await Promise.allSettled([
+		listCatalogue({ page, limit: PAGE_SIZE, ...filters }),
+		getGenres()
+	]);
+
+	let items: PosterItem[] = [];
+	let totalCount = 0;
+	let unavailable = false;
+	if (catalogue.status === 'fulfilled') {
+		items = catalogue.value.movies.map(toPosterItem);
+		totalCount = catalogue.value.totalCount;
+	} else {
+		logServerError('Browse catalogue read failed', catalogue.reason);
+		unavailable = true;
 	}
+
+	if (genres.status === 'rejected') logServerError('Browse genre list failed', genres.reason);
+
+	const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+	// A stale link past the end lands on the last page instead of an empty grid.
+	if (totalPages > 0 && page > totalPages) redirect(307, browseHref(filters, totalPages));
+
+	return {
+		items,
+		genres: genres.status === 'fulfilled' ? genres.value : [],
+		filters,
+		pagination: { page, pageSize: PAGE_SIZE, totalCount, totalPages },
+		unavailable
+	};
 }
-
-export const actions = {
-	toggleWatchlist: async ({ request, locals }) => {
-		if (!locals.user) {
-			return { success: false, error: 'Unauthorized' };
-		}
-		const data = await request.formData();
-		const movieId = data.get('movieId') as string;
-		if (!movieId) return { success: false };
-
-		const interaction = await toggleWatchlist(locals.user.id, movieId);
-		return { success: true, watchlist: interaction.watchlist };
-	}
-};
