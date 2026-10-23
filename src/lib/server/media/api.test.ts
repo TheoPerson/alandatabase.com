@@ -358,6 +358,41 @@ describe('POST /api/media/sessions', () => {
 			).status
 		).toBe(404);
 	});
+
+	it('on the media node, accepts the app origin with a grant and grants every URL it emits', async () => {
+		const withGrant = (init: Parameters<typeof event>[1]) => {
+			const e = event(OWNER, { origin: 'https://alandatabase.com', ...init });
+			e.locals.mediaGrant = 'v1.G.S';
+			return e;
+		};
+		const res = await api.startSession(
+			withGrant({ method: 'POST', body: { fileId: FILE_ID, audio: null, caps: CAPS } })
+		);
+		expect(res.status).toBe(201);
+		const session = (await res.json()) as PlaybackSession;
+		expect(session.playlistUrl).toBe(
+			`/api/media/sessions/${session.sessionId}/index.m3u8?mt=v1.G.S`
+		);
+		expect(session.chaptersUrl).toBe(`/api/media/files/${FILE_ID}/chapters?mt=v1.G.S`);
+		expect(session.subtitleTracks[0].url).toBe(
+			`/api/media/files/${FILE_ID}/subtitles/0.vtt?mt=v1.G.S`
+		);
+
+		const playlist = await (
+			await api.sessionAsset(withGrant({ params: { sid: session.sessionId, name: 'index.m3u8' } }))
+		).text();
+		expect(playlist).toContain('URI="init.mp4?mt=v1.G.S"');
+		expect(playlist).toMatch(/^seg-0\.m4s\?mt=v1\.G\.S$/mu);
+
+		// Without a grant, a foreign origin is still refused.
+		expect(
+			(
+				await api.startSession(
+					event(OWNER, { method: 'POST', body: {}, origin: 'https://alandatabase.com' })
+				)
+			).status
+		).toBe(403);
+	});
 });
 
 describe('file extras', () => {

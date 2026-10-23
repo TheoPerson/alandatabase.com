@@ -161,8 +161,8 @@ Current boundaries:
 - Raw `localOverrides` are not serialized to normal clients; only whitelisted text/date overrides are applied.
 - Adult/custom rows remain stored but quarantined; visibility policy deletes no data.
 - `movie_watch_providers` (migration `0005`, additive, re-runnable) stores TMDB/JustWatch availability per region and kind; the worker replaces a movie's rows on each ingest and stores the best English/neutral PNG title logo in `movies.metadata.logoPath`.
-- TV data is an in-code snapshot, not part of the Drizzle schema.
-- No media source/provenance, season/episode, playback event, or progress/resume table exists.
+- TV data: `tv_shows`, `tv_seasons`, `tv_episodes` (migration `0006`, filled by the worker TV ingest and the library scan) under the same fail-closed visibility policy as movies; the IMDb Top TV chart is still an in-code snapshot that the series pages combine with those rows.
+- The owner's media library: `media_files` (`0006`, one row per scanned file with its probe data; the path never leaves the server), `media_progress` (`0007`, per-user position, completion and resume), and `user_show_interactions` (`0008`, watchlist and favourite flags per series TMDB id).
 
 Committed migrations create the original movie/user model and later movie
 override/lock fields. Additive migration `0002_wet_masque.sql` reconciles
@@ -178,7 +178,9 @@ prepared but not applied to a hosted database.
 
 ## Playback and external integrations
 
-Official trailers play through the YouTube IFrame API on `youtube-nocookie.com` inside a full-screen dialog (`src/lib/components/ui/player`): the stage element is created by the API, never by a hand-written iframe, controls never overlay the embed, and only `src/lib/player/youtube-source.ts` and the CSP allowlist may name that host. Everything else renders `PlaybackUnavailable`; runtime safety tests prohibit iframe tags and known mirror domains across the whole source tree, and the cinema CSP `frame-src` allows exactly that one origin. Approved source storage, health checks, player transport, progress capture, and fallback logic are future work.
+Official trailers play through the YouTube IFrame API on `youtube-nocookie.com` inside a full-screen dialog (`src/lib/components/ui/player`): the stage element is created by the API, never by a hand-written iframe, controls never overlay the embed, and only `src/lib/player/youtube-source.ts` and the CSP allowlist may name that host. Everything else renders `PlaybackUnavailable`; runtime safety tests prohibit iframe tags and known mirror domains across the whole source tree, and the cinema CSP `frame-src` allows exactly that one origin. The owner's own files play in Alan's HQP (`src/lib/player/hqp`, `src/lib/components/hqp`) through the owner-only media API (`src/routes/api/media/**`, `src/lib/server/media`): ffmpeg direct-stream or NVENC transcode to fMP4 HLS, WebVTT subtitles, chapters, trickplay sprites and progress. Files resolve only by real path inside `MEDIA_LIBRARY_ROOTS`, which the server never writes to.
+
+Two topologies share that code. Same-origin (today's preview): the app itself reads the library and the session cookie authorizes the media API. Split (online site, `docs/superpowers/specs/2026-10-19-media-node-design.md`): the hosted app sets `MEDIA_ORIGIN` and `MEDIA_GRANT_KEY` and hands the owner's player a 12-hour HMAC playback grant; the owner's PC runs the same build with `MEDIA_NODE=1`, answers only `/api/media/**` and `/api/health`, re-checks the grant's user is still an active owner on every request, sends CORS for `MEDIA_APP_ORIGIN` only, and appends the grant to every URL it emits (playlists, segments, subtitles, trickplay) because the iPhone's native player cannot add headers. Both sides use the same hosted database.
 
 The application retains shared TMDB types/code and loads artwork from the TMDB image CDN, but current application catalog reads are local-only. Reviewed metadata ingestion is an operator/worker responsibility: the worker calls TMDB and writes metadata only after a fail-closed adult/keyword safety decision. Its CLI validates supported commands and `ingest-id` arguments before database setup or network actions; the legacy seed helper still requires replacement with explicit reviewed migration/seed operations.
 

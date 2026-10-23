@@ -64,6 +64,13 @@ export interface HqpLaunchPayload {
 	queue: HqpItem[]; // film: [film]; series: every local episode of the show, (season, episode) order
 	index: number; // the item to play
 	returnHref: string; // where Close goes when there is no in-site history entry
+	// Online site: the owner's PC (media node) and a playback grant; absent when same-origin.
+	media?: MediaRemote | null;
+}
+
+export interface MediaRemote {
+	origin: string; // https://<pc>.ts.net:8443
+	token: string; // short-lived owner grant, sent as ?mt=
 }
 
 export interface HqpLoadOptions {

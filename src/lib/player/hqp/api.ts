@@ -7,7 +7,7 @@ import type {
 	StartSessionRequest,
 	TrickplayManifest
 } from '$lib/media/types';
-import type { HqpError, HqpErrorCode } from './types';
+import type { HqpError, HqpErrorCode, MediaRemote } from './types';
 
 const CODES: Record<number, HqpErrorCode> = {
 	400: 'bad-request',
@@ -88,7 +88,36 @@ export interface ProgressPut {
 
 export type HqpApi = ReturnType<typeof createApi>;
 
-export function createApi(fetchFn: typeof fetch) {
+export function createApi(fetchFn: typeof fetch, remote: () => MediaRemote | null = () => null) {
+	// A call the client makes itself: same-origin path, or the media node with the grant.
+	function at(path: string): string {
+		const node = remote();
+		if (!node) return path;
+		const grant = `mt=${encodeURIComponent(node.token)}`;
+		return `${node.origin}${path}${path.includes('?') ? '&' : '?'}${grant}`;
+	}
+	// A path the server handed back (it already carries the grant): made absolute on the node.
+	function resolve(path: string): string;
+	function resolve(path: string | undefined): string | undefined;
+	function resolve(path: string | undefined): string | undefined {
+		const node = remote();
+		return node && path?.startsWith('/') ? `${node.origin}${path}` : path;
+	}
+	function resolveSession(session: PlaybackSession): PlaybackSession {
+		if (!remote()) return session;
+		return {
+			...session,
+			playlistUrl: resolve(session.playlistUrl),
+			masterPlaylistUrl: resolve(session.masterPlaylistUrl),
+			subtitleTracks: session.subtitleTracks.map((track) => ({
+				...track,
+				url: resolve(track.url)
+			})),
+			chaptersUrl: resolve(session.chaptersUrl),
+			trickplayUrl: resolve(session.trickplayUrl)
+		};
+	}
+
 	async function send(url: string, init?: RequestInit): Promise<Response> {
 		try {
 			return await fetchFn(url, init);
@@ -114,7 +143,7 @@ export function createApi(fetchFn: typeof fetch) {
 
 	return {
 		async startSession(body: StartSessionRequest): Promise<PlaybackSession> {
-			const response = await send('/api/media/sessions', {
+			const response = await send(at('/api/media/sessions'), {
 				method: 'POST',
 				headers: JSON_HEADERS,
 				body: JSON.stringify(body)
@@ -124,11 +153,11 @@ export function createApi(fetchFn: typeof fetch) {
 			}
 			const session = await response.json().catch(() => null);
 			if (!validSession(session)) throw new HqpRequestError(errorFromStatus(null, null));
-			return session;
+			return resolveSession(session);
 		},
 
 		async deleteSession(sessionId: string): Promise<void> {
-			await fetchFn(`/api/media/sessions/${encodeURIComponent(sessionId)}`, {
+			await fetchFn(at(`/api/media/sessions/${encodeURIComponent(sessionId)}`), {
 				method: 'DELETE',
 				keepalive: true
 			}).catch(() => undefined);
@@ -136,7 +165,7 @@ export function createApi(fetchFn: typeof fetch) {
 
 		async putProgress(entry: ProgressPut, keepalive: boolean): Promise<boolean> {
 			try {
-				const response = await fetchFn('/api/media/progress', {
+				const response = await fetchFn(at('/api/media/progress'), {
 					method: 'PUT',
 					headers: JSON_HEADERS,
 					body: JSON.stringify(entry),
@@ -168,7 +197,9 @@ export function createApi(fetchFn: typeof fetch) {
 		async trickplay(url: string): Promise<TrickplayManifest | null> {
 			try {
 				const manifest = await getJson(url);
-				return validManifest(manifest) ? manifest : null;
+				return validManifest(manifest)
+					? { ...manifest, sheets: manifest.sheets.map((sheet) => resolve(sheet)) }
+					: null;
 			} catch {
 				return null;
 			}

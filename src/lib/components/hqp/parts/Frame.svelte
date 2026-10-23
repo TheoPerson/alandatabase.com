@@ -99,6 +99,7 @@
 		class="hqp-video"
 		playsinline
 		preload="auto"
+		crossorigin="anonymous"
 		poster={poster ?? undefined}
 		style:dynamic-range-limit={rangeLimit}
 		{...nativeAttrs}

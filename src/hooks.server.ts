@@ -22,6 +22,9 @@ import {
 	isProductionHostname,
 	normalizeHostname
 } from '$lib/host-routing';
+import { corsHeaders, mediaNodeGate, type NodeSettings } from '$lib/server/media/node-gate';
+import { loadActiveOwner } from '$lib/server/media/node-owner';
+import { mediaNodeSettings } from '$lib/server/media/remote';
 import type { Handle, HandleServerError } from '@sveltejs/kit';
 
 const PRIVATE_RESPONSE_HEADERS = {
@@ -120,7 +123,47 @@ function isCrossOriginFormMutation(event: Parameters<Handle>[0]['event']): boole
 	return origin !== event.url.origin;
 }
 
+// The owner's PC started with MEDIA_NODE=1 (docs/superpowers/specs/2026-10-19-media-node-design.md):
+// the media API only, authenticated by a playback grant from the online app, never by a cookie.
+const MEDIA_NODE = mediaNodeSettings();
+
+async function handleMediaNode(
+	event: Parameters<Handle>[0]['event'],
+	resolve: Parameters<Handle>[0]['resolve'],
+	node: NodeSettings
+): Promise<Response> {
+	const verdict = await mediaNodeGate(
+		{
+			method: event.request.method,
+			url: event.url,
+			origin: event.request.headers.get('origin')
+		},
+		node,
+		async (userId) => (await loadActiveOwner(userId)) !== null,
+		Date.now()
+	);
+	if (verdict.kind === 'respond') return applySecurityHeaders(verdict.response, event);
+
+	event.locals.abTests = {};
+	event.locals.session = null;
+	event.locals.user = verdict.userId ? await loadActiveOwner(verdict.userId) : null;
+	event.locals.mediaGrant = event.locals.user ? verdict.grant : null;
+
+	const response =
+		event.url.pathname === '/api/health' || event.locals.user
+			? await resolve(event)
+			: new Response(JSON.stringify({ error: 'Unauthorized' }), {
+					status: 401,
+					headers: { 'content-type': 'application/json', ...PRIVATE_RESPONSE_HEADERS }
+				});
+	for (const [name, value] of Object.entries(corsHeaders(node))) response.headers.set(name, value);
+	return applySecurityHeaders(response, event);
+}
+
 export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, resolve }) => {
+	if (MEDIA_NODE) return handleMediaNode(event, resolve, MEDIA_NODE);
+
+	event.locals.mediaGrant = null;
 	if (isCrossOriginFormMutation(event)) {
 		return applySecurityHeaders(
 			new Response('Cross-site form submissions are forbidden', { status: 403 }),

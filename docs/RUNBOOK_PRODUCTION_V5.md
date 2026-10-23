@@ -117,6 +117,42 @@ Remove-Item Env:WORKER_DATABASE_URL, Env:MEDIA_LIBRARY_ROOTS, Env:FFPROBE_PATH
 La clé TMDB est lue dans votre `.env`. Le scan ne fait que **lire** `F:/MOVIES` ; il n'y écrit, ne renomme et ne supprime jamais rien. Les chemins
 de vos fichiers sont stockés dans la base mais ne sont jamais envoyés aux navigateurs.
 
+## Étape 6 : le serveur média sur votre PC (option B)
+
+Seulement après la mise en production (étape 5 de `docs/MISE_EN_LIGNE_NETLIFY.md`). Votre PC ne sert alors
+**que** la lecture de vos fichiers ; tout le reste du site (pages, comptes) vient de Netlify.
+
+1. Créez une clé partagée (une seule fois) et gardez-la dans votre gestionnaire de mots de passe :
+   `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`
+2. Dans Netlify (Production seulement), ajoutez :
+   `MEDIA_ORIGIN` = `https://alanjuggerson.taildf8547.ts.net:8443` et `MEDIA_GRANT_KEY` = la clé.
+   Redéployez.
+3. Sur votre PC, dans un PowerShell, depuis le dossier du projet (après `pnpm build`) :
+
+   ```text
+   $env:MEDIA_NODE="1"
+   $env:MEDIA_APP_ORIGIN="https://alandatabase.com"
+   $env:MEDIA_GRANT_KEY="<la clé>"
+   $env:DATABASE_URL="<adresse de production>"
+   $env:MEDIA_LIBRARY_ROOTS="F:/MOVIES"
+   $env:FFMPEG_PATH="<dossier de ffmpeg>/bin/ffmpeg.exe"
+   $env:FFPROBE_PATH="<dossier de ffmpeg>/bin/ffprobe.exe"
+   pnpm media:node
+   ```
+
+   Vérifiez : `http://127.0.0.1:4174/api/health` répond, `http://127.0.0.1:4174/` répond 404 (normal).
+
+4. Publiez ce port, et lui seul, sur Internet : `tailscale funnel --bg --https=8443 http://127.0.0.1:4174`.
+   Votre aperçu privé sur le port 443 reste privé.
+5. Sur alandatabase.com, connecté, lancez un film : il vient de votre PC.
+
+Pour tout couper : `tailscale funnel --https=8443 off`, puis fermez la fenêtre du serveur. Le site reste en
+ligne ; seuls vos films deviennent indisponibles. Pour invalider tous les accès en cours, changez
+`MEDIA_GRANT_KEY` des deux côtés.
+
+Limites : le débit de Funnel n'est pas garanti ; en cas de lenteur, la qualité baisse automatiquement. Le PC
+doit rester allumé pendant la lecture.
+
 ## Si quelque chose tourne mal
 
 - **Pendant les étapes 3 et 4** : ne supprimez rien. Restaurez la sauvegarde de l'étape 1

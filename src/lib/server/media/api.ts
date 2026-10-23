@@ -15,6 +15,8 @@ import {
 	text,
 	UUID_PATTERN
 } from './http';
+import type { PlaybackSession } from '$lib/media/types';
+import { grantPlaylist, withGrant } from './grant';
 import { resolveInsideRoots } from './paths';
 import { getExternalSubtitlePath, getProgress, listContinueWatching } from './repository';
 import {
@@ -45,7 +47,8 @@ async function guarded(
 ): Promise<Response> {
 	const owner = requireOwner(event.locals.user);
 	if (owner instanceof Response) return owner;
-	if (options.mutation && !isSameOrigin(event.request, event.url)) {
+	// A grant-authenticated call (media node) carries no ambient credential, so it needs no origin check.
+	if (options.mutation && !event.locals.mediaGrant && !isSameOrigin(event.request, event.url)) {
 		return fail(403, 'Cross-site requests are forbidden');
 	}
 	try {
@@ -54,6 +57,31 @@ async function guarded(
 		const { status, message } = errorStatus(error);
 		return fail(status, message);
 	}
+}
+
+// On the media node every URL handed back carries the grant (the iPhone's player cannot add headers).
+function granted(event: MediaEvent, path: string): string {
+	return event.locals.mediaGrant ? withGrant(path, event.locals.mediaGrant) : path;
+}
+
+function grantedSession(event: MediaEvent, session: PlaybackSession): PlaybackSession {
+	if (!event.locals.mediaGrant) return session;
+	return {
+		...session,
+		playlistUrl: granted(event, session.playlistUrl),
+		masterPlaylistUrl: session.masterPlaylistUrl && granted(event, session.masterPlaylistUrl),
+		subtitleTracks: session.subtitleTracks.map((track) => ({
+			...track,
+			url: granted(event, track.url)
+		})),
+		chaptersUrl: session.chaptersUrl && granted(event, session.chaptersUrl),
+		trickplayUrl: session.trickplayUrl && granted(event, session.trickplayUrl)
+	};
+}
+
+function playlistText(event: MediaEvent, playlist: string): Response {
+	const grant = event.locals.mediaGrant;
+	return text(grant ? grantPlaylist(playlist, grant) : playlist, HLS_TYPE);
 }
 
 async function readJson(request: Request): Promise<unknown> {
@@ -84,7 +112,7 @@ export function startSession(event: MediaEvent): Promise<Response> {
 	return guarded(event, { mutation: true }, async (userId) => {
 		const request = parseStartRequest(await readJson(event.request));
 		const runtime = await mediaRuntime();
-		return json(await startPlayback(runtime, userId, request), 201);
+		return json(grantedSession(event, await startPlayback(runtime, userId, request)), 201);
 	});
 }
 
@@ -109,8 +137,9 @@ export function sessionAsset(event: MediaEvent): Promise<Response> {
 		if (!match) throw new MediaHttpError(404, 'Not found');
 		const runtime = await mediaRuntime();
 		const [, playlist, init, segment] = match;
-		if (playlist === 'index') return text(runtime.sessions.playlist(sid, userId), HLS_TYPE);
-		if (playlist === 'master') return text(await runtime.sessions.master(sid, userId), HLS_TYPE);
+		if (playlist === 'index') return playlistText(event, runtime.sessions.playlist(sid, userId));
+		if (playlist === 'master')
+			return playlistText(event, await runtime.sessions.master(sid, userId));
 		if (init) return bytes(await runtime.sessions.init(sid, userId), 'video/mp4');
 		const ready = await runtime.sessions.segment(sid, userId, Number(segment));
 		return file(ready.path, ready.size, 'video/mp4');
@@ -175,7 +204,7 @@ export function trickplayManifest(event: MediaEvent): Promise<Response> {
 		const { file: record, identity } = await resolveMediaFile(runtime.config, fileId);
 		const manifest = await runtime.trickplay.manifest(
 			{ ...identity, id: record.id, durationSeconds: record.durationSeconds, video: record.video },
-			(sheet) => `/api/media/files/${record.id}/trickplay/${sheet}.webp`
+			(sheet) => granted(event, `/api/media/files/${record.id}/trickplay/${sheet}.webp`)
 		);
 		return json(manifest);
 	});

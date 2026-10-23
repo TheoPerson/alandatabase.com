@@ -68,6 +68,7 @@ import type {
 	HqpSubtitleState,
 	HqpToast,
 	HqpUpNext,
+	MediaRemote,
 	QualityChoice,
 	SleepMode
 } from './types';
@@ -174,7 +175,9 @@ export function createHqpEngine(options: HqpEngineOptions = {}): HqpEngine {
 			: guardedStorage('sessionStorage');
 	const loadHls = options.loadHls ?? (() => import('hls.js/light').then((m) => m.default));
 	const probeOf = options.probe ?? browserCapsProbe;
-	const api = createApi(fetchFn);
+	// The owner's PC when the player runs on the online site (set by load()); null for same-origin.
+	let remote: MediaRemote | null = null;
+	const api = createApi(fetchFn, () => remote);
 
 	const prefs = writable(loadHqpPrefs(storage));
 	const snapshot = writable(initialState(prefs.get()));
@@ -1368,6 +1371,7 @@ export function createHqpEngine(options: HqpEngineOptions = {}): HqpEngine {
 			if (destroyed) return;
 			if (!video) throw new Error('HqpEngine.attach(video) must run before load()');
 			if (state().item) leaveItem();
+			remote = payload.media ?? null;
 			const queue = [...payload.queue];
 			if (queue.length === 0) return fail(errorFromStatus(404, null));
 			const index = clamp(Math.trunc(payload.index) || 0, 0, queue.length - 1);

@@ -259,6 +259,13 @@ three-critic responsive pass (53 findings fixed); the owner journeys (play,
 resume, subtitles, audio, quality, watchlist for films and series) pass in
 tests/hqp.e2e.ts and in scripted browser runs. Not verified on a real iPhone.
 
+## `in_review` — owner media streaming from the online site (option B)
+
+Approved 2026-10-19. Media node split implemented and verified locally (grant,
+gate, CORS, granted URLs, playback and progress through a separate node).
+Pending: production deployment, Funnel on port 8443, real iPhone test.
+Procedure: `docs/RUNBOOK_PRODUCTION_V5.md`, step 6.
+
 ## `verified` — owner media streaming
 
 Delivered as Alan’s HQP (see the section above): the owner’s F:/MOVIES films

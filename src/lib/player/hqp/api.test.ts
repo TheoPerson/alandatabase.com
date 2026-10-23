@@ -171,3 +171,80 @@ describe('api', () => {
 		});
 	});
 });
+
+describe('api against the media node (online site)', () => {
+	const remote = { origin: 'https://pc.example.ts.net:8443', token: 'v1.abc.def' };
+	const granted = (path: string) => `${path}?mt=v1.abc.def`;
+
+	it('calls the node with the grant and resolves the paths it hands back', async () => {
+		const fromNode = {
+			...SESSION,
+			playlistUrl: granted(SESSION.playlistUrl),
+			masterPlaylistUrl: granted(SESSION.masterPlaylistUrl!),
+			subtitleTracks: [
+				{
+					ordinal: 3,
+					label: 'English',
+					language: 'eng',
+					url: granted('/api/media/files/f/subtitles/3.vtt')
+				}
+			],
+			chaptersUrl: granted(SESSION.chaptersUrl!),
+			trickplayUrl: granted(SESSION.trickplayUrl!)
+		};
+		const fetch = vi.fn(async (_url: string) => json(201, fromNode));
+		const api = createApi(fetch as unknown as typeof globalThis.fetch, () => remote);
+		const session = await api.startSession({ fileId: 'f', audio: 1, caps: CAPS } as never);
+
+		expect(fetch.mock.calls[0][0]).toBe(
+			'https://pc.example.ts.net:8443/api/media/sessions?mt=v1.abc.def'
+		);
+		expect(session.playlistUrl).toBe(
+			'https://pc.example.ts.net:8443/api/media/sessions/abc123/index.m3u8?mt=v1.abc.def'
+		);
+		expect(session.subtitleTracks[0].url).toBe(
+			'https://pc.example.ts.net:8443/api/media/files/f/subtitles/3.vtt?mt=v1.abc.def'
+		);
+		expect(session.trickplayUrl?.startsWith('https://pc.example.ts.net:8443/')).toBe(true);
+	});
+
+	it('sends progress and stop to the node, and resolves trickplay sheets', async () => {
+		const fetch = vi.fn(async (url: string) =>
+			url.includes('trickplay.json')
+				? json(200, {
+						status: 'ready',
+						intervalSeconds: 10,
+						tileWidth: 480,
+						tileHeight: 270,
+						columns: 6,
+						rows: 6,
+						sheets: [granted('/api/media/files/f/trickplay/0.webp')]
+					})
+				: new Response(null, { status: 204 })
+		);
+		const api = createApi(fetch as unknown as typeof globalThis.fetch, () => remote);
+		await api.putProgress({ fileId: 'f', positionSeconds: 1, durationSeconds: 2 } as never, false);
+		await api.deleteSession('abc123');
+		const manifest = await api.trickplay(
+			'https://pc.example.ts.net:8443/api/media/files/f/trickplay.json?mt=v1.abc.def'
+		);
+
+		expect(fetch.mock.calls[0][0]).toBe(
+			'https://pc.example.ts.net:8443/api/media/progress?mt=v1.abc.def'
+		);
+		expect(fetch.mock.calls[1][0]).toBe(
+			'https://pc.example.ts.net:8443/api/media/sessions/abc123?mt=v1.abc.def'
+		);
+		expect(manifest?.sheets[0]).toBe(
+			'https://pc.example.ts.net:8443/api/media/files/f/trickplay/0.webp?mt=v1.abc.def'
+		);
+	});
+
+	it('stays same-origin without a node', async () => {
+		const fetch = vi.fn(async (_url: string) => json(201, SESSION));
+		const api = createApi(fetch as typeof globalThis.fetch);
+		const session = await api.startSession({ fileId: 'f', audio: 1, caps: CAPS } as never);
+		expect(fetch.mock.calls[0][0]).toBe('/api/media/sessions');
+		expect(session.playlistUrl).toBe(SESSION.playlistUrl);
+	});
+});

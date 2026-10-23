@@ -23,6 +23,8 @@ declare global {
 				revokedAt: Date | null;
 			} | null;
 			abTests: Record<string, string>;
+			// Media node only: the playback grant this request was authenticated with.
+			mediaGrant?: string | null;
 		}
 
 		// Shallow routing state: the trailer player is open while `player` is set,

@@ -32,6 +32,7 @@
 		"auth:set-password": "tsx scripts/set-user-password.ts",
 		"library:scan": "pnpm --dir worker library:scan",
 		"library:index": "pnpm --dir worker library:index",
+		"media:node": "vite preview --host 127.0.0.1 --port 4174 --strictPort",
 		"monitor": "tsx scripts/monitor.ts",
 		"sync": "tsx scripts/sync-repos.ts",
 		"media:index": "tsx src/lib/server/media/index-cli.ts"
