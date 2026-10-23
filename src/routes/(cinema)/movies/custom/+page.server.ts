@@ -1,13 +1,24 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
 import { movies } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { isAdmin } from '$lib/server/auth';
+import { isSafeHttpUrl } from '$lib/utils';
+
+export async function load({ locals }) {
+	if (!locals.user) throw redirect(302, '/auth/login');
+	if (!isAdmin(locals.user)) throw error(403, 'Only administrators can add custom movies.');
+	return {};
+}
 
 export const actions = {
 	createCustomMovie: async ({ request, locals }) => {
 		// 1. Auth check
 		if (!locals.user) {
 			return fail(401, { error: 'You must be logged in to add a custom movie.' });
+		}
+		if (!isAdmin(locals.user)) {
+			return fail(403, { error: 'Only administrators can add custom movies.' });
 		}
 
 		// 2. Parse form data
@@ -26,6 +37,15 @@ export const actions = {
 			return fail(400, {
 				error: 'Missing required fields: Title, Video URL, and Poster URL are mandatory.'
 			});
+		}
+
+		// URLs end up in <iframe src> / <img src>: only plain http(s) is allowed (blocks javascript: XSS)
+		if (
+			!isSafeHttpUrl(customVideoUrl) ||
+			!isSafeHttpUrl(posterUrl) ||
+			(backdropUrl && !isSafeHttpUrl(backdropUrl))
+		) {
+			return fail(400, { error: 'Video, poster and backdrop URLs must start with http(s)://.' });
 		}
 
 		try {

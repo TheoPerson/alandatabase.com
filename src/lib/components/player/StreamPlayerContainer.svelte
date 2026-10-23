@@ -1,13 +1,23 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { isSafeHttpUrl } from '$lib/utils';
 
-	let { tmdbId, imdbId, title, trailerKey, customVideoUrl } = $props<{
+	let {
+		tmdbId,
+		imdbId,
+		title,
+		trailerKey,
+		customVideoUrl: rawCustomVideoUrl
+	} = $props<{
 		tmdbId: number | string;
 		imdbId?: string | null;
 		title: string;
 		trailerKey?: string | null;
 		customVideoUrl?: string | null;
 	}>();
+
+	// Never hand a non-http(s) URL (e.g. javascript:) to the iframe
+	const customVideoUrl = $derived(isSafeHttpUrl(rawCustomVideoUrl) ? rawCustomVideoUrl : null);
 
 	// Premium 2026 Movie Mirror Pipeline with Distinct Providers
 	const servers = $derived(

@@ -3,11 +3,15 @@ import { getMovieById } from '$lib/server/services/movie.service';
 import { db } from '$lib/server/db';
 import { movies } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
+import { isAdmin } from '$lib/server/auth';
 
 export async function load({ params, locals }) {
 	// Only authenticated users can edit
 	if (!locals.user) {
 		throw redirect(302, '/auth/login');
+	}
+	if (!isAdmin(locals.user)) {
+		throw error(403, 'Only administrators can modify catalog entries.');
 	}
 
 	const movie = await getMovieById(params.id);
@@ -24,6 +28,9 @@ export const actions = {
 	default: async ({ request, params, locals }) => {
 		if (!locals.user) {
 			return fail(401, { error: 'Unauthorized' });
+		}
+		if (!isAdmin(locals.user)) {
+			return fail(403, { error: 'Only administrators can modify catalog entries.' });
 		}
 
 		const formData = await request.formData();

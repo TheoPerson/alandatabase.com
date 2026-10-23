@@ -1,7 +1,6 @@
 import { sequence } from '@sveltejs/kit/hooks';
 import * as Sentry from '@sentry/sveltekit';
 import { validateSessionToken } from '$lib/server/auth';
-import { ensureTablesExist } from '$lib/server/db/migrate';
 import { assignAllExperiments } from '$lib/server/ab-testing';
 import type { Handle } from '@sveltejs/kit';
 
@@ -15,14 +14,9 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 	event.locals.abTests = assignAllExperiments(deviceId);
 
 	const token = event.cookies.get('session');
-
-	if (!token) {
-		event.locals.user = null;
-		event.locals.session = null;
-		return resolve(event);
-	}
-
-	const { session, user } = await validateSessionToken(token);
+	const { session, user } = token
+		? await validateSessionToken(token)
+		: { session: null, user: null };
 
 	if (session && user) {
 		event.locals.session = session;
@@ -35,12 +29,12 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 			settings: (user.settings as Record<string, any>) || {}
 		};
 	} else {
-		event.cookies.delete('session', { path: '/' });
+		if (token) event.cookies.delete('session', { path: '/' });
 		event.locals.session = null;
 		event.locals.user = null;
 	}
 
-	// Centralized Auth Guard
+	// Centralized Auth Guard (applies to every request, with or without a session cookie)
 	const pathname = event.url.pathname;
 	const isProtected =
 		pathname.startsWith('/my/') || pathname.startsWith('/admin/') || pathname.includes('/edit');
@@ -53,6 +47,19 @@ export const handle: Handle = sequence(Sentry.sentryHandle(), async ({ event, re
 	}
 
 	const response = await resolve(event);
+	// Mirrors netlify.toml so SSR function responses get the same baseline security headers
+	try {
+		if (!response.headers.has('x-frame-options')) {
+			response.headers.set('x-frame-options', 'SAMEORIGIN');
+			response.headers.set('referrer-policy', 'strict-origin-when-cross-origin');
+			response.headers.set(
+				'permissions-policy',
+				'camera=(), microphone=(), geolocation=(), payment=()'
+			);
+		}
+	} catch {
+		/* immutable headers (e.g. proxied fetch responses) */
+	}
 	if (event.request.headers.get('accept')?.includes('text/html')) {
 		response.headers.set('cache-control', 'no-cache, no-store, must-revalidate');
 	}
