@@ -139,11 +139,14 @@
 			<div
 				class="drawer-panel"
 				onclick={(e) => e.stopPropagation()}
+				onkeydown={(e) => e.key === 'Escape' && (drawerOpen = false)}
 				role="dialog"
 				aria-modal="true"
+				aria-labelledby="picker-drawer-title"
+				tabindex="-1"
 			>
 				<div class="drawer-header">
-					<h3 class="drawer-title">Refine Recommendations</h3>
+					<h3 class="drawer-title" id="picker-drawer-title">Refine Recommendations</h3>
 					<button
 						type="button"
 						class="close-btn"
@@ -156,8 +159,8 @@
 
 				<div class="drawer-body">
 					<!-- Recommendation Mode -->
-					<div class="filter-section">
-						<label class="section-label">Recommendation Style</label>
+					<div class="filter-section" role="group" aria-labelledby="picker-filter-mode">
+						<span class="section-label" id="picker-filter-mode">Recommendation Style</span>
 						<div class="pills-grid">
 							<button
 								type="button"
@@ -187,8 +190,8 @@
 					</div>
 
 					<!-- Era -->
-					<div class="filter-section">
-						<label class="section-label">Release Era</label>
+					<div class="filter-section" role="group" aria-labelledby="picker-filter-era">
+						<span class="section-label" id="picker-filter-era">Release Era</span>
 						<div class="pills-grid">
 							{#each ERAS as era}
 								<button
@@ -205,8 +208,8 @@
 					</div>
 
 					<!-- Minimum Rating -->
-					<div class="filter-section">
-						<label class="section-label">Minimum Score</label>
+					<div class="filter-section" role="group" aria-labelledby="picker-filter-rating">
+						<span class="section-label" id="picker-filter-rating">Minimum Score</span>
 						<div class="pills-grid">
 							{#each RATINGS as r}
 								<button
@@ -222,8 +225,8 @@
 					</div>
 
 					<!-- Runtime -->
-					<div class="filter-section">
-						<label class="section-label">Maximum Runtime</label>
+					<div class="filter-section" role="group" aria-labelledby="picker-filter-runtime">
+						<span class="section-label" id="picker-filter-runtime">Maximum Runtime</span>
 						<div class="pills-grid">
 							{#each RUNTIMES as rt}
 								<button
@@ -239,8 +242,8 @@
 					</div>
 
 					<!-- Genres Multi-Select -->
-					<div class="filter-section">
-						<label class="section-label">Genres (Multi-select)</label>
+					<div class="filter-section" role="group" aria-labelledby="picker-filter-genres">
+						<span class="section-label" id="picker-filter-genres">Genres (Multi-select)</span>
 						<div class="genres-wrap">
 							{#each allGenres as g}
 								<button
