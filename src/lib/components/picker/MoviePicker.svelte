@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, untrack } from 'svelte';
 	import PickerCard from './PickerCard.svelte';
 	import PickerFiltersComponent from './PickerFilters.svelte';
 	import type {
@@ -7,7 +7,7 @@
 		PickerPreset,
 		PickerRecommendationResponse
 	} from '$lib/server/picker/types';
-	import { QUICK_PRESETS } from '$lib/server/picker/config';
+	import { QUICK_PRESETS } from '$lib/picker/presets';
 
 	interface Props {
 		initialGenres: string[];
@@ -32,9 +32,11 @@
 		mode: 'balanced'
 	});
 
-	let recommendation = $state<PickerRecommendationResponse | null>(initialPick);
+	// The server pick only seeds local state; later picks come from the client session
+	const seededPick = untrack(() => initialPick);
+	let recommendation = $state<PickerRecommendationResponse | null>(seededPick);
 	let loading = $state(false);
-	let hasStarted = $state(initialPick !== null);
+	let hasStarted = $state(seededPick !== null);
 	let errorMessage = $state<string | null>(null);
 
 	// Quick interaction states for current movie
