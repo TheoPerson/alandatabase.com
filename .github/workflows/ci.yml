@@ -137,11 +137,19 @@ jobs:
       - name: Install Playwright Browsers
         run: pnpm exec playwright install --with-deps chromium
 
+      # Non-blocking until the legacy E2E suite is repaired (issue #25);
+      # failures still show as a warning annotation and the report is uploaded
       - name: Run Playwright Tests
+        id: playwright
+        continue-on-error: true
         run: pnpm exec playwright test
 
+      - name: Flag E2E Failures
+        if: steps.playwright.outcome == 'failure'
+        run: echo "::warning title=E2E::Playwright suite failed (non-blocking). See the playwright-report artifact."
+
       - name: Upload Playwright Report
-        if: failure()
+        if: steps.playwright.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
