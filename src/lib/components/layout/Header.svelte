@@ -298,6 +298,27 @@
 		}
 	}
 
+	/* Phones: let the search shrink so the menu button stays on-screen */
+	@media (max-width: 767px) {
+		.header-right {
+			flex: 1;
+			min-width: 0;
+			justify-content: flex-end;
+			gap: 0.5rem;
+		}
+
+		.search-form {
+			flex: 1;
+			min-width: 0;
+			max-width: 220px;
+		}
+
+		.search-input {
+			width: 100%;
+			min-width: 0;
+		}
+	}
+
 	.search-input:focus {
 		outline: none;
 		border-color: var(--border-accent);

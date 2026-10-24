@@ -12,9 +12,19 @@ export const SESSION_COOKIE_OPTIONS = {
 	path: '/',
 	httpOnly: true,
 	sameSite: 'lax' as const,
-	secure: process.env.NODE_ENV === 'production' && process.env.VERCEL === '1',
+	secure: process.env.NODE_ENV === 'production',
 	maxAge: 60 * 60 * 24 * SESSION_EXPIRY_DAYS
 };
+
+// Catalog-wide mutations (edit, merge, custom movies) are restricted to the emails listed in ADMIN_EMAILS
+export function isAdmin(user: { email: string } | null | undefined): boolean {
+	if (!user) return false;
+	const admins = (process.env.ADMIN_EMAILS ?? '')
+		.split(',')
+		.map((email) => email.trim().toLowerCase())
+		.filter(Boolean);
+	return admins.includes(user.email.toLowerCase());
+}
 
 // Password Hashing with Scrypt (Salt + Hash)
 export async function hashPassword(password: string): Promise<string> {
@@ -30,6 +40,8 @@ export async function verifyPassword(password: string, storedHash: string): Prom
 	const keyBuf = Buffer.from(keyHex, 'hex');
 	const derivedBuf = (await scryptAsync(password, salt, 64)) as Buffer;
 
+	// timingSafeEqual throws on length mismatch (corrupt/legacy hash): treat it as a failed login
+	if (keyBuf.length !== derivedBuf.length) return false;
 	return timingSafeEqual(keyBuf, derivedBuf);
 }
 

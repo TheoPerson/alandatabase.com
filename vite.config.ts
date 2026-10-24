@@ -16,6 +16,8 @@ export default defineConfig({
 	test: {
 		expect: { requireAssertions: true },
 		environment: 'node',
+		// The postgres client is lazy: a placeholder URL lets pure-logic tests import DB-backed modules
+		env: { DATABASE_URL: process.env.DATABASE_URL ?? 'postgres://test:test@localhost:5432/test' },
 		include: ['src/**/*.{test,spec}.{js,ts}']
 	}
 });

@@ -15,11 +15,12 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 	if (!geminiApiKey || geminiApiKey === 'YOUR_GEMINI_KEY')
 		throw error(500, 'Gemini API Key not configured.');
 
-	const body = await request.json();
-	const userMessage: string = body.message?.trim();
+	const body = await request.json().catch(() => ({}));
+	const userMessage: string = typeof body.message === 'string' ? body.message.trim() : '';
 	const resetSession: boolean = body.reset ?? false;
 
 	if (!userMessage) throw error(400, 'No message provided.');
+	if (userMessage.length > 2000) throw error(413, 'Message is too long (2000 characters max).');
 
 	// ── Session management (DB-backed, survives cold starts) ──────────────────
 	let sessionKey = cookies.get('ai_chat_session');
@@ -51,6 +52,18 @@ export const POST: RequestHandler = async ({ request, locals, cookies }) => {
 	let sessionRow = await db.query.aiChatSessions.findFirst({
 		where: eq(aiChatSessions.sessionKey, sessionKey)
 	});
+
+	// The cookie outlives logins: never reuse a chat (and its taste profile) owned by another account
+	if (sessionRow && sessionRow.userId !== locals.user.id) {
+		sessionRow = undefined;
+		sessionKey = crypto.randomUUID();
+		cookies.set('ai_chat_session', sessionKey, {
+			path: '/',
+			maxAge: 60 * 60 * 6,
+			httpOnly: true,
+			sameSite: 'lax'
+		});
+	}
 
 	let history: GeminiMessage[] = (sessionRow?.messages as GeminiMessage[]) ?? [];
 	const isNewSession = !sessionRow;
@@ -141,7 +154,12 @@ Always return valid JSON:
 	const rawText = response.text;
 	if (!rawText) throw error(500, 'Empty AI response');
 
-	const parsed = JSON.parse(rawText);
+	let parsed: { response_text: string; recommended_movie_titles?: string[] };
+	try {
+		parsed = JSON.parse(rawText);
+	} catch {
+		throw error(502, 'The AI curator returned an unreadable response. Please try again.');
+	}
 
 	// ── Append model turn & persist to DB ────────────────────────────────────
 	history.push({ role: 'model', parts: [{ text: rawText }] });

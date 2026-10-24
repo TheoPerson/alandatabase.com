@@ -24,7 +24,10 @@ vite.config.ts.timestamp-*
 # Playwright
 test-results
 
-.vercel
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Local PGlite databases (never commit database files)
+.data/
+worker/.data/

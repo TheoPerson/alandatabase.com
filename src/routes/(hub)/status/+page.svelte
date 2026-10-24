@@ -225,14 +225,14 @@
 			</div>
 		</div>
 
-		<!-- Server Latency Card (Vercel Edge) -->
+		<!-- Server Latency Card (Netlify Functions) -->
 		<div class="telemetry-card">
 			<div class="card-header">
 				<div class="icon-wrap server"><span class="icon">▲</span></div>
 				<span class="status-badge online">ACTIVE</span>
 			</div>
 			<div class="card-body">
-				<span class="card-title">Vercel SSR Edge</span>
+				<span class="card-title">Netlify SSR Function</span>
 				<span class="card-sub">Env: {telemetry.nodeEnv}</span>
 				<div class="metric-row">
 					<span class="metric-val">{telemetry.serverLatencyMs} ms</span>

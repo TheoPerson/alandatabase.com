@@ -47,8 +47,8 @@ export const load: PageServerLoad = async () => {
 		],
 		systemInfo: {
 			nodeVersion: process.version,
-			adapter: '@sveltejs/adapter-vercel (v5)',
-			architecture: 'Serverless Functions (ESM)',
+			adapter: '@sveltejs/adapter-netlify (v6)',
+			architecture: 'Netlify Functions (ESM)',
 			framework: 'SvelteKit 2 + Svelte 5 (Runes)'
 		}
 	};

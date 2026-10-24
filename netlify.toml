@@ -9,3 +9,12 @@
   for = "/_app/immutable/*"
   [headers.values]
     cache-control = "public, immutable, max-age=31536000"
+
+# Baseline security headers. Permissions-Policy deliberately leaves fullscreen/autoplay/encrypted-media
+# untouched so the third-party player iframes keep working.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
