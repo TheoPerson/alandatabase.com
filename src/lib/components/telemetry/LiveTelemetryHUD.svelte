@@ -167,7 +167,18 @@
 			}
 			window.addEventListener('keydown', handleKeydown);
 		}
+	});
+
+	// Stream only while the panel is open: an always-on EventSource on every page view
+	// keeps re-invoking the serverless function (each reconnect is a billed invocation)
+	$effect(() => {
+		if (!isOpen) return;
 		connectSSE();
+		return () => {
+			eventSource?.close();
+			eventSource = null;
+			isConnected = false;
+		};
 	});
 
 	onDestroy(() => {
